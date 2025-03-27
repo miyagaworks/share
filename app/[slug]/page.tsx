@@ -8,21 +8,21 @@ import { ProfileCustomLink } from "@/components/profile/ProfileCustomLink";
 import { Metadata } from "next";
 import Link from "next/link";
 import type { User } from "@prisma/client";
-
-interface ProfilePageProps {
-    params: {
-        slug: string;
-    };
-}
-
 interface ExtendedUser extends User {
     snsIconColor: string | null;
     companyUrl: string | null;
     companyLabel: string | null;
 }
 
+type ProfileParams = {
+    params: {
+        slug: string;
+    };
+    searchParams?: Record<string, string | string[]>;
+};
+
 // 動的メタデータ生成
-export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
+export async function generateMetadata({ params }: ProfileParams): Promise<Metadata> {
     const profile = await prisma.profile.findUnique({
         where: { slug: params.slug },
         include: {
@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     };
 }
 
-export default async function ProfilePage({ params }: ProfilePageProps) {
+export default async function ProfilePage({ params }: ProfileParams) {
     const { slug } = params;
 
     // プロフィールデータの取得

@@ -1,6 +1,6 @@
 // app/api/webhook/stripe/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { stripe, PLANS, getPlanName } from "@/lib/stripe";
+import { stripe, PLANS, getPlanNameFromId } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 
@@ -272,7 +272,7 @@ function getInvoiceDescription(invoice: Stripe.Invoice): string {
     if (!priceId) return '請求明細';
 
     const plan = getPlanFromPrice(priceId);
-    const planName = getPlanName(plan);
+    const planName = getPlanNameFromId(plan); // 修正後の関数を使用
 
     return `${planName}の支払い`;
 }
