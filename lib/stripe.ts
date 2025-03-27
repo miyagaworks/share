@@ -37,6 +37,17 @@ export const PLANS = {
     },
 };
 
+// planIdからプラン名を直接取得する関数
+export function getPlanNameFromId(planId: string): string {
+    switch (planId) {
+        case 'monthly': return '月額プラン';
+        case 'yearly': return '年額プラン';
+        case 'business': return 'ビジネスプラン';
+        case 'enterprise': return 'エンタープライズプラン';
+        default: return '不明なプラン';
+    }
+}
+
 // サブスクリプションステータスの表示名を取得するヘルパー関数
 export function getSubscriptionStatusText(status: string): string {
     switch (status) {
