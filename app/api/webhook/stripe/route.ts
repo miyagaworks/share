@@ -1,6 +1,6 @@
 // app/api/webhook/stripe/route.ts
 import { NextRequest, NextResponse } from "next/server";
-import { stripe, PLANS, getPlanNameFromId } from "@/lib/stripe";
+import { stripe, PLANS } from "@/lib/stripe";
 import { prisma } from "@/lib/prisma";
 import Stripe from "stripe";
 
@@ -272,7 +272,7 @@ function getInvoiceDescription(invoice: Stripe.Invoice): string {
     if (!priceId) return '請求明細';
 
     const plan = getPlanFromPrice(priceId);
-    const planName = getPlanNameFromId(plan); // 修正後の関数を使用
+    const planName = getPlanNameFromId(plan);
 
     return `${planName}の支払い`;
 }
@@ -284,4 +284,20 @@ function getPlanFromPrice(priceId: string): string {
     if (priceId === PLANS.BUSINESS.priceId) return 'business';
 
     return 'unknown';
+}
+
+// ヘルパー関数: プランIDから表示名を取得
+function getPlanNameFromId(planId: string): string {
+    switch (planId) {
+        case 'monthly':
+            return '月額プラン';
+        case 'yearly':
+            return '年額プラン';
+        case 'business':
+            return 'ビジネスプラン';
+        case 'enterprise':
+            return 'エンタープライズプラン';
+        default:
+            return '不明なプラン';
+    }
 }

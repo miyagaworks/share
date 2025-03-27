@@ -1,14 +1,13 @@
-// next.config.mjs
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     images: {
         domains: ['lh3.googleusercontent.com'],
     },
-    // TypeScriptの型チェックエラーを無視してビルドを成功させる設定
+    // TypeScript型チェックエラーを無視する設定
     typescript: {
         ignoreBuildErrors: true,
     },
-    // Stripeのwebhookエラーを一時的に無視（必要に応じて）
+    // ESLintエラーも無視する（オプション）
     eslint: {
         ignoreDuringBuilds: true,
     },
