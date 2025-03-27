@@ -1,26 +1,203 @@
 @import "tailwindcss";
-
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
-}
-
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+    --background: #E8EAEE;
+    --foreground: #171717;
+    --color-background: var(--background);
+    --color-foreground: var(--foreground);
+    --font-sans: var(--font-geist-sans);
+    --font-mono: var(--font-geist-mono);
 }
 
 @media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+     :root {
+        --background: #0a0a0a;
+        --foreground: #ededed;
+    }
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+    background: var(--background);
+    color: var(--foreground);
+    font-family: Arial, Helvetica, sans-serif;
+}
+
+
+/* QRスキャンページ用のスタイル */
+
+.profile-scan-page {
+    animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeIn {
+    0% {
+        opacity: 0;
+    }
+    100% {
+        opacity: 1;
+    }
+}
+
+
+/* モーダル関連スタイル */
+
+.modal-open {
+    overflow: hidden;
+}
+
+.modal-transition-in {
+    animation: modalIn 0.3s ease-out forwards;
+}
+
+.modal-transition-out {
+    animation: modalOut 0.2s ease-in forwards;
+}
+
+@keyframes modalIn {
+    0% {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+    100% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+}
+
+@keyframes modalOut {
+    0% {
+        opacity: 1;
+        transform: scale(1) translateY(0);
+    }
+    100% {
+        opacity: 0;
+        transform: scale(0.9) translateY(20px);
+    }
+}
+
+
+/* モバイル表示用の特別なスタイル */
+
+@media (max-width: 767px) {
+    /* 既存のサイドバーを確実に非表示 */
+    .side-nav,
+    .sidebar,
+    aside,
+    [class*="sidebar"],
+    [class*="side-nav"],
+    [class*="side-menu"],
+    [id*="sidebar"] {
+        display: none !important;
+        width: 0 !important;
+        min-width: 0 !important;
+        position: absolute !important;
+        left: -9999px !important;
+        pointer-events: none !important;
+    }
+    /* メインコンテンツを全幅で表示 */
+    main,
+    .main-content,
+    .dashboard-content,
+    [class*="main-content"],
+    [class*="dashboard-content"] {
+        padding-left: 1rem !important;
+        /* 左右のパディングを均等に */
+        padding-right: 1rem !important;
+        margin-left: auto !important;
+        /* 左右のマージンを均等に */
+        margin-right: auto !important;
+    }
+    /* ダッシュボードのナビゲーションカードのアイコンサイズを調整 */
+    .dashboard-nav-icon {
+        width: 1.25rem;
+        height: 1.25rem;
+    }
+    /* ダッシュボードカードの余白調整 */
+    .dashboard-card {
+        padding: 1rem !important;
+    }
+    /* コンテナにも左右均等なパディングを設定 */
+    .container {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+        margin-left: auto !important;
+        margin-right: auto !important;
+    }
+    /* カードやセクションのパディングも均等に */
+    .card,
+    .section,
+    .dashboard-card,
+    [class*="card"],
+    [class*="section"] {
+        padding-left: 1rem !important;
+        padding-right: 1rem !important;
+    }
+    /* メニューカードを非表示 */
+    .menu-card,
+    .menu-section,
+    div[class*="menu-card"],
+    div[class*="menu-section"],
+    div.mobile-menu-card,
+    div[id="mobile-menu"],
+    div.dashboard-menu {
+        display: none !important;
+    }
+    /* ダッシュボードに表示されるメニューコンテナを非表示 */
+    .dashboard-nav-container,
+    #mobile-menu,
+    div[id*="mobile-menu"],
+    div[class*="mobile-menu"],
+    .menu-heading,
+    .menu-container {
+        display: none !important;
+    }
+    /* メニュー見出しを持つ要素を非表示 */
+    h2.menu-title,
+    h3.menu-title {
+        display: none !important;
+    }
+    /* メニューという文字を含む見出しを持つ親要素を非表示 */
+    div:where(h2, h3, h4) {
+        display: none !important;
+    }
+}
+
+
+/* リンクカードのアイテムが折り返しの際に整列するようにする */
+
+.link-items-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+    gap: 1rem;
+}
+
+
+/* デスクトップでの調整 */
+
+@media (min-width: 768px) {
+    /* デスクトップではサイドバーを表示 */
+    .sidebar {
+        display: flex !important;
+    }
+    /* メインコンテンツにマージンを追加 */
+    .main-content {
+        margin-left: 16rem !important;
+        /* 256px (w-64) */
+    }
+    /* サイドバーが折りたたまれている場合 */
+    .sidebar-collapsed+.main-content {
+        margin-left: 4rem !important;
+        /* 64px (w-16) */
+    }
+}
+
+
+/* メニューカードを非表示にするための追加スタイル */
+
+
+/* JavaScriptを使わずCSSのみで対応 */
+
+.dashboard div:first-of-type+div.rounded-lg,
+.dashboard-page div:first-of-type+div.rounded-lg,
+[class*="dashboard"] div:first-of-type+div.rounded-lg {
+    display: none !important;
 }

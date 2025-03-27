@@ -1,0 +1,140 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id              String    @id @default(cuid())
+  email           String    @unique
+  name            String?
+  nameEn          String?
+  password        String?   // ハッシュ化されたパスワード、OAuthの場合はnull
+  image           String?   // プロフィール画像URL
+  bio             String?   // 自己紹介
+  mainColor       String    @default("#3B82F6") // デフォルトは青
+  snsIconColor    String?   @default("#333333") // デフォルトは黒に近いグレー
+  phone           String?   // 電話番号
+  company         String?   // 会社/組織名
+  companyUrl      String?   // 会社/組織のWebサイト
+  companyLabel    String?   // 会社/組織のリンク表示名
+  
+  // 認証関連
+  emailVerified   DateTime?
+  accounts        Account[]
+  
+  // プロフィール関連
+  profile         Profile?
+  customLinks     CustomLink[]
+  snsLinks        SnsLink[]
+  
+  // サブスクリプション関連 - 新規追加
+  stripeCustomerId String?   // Stripeカスタマー識別子
+  subscription    Subscription?
+  billingHistory   BillingRecord[]
+  trialEndsAt     DateTime?
+  subscriptionStatus String?
+  
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Profile {
+  id              String    @id @default(cuid())
+  userId          String    @unique
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug            String    @unique // カスタムURLスラッグ（12345）
+  views           Int       @default(0) // プロフィール閲覧数
+  isPublic        Boolean   @default(true)
+  lastAccessed    DateTime?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model SnsLink {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform        String    // 'line', 'youtube', 'x', 'instagram', 等
+  username        String?   // ユーザー名
+  url             String    // 完全なURL
+  displayOrder    Int       // 表示順序（並べ替え用）
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([userId, platform]) // 1ユーザーあたり各プラットフォーム1つまで
+}
+
+model CustomLink {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String    // リンクの表示名
+  url             String    // URL
+  displayOrder    Int       // 表示順序
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+model Account {
+  id              String    @id @default(cuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type            String    // oauth, email
+  provider        String    // google, apple, email
+  providerAccountId String?
+  refresh_token   String?
+  access_token    String?
+  expires_at      Int?
+  token_type      String?
+  scope           String?
+  id_token        String?
+  session_state   String?
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  @@unique([provider, providerAccountId])
+}
+
+// 新規追加 - サブスクリプションモデル
+model Subscription {
+  id              String   @id @default(cuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status          String   // 'trialing', 'active', 'past_due', 'canceled', 'incomplete'
+  plan            String   // 'monthly', 'yearly', 'business'
+  priceId         String?  // Stripe価格ID
+  subscriptionId  String?  // Stripe サブスクリプションID
+  currentPeriodStart DateTime
+  currentPeriodEnd   DateTime
+  cancelAtPeriodEnd  Boolean @default(false)
+  trialStart      DateTime?
+  trialEnd        DateTime?
+  canceledAt      DateTime?
+  cancelReason    String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+// 新規追加 - 請求履歴モデル
+model BillingRecord {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoiceId       String?  // Stripe インボイスID
+  amount          Int      // 金額（円）
+  status          String   // 'paid', 'pending', 'failed'
+  description     String?  // 請求内容
+  paidAt          DateTime?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
