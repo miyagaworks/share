@@ -46,7 +46,7 @@ export async function generateMetadata({ params }: ProfileParams): Promise<Metad
     };
 }
 
-export default async function ProfilePage({ params }: ProfileParams) {
+export default async function ProfilePage({ params }: { params: { slug: string } }) {
     const { slug } = params;
 
     // プロフィールデータの取得
