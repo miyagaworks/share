@@ -62,7 +62,7 @@ export function getSubscriptionStatusText(status: string): string {
 }
 
 // プランIDから名前を取得するヘルパー関数
-export function getPlanName(planId: string): string {
+export function getPlanNameById(planId: string): string {
     // PLANSオブジェクトからpriceIdに一致するプランを探す
     const plan = Object.values(PLANS).find(p => p.priceId === planId);
     if (plan) {
@@ -70,3 +70,6 @@ export function getPlanName(planId: string): string {
     }
     return '不明なプラン';
 }
+
+// 既存の関数名を残すためのエイリアス
+export const getPlanName = getPlanNameById;
