@@ -210,5 +210,27 @@ export const snsGuidesData: Record<string, SnsGuide> = {
             }
         ],
         additionalInfo: 'noteではマガジンとプロフィールの両方がありますが、ここではプロフィールの文字列を入力してください。'
+    },
+    bereal: {
+        platform: 'bereal',
+        platformName: 'BeReal',
+        steps: [
+            {
+                title: 'BeRealアプリを開く',
+                description: 'BeRealアプリを開き、右下のプロフィールアイコンをタップします。',
+                imageUrl: '/images/guides/bereal-step1.png'
+            },
+            {
+                title: 'プロフィールページを表示',
+                description: 'プロフィール画面が表示されたら、右上の歯車アイコンをタップします。',
+                imageUrl: '/images/guides/bereal-step2.png'
+            },
+            {
+                title: 'ユーザーを確認',
+                description: '設定メニューの上部にある名前の下があなたのユーザー名です。',
+                imageUrl: '/images/guides/bereal-step3.png'
+            }
+        ],
+        additionalInfo: 'BeRealプロフィールのURLは "https://bere.al/ユーザー名" の形式になります。'
     }
 }

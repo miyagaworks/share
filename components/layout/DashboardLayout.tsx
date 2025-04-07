@@ -149,7 +149,7 @@ const sidebarItems = [
         icon: <ShareIcon />,
     },
     {
-        title: "サブスクリプション",
+        title: "ご利用プラン",
         href: "/dashboard/subscription",
         icon: <SubscriptionIcon />,
     },

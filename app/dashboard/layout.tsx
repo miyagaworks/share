@@ -75,7 +75,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         },
         {
             href: "/dashboard/subscription",
-            label: "サブスクリプション",
+            label: "ご利用プラン",
             icon: <HiCreditCard className="w-5 h-5" />
         }
     ];
@@ -128,9 +128,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                 <Link
                                     key={item.href}
                                     href={item.href}
-                                    className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${pathname === item.href
-                                            ? "bg-blue-50 text-blue-600"
-                                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                                    className={`flex items-center px-3 py-2 text-base font-medium rounded-md ${pathname === item.href
+                                        ? "bg-blue-50 text-blue-600"
+                                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                                         }`}
                                     onClick={toggleMobileMenu}
                                 >
@@ -149,8 +149,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                     key={item.href}
                                     href={item.href}
                                     className={`flex items-center px-3 py-2 text-sm font-medium rounded-md ${pathname === item.href
-                                            ? "bg-blue-50 text-blue-600"
-                                            : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
+                                        ? "bg-blue-50 text-blue-600"
+                                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
                                         }`}
                                 >
                                     <span className="mr-3 text-gray-500">{item.icon}</span>
@@ -162,15 +162,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
                     {/* メインコンテンツ */}
                     <div className="flex-1 w-full md:w-auto">
-                        <main className="container mx-auto px-4 py-6 mb-20">{children}</main>
+                        <main className="container mx-auto px-4 py-6 mb-10">{children}</main>
 
                         {/* モバイルメニューボタン - 画面右下に固定 */}
                         <button
                             type="button"
-                            className="md:hidden fixed bottom-4 right-4 z-30 w-12 h-12 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"
+                            className="md:hidden fixed bottom-4 right-3 z-30 w-16 h-16 rounded-full bg-blue-600 text-white shadow-lg flex items-center justify-center"
                             onClick={toggleMobileMenu}
                         >
-                            {isMobileMenuOpen ? <HiX className="h-6 w-6" /> : <HiMenu className="h-6 w-6" />}
+                            {isMobileMenuOpen ? <HiX className="h-8 w-8" /> : <HiMenu className="h-8 w-8" />}
                         </button>
                     </div>
                 </div>

@@ -11,6 +11,7 @@ export default {
         Google({
             clientId: process.env.GOOGLE_CLIENT_ID,
             clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+            allowDangerousEmailAccountLinking: true,
         }),
         Credentials({
             async authorize(credentials) {
@@ -40,6 +41,17 @@ export default {
     pages: {
         signIn: "/auth/signin",
         error: "/auth/error",
+    },
+    cookies: {
+        csrfToken: {
+            name: "next-auth.csrf-token",
+            options: {
+                httpOnly: true,
+                sameSite: "lax",
+                path: "/",
+                secure: process.env.NODE_ENV === "production",
+            },
+        },
     },
     callbacks: {
         async session({ token, session }) {

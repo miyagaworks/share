@@ -74,7 +74,7 @@ export async function POST(req: NextRequest) {
 
 // 実際の処理関数は、Prismaモデルが生成されてから有効化する
 
-// サブスクリプション作成ハンドラー
+// ご利用プラン作成ハンドラー
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     const customerId = subscription.customer as string;
 
@@ -88,7 +88,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
         return;
     }
 
-    // サブスクリプション情報をデータベースに保存/更新
+    // ご利用プラン情報をデータベースに保存/更新
     await prisma.subscription.upsert({
         where: { userId: user.id },
         update: {
@@ -131,7 +131,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     });
 }
 
-// サブスクリプション更新ハンドラー
+// ご利用プラン更新ハンドラー
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     const customerId = subscription.customer as string;
 
@@ -145,7 +145,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
         return;
     }
 
-    // サブスクリプション情報を更新
+    // ご利用プラン情報を更新
     await prisma.subscription.update({
         where: { userId: user.id },
         data: {
@@ -165,7 +165,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     });
 }
 
-// サブスクリプション削除ハンドラー
+// ご利用プラン削除ハンドラー
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     const customerId = subscription.customer as string;
 
@@ -179,7 +179,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         return;
     }
 
-    // サブスクリプションのステータスを更新
+    // ご利用プランのステータスを更新
     await prisma.subscription.update({
         where: { userId: user.id },
         data: {
@@ -245,7 +245,7 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
     // ユーザーへの通知などの処理を追加することも可能
 }
 
-// ヘルパー関数: サブスクリプションからプラン種別を取得
+// ヘルパー関数: ご利用プランからプラン種別を取得
 function getPlanFromSubscription(subscription: Stripe.Subscription): string {
     const priceId = subscription.items.data[0].price.id;
 
@@ -253,7 +253,7 @@ function getPlanFromSubscription(subscription: Stripe.Subscription): string {
     if (priceId === PLANS.YEARLY.priceId) return 'yearly';
     if (priceId === PLANS.BUSINESS.priceId) return 'business';
 
-    // プランを特定できない場合はサブスクリプションの課金間隔から推測
+    // プランを特定できない場合はご利用プランの課金間隔から推測
     const interval = subscription.items.data[0].price.recurring?.interval;
 
     if (interval === 'month') return 'monthly';

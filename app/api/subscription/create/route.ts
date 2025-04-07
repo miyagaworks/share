@@ -32,11 +32,11 @@ function calculatePeriodEndDate(plan: string, startDate: Date): Date {
     return endDate;
 }
 
-// サブスクリプション作成API
+// ご利用プラン作成API
 export async function POST(req: NextRequest) {
     try {
         // リクエストログ
-        console.log("サブスクリプション作成リクエスト受信");
+        console.log("プラン作成リクエスト受信");
         console.log("現在のサーバー時間:", new Date().toISOString());
 
         const session = await auth();
@@ -101,7 +101,7 @@ export async function POST(req: NextRequest) {
 
         console.log("トライアル終了日:", trialEndsAt.toISOString());
 
-        // モックサブスクリプション作成
+        // モックご利用プラン作成
         const mockSubscription = {
             id: `sub_mock_${Math.random().toString(36).substring(2, 10)}`,
             status: "active",
@@ -114,7 +114,7 @@ export async function POST(req: NextRequest) {
             }
         };
 
-        console.log("モックサブスクリプション作成:", mockSubscription);
+        console.log("モックプラン作成:", mockSubscription);
 
         // ユーザーのStripeCustomerIdを更新
         if (!user.stripeCustomerId) {
@@ -129,12 +129,12 @@ export async function POST(req: NextRequest) {
             console.log("ユーザー情報更新:", { stripeCustomerId: mockCustomerId, subscriptionStatus: "active" });
         }
 
-        // 既存のサブスクリプションをチェック
+        // 既存のご利用プランをチェック
         const existingSubscription = await prisma.subscription.findUnique({
             where: { userId: session.user.id },
         });
 
-        console.log("既存のサブスクリプション:", existingSubscription);
+        console.log("既存のご利用プラン:", existingSubscription);
 
         // 現在の日付と期間終了日を設定
         const currentPeriodStart = now;
@@ -146,7 +146,7 @@ export async function POST(req: NextRequest) {
             currentPeriodEnd: currentPeriodEnd.toISOString()
         });
 
-        // サブスクリプション情報を更新または作成
+        // ご利用プラン情報を更新または作成
         const subscriptionData = {
             status: "active", // トライアル中ではなくアクティブに変更
             plan: plan || "monthly",
@@ -162,21 +162,21 @@ export async function POST(req: NextRequest) {
         let newSubscription;
 
         if (existingSubscription) {
-            // 既存のサブスクリプションを更新
+            // 既存のご利用プランを更新
             newSubscription = await prisma.subscription.update({
                 where: { userId: session.user.id },
                 data: subscriptionData,
             });
-            console.log("サブスクリプション更新:", newSubscription);
+            console.log("プラン更新:", newSubscription);
         } else {
-            // 新規サブスクリプションを作成
+            // 新規ご利用プランを作成
             newSubscription = await prisma.subscription.create({
                 data: {
                     userId: session.user.id,
                     ...subscriptionData
                 },
             });
-            console.log("サブスクリプション作成:", newSubscription);
+            console.log("プラン作成:", newSubscription);
         }
 
         // PaymentIntent情報を取得
@@ -186,14 +186,14 @@ export async function POST(req: NextRequest) {
             success: true,
             subscription: newSubscription,
             clientSecret,
-            message: "サブスクリプションが正常に作成されました（開発環境用モックデータ）"
+            message: "プランが正常に作成されました（開発環境用モックデータ）"
         });
 
     } catch (error) {
-        console.error("サブスクリプション作成エラー:", error);
-        const errorMessage = error instanceof Error ? error.message : "サブスクリプションの作成に失敗しました";
+        console.error("プラン作成エラー:", error);
+        const errorMessage = error instanceof Error ? error.message : "プランの作成に失敗しました";
         return NextResponse.json(
-            { error: `サブスクリプションの作成に失敗しました: ${errorMessage}` },
+            { error: `プランの作成に失敗しました: ${errorMessage}` },
             { status: 500 }
         );
     }

@@ -1,6 +1,6 @@
+// components/profile/ProfileSnsLink.tsx
 "use client";
 
-// components/profile/ProfileSnsLink.tsx
 import { ImprovedSnsIcon } from "@/components/shared/ImprovedSnsIcon";
 import type { SnsLink } from "@prisma/client";
 import type { SnsPlatform } from "@/types/sns";
@@ -23,6 +23,13 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
                 // LINEアプリの起動を試みる
                 if (link.username) {
                     return `line://ti/p/${link.username}`;
+                }
+                break;
+            case "bereal":
+                // LINEと同様にURLをそのまま使用
+                // ユーザーがhttps://bere.al/usernameをコピーしてペーストした場合の処理
+                if (link.url.startsWith('https://bere.al/')) {
+                    return link.url;
                 }
                 break;
             case "instagram":

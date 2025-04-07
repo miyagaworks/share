@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 // import { stripe } from "@/lib/stripe"; // 本番環境では必要
 
-// サブスクリプションキャンセルAPI
+// ご利用プランキャンセルAPI
 export async function POST(req: NextRequest) {
     try {
         console.log("キャンセルリクエスト受信");
@@ -24,18 +24,18 @@ export async function POST(req: NextRequest) {
 
         console.log("キャンセルリクエスト内容:", { userId: session.user.id, reason });
 
-        // ユーザーのサブスクリプション情報を取得
+        // ユーザーのご利用プラン情報を取得
         const subscription = await prisma.subscription.findUnique({
             where: { userId: session.user.id },
         });
 
-        console.log("取得したサブスクリプション:", subscription);
+        console.log("取得したご利用プラン:", subscription);
 
-        // サブスクリプションが見つからない場合
+        // ご利用プランが見つからない場合
         if (!subscription) {
-            console.log("サブスクリプションが見つかりません");
+            console.log("ご利用のプランが見つかりません");
             return NextResponse.json(
-                { error: "サブスクリプションが見つかりません" },
+                { error: "ご利用のプランが見つかりません" },
                 { status: 404 }
             );
         }
@@ -76,16 +76,16 @@ export async function POST(req: NextRequest) {
             }
         });
 
-        console.log("サブスクリプション更新完了:", updatedSubscription);
+        console.log("プラン更新完了:", updatedSubscription);
 
         return NextResponse.json({
             success: true,
             subscription: updatedSubscription,
-            message: "サブスクリプションをキャンセルしました"
+            message: "プランをキャンセルしました"
         });
     } catch (error) {
-        console.error("サブスクリプションキャンセルエラー:", error);
-        const errorMessage = error instanceof Error ? error.message : "サブスクリプションのキャンセルに失敗しました";
+        console.error("プランキャンセルエラー:", error);
+        const errorMessage = error instanceof Error ? error.message : "プランのキャンセルに失敗しました";
         return NextResponse.json(
             { error: errorMessage },
             { status: 500 }

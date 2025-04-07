@@ -71,7 +71,7 @@ export function ImageUpload({
         <div
             onClick={handleClick}
             className={cn(
-                "relative w-24 h-24 rounded-full border border-input bg-background flex items-center justify-center cursor-pointer overflow-hidden transition-all",
+                "relative w-18 h-18 rounded-full border border-input bg-background flex items-center justify-center cursor-pointer overflow-hidden transition-all",
                 disabled && "opacity-50 cursor-not-allowed",
                 value ? "bg-transparent" : "bg-muted",
                 className

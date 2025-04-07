@@ -13,7 +13,7 @@ async function createMissingSubscriptions() {
 
     console.log(`Found ${usersWithoutSubscription.length} users without subscription records`);
 
-    // 各ユーザーにサブスクリプションレコードを作成
+    // 各ユーザーにご利用プランレコードを作成
     for (const user of usersWithoutSubscription) {
         // トライアル終了日を取得（ない場合は30日後）
         const trialEndsAt = user.trialEndsAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000);

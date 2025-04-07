@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 // import { stripe } from "@/lib/stripe";
 
-// サブスクリプション情報の型定義
+// ご利用プラン情報の型定義
 interface MockSubscription {
     id: string;
     userId: string;
@@ -29,7 +29,7 @@ interface BillingRecord {
     createdAt: Date;
 }
 
-// サブスクリプション情報取得API
+// ご利用プラン情報取得API
 export async function GET() {
     try {
         const session = await auth();
@@ -41,7 +41,7 @@ export async function GET() {
             );
         }
 
-        // データベースからサブスクリプション情報を取得
+        // データベースからご利用プラン情報を取得
         let userSubscription = null;
         let userBillingHistory: BillingRecord[] = []; // 明示的に型を指定
 
@@ -87,11 +87,11 @@ export async function GET() {
             success: true,
             subscription: userSubscription,
             billingHistory: userBillingHistory,
-            message: "サブスクリプション情報を取得しました"
+            message: "ご利用のプラン情報を取得しました"
         });
     } catch (error) {
-        console.error("サブスクリプション取得エラー:", error);
-        const errorMessage = error instanceof Error ? error.message : "サブスクリプション情報の取得に失敗しました";
+        console.error("ご利用のプラン取得エラー:", error);
+        const errorMessage = error instanceof Error ? error.message : "ご利用のプラン情報の取得に失敗しました";
         return NextResponse.json(
             { error: errorMessage },
             { status: 500 }

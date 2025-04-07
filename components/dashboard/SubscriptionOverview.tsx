@@ -12,7 +12,7 @@ import TrialBanner from '@/components/subscription/TrialBanner';
 import { HiCreditCard, HiArrowRight, HiCalendar, HiClock } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 
-// サブスクリプションデータの型定義
+// ご利用プランデータの型定義
 interface SubscriptionData {
     id: string;
     status: string;
@@ -65,10 +65,10 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                     setTrialEndDate(profileData.user.trialEndsAt);
                 }
 
-                // サブスクリプション情報を取得
+                // ご利用プラン情報を取得
                 const subscriptionResponse = await fetch('/api/subscription');
                 if (!subscriptionResponse.ok) {
-                    throw new Error('サブスクリプション情報の取得に失敗しました');
+                    throw new Error('プラン情報の取得に失敗しました');
                 }
                 const subscriptionData = await subscriptionResponse.json();
 
@@ -90,11 +90,11 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
     if (isLoading) {
         return (
             <DashboardCard
-                title="サブスクリプション"
+                title="ご利用プラン"
                 className="flex items-center justify-center min-h-[120px]"
             >
                 <Spinner size="md" />
-                <span className="ml-3 text-sm text-gray-500">サブスクリプション情報を読み込み中...</span>
+                <span className="ml-3 text-sm text-gray-500">プラン情報を読み込み中...</span>
             </DashboardCard>
         );
     }
@@ -152,7 +152,7 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
         );
     }
 
-    // アクティブなサブスクリプション
+    // アクティブなご利用プラン
     if (subscriptionData?.subscription && subscriptionData.subscription.status === 'active') {
         const subscription = subscriptionData.subscription;
         const planName =
@@ -167,7 +167,7 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.3 }}
             >
-                <DashboardCard title="サブスクリプション">
+                <DashboardCard title="ご利用プラン">
                     <div className="flex items-start">
                         <div className="rounded-full bg-green-100 p-3 mr-4">
                             <HiCreditCard className="h-6 w-6 text-green-600" />
@@ -190,7 +190,7 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                             <Link href="/dashboard/subscription">
                                 <Button variant="outline" className="flex items-center" size="sm">
                                     <HiCreditCard className="mr-2 h-4 w-4" />
-                                    サブスクリプションを管理
+                                    プランを管理
                                     <HiArrowRight className="ml-1 h-4 w-4" />
                                 </Button>
                             </Link>
@@ -203,15 +203,15 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
 
     // キャンセル済みまたはその他のステータス
     return (
-        <DashboardCard title="サブスクリプション">
+        <DashboardCard title="ご利用プラン">
             <div className="flex items-start">
                 <div className="rounded-full bg-gray-100 p-3 mr-4">
                     <HiCreditCard className="h-6 w-6 text-gray-500" />
                 </div>
                 <div className="flex-1">
-                    <h3 className="text-lg font-semibold mb-1">サブスクリプション</h3>
+                    <h3 className="text-lg font-semibold mb-1">ご利用プラン</h3>
                     <p className="text-sm text-gray-500 mb-4">
-                        現在アクティブなサブスクリプションはありません。有料プランにアップグレードして、すべての機能をご利用ください。
+                        現在アクティブなプランはありません。有料プランにアップグレードして、すべての機能をご利用ください。
                     </p>
                     <Link href="/dashboard/subscription">
                         <Button className="flex items-center" size="sm">

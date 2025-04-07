@@ -9,6 +9,7 @@ export const SNS_PLATFORMS = [
     'pinterest',
     'threads',
     'note',
+    'bereal',
 ] as const;
 
 export type SnsPlatform = typeof SNS_PLATFORMS[number];
@@ -32,7 +33,7 @@ export const SNS_METADATA: Record<SnsPlatform, SnsMetadata> = {
     youtube: {
         name: 'YouTube',
         icon: 'youtube-icon.svg',
-        baseUrl: 'https://www.youtube.com/@',
+        baseUrl: 'https://youtube.com/@',
         placeholderText: 'YouTubeチャンネルID（@マーク除く）',
         helpText: 'YouTubeチャンネルページのURLを貼り付けてください'
     },
@@ -84,5 +85,12 @@ export const SNS_METADATA: Record<SnsPlatform, SnsMetadata> = {
         baseUrl: 'https://note.com/',
         placeholderText: 'noteのユーザー名',
         helpText: 'noteのプロフィールURLからユーザー名を入力してください'
+    },
+    bereal: {
+        name: 'BeReal',
+        icon: 'bereal-icon.svg',
+        baseUrl: '',
+        placeholderText: 'BeRealからコピーしたURLを貼り付け',
+        helpText: 'BeRealアプリのプロフィール共有からコピーしたURLを貼り付けてください'
     }
 };

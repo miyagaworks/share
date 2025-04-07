@@ -36,14 +36,14 @@ export function ShareOptionClient({ profileUrl }: ShareOptionClientProps) {
         const text = "私のプロフィールをチェックしてください！";
 
         switch (platform) {
+            case "line":
+                shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(profileUrl)}`;
+                break;
             case "x":
                 shareUrl = `https://x.com/intent/tweet?text=${encodeURIComponent(text)}&url=${encodeURIComponent(profileUrl)}`;
                 break;
             case "facebook":
                 shareUrl = `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(profileUrl)}`;
-                break;
-            case "line":
-                shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(profileUrl)}`;
                 break;
             case "mail":
                 shareUrl = `mailto:?subject=${encodeURIComponent("プロフィール共有")}&body=${encodeURIComponent(`${text}\n${profileUrl}`)}`;
@@ -58,7 +58,7 @@ export function ShareOptionClient({ profileUrl }: ShareOptionClientProps) {
     return (
         <div className="space-y-4">
             <Button
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-700 text-white"
+                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-800 text-white"
                 onClick={handleCopyUrl}
             >
                 <FaLink className="h-4 w-4" />

@@ -292,7 +292,7 @@ export default function ImprovedDashboardPage() {
                                 </div>
                                 <div className="flex flex-wrap gap-3">
                                     <Link href={profileUrl} target="_blank">
-                                        <button className="flex items-center justify-center py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                                        <button className="flex items-center justify-center py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
                                             <HiEye className="mr-2 h-4 w-4" />
                                             表示
                                         </button>
@@ -311,7 +311,7 @@ export default function ImprovedDashboardPage() {
                                     プロフィールがまだ作成されていません
                                 </p>
                                 <Link href="/dashboard/profile">
-                                    <button className="flex items-center justify-center py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                                    <button className="flex items-center justify-center py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
                                         <HiPlus className="mr-2 h-4 w-4" />
                                         プロフィール作成
                                     </button>
@@ -335,7 +335,7 @@ export default function ImprovedDashboardPage() {
                     </div>
                     <div className="p-6 space-y-3">
                         <Link href="/dashboard/links">
-                            <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-700 transition-colors">
+                            <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
                                 <HiPlus className="mr-2 h-4 w-4" />
                                 SNSを追加する
                             </button>
@@ -355,7 +355,7 @@ export default function ImprovedDashboardPage() {
                     </div>
                 </motion.div>
 
-                {/* サブスクリプションカード */}
+                {/* ご利用プランカード */}
                 <motion.div
                     variants={cardVariants}
                     className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden md:col-span-1"
@@ -364,7 +364,7 @@ export default function ImprovedDashboardPage() {
                     <div className="border-b border-gray-200 px-6 py-4">
                         <div className="flex items-center">
                             <HiCreditCard className="h-5 w-5 text-gray-700" />
-                            <h2 className="ml-2 text-lg font-semibold">サブスクリプション</h2>
+                            <h2 className="ml-2 text-lg font-semibold">ご利用プラン</h2>
                         </div>
                     </div>
                     <div className="p-6">
@@ -375,7 +375,7 @@ export default function ImprovedDashboardPage() {
                                 </svg>
                             </div>
                             <div className="ml-3">
-                                <h3 className="font-medium">有効なサブスクリプション</h3>
+                                <h3 className="font-medium">有効なプラン</h3>
                             </div>
                         </div>
                         <Link href="/dashboard/subscription">

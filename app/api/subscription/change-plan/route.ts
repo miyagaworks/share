@@ -6,7 +6,7 @@ import { auth } from "@/auth";
 import { PLANS } from "@/lib/stripe";
 // import { stripe } from "@/lib/stripe";
 
-// サブスクリプションプランの型定義
+// ご利用プランの型定義
 type SubscriptionPlan = 'monthly' | 'yearly' | 'business';
 
 // プラン変更API
@@ -52,14 +52,14 @@ export async function POST(req: NextRequest) {
 
         // 注: Prismaスキーマのモデル生成後に有効化
         /*
-        // ユーザーのサブスクリプション情報を取得
+        // ユーザーのご利用プラン情報を取得
         const subscription = await prisma.subscription.findUnique({
             where: { userId: session.user.id },
         });
 
         if (!subscription || !subscription.subscriptionId) {
             return NextResponse.json(
-                { error: "サブスクリプションが見つかりません" },
+                { error: "ご利用プランが見つかりません" },
                 { status: 404 }
             );
         }
@@ -72,14 +72,14 @@ export async function POST(req: NextRequest) {
             );
         }
 
-        // Stripeサブスクリプションのアイテムを取得
+        // Stripeご利用プランのアイテムを取得
         const stripeSubscription = await stripe.subscriptions.retrieve(
             subscription.subscriptionId
         );
 
         const subscriptionItemId = stripeSubscription.items.data[0].id;
 
-        // Stripeサブスクリプションのアイテムを更新
+        // Stripeご利用プランのアイテムを更新
         const updatedSubscription = await stripe.subscriptions.update(
             subscription.subscriptionId,
             {

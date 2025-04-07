@@ -27,7 +27,7 @@ console.log('- 本番環境でマイグレーションを実行する前に、�
 console.log('- マイグレーション後、コメントアウトされたコードを有効化してください\n');
 
 console.log('----------------------------------------');
-console.log('サブスクリプション関連のコードをアンコメントするファイル:');
+console.log('ご利用プラン関連のコードをアンコメントするファイル:');
 console.log('1. app/api/webhook/stripe/route.ts');
 console.log('2. app/api/subscription/route.ts');
 console.log('3. app/api/subscription/create/route.ts');

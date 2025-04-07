@@ -36,6 +36,7 @@ export function SNSLinkFormWithGuideIntegration({ onSuccess, existingPlatforms }
     const [showGuide, setShowGuide] = useState(false);
     const [autoGuideShown, setAutoGuideShown] = useState(false);
     const [lineInputValue, setLineInputValue] = useState(""); // LINE入力値の状態
+    const [berealInputValue, setBerealInputValue] = useState(""); // BeReal入力値の状態を追加
 
     const {
         register,
@@ -91,6 +92,19 @@ export function SNSLinkFormWithGuideIntegration({ onSuccess, existingPlatforms }
         return url; // 一致しない場合は元の文字列を返す
     };
 
+    // BeRealのURLからユーザー名を抽出する関数（extractLineId関数の後に追加）
+    const extractBerealUsername = (url: string): string => {
+        // URLのパターンチェック (https://bere.al/username)
+        const berealUrlPattern = /(?:https?:\/\/)?bere\.al\/([^?#\s\/]+)/i;
+        const match = url.match(berealUrlPattern);
+
+        if (match && match[1]) {
+            return match[1]; // 抽出したユーザー名部分を返す
+        }
+
+        return url; // 一致しない場合は元の文字列を返す
+    };
+
     const handlePlatformSelect = (platform: SnsPlatform) => {
         setSelectedPlatform(platform);
         setValue("platform", platform);
@@ -99,7 +113,11 @@ export function SNSLinkFormWithGuideIntegration({ onSuccess, existingPlatforms }
         if (platform === "line") {
             setValue("username", "");
             setValue("url", "");
-            setLineInputValue(""); // LINE入力用状態もリセット
+            setLineInputValue(""); // LINE入力用状態をリセット
+        } else if (platform === "bereal") { // BeReal処理を追加
+            setValue("username", "");
+            setValue("url", "");
+            setBerealInputValue(""); // BeReal入力用状態をリセット
         } else {
             setValue("url", SNS_METADATA[platform].baseUrl);
             setValue("username", "");
@@ -127,23 +145,28 @@ export function SNSLinkFormWithGuideIntegration({ onSuccess, existingPlatforms }
         setValue("url", `https://line.me/ti/p/${extractedId}`);
     };
 
+    // BeReal専用の入力処理（handleLineInputChange関数の後に追加）
+    const handleBerealInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const inputValue = e.target.value;
+        setBerealInputValue(inputValue);
+
+        // 入力内容からBeRealユーザー名を抽出
+        const extractedUsername = extractBerealUsername(inputValue);
+
+        // ユーザー名とURLを更新
+        setValue("username", extractedUsername);
+        setValue("url", `https://bere.al/${extractedUsername}`);
+    };
+
     // 通常のSNSのユーザー名変更処理
     const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const username = e.target.value;
         setValue("username", username);
 
-        if (selectedPlatform && selectedPlatform !== "line") {
-            // プラットフォーム別のURL生成ロジック
-            let url = SNS_METADATA[selectedPlatform].baseUrl;
-
-            if (selectedPlatform === "skype") {
-                url = `skype:${username}?chat`;
-            } else if (selectedPlatform === "whatsapp") {
-                url = `https://wa.me/${username}`;
-            } else {
-                url = `${url}${username}`;
-            }
-
+        // LINEとBeReal以外のすべてのプラットフォームでURLを自動生成
+        if (selectedPlatform && SNS_METADATA[selectedPlatform].baseUrl) {
+            // baseUrlがある場合のみURLを生成
+            const url = `${SNS_METADATA[selectedPlatform].baseUrl}${username}`;
             setValue("url", url);
         }
     };
@@ -168,6 +191,7 @@ export function SNSLinkFormWithGuideIntegration({ onSuccess, existingPlatforms }
             setShowHelp(false);
             setAutoGuideShown(false);
             setLineInputValue(""); // LINE入力をリセット
+            setBerealInputValue(""); // BeReal入力をリセット
             onSuccess();
         } catch (error) {
             const errorMessage = error instanceof Error ? error.message : "SNSリンクの追加に失敗しました";
@@ -304,6 +328,13 @@ export function SNSLinkFormWithGuideIntegration({ onSuccess, existingPlatforms }
                                             placeholder="https://line.me/ti/p/xxxx または IDを直接入力"
                                             disabled={isPending}
                                         />
+                                    ) : selectedPlatform === "bereal" ? ( // BeReal専用入力フィールドを追加
+                                        <Input
+                                            value={berealInputValue}
+                                            onChange={handleBerealInputChange}
+                                            placeholder="https://bere.al/username または ユーザー名を直接入力"
+                                            disabled={isPending}
+                                        />
                                     ) : (
                                         // その他のSNS用入力フィールド
                                         <Input
@@ -348,6 +379,22 @@ export function SNSLinkFormWithGuideIntegration({ onSuccess, existingPlatforms }
                                     />
                                     <p className="mt-1 text-xs text-gray-500">
                                         URLから自動的に抽出されたLINE IDです
+                                    </p>
+                                </div>
+                            )}
+
+                            {selectedPlatform === "bereal" && usernameValue && (
+                                <div>
+                                    <label className="text-sm font-medium leading-none block mb-2">
+                                        抽出されたBeRealユーザー名
+                                    </label>
+                                    <Input
+                                        value={usernameValue}
+                                        readOnly
+                                        className="bg-gray-50"
+                                    />
+                                    <p className="mt-1 text-xs text-gray-500">
+                                        URLから自動的に抽出されたBeRealユーザー名です
                                     </p>
                                 </div>
                             )}

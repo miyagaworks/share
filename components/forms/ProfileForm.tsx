@@ -17,7 +17,14 @@ import { z } from "zod";
 
 // 拡張されたProfileSchemaを定義
 const ExtendedProfileSchema = ProfileSchema.extend({
-    companyUrl: z.string().url({ message: "有効なURLを入力してください" }).optional().nullable(),
+    // 空文字列の場合はnullに変換し、値がある場合はURLバリデーション
+    companyUrl: z.string()
+        .transform(val => val === "" ? null : val) // 空文字列をnullに変換
+        .refine(val => val === null || /^https?:\/\//i.test(val), {
+            message: "有効なURLを入力してください"
+        })
+        .optional()
+        .nullable(),
     companyLabel: z.string().optional().nullable(),
 });
 
@@ -58,9 +65,16 @@ export function ProfileForm({ user }: ProfileFormProps) {
         try {
             setIsPending(true);
 
+            // 会社URLの処理
+            let processedCompanyUrl = data.companyUrl?.trim() || null;
+            if (processedCompanyUrl && !/^https?:\/\//i.test(processedCompanyUrl)) {
+                processedCompanyUrl = `https://${processedCompanyUrl}`;
+            }
+
             // 画像が変更されていたら、imageも送信
             const profileData = {
                 ...data,
+                companyUrl: processedCompanyUrl, // 処理したURLを使用
                 image: image !== user.image ? image : undefined,
             };
 

@@ -4,7 +4,7 @@ import { auth } from "@/auth";
 import { prisma } from "@/lib/prisma";
 // import { stripe } from "@/lib/stripe"; // 本番環境では必要
 
-// サブスクリプション再アクティブ化API
+// ご利用プラン再アクティブ化API
 export async function POST() {
     try {
         console.log("再アクティブ化リクエスト受信");
@@ -21,28 +21,28 @@ export async function POST() {
 
         console.log("ユーザーID:", session.user.id);
 
-        // ユーザーのサブスクリプション情報を取得
+        // ユーザーのご利用プラン情報を取得
         const subscription = await prisma.subscription.findUnique({
             where: { userId: session.user.id },
         });
 
-        console.log("取得したサブスクリプション:", subscription);
+        console.log("取得したプラン:", subscription);
 
         if (!subscription) {
-            console.log("サブスクリプションが見つかりません");
+            console.log("プランが見つかりません");
             return NextResponse.json(
-                { error: "サブスクリプションが見つかりません" },
+                { error: "プランが見つかりません" },
                 { status: 404 }
             );
         }
 
         // キャンセル予定ではない場合
         if (!subscription.cancelAtPeriodEnd) {
-            console.log("サブスクリプションは既にアクティブです");
+            console.log("プランは既にアクティブです");
             return NextResponse.json(
                 {
                     success: true,
-                    message: "サブスクリプションは既にアクティブです",
+                    message: "プランは既にアクティブです",
                     subscription
                 },
                 { status: 200 }
@@ -67,16 +67,16 @@ export async function POST() {
             }
         });
 
-        console.log("サブスクリプション更新完了:", updatedSubscription);
+        console.log("プラン更新完了:", updatedSubscription);
 
         return NextResponse.json({
             success: true,
             subscription: updatedSubscription,
-            message: "サブスクリプションを再アクティブ化しました"
+            message: "プランを再アクティブ化しました"
         });
     } catch (error) {
-        console.error("サブスクリプション再アクティブ化エラー:", error);
-        const errorMessage = error instanceof Error ? error.message : "サブスクリプションの再アクティブ化に失敗しました";
+        console.error("プラン再アクティブ化エラー:", error);
+        const errorMessage = error instanceof Error ? error.message : "プランの再アクティブ化に失敗しました";
         return NextResponse.json(
             { error: errorMessage },
             { status: 500 }

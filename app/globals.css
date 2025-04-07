@@ -75,6 +75,47 @@ body {
 }
 
 
+/* フェードインアニメーション */
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.animate-fadeIn {
+    animation: fadeIn 0.3s ease-out;
+}
+
+
+/* スライドアップアニメーション */
+
+@keyframes slideUp {
+    from {
+        transform: translateY(10px);
+        opacity: 0;
+    }
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
+
+.animate-slideUp {
+    animation: slideUp 0.3s ease-out;
+}
+
+
+/* フェードイン */
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+
 /* モバイル表示用の特別なスタイル */
 
 @media (max-width: 767px) {

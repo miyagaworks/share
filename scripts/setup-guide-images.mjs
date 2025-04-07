@@ -13,11 +13,9 @@ const PLATFORMS = [
     'tiktok',
     'facebook',
     'pinterest',
-    'pixiv',
     'threads',
-    'skype',
     'note',
-    'whatsapp'
+    'bereal'
 ];
 
 async function main() {

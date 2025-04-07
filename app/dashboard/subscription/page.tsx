@@ -98,7 +98,7 @@ export default function SubscriptionPage() {
                 <div className="flex items-center mb-6">
                     <HiCreditCard className="h-8 w-8 text-gray-700 mr-3" />
                     <div>
-                        <h1 className="text-3xl font-bold tracking-tight">サブスクリプション</h1>
+                        <h1 className="text-3xl font-bold tracking-tight">ご利用プラン</h1>
                         <p className="text-muted-foreground">
                             プランの管理、支払い設定、請求履歴の確認ができます
                         </p>

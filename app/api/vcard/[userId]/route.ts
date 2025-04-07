@@ -15,6 +15,7 @@ export async function GET(
         });
 
         if (!user) {
+            console.error("User not found:", userId);
             return NextResponse.json(
                 { error: "User not found" },
                 { status: 404 }
@@ -24,12 +25,24 @@ export async function GET(
         // vCardフォーマットの生成
         const now = new Date().toISOString().replace(/[-:]/g, "").split(".")[0] + "Z";
 
+        // 名前を適切に処理
+        let lastName = "", firstName = "";
+        if (user.nameEn) {
+            const nameParts = user.nameEn.split(" ");
+            if (nameParts.length > 1) {
+                lastName = nameParts.pop() || "";
+                firstName = nameParts.join(" ");
+            } else {
+                firstName = user.nameEn;
+            }
+        }
+
         const vcard = [
             "BEGIN:VCARD",
             "VERSION:3.0",
             `FN:${user.name || ""}`,
-            `N:${user.nameEn?.split(" ").pop() || ""};${user.nameEn?.split(" ")[0] || ""};;;`,
-            `REV:${now}`,
+            `N:${lastName};${firstName};;;`,
+            `REV:${now}`
         ];
 
         // オプション情報の追加
@@ -38,7 +51,7 @@ export async function GET(
         }
 
         if (user.email) {
-            vcard.push(`EMAIL:${user.email}`);
+            vcard.push(`EMAIL;TYPE=INTERNET:${user.email}`);
         }
 
         if (user.company) {
@@ -46,50 +59,43 @@ export async function GET(
         }
 
         if (user.image) {
-            // 画像URLではなく、埋め込み画像として追加する場合は以下のようなコード
-            // 注: 画像のサイズによってはvCardが大きくなりすぎる可能性がある
-            /* 
-            try {
-              const imageResponse = await fetch(user.image);
-              const imageBuffer = await imageResponse.arrayBuffer();
-              const base64Image = Buffer.from(imageBuffer).toString("base64");
-              
-              const imageType = user.image.split(".").pop()?.toLowerCase() || "jpeg";
-              vcard.push(`PHOTO;ENCODING=b;TYPE=${imageType}:${base64Image}`);
-            } catch (error) {
-              console.error("Failed to fetch profile image:", error);
-            }
-            */
-
             // 画像URLを含める
-            vcard.push(`PHOTO;VALUE=uri:${user.image}`);
+            vcard.push(`PHOTO;VALUE=URI:${user.image}`);
         }
 
-        // SNSリンクの取得と追加
-        const snsLinks = await prisma.snsLink.findMany({
-            where: { userId },
-            orderBy: { displayOrder: "asc" },
-        });
+        try {
+            // SNSリンクの取得と追加
+            const snsLinks = await prisma.snsLink.findMany({
+                where: { userId },
+                orderBy: { displayOrder: "asc" },
+            });
 
-        snsLinks.forEach(link => {
-            vcard.push(`URL;type=${link.platform}:${link.url}`);
-        });
+            snsLinks.forEach(link => {
+                vcard.push(`URL;TYPE=${link.platform.toUpperCase()}:${link.url}`);
+            });
 
-        // カスタムリンクの取得と追加
-        const customLinks = await prisma.customLink.findMany({
-            where: { userId },
-            orderBy: { displayOrder: "asc" },
-        });
+            // カスタムリンクの取得と追加
+            const customLinks = await prisma.customLink.findMany({
+                where: { userId },
+                orderBy: { displayOrder: "asc" },
+            });
 
-        customLinks.forEach(link => {
-            vcard.push(`URL;type=WORK:${link.url}`);
-        });
+            customLinks.forEach(link => {
+                vcard.push(`URL;TYPE=WORK:${link.url}`);
+            });
+        } catch (error) {
+            console.error("Error fetching links:", error);
+            // リンク情報の取得に失敗しても処理を継続
+        }
 
         // vCardの終了
         vcard.push("END:VCARD");
 
+        // 標準的なvCardの行区切りはCRLF
+        const vcardContent = vcard.join("\r\n");
+
         // vCardデータを返す
-        return new NextResponse(vcard.join("\n"), {
+        return new NextResponse(vcardContent, {
             headers: {
                 "Content-Type": "text/vcard",
                 "Content-Disposition": `attachment; filename="${user.name || "contact"}.vcf"`,

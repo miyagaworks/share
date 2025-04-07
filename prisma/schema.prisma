@@ -21,6 +21,7 @@ model User {
   name            String?
   nameEn          String?
   password        String?   // ハッシュ化されたパスワード、OAuthの場合はnull
+  passwordResetTokens PasswordResetToken[]
   image           String?   // プロフィール画像URL
   bio             String?   // 自己紹介
   mainColor       String    @default("#3B82F6") // デフォルトは青
@@ -39,12 +40,24 @@ model User {
   customLinks     CustomLink[]
   snsLinks        SnsLink[]
   
-  // サブスクリプション関連 - 新規追加
+  // ご利用プラン関連
   stripeCustomerId String?   // Stripeカスタマー識別子
   subscription    Subscription?
   billingHistory   BillingRecord[]
   trialEndsAt     DateTime?
   subscriptionStatus String?
+
+    // 法人テナント関連
+  corporateRole     String?         // "admin", "member" など
+  position          String?         // 役職
+  department        Department?     @relation(fields: [departmentId], references: [id])
+  departmentId      String?
+  tenant            CorporateTenant? @relation("TenantUsers", fields: [tenantId], references: [id])
+  tenantId          String?
+  adminOfTenant     CorporateTenant? @relation("TenantAdmin")
+  
+  // 問い合わせ関連
+  contacts        Contact[]
   
   createdAt       DateTime  @default(now())
   updatedAt       DateTime  @updatedAt
@@ -107,7 +120,7 @@ model Account {
   @@unique([provider, providerAccountId])
 }
 
-// 新規追加 - サブスクリプションモデル
+// ご利用プランモデル
 model Subscription {
   id              String   @id @default(cuid())
   userId          String   @unique
@@ -115,7 +128,7 @@ model Subscription {
   status          String   // 'trialing', 'active', 'past_due', 'canceled', 'incomplete'
   plan            String   // 'monthly', 'yearly', 'business'
   priceId         String?  // Stripe価格ID
-  subscriptionId  String?  // Stripe サブスクリプションID
+  subscriptionId  String?  // Stripe ご利用プランID
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   cancelAtPeriodEnd  Boolean @default(false)
@@ -125,9 +138,10 @@ model Subscription {
   cancelReason    String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+  corporateTenant CorporateTenant?
 }
 
-// 新規追加 - 請求履歴モデル
+// 請求履歴モデル
 model BillingRecord {
   id              String   @id @default(cuid())
   userId          String
@@ -139,4 +153,72 @@ model BillingRecord {
   paidAt          DateTime?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
+}
+
+model PasswordResetToken {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  expires   DateTime
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+}
+
+// お問い合わせモデル
+model Contact {
+  id          String    @id @default(cuid())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  name        String
+  email       String
+  companyName String?
+  type        String    // 'account', 'billing', 'technical', 'feature', 'feedback', 'corporate', 'other'
+  subject     String
+  message     String    @db.Text
+  
+  status      String    @default("pending") // 'pending', 'in_progress', 'resolved', 'closed'
+  notes       String?   @db.Text
+  assignedTo  String?   // スタッフのIDなど
+  
+  // ユーザーとの関連付け
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+}
+
+// 法人テナント情報
+model CorporateTenant {
+  id                String    @id @default(cuid())
+  name              String
+  logoUrl           String?
+  primaryColor      String?
+  secondaryColor    String?
+  customDomain      String?   @unique
+  maxUsers          Int
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // リレーション
+  subscription      Subscription?  @relation(fields: [subscriptionId], references: [id])
+  subscriptionId    String?        @unique
+  admin             User           @relation("TenantAdmin", fields: [adminId], references: [id])
+  adminId           String        @unique   // @uniqueを追加
+  users             User[]         @relation("TenantUsers")
+  departments       Department[]
+}
+
+// 部署/チーム管理
+model Department {
+  id                String    @id @default(cuid())
+  name              String
+  description       String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  
+  // リレーション
+  tenant            CorporateTenant @relation(fields: [tenantId], references: [id])
+  tenantId          String
+  users             User[]
 }

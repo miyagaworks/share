@@ -188,7 +188,7 @@ export function QrCodeClient({ profileUrl }: QrCodeClientProps) {
 
             <div className="flex justify-center space-x-4 mt-4">
                 <Button
-                    className="flex-1 flex items-center gap-2 justify-center bg-blue-600 hover:bg-blue-700 text-white"
+                    className="flex-1 flex items-center gap-2 justify-center bg-blue-600 hover:bg-blue-800 text-white"
                     onClick={downloadQrAsPng}
                 >
                     <FaImage className="h-4 w-4" />
@@ -196,7 +196,7 @@ export function QrCodeClient({ profileUrl }: QrCodeClientProps) {
                 </Button>
 
                 <Button
-                    className="flex-1 flex items-center gap-2 justify-center bg-blue-600 hover:bg-blue-700 text-white"
+                    className="flex-1 flex items-center gap-2 justify-center bg-blue-600 hover:bg-blue-800 text-white"
                     onClick={downloadQrAsSvg}
                 >
                     <FaCode className="h-4 w-4" />

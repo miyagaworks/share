@@ -48,7 +48,7 @@ export function getPlanNameFromId(planId: string): string {
     }
 }
 
-// サブスクリプションステータスの表示名を取得するヘルパー関数
+// ご利用プランステータスの表示名を取得するヘルパー関数
 export function getSubscriptionStatusText(status: string): string {
     switch (status) {
         case 'trialing': return '無料トライアル中';
