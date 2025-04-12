@@ -1,108 +1,32 @@
 // middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
 
-// テナントのステータスをチェックする関数
-async function checkTenantStatus(req: NextRequest) {
-  try {
-    // 認証セッションの取得
-    const session = await auth();
-
-    // 未認証の場合はそのまま通過（認証チェックは別のロジックで行う）
-    if (!session?.user?.id) {
-      return NextResponse.next();
-    }
-
-    // ダッシュボード（特に法人関連パス）へのアクセスのみをチェック
-    const path = req.nextUrl.pathname;
-    if (!path.startsWith('/dashboard/corporate') && !path.startsWith('/api/corporate')) {
-      return NextResponse.next();
-    }
-
-    // ユーザーのテナント情報を取得
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: {
-        adminOfTenant: true,
-        tenant: true,
-      },
-    });
-
-    if (!user) {
-      return NextResponse.next();
-    }
-
-    // テナント情報を取得（管理者または一般メンバーのいずれか）
-    const tenant = user.adminOfTenant || user.tenant;
-
-    // テナントがない場合はそのまま通過
-    if (!tenant) {
-      return NextResponse.next();
-    }
-
-    // テナントが一時停止中の場合は、特定のパスを除いてアクセスを制限
-    if (tenant.accountStatus === 'suspended') {
-      // 再アクティブ化APIとアカウント設定ページへのアクセスは許可
-      if (
-        path === '/api/corporate/settings/reactivate' ||
-        path === '/dashboard/corporate/settings'
-      ) {
-        return NextResponse.next();
-      }
-
-      // それ以外の法人関連ページへのアクセスはブロック
-      if (path.startsWith('/dashboard/corporate') || path.startsWith('/api/corporate')) {
-        // アカウント設定ページにリダイレクト
-        return NextResponse.redirect(new URL('/dashboard/corporate/settings', req.url));
-      }
-    }
-
-    // 問題なければ次のミドルウェアへ
-    return NextResponse.next();
-  } catch (error) {
-    console.error('テナントステータスチェックエラー:', error);
-    // エラーが発生した場合は通過させる（安全サイド）
+// この最小限のミドルウェアは認証チェックのみを行い
+// データベースアクセスを含む複雑な処理は行いません
+export function middleware(request: NextRequest) {
+  // ルートへのリクエストを処理
+  if (request.nextUrl.pathname === '/') {
+    // 必要に応じてリダイレクトやレスポンス変更が可能
     return NextResponse.next();
   }
-}
 
-// This function can be marked `async` if using `await` inside
-export async function middleware(request: NextRequest) {
-  // 例: /dashboard で始まるパスは認証が必要
-  const isAuthRequired = request.nextUrl.pathname.startsWith('/dashboard');
-
-  // 認証が必要なパスの場合の処理を追加できます
-  if (isAuthRequired) {
-    // ここに認証チェックなどのロジックを追加
-    // 例: return NextResponse.redirect(new URL('/auth/signin', request.url));
+  // ダッシュボードへのアクセスは許可
+  // 認証チェックは各ページコンポーネントで行う
+  if (request.nextUrl.pathname.startsWith('/dashboard')) {
+    return NextResponse.next();
   }
 
-  // 法人テナントが一時停止中の場合のアクセス制限
-  if (
-    request.nextUrl.pathname.startsWith('/dashboard/corporate') ||
-    request.nextUrl.pathname.startsWith('/api/corporate')
-  ) {
-    const tenantStatusResponse = await checkTenantStatus(request);
-    if (tenantStatusResponse && tenantStatusResponse !== NextResponse.next()) {
-      return tenantStatusResponse;
-    }
+  // APIルートへのアクセス
+  if (request.nextUrl.pathname.startsWith('/api')) {
+    return NextResponse.next();
   }
 
+  // デフォルトはそのまま次へ
   return NextResponse.next();
 }
 
-// See "Matching Paths" below to learn more
+// 静的アセットと画像を除外
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/((?!_next/static|_next/image|favicon.ico).*)'],
 };
