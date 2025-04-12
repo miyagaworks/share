@@ -177,215 +177,235 @@ export default function ImprovedDashboardPage() {
     const profileUrl = userData.profile ? `/${userData.profile.slug}` : null;
 
     return (
+      <motion.div initial="hidden" animate="visible" variants={pageVariants} className="space-y-6">
+        <div className="flex items-center mb-6">
+          <HiHome className="h-8 w-8 text-gray-700 mr-3" />
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">ダッシュボード</h1>
+            <p className="text-muted-foreground">あなたのプロフィールの概要と管理</p>
+          </div>
+        </div>
+
         <motion.div
-            initial="hidden"
-            animate="visible"
-            variants={pageVariants}
-            className="space-y-6"
+          variants={staggerContainerVariants}
+          className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
         >
-            <div className="flex items-center mb-6">
-                <HiHome className="h-8 w-8 text-gray-700 mr-3" />
-                <div>
-                    <h1 className="text-3xl font-bold tracking-tight">ダッシュボード</h1>
-                    <p className="text-muted-foreground">
-                        あなたのプロフィールの概要と管理
-                    </p>
-                </div>
+          {/* プロフィールカード */}
+          <motion.div
+            variants={cardVariants}
+            className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+            transition={{ duration: 0.3 }}
+          >
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center">
+                <HiUser className="h-5 w-5 text-gray-700" />
+                <h2 className="ml-2 text-lg font-semibold">プロフィール</h2>
+              </div>
             </div>
+            <div className="p-6">
+              <div className="flex items-center mb-6">
+                {userData.image ? (
+                  <Image
+                    src={userData.image}
+                    alt={userData.name || 'ユーザー'}
+                    width={48}
+                    height={48}
+                    className="w-12 h-12 rounded-full object-cover"
+                  />
+                ) : (
+                  <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="24"
+                      height="24"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                      <circle cx="12" cy="7" r="4"></circle>
+                    </svg>
+                  </div>
+                )}
+                <div className="ml-4">
+                  <h3 className="text-xl font-medium">{userData.name || '未設定'}</h3>
+                  {userData.nameEn && <p className="text-sm text-gray-500">{userData.nameEn}</p>}
+                </div>
+              </div>
+              <Link href="/dashboard/profile">
+                <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
+                  <HiPencil className="mr-2 h-4 w-4" />
+                  編集
+                </button>
+              </Link>
+            </div>
+          </motion.div>
 
-            <motion.div
-                variants={staggerContainerVariants}
-                className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-            >
-                {/* プロフィールカード */}
-                <motion.div
-                    variants={cardVariants}
-                    className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
-                    transition={{ duration: 0.3 }}
-                >
-                    <div className="border-b border-gray-200 px-6 py-4">
-                        <div className="flex items-center">
-                            <HiUser className="h-5 w-5 text-gray-700" />
-                            <h2 className="ml-2 text-lg font-semibold">プロフィール</h2>
-                        </div>
-                    </div>
-                    <div className="p-6">
-                        <div className="flex items-center mb-6">
-                            {userData.image ? (
-                                <Image
-                                    src={userData.image}
-                                    alt={userData.name || "ユーザー"}
-                                    width={48}
-                                    height={48}
-                                    className="w-12 h-12 rounded-full object-cover"
-                                />
-                            ) : (
-                                <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center">
-                                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                                        <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                        <circle cx="12" cy="7" r="4"></circle>
-                                    </svg>
-                                </div>
-                            )}
-                            <div className="ml-4">
-                                <h3 className="text-xl font-medium">{userData.name || "未設定"}</h3>
-                                {userData.nameEn && <p className="text-sm text-gray-500">{userData.nameEn}</p>}
-                            </div>
-                        </div>
-                        <Link href="/dashboard/profile">
-                            <button className="flex items-center justify-center w-full py-2 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                <HiPencil className="mr-2 h-4 w-4" />
-                                編集
-                            </button>
-                        </Link>
-                    </div>
-                </motion.div>
+          {/* SNSリンクカード */}
+          <motion.div
+            variants={cardVariants}
+            className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
+            transition={{ duration: 0.3 }}
+          >
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center">
+                <HiLink className="h-5 w-5 text-gray-700" />
+                <h2 className="ml-2 text-lg font-semibold">SNSリンク</h2>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center mb-6">
+                <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
+                  <span className="text-blue-700 font-medium">{snsCount}</span>
+                </div>
+                <span className="ml-3 text-gray-600">/ 12 SNS設定済み</span>
+              </div>
+              <Link href="/dashboard/links">
+                <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
+                  <HiPlus className="mr-2 h-4 w-4" />
+                  管理
+                </button>
+              </Link>
+            </div>
+          </motion.div>
 
-                {/* SNSリンクカード */}
-                <motion.div
-                    variants={cardVariants}
-                    className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden"
-                    transition={{ duration: 0.3 }}
-                >
-                    <div className="border-b border-gray-200 px-6 py-4">
-                        <div className="flex items-center">
-                            <HiLink className="h-5 w-5 text-gray-700" />
-                            <h2 className="ml-2 text-lg font-semibold">SNSリンク</h2>
-                        </div>
-                    </div>
-                    <div className="p-6">
-                        <div className="flex items-center mb-6">
-                            <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                                <span className="text-blue-700 font-medium">{snsCount}</span>
-                            </div>
-                            <span className="ml-3 text-gray-600">/ 12 SNS設定済み</span>
-                        </div>
-                        <Link href="/dashboard/links">
-                            <button className="flex items-center justify-center w-full py-2 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                <HiPlus className="mr-2 h-4 w-4" />
-                                管理
-                            </button>
-                        </Link>
-                    </div>
-                </motion.div>
+          {/* 公開プロフィールカード */}
+          <motion.div
+            variants={cardVariants}
+            className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden md:col-span-2 lg:col-span-1"
+            transition={{ duration: 0.3 }}
+          >
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center">
+                <HiShare className="h-5 w-5 text-gray-700" />
+                <h2 className="ml-2 text-lg font-semibold">公開プロフィール</h2>
+              </div>
+            </div>
+            <div className="p-6">
+              {profileUrl ? (
+                <>
+                  <p className="text-gray-600 text-sm mb-2">あなたのプロフィールURLは:</p>
+                  <div className="bg-gray-50 p-3 rounded-md mb-4 font-mono text-sm break-all">
+                    {typeof window !== 'undefined'
+                      ? window.location.origin + profileUrl
+                      : '' + profileUrl}
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    <Link href={profileUrl} target="_blank">
+                      <button className="flex items-center justify-center py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
+                        <HiEye className="mr-2 h-4 w-4" />
+                        表示
+                      </button>
+                    </Link>
+                    <Link href="/dashboard/share">
+                      <button className="flex items-center justify-center py-2 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-700 transition-colors">
+                        <HiShare className="mr-2 h-4 w-4" />
+                        共有設定
+                      </button>
+                    </Link>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <p className="text-gray-600 mb-4">プロフィールがまだ作成されていません</p>
+                  <Link href="/dashboard/profile">
+                    <button className="flex items-center justify-center py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
+                      <HiPlus className="mr-2 h-4 w-4" />
+                      プロフィール作成
+                    </button>
+                  </Link>
+                </>
+              )}
+            </div>
+          </motion.div>
 
-                {/* 公開プロフィールカード */}
-                <motion.div
-                    variants={cardVariants}
-                    className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden md:col-span-2 lg:col-span-1"
-                    transition={{ duration: 0.3 }}
-                >
-                    <div className="border-b border-gray-200 px-6 py-4">
-                        <div className="flex items-center">
-                            <HiShare className="h-5 w-5 text-gray-700" />
-                            <h2 className="ml-2 text-lg font-semibold">公開プロフィール</h2>
-                        </div>
-                    </div>
-                    <div className="p-6">
-                        {profileUrl ? (
-                            <>
-                                <p className="text-gray-600 text-sm mb-2">
-                                    あなたのプロフィールURLは:
-                                </p>
-                                <div className="bg-gray-50 p-3 rounded-md mb-4 font-mono text-sm break-all">
-                                    {typeof window !== 'undefined' ? window.location.origin + profileUrl : '' + profileUrl}
-                                </div>
-                                <div className="flex flex-wrap gap-3">
-                                    <Link href={profileUrl} target="_blank">
-                                        <button className="flex items-center justify-center py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
-                                            <HiEye className="mr-2 h-4 w-4" />
-                                            表示
-                                        </button>
-                                    </Link>
-                                    <Link href="/dashboard/share">
-                                        <button className="flex items-center justify-center py-2 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                            <HiShare className="mr-2 h-4 w-4" />
-                                            共有設定
-                                        </button>
-                                    </Link>
-                                </div>
-                            </>
-                        ) : (
-                            <>
-                                <p className="text-gray-600 mb-4">
-                                    プロフィールがまだ作成されていません
-                                </p>
-                                <Link href="/dashboard/profile">
-                                    <button className="flex items-center justify-center py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
-                                        <HiPlus className="mr-2 h-4 w-4" />
-                                        プロフィール作成
-                                    </button>
-                                </Link>
-                            </>
-                        )}
-                    </div>
-                </motion.div>
+          {/* クイックアクションカード */}
+          <motion.div
+            variants={cardVariants}
+            className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden md:col-span-1"
+            transition={{ duration: 0.3 }}
+          >
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center">
+                <HiLink className="h-5 w-5 text-gray-700" />
+                <h2 className="ml-2 text-lg font-semibold">クイックアクション</h2>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="mb-2">
+                <Link href="/dashboard/design">
+                  <button className="flex items-center justify-center w-full py-3 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
+                    <HiColorSwatch className="mr-2 h-4 w-4" />
+                    デザインをカスタマイズする
+                  </button>
+                </Link>
+              </div>
 
-                {/* クイックアクションカード */}
-                <motion.div
-                    variants={cardVariants}
-                    className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden md:col-span-1"
-                    transition={{ duration: 0.3 }}
-                >
-                    <div className="border-b border-gray-200 px-6 py-4">
-                        <div className="flex items-center">
-                            <HiLink className="h-5 w-5 text-gray-700" />
-                            <h2 className="ml-2 text-lg font-semibold">クイックアクション</h2>
-                        </div>
-                    </div>
-                    <div className="p-6 space-y-3">
-                        <Link href="/dashboard/links">
-                            <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
-                                <HiPlus className="mr-2 h-4 w-4" />
-                                SNSを追加する
-                            </button>
-                        </Link>
-                        <Link href="/dashboard/design">
-                            <button className="flex items-center justify-center w-full py-2 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                <HiColorSwatch className="mr-2 h-4 w-4" />
-                                デザインをカスタマイズする
-                            </button>
-                        </Link>
-                        <Link href="/dashboard/share">
-                            <button className="flex items-center justify-center w-full py-2 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                <HiQrcode className="mr-2 h-4 w-4" />
-                                QRコードを生成する
-                            </button>
-                        </Link>
-                    </div>
-                </motion.div>
+              <div className="mb-2">
+                <Link href="/dashboard/links">
+                  <button className="flex items-center justify-center w-full py-3 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-700 transition-colors">
+                    <HiPlus className="mr-2 h-4 w-4" />
+                    SNSを追加する
+                  </button>
+                </Link>
+              </div>
 
-                {/* ご利用プランカード */}
-                <motion.div
-                    variants={cardVariants}
-                    className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden md:col-span-1"
-                    transition={{ duration: 0.3 }}
-                >
-                    <div className="border-b border-gray-200 px-6 py-4">
-                        <div className="flex items-center">
-                            <HiCreditCard className="h-5 w-5 text-gray-700" />
-                            <h2 className="ml-2 text-lg font-semibold">ご利用プラン</h2>
-                        </div>
-                    </div>
-                    <div className="p-6">
-                        <div className="flex items-center mb-4">
-                            <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center">
-                                <svg className="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-                            <div className="ml-3">
-                                <h3 className="font-medium">有効なプラン</h3>
-                            </div>
-                        </div>
-                        <Link href="/dashboard/subscription">
-                            <button className="flex items-center justify-center w-full py-2 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors">
-                                詳細
-                            </button>
-                        </Link>
-                    </div>
-                </motion.div>
-            </motion.div>
+              <div>
+                <Link href="/dashboard/share">
+                  <button className="flex items-center justify-center w-full py-3 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-700 transition-colors">
+                    <HiQrcode className="mr-2 h-4 w-4" />
+                    QRコードを生成する
+                  </button>
+                </Link>
+              </div>
+            </div>
+          </motion.div>
+
+          {/* ご利用プランカード */}
+          <motion.div
+            variants={cardVariants}
+            className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden md:col-span-1"
+            transition={{ duration: 0.3 }}
+          >
+            <div className="border-b border-gray-200 px-6 py-4">
+              <div className="flex items-center">
+                <HiCreditCard className="h-5 w-5 text-gray-700" />
+                <h2 className="ml-2 text-lg font-semibold">ご利用プラン</h2>
+              </div>
+            </div>
+            <div className="p-6">
+              <div className="flex items-center mb-4">
+                <div className="w-9 h-9 rounded-full bg-green-100 flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M5 13l4 4L19 7"
+                    />
+                  </svg>
+                </div>
+                <div className="ml-3">
+                  <h3 className="font-medium">有効なプラン</h3>
+                </div>
+              </div>
+              <Link href="/dashboard/subscription">
+                <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
+                  詳細
+                </button>
+              </Link>
+            </div>
+          </motion.div>
         </motion.div>
+      </motion.div>
     );
 }

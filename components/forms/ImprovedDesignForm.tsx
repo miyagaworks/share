@@ -186,7 +186,7 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
                     {/* SNSアイコンプレビュー */}
                     <div className="mt-4">
                         <label className="text-xs text-muted-foreground">SNSアイコンプレビュー</label>
-                        <div className="mt-2 p-4 rounded-lg border border-gray-200 flex justify-center gap-4">
+                        <div className="mt-2 p-4 rounded-lg border border-blue-700 flex justify-center gap-4">
                             <div className="flex flex-col items-center">
                                 <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center">
                                     <svg viewBox="0 0 24 24" width="24" height="24" fill={useOriginalColors ? "#00B900" : "#333333"}>

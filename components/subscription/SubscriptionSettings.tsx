@@ -1,7 +1,7 @@
 // components/subscription/SubscriptionSettings.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import PaymentMethodForm from '@/components/subscription/PaymentMethodForm';
@@ -9,12 +9,42 @@ import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { HiCheck, HiOutlineOfficeBuilding } from 'react-icons/hi';
 import { FiUsers } from 'react-icons/fi';
+import { HiUser, HiOfficeBuilding } from 'react-icons/hi';
 
-// ご利用プランプランの型定義
+// ご利用プラン種類の型定義
 type SubscriptionPlan = 'monthly' | 'yearly' | 'business';
 
+interface SubscriptionData {
+  id: string;
+  subscriptionId?: string;
+  tenantId?: string;
+}
+
+interface SubscriptionResponse {
+  success: boolean;
+  subscription: {
+    id: string;
+    status: string;
+    plan: string;
+    // その他のプロパティを適切に定義
+    currentPeriodEnd?: string;
+    cancelAtPeriodEnd?: boolean;
+    trialEnd?: string | null;
+  };
+  tenant?: {
+    id: string;
+    name: string;
+    logoUrl?: string | null;
+    primaryColor?: string | null;
+    secondaryColor?: string | null;
+    // 必要に応じて他のプロパティも定義
+  };
+  clientSecret?: string;
+  message: string;
+  redirectUrl?: string;
+}
+
 // 各プランのプレースホルダーpriceIdを設定
-// 注: 環境変数が設定されていない場合にはデフォルト値を使用
 const PLAN_PRICE_IDS = {
   monthly: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || 'price_monthly_placeholder',
   yearly: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID || 'price_yearly_placeholder',
@@ -42,7 +72,22 @@ export default function SubscriptionSettings() {
   const [processing, setProcessing] = useState(false);
   const [showCorporatePlans, setShowCorporatePlans] = useState(false);
 
-  // ご利用プラン作成処理
+  // 法人プラン申し込み完了状態の管理
+  const [corporateSubscribed, setCorporateSubscribed] = useState(false);
+  const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
+
+  useEffect(() => {
+    if (subscriptionData && corporateSubscribed) {
+      console.log('サブスクリプション登録完了:', subscriptionData);
+      // リダイレクトURLにテナントIDを含める
+      const redirectPath = `/dashboard/corporate/onboarding?tenant=${subscriptionData.tenantId}`;
+      setTimeout(() => {
+        window.location.href = redirectPath;
+      }, 2000);
+    }
+  }, [subscriptionData, corporateSubscribed]);
+
+  // 個人プラン作成処理
   const handleSubscribe = async () => {
     if (!paymentMethodId) {
       toast.error('支払い方法を入力してください');
@@ -97,29 +142,122 @@ export default function SubscriptionSettings() {
     }
   };
 
-  // 法人プラン申し込み処理（問い合わせフォームへ）
-  const handleCorporateInquiry = () => {
-    // 法人プランはお問い合わせフォームから申し込み
-    window.location.href = '/support/contact?subject=法人プラン申し込み&plan=' + selectedPlan;
+  // 法人プラン申し込み処理
+  const handleCorporateSubscribe = async () => {
+    if (!paymentMethodId) {
+      toast.error('支払い方法を入力してください');
+      return;
+    }
+
+    try {
+      setProcessing(true);
+
+      // 選択されたプランに対応するpriceIdを取得
+      const priceId = PLAN_PRICE_IDS[selectedPlan];
+
+      console.log('法人プラン申し込みデータ:', {
+        plan: selectedPlan,
+        priceId,
+        paymentMethodId,
+        isCorporate: true,
+      });
+
+      // 法人プラン登録APIを呼び出す
+      const response = await fetch('/api/subscription/create', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          plan: selectedPlan,
+          priceId: priceId,
+          paymentMethodId: paymentMethodId,
+          isCorporate: true, // 法人プラン指定フラグ
+        }),
+      });
+
+      // レスポンスの処理
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'プランの作成に失敗しました');
+      }
+
+      const data: SubscriptionResponse = await response.json();
+      console.log('法人プラン登録レスポンス:', data);
+
+      // 成功メッセージを表示
+      toast.success('法人プランの登録が完了しました！');
+
+      // 型定義に合わせてデータを保存
+      if (data.subscription && data.tenant) {
+        setSubscriptionData({
+          id: data.subscription.id,
+          subscriptionId: data.subscription.id,
+          tenantId: data.tenant.id,
+        });
+      }
+
+      // 法人プラン申し込み完了フラグをセット
+      setCorporateSubscribed(true);
+
+      // リダイレクトURLがあればそこに遷移
+      if (data.redirectUrl) {
+        setTimeout(() => {
+          window.location.href = data.redirectUrl as string;
+        }, 2000);
+      } else {
+        // 通常のダッシュボードへ
+        setTimeout(() => {
+          window.location.href = '/dashboard/corporate/onboarding';
+        }, 2000);
+      }
+    } catch (error) {
+      console.error('法人プラン登録エラー:', error);
+      const errorMessage = error instanceof Error ? error.message : 'エラーが発生しました';
+      toast.error(errorMessage);
+    } finally {
+      setProcessing(false);
+    }
   };
+
+  // 法人プラン申し込み完了後のリダイレクト中画面
+  if (corporateSubscribed) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 my-6 text-center">
+        <div className="flex flex-col items-center">
+          <Spinner size="lg" className="mb-4" />
+          <h2 className="text-xl font-semibold mb-2">法人プランの設定を完了しています</h2>
+          <p className="text-gray-600 mb-4">
+            まもなく初期設定ページに移動します。しばらくお待ちください...
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="subscription-plans" className="space-y-6">
       <div className="space-y-6">
         {/* タブスタイルの切り替え */}
-        <div className="bg-white rounded-lg border border-gray-200 p-1 flex">
-          <button
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${!showCorporatePlans ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
-            onClick={() => setShowCorporatePlans(false)}
-          >
-            個人プラン
-          </button>
-          <button
-            className={`flex-1 py-2 px-4 rounded-md text-sm font-medium transition-colors ${showCorporatePlans ? 'bg-blue-50 text-blue-700' : 'text-gray-600 hover:bg-gray-50'}`}
-            onClick={() => setShowCorporatePlans(true)}
-          >
-            法人プラン
-          </button>
+        <div className="mb-6">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex">
+            <button
+              className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
+                !showCorporatePlans ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-50'
+              }`}
+              onClick={() => setShowCorporatePlans(false)}
+            >
+              <HiUser className="h-5 w-5" />
+              個人プラン
+            </button>
+            <button
+              className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
+                showCorporatePlans ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-50'
+              }`}
+              onClick={() => setShowCorporatePlans(true)}
+            >
+              <HiOfficeBuilding className="h-5 w-5" />
+              法人プラン
+            </button>
+          </div>
         </div>
 
         {/* 個人プラン */}
@@ -273,6 +411,25 @@ export default function SubscriptionSettings() {
                         </li>
                       ))}
                     </ul>
+
+                    {/* 登録ボタン */}
+                    <div className="mt-4">
+                      <Button
+                        onClick={handleCorporateSubscribe}
+                        disabled={!paymentMethodId || processing || selectedPlan !== 'business'}
+                        className="w-full"
+                        size="sm"
+                      >
+                        {processing && selectedPlan === 'business' ? (
+                          <>
+                            <Spinner size="sm" className="mr-2" />
+                            処理中...
+                          </>
+                        ) : (
+                          '選択して申し込む'
+                        )}
+                      </Button>
+                    </div>
                   </div>
                   {selectedPlan === 'business' && (
                     <div className="bg-blue-500 rounded-full p-1">
@@ -310,6 +467,13 @@ export default function SubscriptionSettings() {
                         </li>
                       ))}
                     </ul>
+
+                    {/* ビジネスプランは近日公開のため無効 */}
+                    <div className="mt-4">
+                      <Button disabled={true} className="w-full" size="sm">
+                        近日公開
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -346,18 +510,25 @@ export default function SubscriptionSettings() {
               </ul>
             </div>
 
-            {/* 法人プラン用ご案内 */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-              <h3 className="font-semibold text-blue-800">法人プランのお申し込み方法</h3>
-              <p className="text-sm text-blue-700 mt-1">
-                法人プランをご希望の場合は、以下の「お問い合わせ」ボタンからお申し込みください。担当者より詳細をご案内いたします。
-              </p>
-            </div>
+            {/* 支払い方法入力 */}
+            <h3 className="font-semibold mb-3">お支払い方法</h3>
+            <PaymentMethodForm onPaymentMethodChange={setPaymentMethodId} />
 
             {/* 登録/変更ボタン */}
             <div className="mt-6 flex justify-end">
-              <Button onClick={handleCorporateInquiry} className="px-8">
-                お問い合わせ
+              <Button
+                onClick={handleCorporateSubscribe}
+                disabled={!paymentMethodId || processing}
+                className="px-8"
+              >
+                {processing ? (
+                  <>
+                    <Spinner size="sm" className="mr-2" />
+                    処理中...
+                  </>
+                ) : (
+                  '申し込む'
+                )}
               </Button>
             </div>
           </div>

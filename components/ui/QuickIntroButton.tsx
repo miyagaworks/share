@@ -1,30 +1,33 @@
 // components/ui/QuickIntroButton.tsx
 import React from 'react';
-import Link from 'next/link';
-import { HiLightningBolt } from 'react-icons/hi';
+import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/Button';
+import { HiSparkles, HiExternalLink } from 'react-icons/hi';
 
-interface QuickIntroButtonProps {
-  className?: string;
-}
+export function QuickIntroButton() {
+  const router = useRouter();
 
-export const QuickIntroButton: React.FC<QuickIntroButtonProps> = ({ className = '' }) => {
+  const handleClick = () => {
+    router.push('/jikogene');
+  };
+
   return (
-    <Link href="/jikogene?fromProfile=true" passHref target="_blank" rel="noopener noreferrer">
-      <button
+    <div className="space-y-2">
+      <Button
         type="button"
-        className={`
-          inline-flex items-center text-sm px-4 py-2 border border-blue-500 
-          rounded-md text-blue-600 bg-white hover:bg-blue-50 
-          transition-colors duration-200 font-medium
-          focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2
-          ${className}
-        `}
+        variant="default" // defaultに変更してプライマリカラーに
+        onClick={handleClick}
+        className="w-full py-3 group relative flex items-center justify-center bg-blue-600 hover:bg-blue-700"
       >
-        <HiLightningBolt className="mr-2 h-5 w-5 text-blue-500" />
-        かんたん自己紹介を作成
-      </button>
-    </Link>
-  );
-};
+        <HiSparkles className="mr-2 h-5 w-5 text-yellow-300 animate-pulse" />
+        <span className="text-white font-medium">かんたん自己紹介を作成</span>
+        <HiExternalLink className="ml-2 h-4 w-4 text-white opacity-70 group-hover:opacity-100 transition-opacity" />
+      </Button>
 
-export default QuickIntroButton;
+      <p className="text-sm text-gray-600 px-2 text-justify">
+        AI支援の質問に答えるだけで、あなたに最適化された自己紹介文を簡単に作成できます。
+        職業、趣味、性格などの情報から魅力的な自己紹介を自動生成します。
+      </p>
+    </div>
+  );
+}

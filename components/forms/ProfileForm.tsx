@@ -7,7 +7,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { ProfileSchema } from "@/schemas/auth";
 import { Button } from "@/components/ui/Button";
 import { Input } from "@/components/ui/Input";
-import { EnhancedColorPicker as ColorPicker } from "@/components/ui/EnhancedColorPicker";
 import { ImageUpload } from "@/components/ui/ImageUpload";
 import { useRouter } from "next/navigation";
 import { toast } from "react-hot-toast";
@@ -42,24 +41,19 @@ export function ProfileForm({ user }: ProfileFormProps) {
     const {
         register,
         handleSubmit,
-        setValue,
         formState: { errors },
-        watch,
     } = useForm<FormData>({
         resolver: zodResolver(ExtendedProfileSchema),
         defaultValues: {
             name: user.name || "",
             nameEn: user.nameEn || "",
             bio: user.bio || "",
-            mainColor: user.mainColor || "#3B82F6",
             phone: user.phone || "",
             company: user.company || "",
             companyUrl: (user as unknown as { companyUrl?: string | null }).companyUrl || "",
             companyLabel: (user as unknown as { companyLabel?: string | null }).companyLabel || "会社HP",
         },
     });
-
-    const watchedMainColor = watch("mainColor");
 
     const onSubmit = async (data: FormData) => {
         try {
@@ -140,20 +134,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
                     />
                     {errors.bio?.message && (
                         <p className="text-sm text-destructive mt-1">{errors.bio.message}</p>
-                    )}
-                </div>
-
-                <div>
-                    <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
-                        メインカラー
-                    </label>
-                    <ColorPicker
-                        color={watchedMainColor || "#3B82F6"}
-                        onChange={(color) => setValue("mainColor", color)}
-                        disabled={isPending}
-                    />
-                    {errors.mainColor?.message && (
-                        <p className="text-sm text-destructive mt-1">{errors.mainColor.message}</p>
                     )}
                 </div>
 

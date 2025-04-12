@@ -199,6 +199,17 @@ model CorporateTenant {
   maxUsers          Int
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
+
+  // 追加する設定関連フィールド
+  securitySettings  Json?     // パスワードポリシー等のセキュリティ設定
+  notificationSettings Json?  // 通知設定
+  billingAddress    Json?     // 請求先情報
+  billingEmail      String?   // 請求先メールアドレス
+  billingContact    String?   // 請求担当者名
+  
+  // 高度な設定
+  accountStatus     String    @default("active") // "active", "suspended", "deleted"
+  dataRetentionDays Int       @default(365)      // データ保持期間（日数）
   
   // リレーション
   subscription      Subscription?  @relation(fields: [subscriptionId], references: [id])

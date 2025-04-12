@@ -1,16 +1,18 @@
-// middleware.ts
-import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+// middleware/checkTenantStatus.ts
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-// テナントのステータスをチェックする関数
-async function checkTenantStatus(req: NextRequest) {
+/**
+ * 法人テナントのステータスをチェックするミドルウェア
+ * 一時停止中のテナントへのアクセスを制限する
+ */
+export async function checkTenantStatus(req: NextRequest) {
   try {
     // 認証セッションの取得
     const session = await auth();
 
-    // 未認証の場合はそのまま通過（認証チェックは別のロジックで行う）
+    // 未認証の場合はそのまま通過（認証チェックは別のミドルウェアで行う）
     if (!session?.user?.id) {
       return NextResponse.next();
     }
@@ -67,42 +69,3 @@ async function checkTenantStatus(req: NextRequest) {
     return NextResponse.next();
   }
 }
-
-// This function can be marked `async` if using `await` inside
-export async function middleware(request: NextRequest) {
-  // 例: /dashboard で始まるパスは認証が必要
-  const isAuthRequired = request.nextUrl.pathname.startsWith('/dashboard');
-
-  // 認証が必要なパスの場合の処理を追加できます
-  if (isAuthRequired) {
-    // ここに認証チェックなどのロジックを追加
-    // 例: return NextResponse.redirect(new URL('/auth/signin', request.url));
-  }
-
-  // 法人テナントが一時停止中の場合のアクセス制限
-  if (
-    request.nextUrl.pathname.startsWith('/dashboard/corporate') ||
-    request.nextUrl.pathname.startsWith('/api/corporate')
-  ) {
-    const tenantStatusResponse = await checkTenantStatus(request);
-    if (tenantStatusResponse && tenantStatusResponse !== NextResponse.next()) {
-      return tenantStatusResponse;
-    }
-  }
-
-  return NextResponse.next();
-}
-
-// See "Matching Paths" below to learn more
-export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
-  ],
-};

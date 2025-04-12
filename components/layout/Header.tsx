@@ -61,14 +61,7 @@ export function Header({ className }: HeaderProps) {
             </svg>
           </button>
           <Link href="/dashboard" className="ml-4 flex items-center lg:ml-0">
-            <Image
-              src="/logo.svg"
-              alt="Share"
-              width={100}
-              height={32}
-              className="h-8 w-auto"
-              priority
-            />
+            <Image src="/logo.svg" alt="Share Logo" width={145} height={42} priority />
           </Link>
         </div>
 

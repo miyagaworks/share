@@ -65,14 +65,7 @@ export function DashboardHeader() {
         <div className="flex items-center">
           {/* ロゴ */}
           <Link href="/dashboard" className="flex items-center">
-            <Image
-              src="/logo.svg"
-              alt="Share"
-              width={100}
-              height={32}
-              className="h-8 w-auto"
-              priority
-            />
+            <Image src="/logo.svg" alt="Share Logo" width={145} height={42} priority />
           </Link>
         </div>
 

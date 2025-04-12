@@ -1,107 +1,191 @@
 // components/layout/Sidebar.tsx
-"use client";
+'use client';
 
 import React, { useState, useEffect } from 'react';
-import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { cn } from "@/lib/utils";
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import { HiChevronLeft, HiChevronRight, HiHome, HiOfficeBuilding } from 'react-icons/hi';
+import { motion } from 'framer-motion';
+import { cn } from '@/lib/utils';
+// import Image from 'next/image';
 
-// サイドバー項目の型定義
-interface SidebarItem {
+interface SidebarProps {
+  items: {
     title: string;
     href: string;
     icon: React.ReactNode;
-    badge?: number | string;
+  }[];
+  onToggleCollapse: (collapsed: boolean) => void;
 }
 
-interface SidebarProps {
-    items: SidebarItem[];
-    className?: string;
-}
+export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
+  const [collapsed, setCollapsed] = useState(false);
+  const pathname = usePathname();
+  const [isMounted, setIsMounted] = useState(false);
 
-export function Sidebar({ items = [], className }: SidebarProps) {
-    const pathname = usePathname();
-    const [collapsed, setCollapsed] = useState(false);
-    const [isMobile, setIsMobile] = useState(false);
+  // 現在の URL が法人ダッシュボードかどうかを確認
+  const isCorporateSection = pathname?.startsWith('/dashboard/corporate');
 
-    // レスポンシブ対応
-    useEffect(() => {
-        const checkSize = () => {
-            setIsMobile(window.innerWidth < 768); // md ブレークポイント
-            setCollapsed(window.innerWidth < 1280);
-        };
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
 
-        checkSize();
-        window.addEventListener("resize", checkSize);
-        return () => window.removeEventListener("resize", checkSize);
-    }, []);
+  const toggleCollapse = () => {
+    setCollapsed(!collapsed);
+    onToggleCollapse(!collapsed);
+  };
 
-    // モバイルでは表示しない
-    if (isMobile) return null;
-
+  if (!isMounted) {
+    // ハイドレーション不一致を避けるためにサーバーサイドレンダリング時は最小限の内容を返す
     return (
-        <div
-            className={cn(
-                "hidden md:block fixed top-16 bottom-0 overflow-y-auto border-r border-gray-200 bg-white z-30",
-                collapsed ? "w-16" : "w-64",
-                className
-            )}
-            style={{ height: 'calc(100vh - 4rem)' }} // 16px * 4 = 64px (ヘッダーの高さ)
-        >
-            <div className="flex flex-col h-full">
-                <div className="flex-1 py-5 px-3">
-                    <nav className="space-y-1">
-                        {items?.map((item) => (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={cn(
-                                    "group flex items-center rounded-md px-2 py-2 text-sm font-medium transition-colors",
-                                    pathname === item.href
-                                        ? "bg-blue-50 text-blue-600"
-                                        : "text-gray-700 hover:bg-gray-50 hover:text-gray-900"
-                                )}
-                            >
-                                <div className="mr-3 flex-shrink-0 text-gray-500">{item.icon}</div>
-                                {!collapsed && (
-                                    <span className="flex-1 whitespace-nowrap">
-                                        {item.title}
-                                    </span>
-                                )}
-                                {item.badge && !collapsed && (
-                                    <span className="ml-auto inline-flex h-5 items-center justify-center rounded-full bg-blue-100 px-2 text-xs font-medium text-blue-800">
-                                        {item.badge}
-                                    </span>
-                                )}
-                            </Link>
-                        ))}
-                    </nav>
-                </div>
-
-                {/* サイドバー制御ボタン */}
-                <div className="flex shrink-0 items-center justify-center border-t border-gray-200 p-4">
-                    <button
-                        onClick={() => setCollapsed(!collapsed)}
-                        className="p-1 rounded-md text-gray-500 hover:bg-gray-100 focus:outline-none"
-                        aria-label={collapsed ? "展開する" : "折りたたむ"}
-                    >
-                        <svg
-                            xmlns="http://www.w3.org/2000/svg"
-                            className={`h-6 w-6 transform transition-transform ${collapsed ? "rotate-180" : ""}`}
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                        >
-                            <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                                d={collapsed ? "M13 5l7 7-7 7" : "M11 19l-7-7 7-7"}
-                            />
-                        </svg>
-                    </button>
-                </div>
-            </div>
+      <div className="fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-20 transition-all duration-300 transform">
+        {/* ロゴプレースホルダー */}
+        <div className="h-16 border-b border-gray-200 flex items-center px-4">
+          <div className="w-8 h-8 bg-gray-200 rounded-md"></div>
         </div>
+      </div>
     );
+  }
+
+  // メインメニュー項目と追加メニュー項目を分離
+  const mainMenuItems = [...items];
+  let additionalLink = null;
+
+  // 法人セクションにいる場合、個人ダッシュボードへのリンクを追加メニューに
+  if (isCorporateSection) {
+    additionalLink = {
+      title: '個人ダッシュボード',
+      href: '/dashboard',
+      icon: <HiHome className="h-5 w-5" />,
+    };
+  }
+  // 個人セクションにいる場合、法人ダッシュボードへのリンクを追加メニューに
+  else if (!isCorporateSection && pathname?.startsWith('/dashboard')) {
+    // mainMenuItemsから法人ダッシュボードへのリンクが含まれている場合は削除
+    const corporateLinkIndex = mainMenuItems.findIndex(
+      (item) => item.href === '/dashboard/corporate',
+    );
+    if (corporateLinkIndex >= 0) {
+      additionalLink = mainMenuItems.splice(corporateLinkIndex, 1)[0];
+    } else {
+      // 含まれていない場合は新規作成
+      additionalLink = {
+        title: '法人ダッシュボード',
+        href: '/dashboard/corporate',
+        icon: <HiOfficeBuilding className="h-5 w-5" />,
+      };
+    }
+  }
+
+  return (
+    <motion.div
+      initial={false}
+      animate={{ width: collapsed ? 64 : 256 }}
+      transition={{ duration: 0.3 }}
+      className="fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-20 pt-16"
+    >
+      <div className="h-full overflow-y-auto overflow-x-hidden">
+        <div className="flex items-center justify-between p-4 mb-2">
+          <h2
+            className={cn(
+              'text-sm font-semibold text-gray-600 uppercase transition-opacity',
+              collapsed ? 'opacity-0' : 'opacity-100',
+            )}
+          >
+            メニュー
+          </h2>
+          <button
+            onClick={toggleCollapse}
+            className="p-1 rounded-md hover:bg-blue-100 transition-colors focus:outline-none"
+            aria-label={collapsed ? 'サイドバーを展開' : 'サイドバーを折りたたむ'}
+          >
+            {collapsed ? (
+              <HiChevronRight className="h-5 w-5 text-gray-600" />
+            ) : (
+              <HiChevronLeft className="h-5 w-5 text-gray-600" />
+            )}
+          </button>
+        </div>
+
+        {/* メインメニュー項目 */}
+        <nav className="space-y-1 px-2">
+          {mainMenuItems.map((item) => (
+            <Link
+              key={item.href}
+              href={item.href}
+              className={cn(
+                'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors group',
+                pathname === item.href
+                  ? 'bg-blue-50 text-blue-700'
+                  : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700',
+                collapsed ? 'justify-center' : 'justify-start',
+              )}
+            >
+              <div
+                className={cn(
+                  'flex-shrink-0',
+                  pathname === item.href
+                    ? 'text-blue-700'
+                    : 'text-gray-600 group-hover:text-blue-700',
+                )}
+              >
+                {item.icon}
+              </div>
+              <span
+                className={cn(
+                  'ml-3 transition-opacity duration-200',
+                  collapsed ? 'opacity-0 hidden' : 'opacity-100',
+                )}
+              >
+                {item.title}
+              </span>
+            </Link>
+          ))}
+        </nav>
+
+        {/* 区切り線と追加リンク */}
+        {additionalLink && (
+          <div className="mt-4">
+            {/* 区切り線 */}
+            <div
+              className={cn('mx-2 border-t border-gray-200 my-4', collapsed ? 'mx-2' : 'mx-4')}
+            ></div>
+
+            {/* 追加リンク */}
+            <nav className="space-y-1 px-2">
+              <Link
+                href={additionalLink.href}
+                className={cn(
+                  'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors group',
+                  pathname === additionalLink.href
+                    ? 'bg-blue-50 text-blue-700'
+                    : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700',
+                  collapsed ? 'justify-center' : 'justify-start',
+                )}
+              >
+                <div
+                  className={cn(
+                    'flex-shrink-0',
+                    pathname === additionalLink.href
+                      ? 'text-blue-700'
+                      : 'text-gray-600 group-hover:text-blue-700',
+                  )}
+                >
+                  {additionalLink.icon}
+                </div>
+                <span
+                  className={cn(
+                    'ml-3 transition-opacity duration-200',
+                    collapsed ? 'opacity-0 hidden' : 'opacity-100',
+                  )}
+                >
+                  {additionalLink.title}
+                </span>
+              </Link>
+            </nav>
+          </div>
+        )}
+      </div>
+    </motion.div>
+  );
 }

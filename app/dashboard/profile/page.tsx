@@ -10,7 +10,6 @@ import { Spinner } from '@/components/ui/Spinner';
 import { DashboardCard } from '@/components/ui/DashboardCard';
 import { Input, Textarea, FormGroup } from '@/components/ui/Input';
 import { ImageUpload } from '@/components/ui/ImageUpload';
-import { EnhancedColorPicker as ColorPicker } from '@/components/ui/EnhancedColorPicker';
 import { QuickIntroButton } from '@/components/ui/QuickIntroButton';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -22,7 +21,6 @@ import {
   HiOfficeBuilding,
   HiGlobe,
   HiAnnotation,
-  HiColorSwatch,
 } from 'react-icons/hi';
 
 interface UserWithProfile extends User {
@@ -52,8 +50,7 @@ export default function ProfilePage() {
     companyLabel: '',
   });
   const [image, setImage] = useState<string | null>(null);
-  const [mainColor, setMainColor] = useState('#3B82F6');
-
+ 
   // プロフィールデータを取得する関数
   const fetchUserData = async () => {
     try {
@@ -99,7 +96,6 @@ export default function ProfilePage() {
         });
 
         setImage(userData.image);
-        setMainColor(userData.mainColor || '#3B82F6');
       } catch (error) {
         console.error('データ取得エラー:', error);
       } finally {
@@ -146,8 +142,7 @@ export default function ProfilePage() {
         company: processedCompany,
         companyUrl: processedCompanyUrl,
         companyLabel: processedCompanyLabel,
-        image, // 画像はそのまま
-        mainColor, // メインカラーはそのまま
+        image,        
       });
 
       if (response.error) {
@@ -173,7 +168,6 @@ export default function ProfilePage() {
       });
 
       setImage(updatedUserData.image);
-      setMainColor(updatedUserData.mainColor || '#3B82F6');
     } catch (error) {
       console.error('更新エラー:', error);
       toast.error('プロフィールの更新に失敗しました');
@@ -278,20 +272,10 @@ export default function ProfilePage() {
               />
 
               {/* かんたん自己紹介ボタンを追加 */}
-              <div className="mt-4">
+              <div className="mt-6 mb-4 border border-blue-200 rounded-lg bg-blue-50 p-4">
+                <h3 className="text-blue-800 font-medium mb-2">自己紹介文を簡単に作成</h3>
                 <QuickIntroButton />
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                <HiColorSwatch className="mr-2 h-4 w-4 text-gray-500" />
-                メインカラー
-              </label>
-              <p className="text-xs text-gray-500 ml-6 mb-3 text-justify">
-                プロフィールページのアクセントカラーとして使用されます
-              </p>
-              <ColorPicker color={mainColor} onChange={setMainColor} disabled={isSaving} />
             </div>
           </FormGroup>
         </DashboardCard>
