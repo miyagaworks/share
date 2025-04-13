@@ -1,6 +1,7 @@
 share/
 ├── README.md
 ├── actions
+│   ├── corporateSns.ts
 │   ├── jikogene.ts
 │   ├── profile.ts
 │   ├── sns.ts
@@ -21,6 +22,37 @@ share/
 │   │   │   ├── reset-password
 │   │   │   │   └── route.ts
 │   │   │   └── verify-reset-token
+│   │   │       └── route.ts
+│   │   ├── corporate
+│   │   │   ├── access
+│   │   │   │   └── route.ts
+│   │   │   ├── branding
+│   │   │   │   └── route.ts
+│   │   │   ├── departments
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── settings
+│   │   │   │   ├── delete
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── export
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── reactivate
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── route.ts
+│   │   │   │   └── suspend
+│   │   │   │       └── route.ts
+│   │   │   ├── sns
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   └── tenant
+│   │   │       └── route.ts
+│   │   ├── corporate-profile
+│   │   │   ├── links
+│   │   │   │   └── route.ts
+│   │   │   ├── route.ts
+│   │   │   └── update
 │   │   │       └── route.ts
 │   │   ├── jikogene
 │   │   │   └── route.ts
@@ -81,6 +113,33 @@ share/
 │   │   │   └── delete
 │   │   │       └── page.tsx
 │   │   ├── client-script.js
+│   │   ├── corporate
+│   │   │   ├── branding
+│   │   │   │   └── page.tsx
+│   │   │   ├── departments
+│   │   │   │   └── page.tsx
+│   │   │   ├── layout.tsx
+│   │   │   ├── onboarding
+│   │   │   │   └── page.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── settings
+│   │   │   │   ├── layout.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── sns
+│   │   │   │   └── page.tsx
+│   │   │   └── users
+│   │   │       ├── invite
+│   │   │       │   └── page.tsx
+│   │   │       └── page.tsx
+│   │   ├── corporate-profile
+│   │   │   ├── design
+│   │   │   │   └── page.tsx
+│   │   │   ├── layout.tsx
+│   │   │   ├── links
+│   │   │   ├── page.tsx
+│   │   │   ├── profile
+│   │   │   │   └── page.tsx
+│   │   │   └── share
 │   │   ├── design
 │   │   │   └── page.tsx
 │   │   ├── layout.tsx
@@ -141,6 +200,8 @@ share/
 ├── auth.config.ts
 ├── auth.ts
 ├── components
+│   ├── corporate
+│   │   └── SuspendedBanner.tsx
 │   ├── dashboard
 │   │   ├── CustomLinkClient.tsx
 │   │   ├── CustomLinkList.tsx
@@ -158,12 +219,15 @@ share/
 │   │   ├── ImprovedDesignForm.tsx
 │   │   ├── ProfileForm.tsx
 │   │   └── SNSLinkFormWithGuideIntegration.tsx
+│   ├── guards
+│   │   └── CorporateAccessGuard.tsx
 │   ├── layout
 │   │   ├── AuthLayout.tsx
 │   │   ├── DashboardHeader.tsx
 │   │   ├── DashboardLayout.tsx
 │   │   ├── Footer.tsx
 │   │   ├── Header.tsx
+│   │   ├── MobileMenuButton.tsx
 │   │   ├── PageLayout.tsx
 │   │   └── Sidebar.tsx
 │   ├── profile
@@ -181,6 +245,7 @@ share/
 │   │   ├── LoadingSpinner.tsx
 │   │   └── SnsGuideModalWithDescription.tsx
 │   ├── subscription
+│   │   ├── CorporateSubscriptionRedirect.tsx
 │   │   ├── PaymentMethodForm.tsx
 │   │   ├── SubscriptionSettings.tsx
 │   │   ├── SubscriptionStatus.tsx
@@ -215,6 +280,8 @@ share/
 │   ├── ui-plan.md
 │   └── white-label-solution.md
 ├── eslint.config.mjs
+├── hooks
+│   └── useCorporateAccess.ts
 ├── lib
 │   ├── email.ts
 │   ├── jikogene
@@ -230,8 +297,11 @@ share/
 │   │   ├── api.ts
 │   │   ├── auth.ts
 │   │   ├── colorUtils.ts
+│   │   ├── corporate-access.ts
 │   │   └── validation.ts
 │   └── utils.ts
+├── middleware
+│   └── checkTenantStatus.ts
 ├── middleware.ts
 ├── next-env.d.ts
 ├── next.config.mjs
@@ -254,6 +324,12 @@ share/
 │   │   ├── 20250402234039_add_password_reset_tokens
 │   │   │   └── migration.sql
 │   │   ├── 20250406131630_add_contact_model
+│   │   │   └── migration.sql
+│   │   ├── 20250407000850_fix_corporate_tenant_relations
+│   │   │   └── migration.sql
+│   │   ├── 20250407062009_add_corporate_settings
+│   │   │   └── migration.sql
+│   │   ├── 20250412092956_add_corporate_sns_links
 │   │   │   └── migration.sql
 │   │   └── migration_lock.toml
 │   └── schema.prisma
@@ -327,5 +403,3 @@ share/
     ├── sns-guide.ts
     ├── sns.ts
     └── tinycolor2.d.ts
-
-

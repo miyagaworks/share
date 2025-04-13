@@ -218,6 +218,7 @@ model CorporateTenant {
   adminId           String        @unique   // @uniqueを追加
   users             User[]         @relation("TenantUsers")
   departments       Department[]
+  corporateSnsLinks CorporateSnsLink[] // 新しく追加
 }
 
 // 部署/チーム管理
@@ -232,4 +233,21 @@ model Department {
   tenant            CorporateTenant @relation(fields: [tenantId], references: [id])
   tenantId          String
   users             User[]
+}
+
+// 法人共通SNSリンクモデル
+model CorporateSnsLink {
+  id            String   @id @default(cuid())
+  tenantId      String
+  tenant        CorporateTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  platform      String   // 'line', 'youtube', 'x', 'instagram', 等
+  username      String?  // ユーザー名
+  url           String   // 完全なURL
+  displayOrder  Int      // 表示順序（並べ替え用）
+  isRequired    Boolean  @default(false) // 全メンバーに必須かどうか（削除不可）
+  description   String?  // 説明（任意）
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+
+  @@unique([tenantId, platform]) // 1テナントあたり各プラットフォーム1つまで
 }

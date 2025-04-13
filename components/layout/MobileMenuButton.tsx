@@ -50,7 +50,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed bottom-6 right-6 z-50 bg-blue-600 text-white p-5 rounded-full shadow-lg focus:outline-none"
+        className="lg:hidden fixed bottom-6 right-3 z-50 bg-blue-600 text-white p-5 rounded-full shadow-lg focus:outline-none"
         aria-label="メニューを開く"
       >
         <HiMenu className="h-8 w-8" />
@@ -59,14 +59,15 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
       {/* オーバーレイ（メニューが開いている時のみ表示） */}
       {isOpen && (
         <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden"
+          className="fixed inset-0 z-40 lg:hidden"
+          style={{ backgroundColor: 'rgba(0, 0, 0, 0.8)' }}
           onClick={() => setIsOpen(false)}
         />
       )}
 
-      {/* メニュー */}
+      {/* メニュー - ドロップシャドウを削除 */}
       <div
-        className={`fixed inset-y-0 left-0 z-50 w-full max-w-xs bg-white shadow-xl transform transition-transform duration-300 ease-in-out lg:hidden ${
+        className={`fixed inset-y-0 left-0 z-50 w-full max-w-xs bg-white transform transition-transform duration-300 ease-in-out lg:hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
         }`}
       >

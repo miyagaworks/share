@@ -24,6 +24,19 @@ export default function SignupPage() {
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [termsAccepted, setTermsAccepted] = useState(false);
+
+  // Google認証を開始する関数をここに挿入
+  const handleGoogleSignIn = () => {
+    // 利用規約の同意確認
+    if (!termsAccepted) {
+      setError('Googleで登録する場合も利用規約に同意していただく必要があります');
+      return;
+    }
+
+    // 同意している場合のみGoogleログインを実行
+    signIn('google', { callbackUrl: '/dashboard' });
+  };
 
   const {
     register,
@@ -68,10 +81,11 @@ export default function SignupPage() {
       emailValue.length > 0 &&
       emailRegex.test(emailValue) &&
       passwordValue.length >= 8 &&
-      !Object.keys(errors).length;
+      !Object.keys(errors).length &&
+      termsAccepted; // 利用規約同意も条件に追加
 
     setIsFormValid(formIsValid);
-  }, [watchName, watchEmail, watchPassword, errors, isValid]);
+  }, [watchName, watchEmail, watchPassword, errors, isValid, termsAccepted]); // termsAccepted を依存配列に追加
 
   // パスワードの表示/非表示を切り替える関数
   const togglePasswordVisibility = () => {
@@ -79,6 +93,12 @@ export default function SignupPage() {
   };
 
   const onSubmit = async (data: { name: string; email: string; password: string }) => {
+    // 利用規約の同意確認
+    if (!termsAccepted) {
+      setError('利用規約に同意していただく必要があります');
+      return;
+    }
+
     try {
       setError(null);
       setIsPending(true);
@@ -312,6 +332,42 @@ export default function SignupPage() {
                   </p>
                 )}
               </div>
+
+              {/* 利用規約同意チェックボックス */}
+              <div className="mt-6">
+                <div className="flex items-start">
+                  <div className="flex items-center h-5">
+                    <input
+                      id="terms"
+                      name="terms"
+                      type="checkbox"
+                      checked={termsAccepted}
+                      onChange={(e) => setTermsAccepted(e.target.checked)}
+                      className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      disabled={isPending}
+                    />
+                  </div>
+                  <div className="ml-3 text-sm">
+                    <label htmlFor="terms" className="text-gray-700">
+                      <span className="font-medium">利用規約</span>に同意します
+                    </label>
+                    <p className="text-gray-500 mt-1">
+                      <Link
+                        href="/legal/terms"
+                        target="_blank"
+                        className="text-blue-600 hover:text-blue-500 hover:underline"
+                      >
+                        利用規約を読む
+                      </Link>
+                    </p>
+                  </div>
+                </div>
+                {!termsAccepted && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    登録を続けるには利用規約に同意する必要があります
+                  </p>
+                )}
+              </div>
             </div>
 
             <div>
@@ -367,10 +423,12 @@ export default function SignupPage() {
 
             <div className="mt-6">
               <Button
-                className="w-full bg-white text-gray-700 border border-gray-300 hover:bg-gray-50 shadow-sm flex items-center justify-center transform hover:-translate-y-0.5 transition"
+                className={`w-full bg-white text-gray-700 border border-gray-300 flex items-center justify-center transform hover:-translate-y-0.5 transition ${
+                  termsAccepted ? 'hover:bg-gray-50 shadow-sm' : 'opacity-50 cursor-not-allowed'
+                }`}
                 variant="outline"
-                onClick={() => signIn('google', { callbackUrl: '/dashboard' })}
-                disabled={isPending}
+                onClick={handleGoogleSignIn}
+                disabled={isPending || !termsAccepted} // 利用規約に同意していない場合は無効化
               >
                 <Image
                   src="/google-logo.svg"
@@ -381,6 +439,9 @@ export default function SignupPage() {
                 />
                 Googleで登録
               </Button>
+              <p className="text-xs text-gray-500 mt-2 text-center">
+                Googleで登録する場合も利用規約に同意する必要があります
+              </p>
             </div>
           </div>
 

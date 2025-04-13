@@ -61,10 +61,10 @@ export function DashboardHeader() {
 
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
-      <div className="mx-auto flex h-16 items-center justify-between px-4 sm:px-6 lg:px-8">
+      <div className="mx-auto flex h-16 items-center justify-between px-2 sm:px-6 lg:px-8">
         <div className="flex items-center">
           {/* ロゴ */}
-          <Link href="/dashboard" className="flex items-center">
+          <Link href="/dashboard" className="flex items-center px-2">
             <Image src="/logo.svg" alt="Share Logo" width={145} height={42} priority />
           </Link>
         </div>
@@ -110,7 +110,7 @@ export function DashboardHeader() {
               <span className="hidden md:inline-block text-sm font-medium">{user.name}</span>
             </button>
 
-            {/* ドロップダウンメニュー - 更新版 */}
+            {/* ドロップダウンメニュー */}
             {isMenuOpen && (
               <div
                 ref={menuRef}

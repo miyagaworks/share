@@ -66,7 +66,7 @@ const Result = memo(function Result({ text, onReset, warning }: ResultProps) {
 
         <CardContent>
           <div className="bg-gray-50 p-6 rounded-md border border-gray-200 mb-6">
-            <p className="whitespace-pre-line text-gray-800">{text}</p>
+            <p className="whitespace-pre-line text-gray-800 text-justify">{text}</p>
           </div>
         </CardContent>
 

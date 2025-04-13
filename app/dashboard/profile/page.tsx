@@ -21,6 +21,7 @@ import {
   HiOfficeBuilding,
   HiGlobe,
   HiAnnotation,
+  HiSparkles,
 } from 'react-icons/hi';
 
 interface UserWithProfile extends User {
@@ -50,7 +51,7 @@ export default function ProfilePage() {
     companyLabel: '',
   });
   const [image, setImage] = useState<string | null>(null);
- 
+
   // プロフィールデータを取得する関数
   const fetchUserData = async () => {
     try {
@@ -142,7 +143,7 @@ export default function ProfilePage() {
         company: processedCompany,
         companyUrl: processedCompanyUrl,
         companyLabel: processedCompanyLabel,
-        image,        
+        image,
       });
 
       if (response.error) {
@@ -273,7 +274,14 @@ export default function ProfilePage() {
 
               {/* かんたん自己紹介ボタンを追加 */}
               <div className="mt-6 mb-4 border border-blue-200 rounded-lg bg-blue-50 p-4">
-                <h3 className="text-blue-800 font-medium mb-2">自己紹介文を簡単に作成</h3>
+                <div className="flex items-center mb-2">
+                  <HiSparkles className="text-blue-600 h-5 w-5 mr-2" /> {/* アイコンを変更 */}
+                  <h3 className="text-blue-800 font-medium">自己紹介文を簡単に作成</h3>
+                </div>
+                <p className="text-sm text-blue-700 mb-4">
+                  AIを使って質問に答えるだけで、あなたに最適な自己紹介文を自動生成できます。
+                  現在の編集内容は保存してから利用することをおすすめします。
+                </p>
                 <QuickIntroButton />
               </div>
             </div>

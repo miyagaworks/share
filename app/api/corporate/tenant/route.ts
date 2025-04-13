@@ -1,8 +1,9 @@
-// app/api/corporate/tenant/route.ts を作成
+// app/api/corporate/tenant/route.ts
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { checkCorporateAccess } from '@/lib/utils/corporate-access';
 
 export async function GET() {
   try {
@@ -10,6 +11,21 @@ export async function GET() {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
+    }
+
+    // 法人アクセス権を確認
+    const accessCheck = await checkCorporateAccess(session.user.id);
+    if (!accessCheck.hasCorporateAccess) {
+      return NextResponse.json(
+        {
+          success: false,
+          error:
+            accessCheck.error ||
+            '法人テナント情報が見つかりません。法人プランにアップグレードしてください。',
+          hasCorporateAccess: false,
+        },
+        { status: 403 },
+      );
     }
 
     // ユーザーの法人テナント情報を取得
@@ -52,16 +68,16 @@ export async function GET() {
     // テナント情報を取得（管理者または一般メンバーのいずれか）
     const tenant = user.adminOfTenant || user.tenant;
 
-    // 法人プラン登録直後の場合、テナントがなくてもエラーにしない
+    // 法人テナントが存在しない場合は403エラーを返す
     if (!tenant) {
       return NextResponse.json(
         {
           success: false,
-          message: '法人テナント情報が見つかりません。プロフィールページに移動します。',
-          isAuthenticated: true,
+          error: '法人テナント情報が見つかりません。法人プランにアップグレードしてください。',
+          hasCorporateAccess: false,
         },
-        { status: 200 },
-      ); // 404ではなく200を返してリダイレクトを防止
+        { status: 403 },
+      );
     }
 
     // ユーザーの役割を確認
@@ -71,9 +87,16 @@ export async function GET() {
       success: true,
       tenant,
       userRole: isAdmin ? 'admin' : user.corporateRole || 'member',
+      hasCorporateAccess: true,
     });
   } catch (error) {
     console.error('法人テナント情報取得エラー:', error);
-    return NextResponse.json({ error: '法人テナント情報の取得に失敗しました' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: '法人テナント情報の取得に失敗しました',
+        hasCorporateAccess: false,
+      },
+      { status: 500 },
+    );
   }
 }

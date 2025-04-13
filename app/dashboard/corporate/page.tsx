@@ -4,11 +4,19 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { HiOfficeBuilding, HiUsers, HiColorSwatch, HiTemplate } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { DashboardCard } from '@/components/ui/DashboardCard';
 import Image from 'next/image';
+import { useCorporateAccess } from '@/hooks/useCorporateAccess';
+import {
+  HiOfficeBuilding,
+  HiUsers,
+  HiTemplate,
+  HiColorSwatch,
+  HiLink,
+  HiCog,
+} from 'react-icons/hi';
 
 // 企業テナント情報の型定義
 interface CorporateTenant {
@@ -36,6 +44,13 @@ interface CorporateTenant {
 export default function CorporateDashboardPage() {
   const { data: session } = useSession();
   const router = useRouter();
+
+  // 法人アクセス権を確認するフックを使用
+  // accessErrorは使用していないので、分割代入から除去
+  const { isLoading: isAccessLoading, hasCorporateAccess } = useCorporateAccess({
+    redirectIfNoAccess: true, // アクセス権がない場合は/dashboardにリダイレクト
+  });
+
   const [isLoading, setIsLoading] = useState(true);
   const [tenantData, setTenantData] = useState<CorporateTenant | null>(null);
   const [error, setError] = useState<string | null>(null);
@@ -43,12 +58,12 @@ export default function CorporateDashboardPage() {
   // テナント情報を取得
   useEffect(() => {
     const fetchTenantData = async () => {
-      if (!session?.user?.id) return;
+      if (!session?.user?.id || !hasCorporateAccess || isAccessLoading) return;
 
       try {
         setIsLoading(true);
 
-        // テナント情報取得API（実装予定）
+        // テナント情報取得API
         const response = await fetch('/api/corporate/tenant');
 
         if (!response.ok) {
@@ -67,22 +82,20 @@ export default function CorporateDashboardPage() {
     };
 
     fetchTenantData();
-  }, [session]);
-
-  // 法人プランへのアクセス権がない場合のリダイレクト処理
-  useEffect(() => {
-    if (!isLoading && !tenantData && !error) {
-      router.push('/dashboard');
-    }
-  }, [isLoading, tenantData, error, router]);
+  }, [session, hasCorporateAccess, isAccessLoading]);
 
   // 読み込み中
-  if (isLoading) {
+  if (isAccessLoading || isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
         <Spinner size="lg" />
       </div>
     );
+  }
+
+  // アクセス権がない場合（useCorporateAccessフックで既にリダイレクト済み）
+  if (!hasCorporateAccess) {
+    return null;
   }
 
   // エラー表示
@@ -152,7 +165,7 @@ export default function CorporateDashboardPage() {
         <DashboardCard
           title="部署管理"
           className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => router.push('/dashboard/corporate/users')}
+          onClick={() => router.push('/dashboard/corporate/departments')}
         >
           <div className="flex flex-col items-center p-4">
             <div className="bg-green-100 p-3 rounded-full mb-3">
@@ -165,11 +178,26 @@ export default function CorporateDashboardPage() {
           </div>
         </DashboardCard>
 
+        {/* 共通SNS設定 */}
+        <DashboardCard
+          title="共通SNS設定"
+          className="cursor-pointer hover:shadow-md transition-shadow"
+          onClick={() => router.push('/dashboard/corporate/sns')}
+        >
+          <div className="flex flex-col items-center p-4">
+            <div className="bg-indigo-100 p-3 rounded-full mb-3">
+              <HiLink className="h-6 w-6 text-indigo-600" />
+            </div>
+            <h3 className="font-medium text-center">共通SNS設定</h3>
+            <p className="text-sm text-gray-500 text-center mt-1">全社員共通のSNSリンク</p>
+          </div>
+        </DashboardCard>
+
         {/* ブランディング設定 */}
         <DashboardCard
           title="ブランディング管理"
           className="cursor-pointer hover:shadow-md transition-shadow"
-          onClick={() => router.push('/dashboard/corporate/users')}
+          onClick={() => router.push('/dashboard/corporate/branding')}
         >
           <div className="flex flex-col items-center p-4">
             <div className="bg-purple-100 p-3 rounded-full mb-3">
@@ -188,25 +216,7 @@ export default function CorporateDashboardPage() {
         >
           <div className="flex flex-col items-center p-4">
             <div className="bg-gray-100 p-3 rounded-full mb-3">
-              <svg
-                className="h-6 w-6 text-gray-600"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.678.413 1.566.417 2.572-.066z"
-                />
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                />
-              </svg>
+              <HiCog className="h-6 w-6 text-gray-600" />
             </div>
             <h3 className="font-medium text-center">設定</h3>
             <p className="text-sm text-gray-500 text-center mt-1">法人アカウント設定</p>
