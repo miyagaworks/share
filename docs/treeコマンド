@@ -1,1 +1,10 @@
 tree -I 'node_modules|.git|.next|dist|build'
+
+# 全ての変更ファイルをステージング領域に追加
+git add .
+
+# 変更内容をコミット
+git commit -m "法人ダッシュボードの個人ダッシュボードを構築"
+
+# リモートリポジトリにプッシュ
+git push origin main
