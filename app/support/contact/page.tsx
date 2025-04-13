@@ -1,7 +1,7 @@
 // app/support/contact/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Button } from '@/components/ui/Button';
@@ -19,7 +19,28 @@ type ContactType =
   | 'corporate'
   | 'other';
 
-export default function ContactPage() {
+// ローディング表示用のコンポーネント
+function LoadingFallback() {
+  return (
+    <PageLayout
+      title="お問い合わせ"
+      breadcrumbs={[
+        { name: 'ホーム', href: '/' },
+        { name: 'お問い合わせ', href: '/support/contact' },
+      ]}
+    >
+      <div className="flex justify-center items-center py-16">
+        <div className="text-center">
+          <LoadingSpinner size="lg" />
+          <p className="mt-4 text-gray-600">読み込み中...</p>
+        </div>
+      </div>
+    </PageLayout>
+  );
+}
+
+// useSearchParamsを使用するコンテンツコンポーネント
+function ContactContent() {
   const searchParams = useSearchParams();
 
   const [name, setName] = useState('');
@@ -351,5 +372,14 @@ export default function ContactPage() {
         </div>
       </div>
     </PageLayout>
+  );
+}
+
+// メインのページコンポーネント
+export default function ContactPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ContactContent />
+    </Suspense>
   );
 }

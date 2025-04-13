@@ -1,7 +1,7 @@
 // app/jikogene/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -13,7 +13,34 @@ import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 
-export default function JikogenePage() {
+// ローディング表示用のコンポーネント
+function LoadingFallback() {
+  return (
+    <div className="min-h-screen flex flex-col py-8">
+      <div className="container mx-auto px-4">
+        <div className="max-w-3xl mx-auto mb-8 flex justify-center">
+          <Image
+            src="/jikogene.svg"
+            alt="自己紹介文ジェネレーター"
+            width={240}
+            height={60}
+            priority
+          />
+        </div>
+        <div className="bg-white rounded-md shadow-md max-w-3xl mx-auto p-6 animate-fadeIn">
+          <div className="flex flex-col items-center justify-center py-12">
+            <Spinner size="lg" />
+            <p className="mt-4 text-gray-700 font-medium">読み込み中...</p>
+            <p className="mt-2 text-gray-500 text-sm">少々お待ちください</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// useSearchParamsを使用するコンテンツコンポーネント
+function JikogeneContent() {
   const [result, setResult] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
@@ -283,5 +310,14 @@ export default function JikogenePage() {
         )}
       </div>
     </div>
+  );
+}
+
+// メインのページコンポーネント
+export default function JikogenePage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <JikogeneContent />
+    </Suspense>
   );
 }
