@@ -1,3 +1,4 @@
+// app/api/auth/forgot-password/route.ts
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { randomUUID } from "crypto";
@@ -51,7 +52,7 @@ export async function POST(request: Request) {
 
         try {
             // メール送信ヘルパー関数を呼び出す
-            await sendPasswordResetEmail(user.email, user.name || "ユーザー", resetLink);
+            await sendPasswordResetEmail(user.email, resetLink);
         } catch (emailError) {
             console.error("メール送信エラー:", emailError);
             // メール送信エラーでも成功レスポンスを返す（セキュリティ上の理由）
