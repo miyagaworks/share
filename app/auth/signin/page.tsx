@@ -84,11 +84,15 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
+      console.log('ログイン試行:', { email: data.email });
+
       const result = await signIn('credentials', {
         email: data.email,
         password: data.password,
         redirect: false,
       });
+
+      console.log('ログイン結果:', result);
 
       if (result?.error) {
         setError('メールアドレスまたはパスワードが正しくありません。');
@@ -98,8 +102,8 @@ export default function SigninPage() {
       router.push('/dashboard');
       router.refresh();
     } catch (error) {
+      console.error('ログインエラー詳細:', error);
       setError('ログイン処理中にエラーが発生しました。');
-      console.error('ログインエラー:', error);
     } finally {
       setIsPending(false);
     }

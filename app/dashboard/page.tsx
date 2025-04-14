@@ -73,9 +73,12 @@ export default function ImprovedDashboardPage() {
         if (status === "loading") return;
 
         if (!session) {
+            console.log('セッションなし、サインインページへリダイレクト');
             router.push("/auth/signin");
             return;
         }
+
+        console.log('セッション情報:', session);
 
         const loadData = async () => {
             try {
