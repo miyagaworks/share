@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@/schemas/auth';
@@ -13,7 +12,6 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 export default function SigninPage() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [isEmailFilled, setIsEmailFilled] = useState(false);
@@ -22,18 +20,21 @@ export default function SigninPage() {
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false); // 利用規約同意状態を追加
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [debugInfo, setDebugInfo] = useState<string | null>(null);
+
+  // パスワードの表示/非表示を切り替える関数（欠落していたので追加）
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   // Google認証を開始する関数
   const handleGoogleSignIn = () => {
-    // 利用規約の同意確認
     if (!termsAccepted) {
       setError('Googleでログインする場合も利用規約に同意していただく必要があります');
       return;
     }
 
-    // 同意している場合のみGoogleログインを実行
     signIn('google', { callbackUrl: '/dashboard' });
   };
 
@@ -48,7 +49,7 @@ export default function SigninPage() {
       email: '',
       password: '',
     },
-    mode: 'onChange', // リアルタイムバリデーション
+    mode: 'onChange',
   });
 
   const watchEmail = watch('email');
@@ -56,21 +57,17 @@ export default function SigninPage() {
 
   // 入力フィールドの状態を監視
   useEffect(() => {
-    // 空白を除去した後の各フィールドの値が空でないかを確認
     const emailValue = watchEmail?.trim() || '';
     const passwordValue = watchPassword || '';
 
     setIsEmailFilled(emailValue.length > 0);
     setIsPasswordFilled(passwordValue.length > 0);
 
-    // メールアドレスの簡易バリデーション
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     setIsEmailValid(emailRegex.test(emailValue));
 
-    // パスワードの長さチェック
     setIsPasswordValid(passwordValue.length >= 8);
 
-    // すべての条件が満たされていればフォームは有効
     const formIsValid =
       emailValue.length > 0 &&
       emailRegex.test(emailValue) &&
@@ -83,56 +80,44 @@ export default function SigninPage() {
   const onSubmit = async (data: { email: string; password: string }) => {
     try {
       setError(null);
-      setDebugInfo(null);
+      setDebugInfo(null); // アンコメントして実際に使用
       setIsPending(true);
 
-      // 統一されたログフォーマット
-      console.log('ログイン試行:', {
-        email: data.email.toLowerCase(), // 明示的に小文字化してログ出力
-        timestamp: new Date().toISOString(),
-        environment: process.env.NODE_ENV || 'development',
-      });
-
-      // メールアドレスを小文字に変換して送信
       const normalizedEmail = data.email.toLowerCase();
 
+      console.log('ログイン試行:', {
+        email: normalizedEmail,
+        timestamp: new Date().toISOString(),
+      });
+
+      // リダイレクトを制御するためにfalseに設定
       const result = await signIn('credentials', {
         email: normalizedEmail,
         password: data.password,
         redirect: false,
       });
 
-      // 詳細なログと開発環境での詳細なデバッグ情報
-      console.log('ログイン結果:', result);
-
       if (result?.error) {
-        // 開発環境の場合、より詳細なエラー情報を表示
+        console.error('サインインエラー:', result.error);
+        setError('メールアドレスまたはパスワードが正しくありません。');
+
         if (process.env.NODE_ENV !== 'production') {
           setDebugInfo(`エラー詳細: ${result.error}`);
         }
-
-        setError('メールアドレスまたはパスワードが正しくありません。');
-        return;
+      } else {
+        // 成功した場合は手動でリダイレクト
+        window.location.href = '/dashboard';
       }
-
-      router.push('/dashboard');
-      router.refresh();
     } catch (error) {
       console.error('ログインエラー詳細:', error);
       setError('ログイン処理中にエラーが発生しました。');
 
-      // 開発環境の場合のみ詳細なエラー情報を表示
       if (process.env.NODE_ENV !== 'production' && error instanceof Error) {
         setDebugInfo(`エラー詳細: ${error.message}`);
       }
     } finally {
       setIsPending(false);
     }
-  };
-
-  // パスワードの表示/非表示を切り替える関数
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
   };
 
   return (
