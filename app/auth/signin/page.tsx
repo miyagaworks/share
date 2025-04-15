@@ -23,6 +23,7 @@ export default function SigninPage() {
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false); // 利用規約同意状態を追加
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
 
   // Google認証を開始する関数
   const handleGoogleSignIn = () => {
@@ -82,19 +83,34 @@ export default function SigninPage() {
   const onSubmit = async (data: { email: string; password: string }) => {
     try {
       setError(null);
+      setDebugInfo(null);
       setIsPending(true);
 
-      console.log('ログイン試行:', { email: data.email });
+      // 統一されたログフォーマット
+      console.log('ログイン試行:', {
+        email: data.email.toLowerCase(), // 明示的に小文字化してログ出力
+        timestamp: new Date().toISOString(),
+        environment: process.env.NODE_ENV || 'development',
+      });
+
+      // メールアドレスを小文字に変換して送信
+      const normalizedEmail = data.email.toLowerCase();
 
       const result = await signIn('credentials', {
-        email: data.email,
+        email: normalizedEmail,
         password: data.password,
         redirect: false,
       });
 
+      // 詳細なログと開発環境での詳細なデバッグ情報
       console.log('ログイン結果:', result);
 
       if (result?.error) {
+        // 開発環境の場合、より詳細なエラー情報を表示
+        if (process.env.NODE_ENV !== 'production') {
+          setDebugInfo(`エラー詳細: ${result.error}`);
+        }
+
         setError('メールアドレスまたはパスワードが正しくありません。');
         return;
       }
@@ -104,6 +120,11 @@ export default function SigninPage() {
     } catch (error) {
       console.error('ログインエラー詳細:', error);
       setError('ログイン処理中にエラーが発生しました。');
+
+      // 開発環境の場合のみ詳細なエラー情報を表示
+      if (process.env.NODE_ENV !== 'production' && error instanceof Error) {
+        setDebugInfo(`エラー詳細: ${error.message}`);
+      }
     } finally {
       setIsPending(false);
     }
@@ -165,6 +186,30 @@ export default function SigninPage() {
                     />
                   </svg>
                   {error}
+                </div>
+              </div>
+            )}
+
+            {/* デバッグ情報（開発環境のみ） */}
+            {debugInfo && process.env.NODE_ENV !== 'production' && (
+              <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-700 border border-gray-200 shadow-sm">
+                <div className="flex items-center">
+                  <svg
+                    className="h-5 w-5 mr-2 text-gray-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 7a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <div>
+                    <p className="font-medium">デバッグ情報</p>
+                    <p className="mt-1">{debugInfo}</p>
+                  </div>
                 </div>
               </div>
             )}

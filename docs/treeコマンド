@@ -4,7 +4,7 @@ tree -I 'node_modules|.git|.next|dist|build'
 git add .
 
 # 変更内容をコミット
-git commit -m "ログイン関連のデバッグログを追加"
+git commit -m "ログイン認証の修正"
 
 # リモートリポジトリにプッシュ
 git push origin main
