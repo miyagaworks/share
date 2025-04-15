@@ -15,29 +15,54 @@ export default {
     }),
     Credentials({
       async authorize(credentials) {
-        const validatedFields = LoginSchema.safeParse(credentials);
+        try {
+          const validatedFields = LoginSchema.safeParse(credentials);
 
-        if (!validatedFields.success) return null;
+          if (!validatedFields.success) {
+            console.log('バリデーションエラー:', validatedFields.error);
+            return null;
+          }
 
-        const { email, password } = validatedFields.data;
+          const { email, password } = validatedFields.data;
 
-        // 大文字小文字を区別しないメールアドレス検索に変更
-        const user = await prisma.user.findFirst({
-          where: {
-            email: {
-              mode: 'insensitive',
-              equals: email,
+          // メールアドレスを小文字化
+          const normalizedEmail = email.toLowerCase();
+
+          console.log(`認証試行: ${normalizedEmail}`);
+
+          // 大文字小文字を区別しないメールアドレス検索
+          const user = await prisma.user.findFirst({
+            where: {
+              email: {
+                mode: 'insensitive',
+                equals: normalizedEmail,
+              },
             },
-          },
-        });
+          });
 
-        if (!user || !user.password) return null;
+          if (!user) {
+            console.log(`ユーザーが見つかりません: ${normalizedEmail}`);
+            return null;
+          }
 
-        const passwordsMatch = await bcrypt.compare(password, user.password);
+          if (!user.password) {
+            console.log(`パスワードが設定されていません（OAuthユーザー？）: ${user.id}`);
+            return null;
+          }
 
-        if (!passwordsMatch) return null;
+          const passwordsMatch = await bcrypt.compare(password, user.password);
 
-        return user;
+          if (!passwordsMatch) {
+            console.log(`パスワードが一致しません: ${user.id}`);
+            return null;
+          }
+
+          console.log(`認証成功: ${user.id}`);
+          return user;
+        } catch (error) {
+          console.error('認証エラー:', error);
+          return null;
+        }
       },
     }),
   ],
