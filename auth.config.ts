@@ -1,21 +1,27 @@
 // auth.config.ts
-import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { LoginSchema } from '@/schemas/auth';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+import { NextAuthOptions } from 'next-auth';
 
-export default {
+export const authOptions: NextAuthOptions = {
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID as string,
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
       allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
+      credentials: {
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
+      },
       async authorize(credentials) {
         try {
+          if (!credentials) return null;
+
           const validatedFields = LoginSchema.safeParse(credentials);
 
           if (!validatedFields.success) {
@@ -83,11 +89,11 @@ export default {
   },
   callbacks: {
     async session({ token, session }) {
-      if (token.sub && session.user) {
+      if (token && token.sub && session.user) {
         session.user.id = token.sub;
       }
 
-      if (token.role && session.user) {
+      if (token && token.role && session.user) {
         session.user.role = token.role as string;
       }
 
@@ -99,4 +105,7 @@ export default {
       return token;
     },
   },
-} satisfies NextAuthConfig;
+  secret: process.env.NEXTAUTH_SECRET,
+};
+
+export default authOptions;

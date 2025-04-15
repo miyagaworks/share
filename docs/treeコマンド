@@ -4,7 +4,7 @@ tree -I 'node_modules|.git|.next|dist|build'
 git add .
 
 # 変更内容をコミット
-git commit -m "auth/signin/page.tsxの修正"
+git commit -m "Next.js 14へのダウングレード"
 
 # リモートリポジトリにプッシュ
 git push origin main
