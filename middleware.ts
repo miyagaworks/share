@@ -16,13 +16,26 @@ interface TokenUser {
 }
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  // デバッグ情報を追加
+  console.log(`Middleware実行: ${request.nextUrl.pathname}`);
+
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  // デバッグ情報を追加
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`Path: ${request.nextUrl.pathname}, Token存在: ${!!token}`);
+  }
+
   const { pathname } = request.nextUrl;
 
   // 認証が必要なパスへのアクセスを制御
   if (pathname.startsWith('/dashboard')) {
     // 未認証ユーザーのリダイレクト
     if (!token) {
+      console.log(`未認証ユーザー: ${pathname} へのアクセスをリダイレクト`);
       return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
 
@@ -93,14 +106,21 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // 認証ページへのリダイレクト処理を追加
+  // 既に認証されているユーザーが認証ページにアクセスした場合はダッシュボードへリダイレクト
+  if (pathname.startsWith('/auth/') && token) {
+    console.log('認証済みユーザーが認証ページにアクセス - ダッシュボードへリダイレクト');
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   return NextResponse.next();
 }
 
-// ミドルウェアを適用するパスを指定
+// マッチャーを修正 - 範囲を限定
 export const config = {
   matcher: [
     '/dashboard/:path*',
     '/api/corporate/:path*',
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/auth/:path*', // 認証関連ページのみを対象に
   ],
 };
