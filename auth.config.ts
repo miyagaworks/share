@@ -1,27 +1,57 @@
 // auth.config.ts
+import type { NextAuthOptions } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { LoginSchema } from '@/schemas/auth';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { NextAuthOptions } from 'next-auth';
 
-export const authOptions: NextAuthOptions = {
+// ユーザーの型定義
+interface User {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  password?: string | null;
+  tenantId?: string | null;
+  adminOfTenant?: unknown;
+  subscription?: {
+    plan?: string;
+    status?: string;
+  };
+  // 他の必要なプロパティもここに追加
+}
+
+// セッションユーザーの型定義
+interface SessionUser {
+  id: string;
+  name?: string | null;
+  email?: string | null;
+  image?: string | null;
+  role?: string;
+  tenantId?: string | null;
+  adminOfTenant?: unknown;
+  subscription?: {
+    plan?: string;
+    status?: string;
+  };
+}
+
+const authConfig: NextAuthOptions = {
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID as string,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET as string,
+      clientId: process.env.GOOGLE_CLIENT_ID || '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
       allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
+      name: 'Credentials',
       credentials: {
-        email: { label: 'Email', type: 'email' },
-        password: { label: 'Password', type: 'password' },
+        email: { label: 'メールアドレス', type: 'email' },
+        password: { label: 'パスワード', type: 'password' },
       },
       async authorize(credentials) {
         try {
-          if (!credentials) return null;
-
           const validatedFields = LoginSchema.safeParse(credentials);
 
           if (!validatedFields.success) {
@@ -76,36 +106,35 @@ export const authOptions: NextAuthOptions = {
     signIn: '/auth/signin',
     error: '/auth/error',
   },
-  cookies: {
-    csrfToken: {
-      name: 'next-auth.csrf-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-  },
   callbacks: {
-    async session({ token, session }) {
-      if (token && token.sub && session.user) {
-        session.user.id = token.sub;
+    async jwt({ token, user }) {
+      if (user) {
+        // user型をUserにキャスト
+        const typedUser = user as User;
+        token.user = {
+          id: typedUser.id,
+          name: typedUser.name,
+          email: typedUser.email,
+          image: typedUser.image,
+          tenantId: typedUser.tenantId,
+          adminOfTenant: typedUser.adminOfTenant,
+          subscription: typedUser.subscription,
+        };
       }
-
-      if (token && token.role && session.user) {
-        session.user.role = token.role as string;
-      }
-
-      return session;
-    },
-    async jwt({ token }) {
-      if (!token.sub) return token;
-
       return token;
+    },
+    async session({ session, token }) {
+      if (token.user) {
+        // anyを避けるために型を明示的に指定
+        session.user = token.user as SessionUser;
+      }
+      return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
+  session: {
+    strategy: 'jwt',
+  },
 };
 
-export default authOptions;
+export default authConfig;

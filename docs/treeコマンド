@@ -4,7 +4,7 @@ tree -I 'node_modules|.git|.next|dist|build'
 git add .
 
 # 変更内容をコミット
-git commit -m "Geistフォントの問題を修正"
+git commit -m "認証関連を修正"
 
 # リモートリポジトリにプッシュ
 git push origin main
