@@ -103,6 +103,8 @@ export default function SignupPage() {
       setError(null);
       setIsPending(true);
 
+      console.log('サインアップ開始:', { name: data.name, email: data.email });
+
       // サインアップ処理（既存のコード）
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -116,7 +118,10 @@ export default function SignupPage() {
         }),
       });
 
+      console.log('サインアップレスポンスステータス:', response.status);
+
       const result = await response.json();
+      console.log('サインアップレスポンス:', result);
 
       if (!response.ok) {
         throw new Error(result.message || 'アカウント登録に失敗しました');
@@ -140,6 +145,7 @@ export default function SignupPage() {
       router.push('/dashboard');
       router.refresh();
     } catch (error) {
+      console.error('サインアップエラー詳細:', error);
       if (error instanceof Error) {
         setError(error.message);
       } else {

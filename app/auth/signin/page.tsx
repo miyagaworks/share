@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@/schemas/auth';
@@ -13,7 +12,6 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
 export default function SigninPage() {
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [isEmailFilled, setIsEmailFilled] = useState(false);
@@ -22,17 +20,21 @@ export default function SigninPage() {
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false); // 利用規約同意状態を追加
+  const [termsAccepted, setTermsAccepted] = useState(false);
+  const [debugInfo, setDebugInfo] = useState<string | null>(null);
+
+  // パスワードの表示/非表示を切り替える関数（欠落していたので追加）
+  const togglePasswordVisibility = () => {
+    setShowPassword(!showPassword);
+  };
 
   // Google認証を開始する関数
   const handleGoogleSignIn = () => {
-    // 利用規約の同意確認
     if (!termsAccepted) {
       setError('Googleでログインする場合も利用規約に同意していただく必要があります');
       return;
     }
 
-    // 同意している場合のみGoogleログインを実行
     signIn('google', { callbackUrl: '/dashboard' });
   };
 
@@ -47,7 +49,7 @@ export default function SigninPage() {
       email: '',
       password: '',
     },
-    mode: 'onChange', // リアルタイムバリデーション
+    mode: 'onChange',
   });
 
   const watchEmail = watch('email');
@@ -55,21 +57,17 @@ export default function SigninPage() {
 
   // 入力フィールドの状態を監視
   useEffect(() => {
-    // 空白を除去した後の各フィールドの値が空でないかを確認
     const emailValue = watchEmail?.trim() || '';
     const passwordValue = watchPassword || '';
 
     setIsEmailFilled(emailValue.length > 0);
     setIsPasswordFilled(passwordValue.length > 0);
 
-    // メールアドレスの簡易バリデーション
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     setIsEmailValid(emailRegex.test(emailValue));
 
-    // パスワードの長さチェック
     setIsPasswordValid(passwordValue.length >= 8);
 
-    // すべての条件が満たされていればフォームは有効
     const formIsValid =
       emailValue.length > 0 &&
       emailRegex.test(emailValue) &&
@@ -82,32 +80,44 @@ export default function SigninPage() {
   const onSubmit = async (data: { email: string; password: string }) => {
     try {
       setError(null);
+      setDebugInfo(null); // アンコメントして実際に使用
       setIsPending(true);
 
+      const normalizedEmail = data.email.toLowerCase();
+
+      console.log('ログイン試行:', {
+        email: normalizedEmail,
+        timestamp: new Date().toISOString(),
+      });
+
+      // リダイレクトを制御するためにfalseに設定
       const result = await signIn('credentials', {
-        email: data.email,
+        email: normalizedEmail,
         password: data.password,
         redirect: false,
       });
 
       if (result?.error) {
+        console.error('サインインエラー:', result.error);
         setError('メールアドレスまたはパスワードが正しくありません。');
-        return;
-      }
 
-      router.push('/dashboard');
-      router.refresh();
+        if (process.env.NODE_ENV !== 'production') {
+          setDebugInfo(`エラー詳細: ${result.error}`);
+        }
+      } else {
+        // 成功した場合は手動でリダイレクト
+        window.location.href = '/dashboard';
+      }
     } catch (error) {
+      console.error('ログインエラー詳細:', error);
       setError('ログイン処理中にエラーが発生しました。');
-      console.error('ログインエラー:', error);
+
+      if (process.env.NODE_ENV !== 'production' && error instanceof Error) {
+        setDebugInfo(`エラー詳細: ${error.message}`);
+      }
     } finally {
       setIsPending(false);
     }
-  };
-
-  // パスワードの表示/非表示を切り替える関数
-  const togglePasswordVisibility = () => {
-    setShowPassword(!showPassword);
   };
 
   return (
@@ -161,6 +171,30 @@ export default function SigninPage() {
                     />
                   </svg>
                   {error}
+                </div>
+              </div>
+            )}
+
+            {/* デバッグ情報（開発環境のみ） */}
+            {debugInfo && process.env.NODE_ENV !== 'production' && (
+              <div className="rounded-lg bg-gray-50 p-4 text-sm text-gray-700 border border-gray-200 shadow-sm">
+                <div className="flex items-center">
+                  <svg
+                    className="h-5 w-5 mr-2 text-gray-500"
+                    xmlns="http://www.w3.org/2000/svg"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zm-1 7a1 1 0 01-1 1h-1a1 1 0 110-2h1a1 1 0 011 1z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <div>
+                    <p className="font-medium">デバッグ情報</p>
+                    <p className="mt-1">{debugInfo}</p>
+                  </div>
                 </div>
               </div>
             )}

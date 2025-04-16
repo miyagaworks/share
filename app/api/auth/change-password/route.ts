@@ -78,12 +78,12 @@ export async function POST(req: Request) {
           equals: userEmail,
         },
       },
-      select: {
-        id: true,
-        email: true,
-        password: true,
-      },
-    });
+  select: {
+    id: true,
+    email: true,
+    password: true,
+  },
+});
 
     console.log(`検索結果: ${users.length}件のユーザーが見つかりました`);
 

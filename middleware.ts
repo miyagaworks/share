@@ -1,7 +1,7 @@
 // middleware.ts
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
+import { auth } from './auth'; // NextAuth v4の方法でインポート
 
 // トークンのユーザー情報に対する型定義
 interface TokenUser {
@@ -16,21 +16,32 @@ interface TokenUser {
 }
 
 export async function middleware(request: NextRequest) {
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+  // デバッグ情報を追加
+  console.log(`Middleware実行: ${request.nextUrl.pathname}`);
+
+  const session = await auth();
+  const token = session?.token;
+
+  // デバッグ情報を追加
+  if (process.env.NODE_ENV !== 'production') {
+    console.log(`Path: ${request.nextUrl.pathname}, Token存在: ${!!token}`);
+  }
+
   const { pathname } = request.nextUrl;
 
   // 認証が必要なパスへのアクセスを制御
   if (pathname.startsWith('/dashboard')) {
     // 未認証ユーザーのリダイレクト
-    if (!token) {
+    if (!session) {
+      console.log(`未認証ユーザー: ${pathname} へのアクセスをリダイレクト`);
       return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
 
     // 法人ダッシュボードへのアクセスを制御
     if (pathname.startsWith('/dashboard/corporate/')) {
       try {
-        // tokenのユーザー情報を型キャスト
-        const user = token.user as TokenUser | undefined;
+        // sessionのユーザー情報を型キャスト
+        const user = session.user as TokenUser | undefined;
 
         if (!user) {
           return NextResponse.redirect(new URL('/dashboard', request.url));
@@ -59,13 +70,13 @@ export async function middleware(request: NextRequest) {
   // 法人API利用の制御
   if (pathname.startsWith('/api/corporate/') && pathname !== '/api/corporate/access') {
     // 未認証ユーザーの拒否
-    if (!token) {
+    if (!session) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
     try {
-      // tokenのユーザー情報を型キャスト
-      const user = token.user as TokenUser | undefined;
+      // sessionのユーザー情報を型キャスト
+      const user = session.user as TokenUser | undefined;
 
       if (!user) {
         return NextResponse.json(
@@ -93,14 +104,21 @@ export async function middleware(request: NextRequest) {
     }
   }
 
+  // 認証ページへのリダイレクト処理を追加
+  // 既に認証されているユーザーが認証ページにアクセスした場合はダッシュボードへリダイレクト
+  if (pathname.startsWith('/auth/') && session) {
+    console.log('認証済みユーザーが認証ページにアクセス - ダッシュボードへリダイレクト');
+    return NextResponse.redirect(new URL('/dashboard', request.url));
+  }
+
   return NextResponse.next();
 }
 
-// ミドルウェアを適用するパスを指定
+// マッチャーを修正 - 範囲を限定
 export const config = {
   matcher: [
     '/dashboard/:path*',
     '/api/corporate/:path*',
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    '/auth/:path*', // 認証関連ページのみを対象に
   ],
 };

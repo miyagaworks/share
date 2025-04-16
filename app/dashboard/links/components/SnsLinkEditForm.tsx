@@ -87,20 +87,20 @@ export function SnsLinkEditForm({ link, onCancel, onSuccess }: SnsLinkEditFormPr
 
     // ユーザー名変更時のURL自動生成（LINE以外）
     const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-        if (isLineLink) return;
+    if (isLineLink) return;
 
-        const username = e.target.value;
-        let url = SNS_METADATA[platform].baseUrl;
+    const username = e.target.value;
+    let url = '';
 
-        if (platform === "skype") {
-            url = `skype:${username}?chat`;
-        } else if (platform === "whatsapp") {
-            url = `https://wa.me/${username}`;
-        } else {
-            url = `${url}${username}`;
-        }
+    // 各プラットフォームごとに適切なURL形式を設定
+    if (platform in SNS_METADATA && SNS_METADATA[platform].baseUrl) {
+        url = `${SNS_METADATA[platform].baseUrl}${username}`;
+    } else {
+        // 未知のプラットフォーム用のフォールバック
+        url = `https://${platform}.com/${username}`;
+    }
 
-        setValue("url", url);
+    setValue('url', url);
     };
 
     // LINE URLの直接編集時の処理
