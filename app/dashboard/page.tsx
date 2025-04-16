@@ -5,8 +5,10 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useSession } from "next-auth/react";
 import Link from "next/link";
-import Image from "next/image"; // Next.jsのImageコンポーネントをインポート
+import Image from "next/image";
 import { motion } from "framer-motion";
+import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
+import { CorporateDebugPanel } from '@/components/debug/CorporateDebugPanel';
 import {
     HiHome,
     HiUser,
@@ -39,6 +41,7 @@ export default function ImprovedDashboardPage() {
     const [userData, setUserData] = useState<UserWithProfile | null>(null);
     const [snsCount, setSnsCount] = useState(0);
     const [error, setError] = useState<string | null>(null);
+    const [showDebugPanel, setShowDebugPanel] = useState(false);
 
     // APIからデータを取得する関数
     const fetchData = async () => {
@@ -405,6 +408,92 @@ export default function ImprovedDashboardPage() {
               </Link>
             </div>
           </motion.div>
+
+          {process.env.NODE_ENV === 'development' && (
+            <motion.div
+              variants={cardVariants}
+              className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden col-span-full mt-6"
+              transition={{ duration: 0.3 }}
+            >
+              <div className="border-b border-gray-200 px-6 py-4 bg-yellow-50">
+                <div className="flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 text-yellow-600"
+                    viewBox="0 0 20 20"
+                    fill="currentColor"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  <h2 className="ml-2 text-lg font-semibold">
+                    法人アクセス診断ツール（開発者モード）
+                  </h2>
+                </div>
+              </div>
+              <div className="p-6">
+                <div className="mb-4">
+                  <h3 className="text-md font-medium mb-2">現在の法人アクセス状態:</h3>
+                  <pre className="bg-gray-50 p-3 rounded-md text-xs overflow-auto max-h-32">
+                    {JSON.stringify(corporateAccessState, null, 2)}
+                  </pre>
+                </div>
+
+                <div className="flex flex-wrap gap-3 mb-4">
+                  <button
+                    onClick={() => setShowDebugPanel(!showDebugPanel)}
+                    className="flex items-center justify-center py-2 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors"
+                  >
+                    {showDebugPanel ? 'デバッグパネルを閉じる' : 'デバッグパネルを表示'}
+                  </button>
+
+                  <button
+                    onClick={async () => {
+                      try {
+                        const result = await checkCorporateAccess(true);
+                        alert('アクセスチェック完了: ' + (result.hasAccess ? '許可' : '拒否'));
+                      } catch (err) {
+                        alert('エラー発生: ' + (err instanceof Error ? err.message : String(err)));
+                      }
+                    }}
+                    className="flex items-center justify-center py-2 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-700 transition-colors"
+                  >
+                    アクセス状態を再チェック
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      // 強制的にアクセス許可
+                      corporateAccessState.hasAccess = true;
+                      corporateAccessState.isAdmin = true;
+                      corporateAccessState.tenantId = 'debug-tenant-id';
+                      corporateAccessState.lastChecked = Date.now();
+                      corporateAccessState.error = null;
+
+                      // イベントをディスパッチ
+                      if (typeof window !== 'undefined') {
+                        window.dispatchEvent(
+                          new CustomEvent('corporateAccessChanged', {
+                            detail: { ...corporateAccessState },
+                          }),
+                        );
+                      }
+
+                      alert('法人アクセスを強制的に許可しました');
+                    }}
+                    className="flex items-center justify-center py-2 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-green-50 hover:text-green-700 hover:border-green-700 transition-colors"
+                  >
+                    アクセスを強制許可（デバッグ用）
+                  </button>
+                </div>
+
+                {showDebugPanel && <CorporateDebugPanel />}
+              </div>
+            </motion.div>
+          )}
         </motion.div>
       </motion.div>
     );

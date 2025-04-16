@@ -1,1 +1,5 @@
 tree -I 'node_modules|.git|.next|dist|build'
+
+git add .
+git commit -m "デバッグモードで一時的対応（法人ダッシュボード問題）"
+git push origin main

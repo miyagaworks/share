@@ -1,11 +1,12 @@
 // components/layout/MobileMenuButton.tsx
 'use client';
 
-import React, { useState } from 'react';
-import { HiMenu, HiX } from 'react-icons/hi';
+import React, { useState, useEffect } from 'react';
+import { HiMenu, HiX, HiOfficeBuilding } from 'react-icons/hi';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
+import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
 
 interface MenuItemType {
   title: string;
@@ -20,28 +21,67 @@ interface MobileMenuButtonProps {
 export function MobileMenuButton({ items }: MobileMenuButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
+  // 強制再レンダリング用
+  const [renderKey, setRenderKey] = useState(0);
+
+  // 法人アクセス権を確認
+  useEffect(() => {
+    const initAccess = async () => {
+      // 既に確認済みの場合は再チェックしない
+      if (corporateAccessState.hasAccess !== null) {
+        return;
+      }
+
+      try {
+        await checkCorporateAccess();
+        // 状態が変更されたら再レンダリング
+        setRenderKey((prev) => prev + 1);
+      } catch (error) {
+        console.error('法人アクセスチェックエラー:', error);
+      }
+    };
+
+    initAccess();
+
+    // アクセス状態変更イベントのリスナー
+    const handleAccessChange = () => {
+      setRenderKey((prev) => prev + 1);
+    };
+
+    window.addEventListener('corporateAccessChanged', handleAccessChange);
+
+    return () => {
+      window.removeEventListener('corporateAccessChanged', handleAccessChange);
+    };
+  }, []);
 
   // メニュー項目
   const mainMenuItems = [...items];
   const isCorporateSection = pathname?.startsWith('/dashboard/corporate') || false;
 
   // 追加リンク処理
-  let additionalLink = null;
+  let additionalLinks = [];
+
+  // 法人セクションにいる場合、個人ダッシュボードへのリンクを追加
   if (isCorporateSection) {
-    // 法人セクションにいる場合、個人ダッシュボードへのリンクを追加
-    additionalLink = {
+    additionalLinks.push({
       title: '個人ダッシュボード',
       href: '/dashboard',
       icon: items.find((item) => item.href === '/dashboard')?.icon || null,
-    };
-  } else if (pathname?.startsWith('/dashboard')) {
-    // 個人セクションにいる場合、法人ダッシュボードへのリンクを探す
-    const corporateLinkIndex = mainMenuItems.findIndex(
-      (item) => item.href === '/dashboard/corporate',
+    });
+  }
+  // 個人セクションで法人アクセス権がある場合は法人ダッシュボードへのリンクを追加
+  else if (pathname?.startsWith('/dashboard') && corporateAccessState.hasAccess === true) {
+    // 法人ダッシュボードへのリンクが既にitemsにある場合は使用
+    const corporateLink = items.find((item) => item.href === '/dashboard/corporate');
+
+    additionalLinks.push(
+      corporateLink || {
+        title: '法人ダッシュボード',
+        href: '/dashboard/corporate',
+        icon: <HiOfficeBuilding className="h-5 w-5" />,
+      },
     );
-    if (corporateLinkIndex >= 0) {
-      additionalLink = mainMenuItems.splice(corporateLinkIndex, 1)[0];
-    }
   }
 
   return (
@@ -56,7 +96,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
         <HiMenu className="h-8 w-8" />
       </button>
 
-      {/* オーバーレイ（メニューが開いている時のみ表示） */}
+      {/* オーバーレイ */}
       {isOpen && (
         <div
           className="fixed inset-0 z-40 lg:hidden"
@@ -65,7 +105,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
         />
       )}
 
-      {/* メニュー - ドロップシャドウを削除 */}
+      {/* メニュー */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-full max-w-xs bg-white transform transition-transform duration-300 ease-in-out lg:hidden ${
           isOpen ? 'translate-x-0' : '-translate-x-full'
@@ -113,28 +153,31 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
               ))}
 
               {/* 追加リンク */}
-              {additionalLink && (
+              {additionalLinks.length > 0 && (
                 <div className="pt-4 mt-4 border-t border-gray-200">
-                  <Link
-                    href={additionalLink.href}
-                    className={cn(
-                      'flex items-center px-4 py-4 text-lg font-medium rounded-md transition-colors',
-                      pathname === additionalLink.href
-                        ? 'bg-blue-50 text-blue-700'
-                        : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700',
-                    )}
-                    onClick={() => setIsOpen(false)}
-                  >
-                    <div
+                  {additionalLinks.map((link, index) => (
+                    <Link
+                      key={link.href + index}
+                      href={link.href}
                       className={cn(
-                        'flex-shrink-0 mr-4 text-2xl',
-                        pathname === additionalLink.href ? 'text-blue-700' : 'text-gray-600',
+                        'flex items-center px-4 py-4 text-lg font-medium rounded-md transition-colors',
+                        pathname === link.href
+                          ? 'bg-blue-50 text-blue-700'
+                          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700',
                       )}
+                      onClick={() => setIsOpen(false)}
                     >
-                      {additionalLink.icon}
-                    </div>
-                    <span>{additionalLink.title}</span>
-                  </Link>
+                      <div
+                        className={cn(
+                          'flex-shrink-0 mr-4 text-2xl',
+                          pathname === link.href ? 'text-blue-700' : 'text-gray-600',
+                        )}
+                      >
+                        {link.icon}
+                      </div>
+                      <span>{link.title}</span>
+                    </Link>
+                  ))}
                 </div>
               )}
             </nav>

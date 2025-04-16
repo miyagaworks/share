@@ -1,53 +1,50 @@
 // app/api/corporate/tenant/route.ts
-
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { checkCorporateAccess } from '@/lib/utils/corporate-access';
 
-export async function GET() {
+export async function GET(req: NextRequest) {
   try {
+    console.log('[API] /api/corporate/tenant リクエスト受信');
+
+    // セッション認証チェック
     const session = await auth();
 
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '認証されていません' }, { status: 401 });
+    if (!session || !session.user?.id) {
+      console.log('[API] 認証されていないアクセス');
+      return NextResponse.json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }, { status: 401 });
     }
 
-    // 法人アクセス権を確認
-    const accessCheck = await checkCorporateAccess(session.user.id);
-    if (!accessCheck.hasCorporateAccess) {
-      return NextResponse.json(
-        {
-          success: false,
-          error:
-            accessCheck.error ||
-            '法人テナント情報が見つかりません。法人プランにアップグレードしてください。',
-          hasCorporateAccess: false,
-        },
-        { status: 403 },
-      );
-    }
+    const userId = session.user.id;
+    console.log('[API] ユーザーID:', userId);
 
     // ユーザーの法人テナント情報を取得
     const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+      where: { id: userId },
       include: {
         adminOfTenant: {
           include: {
-            departments: true,
+            subscription: true, // サブスクリプションも含める
             users: {
               select: {
                 id: true,
                 name: true,
                 email: true,
                 corporateRole: true,
+              },
+            },
+            departments: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
               },
             },
           },
         },
         tenant: {
           include: {
-            departments: true,
+            subscription: true, // サブスクリプションも含める
             users: {
               select: {
                 id: true,
@@ -56,45 +53,81 @@ export async function GET() {
                 corporateRole: true,
               },
             },
+            departments: {
+              select: {
+                id: true,
+                name: true,
+                description: true,
+              },
+            },
           },
         },
+        subscription: true,
       },
     });
 
+    // ユーザーが見つからない場合
     if (!user) {
-      return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+      console.log('[API] ユーザーが見つかりません:', userId);
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // テナント情報を取得（管理者または一般メンバーのいずれか）
+    console.log('[API] ユーザー情報取得成功:', {
+      hasAdminTenant: !!user.adminOfTenant,
+      hasTenant: !!user.tenant,
+      hasSubscription: !!user.subscription,
+    });
+
+    // 法人テナント情報を取得（管理者または一般メンバー）
     const tenant = user.adminOfTenant || user.tenant;
 
-    // 法人テナントが存在しない場合は403エラーを返す
+    // テナントが見つからない場合
     if (!tenant) {
+      console.log('[API] テナントが見つかりません:', userId);
+      return NextResponse.json({ error: 'No tenant associated with this user' }, { status: 404 });
+    }
+
+    // サブスクリプションチェック
+    const hasCorporateSubscription =
+      user.subscription &&
+      (user.subscription.plan === 'business' ||
+        user.subscription.plan === 'business-plus' ||
+        user.subscription.plan === 'enterprise') &&
+      user.subscription.status === 'active';
+
+    if (!hasCorporateSubscription) {
+      console.log('[API] 有効な法人サブスクリプションがありません:', userId);
+      return NextResponse.json({ error: 'No active corporate subscription' }, { status: 403 });
+    }
+
+    // アカウント停止状態確認
+    if (tenant.accountStatus === 'suspended') {
+      console.log('[API] テナントは停止状態です:', tenant.id);
       return NextResponse.json(
         {
-          success: false,
-          error: '法人テナント情報が見つかりません。法人プランにアップグレードしてください。',
-          hasCorporateAccess: false,
+          error: 'Account is suspended',
+          tenant: {
+            ...tenant,
+            accountStatus: 'suspended',
+          },
         },
         { status: 403 },
       );
     }
 
-    // ユーザーの役割を確認
-    const isAdmin = !!user.adminOfTenant;
+    console.log('[API] テナント情報返却:', tenant.id);
 
-    return NextResponse.json({
-      success: true,
-      tenant,
-      userRole: isAdmin ? 'admin' : user.corporateRole || 'member',
-      hasCorporateAccess: true,
-    });
+    // 正常レスポンス
+    return NextResponse.json({ tenant });
   } catch (error) {
-    console.error('法人テナント情報取得エラー:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.error('[API] テナント情報取得エラー:', error);
     return NextResponse.json(
       {
-        error: '法人テナント情報の取得に失敗しました',
-        hasCorporateAccess: false,
+        error: 'Failed to fetch tenant information',
+        details: errorMessage,
+        stack: error instanceof Error ? error.stack : undefined,
+        code: 'API_ERROR',
       },
       { status: 500 },
     );

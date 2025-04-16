@@ -1,3 +1,8 @@
+# 重要事項
+## 必要な情報が欲しい場合はこのディレクトリ構造からファイルをリクエストしてからコードは書くようにして下さい。
+## 決して先走ってコードを書かないようにして下さい。
+## 全て十分理解してから回答を出して下さい。
+
 share/
 ├── README.md
 ├── actions
@@ -53,6 +58,11 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── route.ts
 │   │   │   └── update
+│   │   │       └── route.ts
+│   │   ├── debug
+│   │   │   ├── corporate-access
+│   │   │   │   └── route.ts
+│   │   │   └── corporate-detailed
 │   │   │       └── route.ts
 │   │   ├── jikogene
 │   │   │   └── route.ts
@@ -116,6 +126,8 @@ share/
 │   │   ├── corporate
 │   │   │   ├── branding
 │   │   │   │   └── page.tsx
+│   │   │   ├── debug
+│   │   │   │   └── page.tsx
 │   │   │   ├── departments
 │   │   │   │   └── page.tsx
 │   │   │   ├── layout.tsx
@@ -135,11 +147,9 @@ share/
 │   │   │   ├── design
 │   │   │   │   └── page.tsx
 │   │   │   ├── layout.tsx
-│   │   │   ├── links
 │   │   │   ├── page.tsx
-│   │   │   ├── profile
-│   │   │   │   └── page.tsx
-│   │   │   └── share
+│   │   │   └── profile
+│   │   │       └── page.tsx
 │   │   ├── design
 │   │   │   └── page.tsx
 │   │   ├── layout.tsx
@@ -172,6 +182,7 @@ share/
 │   │   │   │   ├── OutputOptions.tsx
 │   │   │   │   └── Personality.tsx
 │   │   │   ├── IntroductionForm.tsx
+│   │   │   ├── JikogeneContent.tsx
 │   │   │   ├── Result.tsx
 │   │   │   └── StepIndicator.tsx
 │   │   ├── hooks
@@ -192,6 +203,7 @@ share/
 │   ├── page.tsx
 │   └── support
 │       ├── contact
+│       │   ├── ContactPageContent.tsx
 │       │   └── page.tsx
 │       ├── faq
 │       │   └── page.tsx
@@ -213,6 +225,8 @@ share/
 │   │   ├── ShareOptionClient.tsx
 │   │   ├── SnsLinkClient.tsx
 │   │   └── SubscriptionOverview.tsx
+│   ├── debug
+│   │   └── CorporateDebugPanel.tsx
 │   ├── forms
 │   │   ├── CustomLinkForm.tsx
 │   │   ├── DesignForm.tsx
@@ -283,6 +297,7 @@ share/
 ├── hooks
 │   └── useCorporateAccess.ts
 ├── lib
+│   ├── corporateAccessState.ts
 │   ├── email.ts
 │   ├── jikogene
 │   │   ├── ai-service.ts
@@ -333,7 +348,6 @@ share/
 │   │   │   └── migration.sql
 │   │   └── migration_lock.toml
 │   └── schema.prisma
-├── providers
 ├── public
 │   ├── bereal.svg
 │   ├── favicon.ico

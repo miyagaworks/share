@@ -1,5 +1,4 @@
 // app/api/subscription/create/route.ts
-// 以下は主要な変更部分のみを記載
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
@@ -142,23 +141,23 @@ export async function POST(req: NextRequest) {
           },
         });
 
-    corporateTenant = newTenant;
-    console.log('法人テナント作成完了:', corporateTenant.id);
+        corporateTenant = newTenant;
+        console.log('法人テナント作成完了:', corporateTenant.id);
 
-    // ユーザーに法人ロールを設定
-    await prisma.user.update({
-      where: { id: session.user.id },
-      data: {
-        corporateRole: 'admin',
-      },
-    });
-  } catch (error) {
-    console.error('法人テナント作成エラー:', error);
-    throw new Error(
-      '法人テナントの作成に失敗しました。' + (error instanceof Error ? error.message : ''),
-    );
-  }
-}
+        // ユーザーに法人ロールを設定
+        await prisma.user.update({
+          where: { id: session.user.id },
+          data: {
+            corporateRole: 'admin',
+          },
+        });
+      } catch (error) {
+        console.error('法人テナント作成エラー:', error);
+        throw new Error(
+          '法人テナントの作成に失敗しました。' + (error instanceof Error ? error.message : ''),
+        );
+      }
+    }
 
     // 現在の日付と期間終了日を設定
     const currentPeriodStart = now;
@@ -201,19 +200,41 @@ export async function POST(req: NextRequest) {
       });
     }
 
-    // 法人テナントがある場合、サブスクリプションと関連付ける
-    if (corporateTenant) {
+    // 法人テナントとサブスクリプションの関連付け
+    if (corporateTenant && newSubscription) {
       try {
+        // 明示的なエラーログを追加
+        console.log('法人テナントとサブスクリプションの関連付けを開始します', {
+          tenantId: corporateTenant.id,
+          subscriptionId: newSubscription.id,
+        });
+
         await prisma.corporateTenant.update({
           where: { id: corporateTenant.id },
           data: {
-            subscription: { connect: { id: newSubscription.id } },
+            subscriptionId: newSubscription.id,
           },
         });
-        console.log('法人テナントとサブスクリプションを関連付けました');
+
+        // 関連付けが成功したか確認
+        const updatedTenant = await prisma.corporateTenant.findUnique({
+          where: { id: corporateTenant.id },
+          select: { subscriptionId: true },
+        });
+
+        console.log('法人テナントとサブスクリプションの関連付け結果:', updatedTenant);
+
+        if (updatedTenant?.subscriptionId !== newSubscription.id) {
+          console.error('関連付けは成功したが、値が反映されていません');
+        }
       } catch (error) {
         console.error('法人テナントとサブスクリプションの関連付けに失敗:', error);
-        // エラーをスローせず処理を続行（後でバッチ処理などで修正可能）
+        // エラーのより詳細な情報をログに出力
+        if (error instanceof Error) {
+          console.error('エラータイプ:', error.name);
+          console.error('エラーメッセージ:', error.message);
+          console.error('スタックトレース:', error.stack);
+        }
       }
     }
 

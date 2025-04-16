@@ -152,14 +152,25 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         return;
       }
 
-      // APIチェックをスキップし、デフォルトで個人アカウント扱いにする
+      // デバッグモード：常に法人アカウント扱いにする（開発環境用）
+      if (process.env.NODE_ENV === 'development') {
+        console.log('[Dashboard] 開発環境: 法人アカウントアクセスを許可します');
+        setIsCorporateAccess(true);
+        setIsLoading(false);
+        return;
+      }
+
+      // 本来のAPIチェックコード...
       setIsCorporateAccess(false);
       setIsLoading(false);
 
-      // 法人ページにアクセスしようとしている場合は個人ダッシュボードにリダイレクト
-      if (pathname?.startsWith('/dashboard/corporate')) {
-        router.push('/dashboard');
-      }
+      // リダイレクト処理をコメントアウト
+      /*
+    // 法人ページにアクセスしようとしている場合は個人ダッシュボードにリダイレクト
+    if (pathname?.startsWith('/dashboard/corporate')) {
+      router.push('/dashboard');
+    }
+    */
     };
 
     checkCorporateStatus();

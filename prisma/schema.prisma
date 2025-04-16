@@ -215,7 +215,7 @@ model CorporateTenant {
   subscription      Subscription?  @relation(fields: [subscriptionId], references: [id])
   subscriptionId    String?        @unique
   admin             User           @relation("TenantAdmin", fields: [adminId], references: [id])
-  adminId           String        @unique   // @uniqueを追加
+  adminId           String         @unique
   users             User[]         @relation("TenantUsers")
   departments       Department[]
   corporateSnsLinks CorporateSnsLink[] // 新しく追加
