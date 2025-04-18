@@ -4,6 +4,139 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { corporateAccessState } from '@/lib/corporateAccessState';
 
+interface DiagnosticInfo {
+  user: {
+    id: string;
+    email: string;
+    name: string | null;
+    corporateRole: string | null;
+    tenantId: string | null;
+    department: {
+      id: string;
+      name: string;
+    } | null;
+    subscription: {
+      id: string;
+      status: string;
+      plan: string;
+      currentPeriodStart: Date;
+      currentPeriodEnd: Date;
+      cancelAtPeriodEnd: boolean;
+      canceledAt: Date | null;
+    } | null;
+  } | null;
+  adminOfTenant: {
+    id: string;
+    name: string;
+    accountStatus: string;
+    subscriptionId: string | null; // nullを許可
+    maxUsers: number;
+    createdAt: Date;
+    updatedAt: Date;
+    logoUrl: string | null;
+    primaryColor: string | null;
+    securitySettings: Record<string, unknown> | null;
+    customDomain: string | null;
+    subscription: {
+      id: string;
+      status: string;
+      plan: string;
+      userId: string;
+      currentPeriodStart: Date;
+      currentPeriodEnd: Date;
+    } | null;
+    users: {
+      id: string;
+      email: string;
+      corporateRole: string | null;
+    }[];
+    departments: {
+      id: string;
+      name: string;
+      _count: {
+        users: number;
+      };
+    }[];
+    corporateSnsLinks: {
+      id: string;
+      platform: string;
+      isRequired: boolean;
+    }[];
+  } | null;
+  memberTenant: {
+    id: string;
+    name: string;
+    accountStatus: string;
+    subscriptionId: string | null; // nullを許可
+    maxUsers: number;
+    subscription: {
+      id: string;
+      status: string;
+      plan: string;
+      userId: string;
+      currentPeriodStart: Date;
+      currentPeriodEnd: Date;
+    } | null;
+    admin: {
+      id: string;
+      email: string;
+      name: string | null;
+    };
+    _count: {
+      users: number;
+      departments: number;
+    };
+  } | null;
+}
+
+interface SchemaInfo {
+  tenantColumns: Array<{
+    column_name: string;
+    data_type: string;
+    character_maximum_length?: number;
+    is_nullable: string;
+    column_default?: string;
+  }>;
+  foreignKeys: Array<{
+    constraint_name: string;
+    table_name: string;
+    column_name: string;
+    foreign_table_name: string;
+    foreign_column_name: string;
+  }>;
+  userToTenantRelations: Array<{
+    constraint_name: string;
+    table_name: string;
+    column_name: string;
+    foreign_table_name: string;
+    foreign_column_name: string;
+  }>;
+}
+
+interface TestResult {
+  success: boolean;
+  error?: string;
+  details?: {
+    [key: string]: unknown;
+    userHasSubscription?: boolean;
+    tenantHasSubscription?: boolean;
+    userSubscriptionIdMatchesTenant?: boolean;
+  };
+}
+
+interface AccessTestResults {
+  accessCheck: TestResult;
+  tenantCheck: TestResult;
+  subscriptionStatus: TestResult;
+}
+
+interface Recommendation {
+  issue: string;
+  severity: 'high' | 'medium' | 'low';
+  action: string;
+  description: string;
+}
+
 export async function GET() {
   try {
     console.log('[デバッグAPI] リクエスト開始');
@@ -49,12 +182,6 @@ export async function GET() {
     // 診断情報を集める
     const diagnosticInfo = {
       // 1. クライアントグローバル状態
-      clientState:
-        typeof window !== 'undefined'
-          ? {
-              corporateAccessState: corporateAccessState,
-            }
-          : null,
 
       // 2. 詳細なユーザー情報
       user: await prisma.user.findUnique({
@@ -177,16 +304,16 @@ export async function GET() {
     // 5. データベースの構造情報（拡張版）
     const schemaInfo = {
       // テナントテーブルの詳細情報
-      tenantColumns: await prisma.$queryRaw`
+      tenantColumns: (await prisma.$queryRaw`
         SELECT column_name, data_type, character_maximum_length, 
-               is_nullable, column_default
+              is_nullable, column_default
         FROM information_schema.columns 
         WHERE table_name = 'CorporateTenant'
         ORDER BY ordinal_position
-      `,
+      `) as SchemaInfo['tenantColumns'],
 
-      // 外部キー制約情報
-      foreignKeys: await prisma.$queryRaw`
+          // 外部キー制約情報
+          foreignKeys: (await prisma.$queryRaw`
         SELECT
           tc.constraint_name,
           tc.table_name, 
@@ -201,11 +328,11 @@ export async function GET() {
             ON ccu.constraint_name = tc.constraint_name
         WHERE tc.constraint_type = 'FOREIGN KEY' AND 
               (tc.table_name = 'CorporateTenant' OR 
-               ccu.table_name = 'CorporateTenant')
-      `,
+              ccu.table_name = 'CorporateTenant')
+      `) as SchemaInfo['foreignKeys'],
 
-      // テーブル間の参照関係
-      userToTenantRelations: await prisma.$queryRaw`
+          // テーブル間の参照関係
+          userToTenantRelations: (await prisma.$queryRaw`
         SELECT
           tc.constraint_name,
           tc.table_name, 
@@ -220,8 +347,8 @@ export async function GET() {
             ON ccu.constraint_name = tc.constraint_name
         WHERE tc.constraint_type = 'FOREIGN KEY' AND 
               ((tc.table_name = 'User' AND ccu.table_name = 'CorporateTenant') OR
-               (tc.table_name = 'CorporateTenant' AND ccu.table_name = 'User'))
-      `,
+              (tc.table_name = 'CorporateTenant' AND ccu.table_name = 'User'))
+      `) as SchemaInfo['userToTenantRelations'],
     };
 
     // 6. アクセス権テスト結果
@@ -237,7 +364,11 @@ export async function GET() {
     };
 
     // 7. 実行アクション・推奨事項
-    const recommendations = generateRecommendations(diagnosticInfo, schemaInfo, accessTestResults);
+    const recommendations = generateRecommendations(
+      diagnosticInfo as DiagnosticInfo,
+      schemaInfo as SchemaInfo,
+      accessTestResults as AccessTestResults,
+    );
 
     console.log('[デバッグAPI] 診断完了');
 
@@ -248,7 +379,14 @@ export async function GET() {
       schemaInfo,
       accessTestResults,
       recommendations,
-      corporateAccessStateSnapshot: corporateAccessState, // グローバル状態のスナップショット
+      corporateAccessStateSnapshot: {
+        // サーバーサイドでも安全に取得できるプロパティのみを含める
+        hasAccess: corporateAccessState.hasAccess,
+        isAdmin: corporateAccessState.isAdmin,
+        tenantId: corporateAccessState.tenantId,
+        lastChecked: corporateAccessState.lastChecked,
+        error: corporateAccessState.error,
+      },
     });
   } catch (error) {
     console.error('[デバッグAPI] エラー発生:', error);
@@ -265,7 +403,7 @@ export async function GET() {
 }
 
 // 内部アクセス権チェック関数（APIエンドポイントを模倣）
-async function checkAccessInternally(userId: string) {
+async function checkAccessInternally(userId: string): Promise<TestResult> {
   try {
     // ユーザーとテナント情報を取得
     const user = await prisma.user.findUnique({
@@ -349,13 +487,13 @@ async function checkAccessInternally(userId: string) {
     return {
       success: false,
       error: 'アクセス権チェック中にエラーが発生しました',
-      details: error instanceof Error ? error.message : String(error),
+      details: { errorMessage: error instanceof Error ? error.message : String(error) },
     };
   }
 }
 
 // テナント情報取得テスト（内部実装）
-async function checkTenantInternally(userId: string) {
+async function checkTenantInternally(userId: string): Promise<TestResult> {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -395,13 +533,13 @@ async function checkTenantInternally(userId: string) {
     return {
       success: false,
       error: 'テナント情報チェック中にエラーが発生しました',
-      details: error instanceof Error ? error.message : String(error),
+      details: { errorMessage: error instanceof Error ? error.message : String(error) },
     };
   }
 }
 
 // サブスクリプション検証テスト（内部実装）
-async function checkSubscriptionInternally(userId: string) {
+async function checkSubscriptionInternally(userId: string): Promise<TestResult> {
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -449,29 +587,28 @@ async function checkSubscriptionInternally(userId: string) {
     return {
       success: false,
       error: 'サブスクリプション情報チェック中にエラーが発生しました',
-      details: error instanceof Error ? error.message : String(error),
+      details: { errorMessage: error instanceof Error ? error.message : String(error) },
     };
   }
 }
 
 // 診断結果に基づく推奨事項生成
-function generateRecommendations(diagnosticInfo: any, schemaInfo: any, accessTestResults: any) {
-  const recommendations: Array<{
-    issue: string;
-    severity: 'high' | 'medium' | 'low';
-    action: string;
-    description: string;
-  }> = [];
+function generateRecommendations(
+  diagnosticInfo: DiagnosticInfo,
+  schemaInfo: SchemaInfo,
+  accessTestResults: AccessTestResults,
+): Recommendation[] {
+  const recommendations: Recommendation[] = [];
 
   // アクセスチェック結果に基づく推奨
   if (!accessTestResults.accessCheck.success) {
     recommendations.push({
       issue: 'アクセス権チェック失敗',
       severity: 'high',
-      action: accessTestResults.accessCheck.error.includes('サブスクリプション')
+      action: accessTestResults.accessCheck.error?.includes('サブスクリプション')
         ? 'サブスクリプション状態の確認'
         : 'テナント・ユーザー関連付けの確認',
-      description: `アクセス権チェックが失敗しました: ${accessTestResults.accessCheck.error}`,
+      description: `アクセス権チェックが失敗しました: ${accessTestResults.accessCheck.error || '不明なエラー'}`,
     });
   }
 
@@ -487,7 +624,7 @@ function generateRecommendations(diagnosticInfo: any, schemaInfo: any, accessTes
   }
 
   // スキーマ情報に基づく推奨
-  const columnNames = schemaInfo.tenantColumns.map((col: any) => col.column_name.toLowerCase());
+  const columnNames = schemaInfo.tenantColumns.map((col) => col.column_name.toLowerCase());
   if (!columnNames.includes('subscriptionid') && !columnNames.includes('subscription_id')) {
     recommendations.push({
       issue: 'スキーマ構造の問題',
@@ -500,7 +637,7 @@ function generateRecommendations(diagnosticInfo: any, schemaInfo: any, accessTes
 
   // サブスクリプション関連の推奨
   const subCheck = accessTestResults.subscriptionStatus;
-  if (subCheck.success && !subCheck.details.userHasSubscription) {
+  if (subCheck.success && subCheck.details && !subCheck.details.userHasSubscription) {
     recommendations.push({
       issue: 'サブスクリプションなし',
       severity: 'high',
@@ -511,6 +648,7 @@ function generateRecommendations(diagnosticInfo: any, schemaInfo: any, accessTes
 
   if (
     subCheck.success &&
+    subCheck.details &&
     subCheck.details.tenantHasSubscription &&
     !subCheck.details.userSubscriptionIdMatchesTenant
   ) {

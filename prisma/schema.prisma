@@ -47,9 +47,6 @@ model User {
   trialEndsAt     DateTime?
   subscriptionStatus String?
 
-  // 権限管理用のroleフィールド
-  role            String    @default("user")
-
     // 法人テナント関連
   corporateRole     String?         // "admin", "member" など
   position          String?         // 役職
@@ -128,10 +125,10 @@ model Subscription {
   id              String   @id @default(cuid())
   userId          String   @unique
   user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status          String
-  plan            String
-  priceId         String?
-  subscriptionId  String?
+  status          String   // 'trialing', 'active', 'past_due', 'canceled', 'incomplete'
+  plan            String   // 'monthly', 'yearly', 'business'
+  priceId         String?  // Stripe価格ID
+  subscriptionId  String?  // Stripe ご利用プランID
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   cancelAtPeriodEnd  Boolean @default(false)
@@ -141,11 +138,7 @@ model Subscription {
   cancelReason    String?
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
-  // CorporateTenantとの関連を修正
-  // 関連する法人テナント（存在する場合）
-  corporateTenantId String?  @unique
-  corporateTenant CorporateTenant? @relation(fields: [corporateTenantId], references: [id])
+  corporateTenant CorporateTenant?
 }
 
 // 請求履歴モデル
@@ -219,12 +212,13 @@ model CorporateTenant {
   dataRetentionDays Int       @default(365)      // データ保持期間（日数）
   
   // リレーション
-  subscription      Subscription?
-  adminId           String    @unique
-  admin             User      @relation("TenantAdmin", fields: [adminId], references: [id])
-  users             User[]    @relation("TenantUsers")
+  subscription      Subscription?  @relation(fields: [subscriptionId], references: [id])
+  subscriptionId    String?        @unique
+  admin             User           @relation("TenantAdmin", fields: [adminId], references: [id])
+  adminId           String         @unique
+  users             User[]         @relation("TenantUsers")
   departments       Department[]
-  corporateSnsLinks CorporateSnsLink[]
+  corporateSnsLinks CorporateSnsLink[] // 新しく追加
 }
 
 // 部署/チーム管理
