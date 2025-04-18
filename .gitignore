@@ -39,3 +39,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# バックアップファイルを無視
+backup_*
+*.bak
+*.backup
+*.tar.gz
