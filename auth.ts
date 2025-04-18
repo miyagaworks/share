@@ -26,7 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const normalizedEmail = email.toLowerCase();
 
-          // ユーザー検索（既存のスキーマを使用）
+          // ユーザー検索（roleフィールドを追加）
           const user = await prisma.user.findUnique({
             where: { email: normalizedEmail },
             select: {
@@ -34,7 +34,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name: true,
               email: true,
               password: true,
-              // 既存スキーマの他のフィールドも必要に応じて選択可能
+              role: true, // roleフィールドを選択に追加
             },
           });
 
@@ -53,7 +53,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: user.name,
             email: user.email,
             role: user.role,
-            // 他の必要なユーザー情報
           };
         } catch (error) {
           console.error('認証エラー:', error);
