@@ -156,15 +156,15 @@ share/
 │   │   │   └── page.tsx
 │   │   ├── layout.tsx
 │   │   ├── links
-│   │   │   ├── LinkClientWrapper.tsx
 │   │   │   ├── components
 │   │   │   │   ├── ClientCustomForm.tsx
 │   │   │   │   ├── ClientCustomWrapper.tsx
 │   │   │   │   ├── ClientSnsForm.tsx
 │   │   │   │   ├── CustomLinkClient.tsx
 │   │   │   │   ├── CustomLinkEditForm.tsx
-│   │   │   │   ├── SnsLinkClient.tsx
+│   │   │   │   ├── SnsLinkClientWrapper.tsx
 │   │   │   │   ├── SnsLinkEditForm.tsx
+│   │   │   │   ├── SnsLinkManager.tsx
 │   │   │   │   └── index.ts
 │   │   │   └── page.tsx
 │   │   ├── page.tsx
@@ -226,7 +226,7 @@ share/
 │   │   ├── ProfileUrlDisplay.tsx
 │   │   ├── QrCodeClient.tsx
 │   │   ├── ShareOptionClient.tsx
-│   │   ├── SnsLinkClient.tsx
+│   │   ├── SnsLinkDisplay.tsx
 │   │   └── SubscriptionOverview.tsx
 │   ├── debug
 │   │   └── CorporateDebugPanel.tsx

@@ -34,7 +34,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name: true,
               email: true,
               password: true,
-              role: true,
+              // 既存スキーマの他のフィールドも必要に応じて選択可能
             },
           });
 
@@ -53,7 +53,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             name: user.name,
             email: user.email,
             role: user.role,
-            // その他必要なプロパティ
+            // 他の必要なユーザー情報
           };
         } catch (error) {
           console.error('認証エラー:', error);

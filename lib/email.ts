@@ -1,12 +1,14 @@
 // lib/email.ts
-import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
+import nodemailer from 'nodemailer';
 
-// AWS SES クライアントの設定
-const sesClient = new SESClient({
-  region: process.env.AWS_REGION || 'ap-northeast-1',
-  credentials: {
-    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
-    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
+// SMTPトランスポーターの設定
+const transporter = nodemailer.createTransport({
+  host: process.env.EMAIL_SERVER_HOST,
+  port: Number(process.env.EMAIL_SERVER_PORT) || 587,
+  secure: process.env.EMAIL_SERVER_PORT === '465',
+  auth: {
+    user: process.env.EMAIL_SERVER_USER,
+    pass: process.env.EMAIL_SERVER_PASSWORD,
   },
 });
 
@@ -19,11 +21,11 @@ interface EmailOptions {
 }
 
 /**
- * Amazon SESを使用してメールを送信する関数
+ * メールを送信する関数
  */
 export async function sendEmail(options: EmailOptions) {
   // デフォルトの送信元メールアドレス
-  const defaultFrom = process.env.SUPPORT_EMAIL || 'support@sns-share.com';
+  const defaultFrom = process.env.EMAIL_FROM || 'support@sns-share.com';
 
   // 開発環境の場合はコンソールにログ出力のみ
   if (process.env.NODE_ENV === 'development') {
@@ -38,39 +40,58 @@ export async function sendEmail(options: EmailOptions) {
   }
 
   try {
-    const command = new SendEmailCommand({
-      Source: options.from || defaultFrom,
-      Destination: {
-        ToAddresses: [options.to],
-      },
-      Message: {
-        Subject: {
-          Data: options.subject,
-          Charset: 'UTF-8',
-        },
-        Body: {
-          Text: {
-            Data: options.text,
-            Charset: 'UTF-8',
-          },
-          // HTML版が提供されている場合は使用
-          ...(options.html
-            ? {
-                Html: {
-                  Data: options.html,
-                  Charset: 'UTF-8',
-                },
-              }
-            : {}),
-        },
-      },
-    });
+    const mailOptions = {
+      from: options.from || defaultFrom,
+      to: options.to,
+      subject: options.subject,
+      text: options.text,
+      html: options.html,
+    };
 
-    const result = await sesClient.send(command);
-    console.log('メール送信成功:', result.MessageId);
-    return { success: true, messageId: result.MessageId };
+    const result = await transporter.sendMail(mailOptions);
+    console.log('メール送信成功:', result.messageId);
+    return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error('メール送信エラー:', error);
     throw error;
   }
+}
+
+/**
+ * 確認メールを送信する関数
+ */
+export async function sendVerificationEmail(email: string, verificationUrl: string) {
+  return sendEmail({
+    to: email,
+    subject: 'メールアドレスの確認',
+    text: `メールアドレスを確認するには、以下のリンクをクリックしてください。\n\n${verificationUrl}\n\n`,
+    html: `
+      <div>
+        <h1>メールアドレスの確認</h1>
+        <p>メールアドレスを確認するには、以下のリンクをクリックしてください。</p>
+        <p><a href="${verificationUrl}">メールアドレスを確認する</a></p>
+      </div>
+    `,
+  });
+}
+
+/**
+ * パスワードリセットメールを送信する関数
+ */
+export async function sendPasswordResetEmail(email: string, resetToken: string) {
+  const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`;
+
+  return sendEmail({
+    to: email,
+    subject: 'パスワードリセットのご案内',
+    text: `パスワードをリセットするには、以下のリンクをクリックしてください。\n\n${resetUrl}\n\nこのリンクは24時間有効です。心当たりがない場合は、このメールを無視してください。`,
+    html: `
+      <div>
+        <h1>パスワードリセットのご案内</h1>
+        <p>パスワードをリセットするには、以下のリンクをクリックしてください。</p>
+        <p><a href="${resetUrl}">パスワードをリセットする</a></p>
+        <p>このリンクは24時間有効です。心当たりがない場合は、このメールを無視してください。</p>
+      </div>
+    `,
+  });
 }

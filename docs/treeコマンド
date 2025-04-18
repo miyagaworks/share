@@ -1,5 +1,15 @@
 tree -I 'node_modules|.git|.next|dist|build'
 
+<<<<<<< HEAD
 git add .
 git commit -m "デバッグモードで一時的対応（法人ダッシュボード問題）"
+=======
+# 全ての変更ファイルをステージング領域に追加
+git add .
+
+# 変更内容をコミット
+git commit -m "認証関連を修正"
+
+# リモートリポジトリにプッシュ
+>>>>>>> a20d17fb3f2293468ead8460ba8a1d377c3cb583
 git push origin main
