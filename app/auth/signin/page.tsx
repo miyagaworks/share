@@ -4,13 +4,13 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@/schemas/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { signIn } from 'next-auth/react';
 
 export default function SigninPage() {
   const router = useRouter();
@@ -22,17 +22,15 @@ export default function SigninPage() {
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false); // 利用規約同意状態を追加
+  const [termsAccepted, setTermsAccepted] = useState(false);
 
   // Google認証を開始する関数
   const handleGoogleSignIn = () => {
-    // 利用規約の同意確認
     if (!termsAccepted) {
       setError('Googleでログインする場合も利用規約に同意していただく必要があります');
       return;
     }
 
-    // 同意している場合のみGoogleログインを実行
     signIn('google', { callbackUrl: '/dashboard' });
   };
 
@@ -47,7 +45,7 @@ export default function SigninPage() {
       email: '',
       password: '',
     },
-    mode: 'onChange', // リアルタイムバリデーション
+    mode: 'onChange',
   });
 
   const watchEmail = watch('email');
@@ -55,21 +53,17 @@ export default function SigninPage() {
 
   // 入力フィールドの状態を監視
   useEffect(() => {
-    // 空白を除去した後の各フィールドの値が空でないかを確認
     const emailValue = watchEmail?.trim() || '';
     const passwordValue = watchPassword || '';
 
     setIsEmailFilled(emailValue.length > 0);
     setIsPasswordFilled(passwordValue.length > 0);
 
-    // メールアドレスの簡易バリデーション
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     setIsEmailValid(emailRegex.test(emailValue));
 
-    // パスワードの長さチェック
     setIsPasswordValid(passwordValue.length >= 8);
 
-    // すべての条件が満たされていればフォームは有効
     const formIsValid =
       emailValue.length > 0 &&
       emailRegex.test(emailValue) &&
@@ -79,28 +73,39 @@ export default function SigninPage() {
     setIsFormValid(formIsValid);
   }, [watchEmail, watchPassword, errors, isValid]);
 
+  // signIn関数
   const onSubmit = async (data: { email: string; password: string }) => {
     try {
       setError(null);
       setIsPending(true);
 
-      const result = await signIn('credentials', {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
+      // signInをdirect importして使う
+      import('next-auth/react')
+        .then(async ({ signIn }) => {
+          const result = await signIn('credentials', {
+            email: data.email.toLowerCase(),
+            password: data.password,
+            redirect: false,
+          });
 
-      if (result?.error) {
-        setError('メールアドレスまたはパスワードが正しくありません。');
-        return;
-      }
+          if (result?.error) {
+            setError('メールアドレスまたはパスワードが正しくありません。');
+            return;
+          }
 
-      router.push('/dashboard');
-      router.refresh();
+          router.push('/dashboard');
+          router.refresh();
+        })
+        .catch((error) => {
+          console.error('ログインエラー:', error);
+          setError('ログイン処理中にエラーが発生しました。');
+        })
+        .finally(() => {
+          setIsPending(false);
+        });
     } catch (error) {
-      setError('ログイン処理中にエラーが発生しました。');
       console.error('ログインエラー:', error);
-    } finally {
+      setError('ログイン処理中にエラーが発生しました。');
       setIsPending(false);
     }
   };

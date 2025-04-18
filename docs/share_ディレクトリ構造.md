@@ -26,6 +26,8 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── reset-password
 │   │   │   │   └── route.ts
+│   │   │   ├── signin
+│   │   │   │   └── route.ts
 │   │   │   └── verify-reset-token
 │   │   │       └── route.ts
 │   │   ├── corporate
@@ -172,6 +174,7 @@ share/
 │   │   │   └── page.tsx
 │   │   └── subscription
 │   │       └── page.tsx
+│   ├── favicon.ico
 │   ├── globals.css
 │   ├── jikogene
 │   │   ├── components
@@ -350,41 +353,43 @@ share/
 │   └── schema.prisma
 ├── public
 │   ├── bereal.svg
-│   ├── favicon.ico
 │   ├── favicon.svg
 │   ├── file.svg
 │   ├── globe.svg
 │   ├── google-logo.svg
 │   ├── images
-│   │   └── guides
-│   │       ├── bereal-step1.png
-│   │       ├── bereal-step2.png
-│   │       ├── bereal-step3.png
-│   │       ├── facebook-step1.png
-│   │       ├── facebook-step2.png
-│   │       ├── facebook-step3.png
-│   │       ├── facebook-step4.png
-│   │       ├── instagram-step1.png
-│   │       ├── instagram-step2.png
-│   │       ├── line-step1.png
-│   │       ├── line-step2.png
-│   │       ├── line-step3.png
-│   │       ├── line-step4.png
-│   │       ├── note-step1.png
-│   │       ├── note-step2.png
-│   │       ├── pinterest-step1.png
-│   │       ├── pinterest-step2.png
-│   │       ├── pinterest-step3.png
-│   │       ├── pinterest-step4.png
-│   │       ├── threads-step1.png
-│   │       ├── tiktok-step1.png
-│   │       ├── tiktok-step2.png
-│   │       ├── x-step1.png
-│   │       ├── x-step2.png
-│   │       ├── youtube-step1.png
-│   │       ├── youtube-step2.png
-│   │       ├── youtube-step3.png
-│   │       └── youtube-step4.png
+│   │   ├── guides
+│   │   │   ├── bereal-step1.png
+│   │   │   ├── bereal-step2.png
+│   │   │   ├── bereal-step3.png
+│   │   │   ├── facebook-step1.png
+│   │   │   ├── facebook-step2.png
+│   │   │   ├── facebook-step3.png
+│   │   │   ├── facebook-step4.png
+│   │   │   ├── instagram-step1.png
+│   │   │   ├── instagram-step2.png
+│   │   │   ├── line-step1.png
+│   │   │   ├── line-step2.png
+│   │   │   ├── line-step3.png
+│   │   │   ├── line-step4.png
+│   │   │   ├── note-step1.png
+│   │   │   ├── note-step2.png
+│   │   │   ├── pinterest-step1.png
+│   │   │   ├── pinterest-step2.png
+│   │   │   ├── pinterest-step3.png
+│   │   │   ├── pinterest-step4.png
+│   │   │   ├── threads-step1.png
+│   │   │   ├── tiktok-step1.png
+│   │   │   ├── tiktok-step2.png
+│   │   │   ├── x-step1.png
+│   │   │   ├── x-step2.png
+│   │   │   ├── youtube-step1.png
+│   │   │   ├── youtube-step2.png
+│   │   │   ├── youtube-step3.png
+│   │   │   └── youtube-step4.png
+│   │   └── icons
+│   │       ├── ogp.png
+│   │       └── ogp_line.png
 │   ├── jikogene.svg
 │   ├── line.svg
 │   ├── logo.svg
@@ -400,7 +405,11 @@ share/
 │   │   ├── apple-touch-icon-152x152.png
 │   │   ├── apple-touch-icon-167x167.png
 │   │   ├── apple-touch-icon-180x180.png
-│   │   └── apple-touch-icon.png
+│   │   ├── apple-touch-icon.png
+│   │   ├── favicon-16x16.png
+│   │   ├── favicon-32x32.png
+│   │   ├── favicon-48x48.png
+│   │   └── favicon-96x96.png
 │   ├── vercel.svg
 │   └── window.svg
 ├── schemas

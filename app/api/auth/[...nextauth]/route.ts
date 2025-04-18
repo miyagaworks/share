@@ -1,4 +1,5 @@
 // app/api/auth/[...nextauth]/route.ts
-import { GET, POST } from "@/auth";
+import { handlers } from '@/auth';
 
-export { GET, POST };
+// Next-Auth v5のエクスポート方法
+export const { GET, POST } = handlers;
