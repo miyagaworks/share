@@ -1,8 +1,4 @@
-// lib/corporateAccessState.ts (改良版)
-// 法人アクセス状態を一元管理するモジュール
-import { checkCorporateAccess as apiCheckCorporateAccess } from '@/lib/utils/corporate-access';
-
-// WindowオブジェクトにプロパティをWindowインターフェースを拡張する形で追加
+// lib/corporateAccessState.ts
 declare global {
   interface Window {
     _corporateAccessState?: CorporateAccessState;
@@ -10,7 +6,7 @@ declare global {
       logs: Array<{
         timestamp: number;
         action: string;
-        data: any;
+        data: unknown; // anyではなくunknown型を使用
       }>;
       version: string;
     };
@@ -34,7 +30,8 @@ export interface CorporateAccessState {
 }
 
 // デバッグログを記録する関数
-function logDebug(action: string, data: any) {
+function logDebug(action: string, data: unknown) {
+  // anyではなくunknown型を使用
   if (typeof window !== 'undefined') {
     // デバッグ構造がなければ初期化
     if (!window._corporateAccessDebug) {
@@ -87,7 +84,7 @@ if (typeof window !== 'undefined') {
 }
 
 // 状態を更新する関数
-export function updateCorporateAccessState(newState: Partial<CorporateAccessState>) {
+export function updateCorporateAccessState(newState: Partial<CorporateAccessState>): void {
   // 変更前後の状態をより詳細にログ出力
   const prevState = { ...corporateAccessState };
   logDebug('状態更新前', prevState);
@@ -146,10 +143,13 @@ export async function checkCorporateAccess(forceCheck = false): Promise<Corporat
 
   try {
     logDebug('APIリクエスト送信', { timestamp: now });
-    const response = await fetch('/api/corporate/access', {
+
+    // キャッシュを無効化するためのパラメータを追加
+    const response = await fetch('/api/corporate/access?t=' + now, {
       cache: 'no-store',
       headers: {
         'Cache-Control': 'no-cache',
+        Pragma: 'no-cache',
       },
     });
 
@@ -178,19 +178,27 @@ export async function checkCorporateAccess(forceCheck = false): Promise<Corporat
         errorData,
       });
 
-      updateCorporateAccessState({
-        hasAccess: false,
-        isAdmin: false,
-        lastChecked: now,
-        error: `APIレスポンスエラー: ${response.status} ${response.statusText}`,
-      });
+      // 401/403ではアクセス権限なしと判断
+      if (response.status === 401 || response.status === 403) {
+        updateCorporateAccessState({
+          hasAccess: false,
+          isAdmin: false,
+          lastChecked: now,
+          error: `アクセス権限がありません: ${response.status}`,
+        });
+      } else {
+        // その他のエラーの場合は、以前の状態を維持してエラーのみ更新
+        updateCorporateAccessState({
+          lastChecked: now,
+          error: `APIレスポンスエラー: ${response.status} ${response.statusText}`,
+        });
+      }
     }
   } catch (error) {
     logDebug('APIリクエストエラー', error);
 
+    // エラー時は以前の状態を維持し、エラーのみ更新
     updateCorporateAccessState({
-      hasAccess: false,
-      isAdmin: false,
       lastChecked: now,
       error:
         '法人アクセス権の確認中にエラーが発生しました: ' +
@@ -210,7 +218,7 @@ export function isUserCorporateAdmin(): boolean {
 }
 
 // 状態をリセットする関数
-export function resetCorporateAccessState() {
+export function resetCorporateAccessState(): void {
   logDebug('状態リセット前', { ...corporateAccessState });
 
   updateCorporateAccessState({
@@ -226,7 +234,11 @@ export function resetCorporateAccessState() {
 }
 
 // デバッグログを取得する関数
-export function getCorporateAccessDebugLogs() {
+export function getCorporateAccessDebugLogs(): Array<{
+  timestamp: number;
+  action: string;
+  data: unknown;
+}> {
   if (typeof window !== 'undefined' && window._corporateAccessDebug) {
     return window._corporateAccessDebug.logs;
   }
@@ -234,7 +246,7 @@ export function getCorporateAccessDebugLogs() {
 }
 
 // デバッグ用の強制アクセス許可機能
-export function enableDebugMode(durationMinutes = 30) {
+export function enableDebugMode(durationMinutes = 30): boolean {
   logDebug('デバッグモード有効化', { durationMinutes });
 
   updateCorporateAccessState({

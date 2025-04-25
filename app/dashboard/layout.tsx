@@ -18,6 +18,7 @@ import {
   HiTemplate,
   HiCog,
 } from 'react-icons/hi';
+import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
 
 // 個人用サイドバー項目
 const personalSidebarItems = [
@@ -139,8 +140,8 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-  const [isCorporateAccount, setIsCorporateAccess] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [, forceUpdate] = useState(0); // 強制再レンダリング用
 
   // 法人アカウントかどうかをチェック
   useEffect(() => {
@@ -152,29 +153,31 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         return;
       }
 
-      // デバッグモード：常に法人アカウント扱いにする（開発環境用）
-      if (process.env.NODE_ENV === 'development') {
-        console.log('[Dashboard] 開発環境: 法人アカウントアクセスを許可します');
-        setIsCorporateAccess(true);
+      try {
+        // 法人アクセス権をチェック
+        await checkCorporateAccess();
+      } catch (error) {
+        console.error('法人アクセスチェックエラー:', error);
+      } finally {
         setIsLoading(false);
-        return;
+        // 状態が更新されたら再レンダリング
+        forceUpdate((prev) => prev + 1);
       }
-
-      // 本来のAPIチェックコード...
-      setIsCorporateAccess(false);
-      setIsLoading(false);
-
-      // リダイレクト処理をコメントアウト
-      /*
-    // 法人ページにアクセスしようとしている場合は個人ダッシュボードにリダイレクト
-    if (pathname?.startsWith('/dashboard/corporate')) {
-      router.push('/dashboard');
-    }
-    */
     };
 
     checkCorporateStatus();
-  }, [session, status, router, pathname]);
+
+    // アクセス状態変更イベントのリスナー
+    const handleAccessChange = () => {
+      forceUpdate((prev) => prev + 1);
+    };
+
+    window.addEventListener('corporateAccessChanged', handleAccessChange);
+
+    return () => {
+      window.removeEventListener('corporateAccessChanged', handleAccessChange);
+    };
+  }, [session, status, router]);
 
   // ユーザーが認証されているが、まだ法人アカウント状態をチェック中
   if (status !== 'loading' && session && isLoading) {
@@ -189,30 +192,23 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   let sidebarItems = [...personalSidebarItems];
 
   // 法人プロファイルページにいる場合
-  if (pathname && pathname.startsWith('/dashboard/corporate-profile') && isCorporateAccount) {
+  if (
+    pathname &&
+    pathname.startsWith('/dashboard/corporate-profile') &&
+    corporateAccessState.hasAccess
+  ) {
     sidebarItems = [...corporateProfileSidebarItems];
   }
   // 法人ダッシュボードにいる場合
-  else if (pathname && pathname.startsWith('/dashboard/corporate') && isCorporateAccount) {
+  else if (
+    pathname &&
+    pathname.startsWith('/dashboard/corporate') &&
+    corporateAccessState.hasAccess
+  ) {
     sidebarItems = [...corporateSidebarItems];
   }
-  // 個人ダッシュボードにいる場合で法人ユーザーの場合
-  else if (isCorporateAccount) {
-    // 法人プロファイルへのリンクを追加
-    sidebarItems = [
-      ...personalSidebarItems,
-      {
-        title: '法人プロフィール',
-        href: '/dashboard/corporate-profile',
-        icon: <HiUser className="h-5 w-5" />,
-      },
-      {
-        title: '法人ダッシュボード',
-        href: '/dashboard/corporate',
-        icon: <HiOfficeBuilding className="h-5 w-5" />,
-      },
-    ];
-  }
+  // 個人ダッシュボードにいる場合で法人ユーザーの場合は「法人ダッシュボード」を通常メニューには含めない
+  // 区切り線と共に別途表示するため、ここでは追加しない
 
   return <DashboardLayout items={sidebarItems}>{children}</DashboardLayout>;
 }

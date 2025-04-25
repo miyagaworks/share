@@ -27,9 +27,14 @@ export async function sendEmail(options: EmailOptions) {
   // デフォルトの送信元メールアドレス
   const defaultFrom = process.env.EMAIL_FROM || 'support@sns-share.com';
 
-  // 開発環境の場合はコンソールにログ出力のみ
-  if (process.env.NODE_ENV === 'development') {
-    console.log('開発環境: メール送信をスキップします');
+  // 開発環境でもメール送信を強制する環境変数
+  const forceEmailInDev = process.env.FORCE_EMAIL_IN_DEV === 'true';
+
+  // 開発環境の場合はコンソールにログ出力のみ（FORCE_EMAIL_IN_DEV=true の場合を除く）
+  if (process.env.NODE_ENV === 'development' && !forceEmailInDev) {
+    console.log(
+      '開発環境: メール送信をスキップします（強制送信するには FORCE_EMAIL_IN_DEV=true を設定）',
+    );
     console.log({
       from: options.from || defaultFrom,
       to: options.to,
@@ -47,6 +52,12 @@ export async function sendEmail(options: EmailOptions) {
       text: options.text,
       html: options.html,
     };
+
+    console.log('メール送信を試みます:', {
+      from: mailOptions.from,
+      to: mailOptions.to,
+      subject: mailOptions.subject,
+    });
 
     const result = await transporter.sendMail(mailOptions);
     console.log('メール送信成功:', result.messageId);
@@ -79,7 +90,47 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
  * パスワードリセットメールを送信する関数
  */
 export async function sendPasswordResetEmail(email: string, resetToken: string) {
-  const resetUrl = `${process.env.NEXTAUTH_URL}/auth/reset-password?token=${resetToken}`;
+  // 環境変数から適切なベースURLを取得
+  const baseUrl =
+    process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+
+  // URLの正規化（末尾のスラッシュを削除）
+  const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+  // トークンからURL部分を除去して純粋なトークン値を取得
+  let cleanToken = resetToken;
+
+  // URLパターンをチェック（複数のレベルの入れ子に対応）
+  while (cleanToken.includes('http') && cleanToken.includes('?token=')) {
+    try {
+      // 最後のtoken=以降の部分を抽出
+      const tokenIndex = cleanToken.lastIndexOf('?token=');
+      if (tokenIndex !== -1) {
+        cleanToken = cleanToken.substring(tokenIndex + 7); // '?token='.length = 7
+      } else {
+        // tokenパラメータがない場合、URLからトークンを抽出試行
+        const url = new URL(cleanToken);
+        const tokenParam = url.searchParams.get('token');
+        if (tokenParam) {
+          cleanToken = tokenParam;
+        }
+        break;
+      }
+    } catch (e) {
+      console.error('トークン解析エラー:', e);
+      break;
+    }
+  }
+
+  // 正しいリセットURLを生成
+  const resetUrl = `${normalizedBaseUrl}/auth/reset-password?token=${cleanToken}`;
+
+  // デバッグログ
+  console.log('パスワードリセットURL生成:', {
+    原トークン: resetToken,
+    クリーン化トークン: cleanToken,
+    最終URL: resetUrl,
+  });
 
   return sendEmail({
     to: email,

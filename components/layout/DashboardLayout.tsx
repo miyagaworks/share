@@ -63,14 +63,16 @@ export function DashboardLayout({ children, items }: DashboardLayoutProps) {
       <div
         className={`flex-1 pt-16 transition-all ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}
       >
-        <main className="container mx-auto px-4 py-6 md:px-6 lg:px-8">
+        {/* 修正：コンテナのpx-4とmd:px-6を削除して一貫した余白を適用 */}
+        <main className="px-4 md:px-6 py-4 md:py-10">
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3 }}
             className={cn('pb-12', isMobile && 'pt-4')}
           >
-            {children}
+            {/* 修正：すべてのページで一貫した余白を適用するためのラッパー追加 */}
+            <div className="space-y-6 px-2 sm:px-4 w-full">{children}</div>
           </motion.div>
         </main>
       </div>

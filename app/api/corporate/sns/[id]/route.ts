@@ -171,13 +171,8 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
       return NextResponse.json({ error: 'リンクが見つかりません' }, { status: 404 });
     }
 
-    // 必須フラグが設定されていれば削除不可
-    if (link.isRequired) {
-      return NextResponse.json(
-        { error: '必須に設定されたリンクは削除できません' },
-        { status: 400 },
-      );
-    }
+    // 管理者は必須リンクも削除可能
+    // 必須フラグのチェックを削除
 
     // リンクを削除
     await prisma.corporateSnsLink.delete({

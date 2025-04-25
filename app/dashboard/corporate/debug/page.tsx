@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+// import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 
@@ -11,7 +11,7 @@ export default function CorporateDebugPage() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">法人アクセス診断ツール</h1>
         <Button variant="outline" onClick={() => router.back()}>
           ダッシュボードに戻る

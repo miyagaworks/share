@@ -124,25 +124,33 @@ export async function POST(req: NextRequest) {
     if (isCorporate) {
       console.log('法人プラン登録処理を開始します');
       // ユーザー名または会社名を取得
-      // 自動生成されるデフォルト名を使わない
       const companyName = user.company || ''; // 空欄にして、オンボーディングで設定させる
 
       try {
-        // 法人テナントを作成
-        const newTenant = await prisma.corporateTenant.create({
-          data: {
-            name: companyName || '新規法人アカウント', // 表示用の一時的な名前
-            maxUsers: plan === 'business-plus' ? 50 : 10,
-            admin: { connect: { id: session.user.id } },
-            users: { connect: [{ id: session.user.id }] },
-            // デフォルトの色設定
-            primaryColor: '#3B82F6',
-            secondaryColor: '#1E40AF',
-          },
+        // ユーザーがすでに法人テナントの管理者かどうかを確認
+        const existingTenantAsAdmin = await prisma.corporateTenant.findUnique({
+          where: { adminId: session.user.id },
         });
 
-        corporateTenant = newTenant;
-        console.log('法人テナント作成完了:', corporateTenant.id);
+        // 既に管理者の場合は新規作成せず、既存のテナントを使用
+        if (existingTenantAsAdmin) {
+          console.log('ユーザーは既に法人テナントの管理者です:', existingTenantAsAdmin.id);
+          corporateTenant = existingTenantAsAdmin;
+        } else {
+          // 法人テナントを作成
+          const newTenant = await prisma.corporateTenant.create({
+            data: {
+              name: companyName || '株式会社 共有商事',
+              maxUsers: plan === 'business-plus' ? 50 : 10,
+              adminId: session.user.id,
+              users: { connect: [{ id: session.user.id }] },
+              primaryColor: '#3B82F6',
+              secondaryColor: '#1E40AF',
+            },
+          });
+          corporateTenant = newTenant;
+          console.log('法人テナント作成完了:', corporateTenant.id);
+        }
 
         // ユーザーに法人ロールを設定
         await prisma.user.update({

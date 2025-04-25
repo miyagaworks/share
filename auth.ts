@@ -1,9 +1,30 @@
 // auth.ts
 import NextAuth from 'next-auth';
+import { DefaultSession } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
+
+// NextAuthの型定義に拡張を行う
+declare module 'next-auth' {
+  interface User {
+    role?: string | null;
+  }
+  interface Session {
+    user: {
+      id: string;
+      role?: string | null;
+    } & DefaultSession['user'];
+  }
+}
+
+// JWTの型拡張
+declare module 'next-auth/jwt' {
+  interface JWT {
+    role?: string | null;
+  }
+}
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
   providers: [
@@ -14,7 +35,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     Credentials({
       async authorize(credentials) {
         try {
-          // 型安全なcredentials処理
           if (!credentials) return null;
 
           const email = credentials.email as string;
@@ -26,7 +46,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           const normalizedEmail = email.toLowerCase();
 
-          // ユーザー検索（roleフィールドを追加）
           const user = await prisma.user.findUnique({
             where: { email: normalizedEmail },
             select: {
@@ -34,7 +53,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               name: true,
               email: true,
               password: true,
-              role: true, // roleフィールドを選択に追加
+              corporateRole: true,
             },
           });
 
@@ -47,12 +66,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return null;
           }
 
-          // 認証成功
           return {
             id: user.id,
             name: user.name,
             email: user.email,
-            role: user.role,
+            role: user.corporateRole,
           };
         } catch (error) {
           console.error('認証エラー:', error);
@@ -69,14 +87,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async session({ token, session }) {
       if (session.user) {
         session.user.id = token.sub || '';
-        session.user.role = token.role; // roleプロパティを処理
+        session.user.role = token.role;
       }
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
-        token.role = user.role; // roleプロパティを処理
+        token.role = user.role;
       }
       return token;
     },

@@ -108,26 +108,40 @@ export default function InviteUserPage() {
     try {
       setIsSending(true);
 
-      // 招待APIを呼び出す（実装予定）
-      // const response = await fetch('/api/corporate/users/invite', {
-      //   method: 'POST',
-      //   headers: { 'Content-Type': 'application/json' },
-      //   body: JSON.stringify({
-      //     emails: emailList,
-      //     role,
-      //     departmentId: departmentId || null
-      //   }),
-      // });
+      // 招待APIを呼び出す
+      const response = await fetch('/api/corporate/users/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          emails: emailList,
+          role,
+          departmentId: departmentId || null,
+        }),
+      });
 
-      // if (!response.ok) {
-      //   const data = await response.json();
-      //   throw new Error(data.error || '招待の送信に失敗しました');
-      // }
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || data.error || '招待の送信に失敗しました');
+      }
 
-      // 成功処理（モック）
-      await new Promise((resolve) => setTimeout(resolve, 1000));
+      const result = await response.json();
 
-      toast.success(`${emailList.length}人のユーザーに招待を送信しました`);
+      // 招待結果の処理
+      if (result.errors && result.errors.length > 0) {
+        // エラーがあるが一部成功した場合
+        if (result.invitedCount > 0) {
+          toast.success(`${result.invitedCount}人のユーザーに招待を送信しました`);
+          toast.error(`${result.errors.length}件のエラーがありました: ${result.errors.join(', ')}`);
+        } else {
+          // すべて失敗した場合
+          throw new Error(`招待の送信に失敗しました: ${result.errors.join(', ')}`);
+        }
+      } else {
+        // すべて成功した場合
+        toast.success(`${result.invitedCount}人のユーザーに招待を送信しました`);
+      }
+
+      // ユーザー一覧ページに戻る
       router.push('/dashboard/corporate/users');
     } catch (err) {
       console.error('招待送信エラー:', err);
@@ -298,7 +312,7 @@ export default function InviteUserPage() {
       {/* ヘルプセクション */}
       <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
         <h3 className="text-sm font-medium text-blue-800 mb-2">招待について</h3>
-        <p className="text-sm text-blue-700">
+        <p className="text-sm text-blue-700 text-justify">
           招待されたユーザーには、メールで招待リンクが送信されます。
           ユーザーがリンクをクリックすると、パスワードの設定後にテナントに参加できます。
           招待は72時間有効です。

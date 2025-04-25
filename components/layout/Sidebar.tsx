@@ -7,7 +7,7 @@ import { usePathname } from 'next/navigation';
 import { HiChevronLeft, HiChevronRight, HiHome, HiOfficeBuilding } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-// import Image from 'next/image';
+import { corporateAccessState } from '@/lib/corporateAccessState';
 
 interface SidebarProps {
   items: {
@@ -47,11 +47,13 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     );
   }
 
-  // メインメニュー項目と追加メニュー項目を分離
+  // メインメニュー項目
   const mainMenuItems = [...items];
+
+  // 追加リンク用変数
   let additionalLink = null;
 
-  // 法人セクションにいる場合、個人ダッシュボードへのリンクを追加メニューに
+  // 法人セクションにいる場合、個人ダッシュボードへのリンクを追加
   if (isCorporateSection) {
     additionalLink = {
       title: '個人ダッシュボード',
@@ -59,22 +61,18 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       icon: <HiHome className="h-5 w-5" />,
     };
   }
-  // 個人セクションにいる場合、法人ダッシュボードへのリンクを追加メニューに
-  else if (!isCorporateSection && pathname?.startsWith('/dashboard')) {
-    // mainMenuItemsから法人ダッシュボードへのリンクが含まれている場合は削除
-    const corporateLinkIndex = mainMenuItems.findIndex(
-      (item) => item.href === '/dashboard/corporate',
-    );
-    if (corporateLinkIndex >= 0) {
-      additionalLink = mainMenuItems.splice(corporateLinkIndex, 1)[0];
-    } else {
-      // 含まれていない場合は新規作成
-      additionalLink = {
-        title: '法人ダッシュボード',
-        href: '/dashboard/corporate',
-        icon: <HiOfficeBuilding className="h-5 w-5" />,
-      };
-    }
+  
+  // 個人セクションにいて法人アクセス権がある場合、法人ダッシュボードへのリンクを追加
+  else if (
+    !isCorporateSection &&
+    pathname?.startsWith('/dashboard') &&
+    corporateAccessState.hasAccess
+  ) {
+    additionalLink = {
+      title: '法人ダッシュボード',
+      href: '/dashboard/corporate',
+      icon: <HiOfficeBuilding className="h-5 w-5" />,
+    };
   }
 
   return (

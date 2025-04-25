@@ -28,7 +28,34 @@ type ResetPasswordFormData = z.infer<typeof ResetPasswordSchema>;
 function ResetPasswordContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const token = searchParams.get('token');
+  // トークンの取得と強化された正規化
+  const rawToken = searchParams.get('token') || '';
+  let token = rawToken;
+
+  // 複数レベルの入れ子URLに対応
+  while (token.includes('http') && token.includes('?token=')) {
+    try {
+      // 最後のtoken=以降の部分を抽出
+      const tokenIndex = token.lastIndexOf('?token=');
+      if (tokenIndex !== -1) {
+        token = token.substring(tokenIndex + 7); // '?token='.length = 7
+      } else {
+        // tokenパラメータがない場合、URLからトークンを抽出試行
+        const url = new URL(token);
+        const tokenParam = url.searchParams.get('token');
+        if (tokenParam) {
+          token = tokenParam;
+        }
+        break;
+      }
+    } catch (e) {
+      console.error('トークン解析エラー:', e);
+      break;
+    }
+  }
+
+  console.log('受け取ったトークン:', rawToken);
+  console.log('処理後のトークン:', token);
 
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);

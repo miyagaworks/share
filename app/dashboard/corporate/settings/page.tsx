@@ -222,21 +222,34 @@ export default function CorporateSettingsPage() {
         }),
       });
 
+      // エラーレスポンスの詳細な処理
       if (!response.ok) {
         const data = await response.json();
+        console.error('設定更新APIエラー詳細:', data);
+
+        // 権限エラーの場合は特別なメッセージを表示
+        if (response.status === 403) {
+          setIsAdmin(false); // 権限がないとAPIが判断した場合、UI状態も更新
+          throw new Error(data.error || '管理者権限がありません');
+        }
+
         throw new Error(data.error || '設定の更新に失敗しました');
       }
 
       const responseData = await response.json();
-      // responseData 変数を実際に使用
-      setTenantData(responseData.tenant);
-      setIsAdmin(responseData.userRole === 'admin');
+      console.log('設定更新成功:', responseData);
+
+      // APIからisAdminが返ってくる場合はそれを使用
+      if (responseData.isAdmin !== undefined) {
+        setIsAdmin(responseData.isAdmin);
+      }
 
       // テナントデータを更新
-      if (tenantData) {
+      if (tenantData && responseData.tenant) {
+        // 必須フィールドを明示的に指定
         setTenantData({
           ...tenantData,
-          name: companyName,
+          name: responseData.tenant.name || tenantData.name,
         });
       }
 
@@ -968,12 +981,7 @@ export default function CorporateSettingsPage() {
                 </div>
                 {isAdmin && (
                   <div className="flex justify-end">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleSaveBillingSettings}
-                      disabled={isSaving}
-                    >
+                    <Button onClick={handleSaveBillingSettings} disabled={isSaving}>
                       {isSaving ? (
                         <>
                           <Spinner size="sm" className="mr-2" />

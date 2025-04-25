@@ -66,11 +66,12 @@ export async function PUT(req: Request) {
     const body = await req.json();
     const { name, type } = body;
 
-    // ユーザーとテナント情報を取得
+    // ユーザーとテナント情報を取得（tenant情報も含める）
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
         adminOfTenant: true,
+        tenant: true, // テナント情報も含める
       },
     });
 
@@ -78,12 +79,19 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
 
-    // 管理者権限の確認
-    if (!user.adminOfTenant) {
+    // 管理者権限の確認（adminOfTenantが存在するか）
+    const isAdmin = !!user.adminOfTenant;
+
+    if (!isAdmin) {
       return NextResponse.json(
         { error: '法人アカウント設定の変更には管理者権限が必要です' },
         { status: 403 },
       );
+    }
+
+    // tenantIdを一度だけ宣言（nullチェック付き）
+    if (!user.adminOfTenant) {
+      return NextResponse.json({ error: '管理者のテナント情報が見つかりません' }, { status: 404 });
     }
 
     const tenantId = user.adminOfTenant.id;
@@ -109,12 +117,6 @@ export async function PUT(req: Request) {
         }
         updateData = { name };
         billingDescription = '基本設定の更新';
-        break;
-
-      case 'security':
-        const { securitySettings } = body;
-        updateData.securitySettings = securitySettings;
-        billingDescription = 'セキュリティ設定の更新';
         break;
 
       case 'notifications':
@@ -151,7 +153,7 @@ export async function PUT(req: Request) {
           status: 'paid',
           description: billingDescription,
           paidAt: new Date(),
-        }
+        },
       });
 
       return updatedTenant;

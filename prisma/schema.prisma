@@ -26,6 +26,8 @@ model User {
   bio             String?   // 自己紹介
   mainColor       String    @default("#3B82F6") // デフォルトは青
   snsIconColor    String?   @default("#333333") // デフォルトは黒に近いグレー
+  headerText      String?
+  textColor       String?
   phone           String?   // 電話番号
   company         String?   // 会社/組織名
   companyUrl      String?   // 会社/組織のWebサイト

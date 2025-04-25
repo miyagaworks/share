@@ -18,6 +18,7 @@ interface ImprovedSnsIconProps {
 // SNS別の元のカラー
 const SNS_COLORS: Record<string, string> = {
   line: '#06C755',
+  'official-line': '#06C755',
   youtube: '#FF0000',
   x: '#000000',
   instagram: '#E4405F',
@@ -87,6 +88,8 @@ export function ImprovedSnsIcon({
   // プラットフォーム別のアイコン表示
   switch (platform) {
     case 'line':
+      return renderCustomSvg(LINE_SVG_PATH);
+    case 'official-line':
       return renderCustomSvg(LINE_SVG_PATH);
     case 'note':
       return renderCustomSvg(NOTE_SVG_PATH);

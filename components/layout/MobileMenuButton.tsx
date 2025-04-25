@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { HiMenu, HiX, HiOfficeBuilding } from 'react-icons/hi';
+import { HiMenu, HiX, HiOfficeBuilding, HiHome } from 'react-icons/hi';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -22,7 +22,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   // 強制再レンダリング用
-  const [renderKey, setRenderKey] = useState(0);
+  const [, setRenderKey] = useState(0);
 
   // 法人アクセス権を確認
   useEffect(() => {
@@ -60,21 +60,23 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
   const isCorporateSection = pathname?.startsWith('/dashboard/corporate') || false;
 
   // 追加リンク処理
-  let additionalLinks = [];
+  const additionalLinks = [];
 
   // 法人セクションにいる場合、個人ダッシュボードへのリンクを追加
   if (isCorporateSection) {
     additionalLinks.push({
       title: '個人ダッシュボード',
       href: '/dashboard',
-      icon: items.find((item) => item.href === '/dashboard')?.icon || null,
+      icon: <HiHome className="h-5 w-5" />,
     });
   }
+
   // 個人セクションで法人アクセス権がある場合は法人ダッシュボードへのリンクを追加
   else if (pathname?.startsWith('/dashboard') && corporateAccessState.hasAccess === true) {
     // 法人ダッシュボードへのリンクが既にitemsにある場合は使用
     const corporateLink = items.find((item) => item.href === '/dashboard/corporate');
 
+    // 法人プランの場合のみ追加リンクを表示
     additionalLinks.push(
       corporateLink || {
         title: '法人ダッシュボード',

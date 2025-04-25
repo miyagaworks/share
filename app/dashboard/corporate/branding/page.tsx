@@ -11,6 +11,7 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { toast } from 'react-hot-toast';
 import { HiSave, HiRefresh } from 'react-icons/hi';
 import Image from 'next/image';
+import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
 
 // テナント情報の型定義
 interface TenantData {
@@ -104,6 +105,11 @@ export default function CorporateBrandingPage() {
       try {
         setIsLoading(true);
 
+        // まずグローバル状態をチェック
+        await checkCorporateAccess(true); // 強制的に最新の状態を取得
+
+        console.log('グローバル状態:', corporateAccessState);
+
         // テナント情報取得API
         const response = await fetch('/api/corporate/tenant');
 
@@ -112,8 +118,11 @@ export default function CorporateBrandingPage() {
         }
 
         const data = await response.json();
+        console.log('テナント情報取得結果:', data);
+
         setTenantData(data.tenant);
-        setIsAdmin(data.userRole === 'admin');
+        // APIから直接isAdminフラグを取得
+        setIsAdmin(data.isAdmin === true);
 
         // 色情報を設定
         if (data.tenant.primaryColor) {
@@ -129,7 +138,22 @@ export default function CorporateBrandingPage() {
         setError(null);
       } catch (err) {
         console.error('テナント情報取得エラー:', err);
-        setError('テナント情報を読み込めませんでした');
+
+        // グローバル状態から取得
+        if (corporateAccessState.hasAccess && corporateAccessState.tenantId) {
+          setIsAdmin(corporateAccessState.isAdmin);
+          // フォールバックデータの設定
+          setTenantData({
+            id: corporateAccessState.tenantId || 'unknown',
+            name: '接続エラー - データ取得中',
+            logoUrl: null,
+            primaryColor: null,
+            secondaryColor: null,
+          });
+          setError('テナント情報を取得できませんでした。一部機能が制限されます。');
+        } else {
+          setError('テナント情報を読み込めませんでした');
+        }
       } finally {
         setIsLoading(false);
       }
@@ -231,6 +255,13 @@ export default function CorporateBrandingPage() {
           <p className="text-gray-500 mt-1">
             会社のロゴとカラーを設定して、統一感のあるプロフィールを作成します
           </p>
+          {/* 管理者ステータスの表示（デバッグ用） */}
+          {process.env.NODE_ENV === 'development' && (
+            <p className="text-xs text-gray-400 mt-1">
+              管理者権限: {isAdmin ? 'あり' : 'なし'}
+              (グローバル状態: {corporateAccessState.isAdmin ? 'あり' : 'なし'})
+            </p>
+          )}
         </div>
 
         {isAdmin && (

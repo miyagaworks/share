@@ -1,9 +1,9 @@
 // app/api/corporate/tenant/route.ts
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET(req: NextRequest) {
+export async function GET() {
   try {
     console.log('[API] /api/corporate/tenant リクエスト受信');
 
@@ -24,7 +24,7 @@ export async function GET(req: NextRequest) {
       include: {
         adminOfTenant: {
           include: {
-            subscription: true, // サブスクリプションも含める
+            subscription: true,
             users: {
               select: {
                 id: true,
@@ -44,7 +44,7 @@ export async function GET(req: NextRequest) {
         },
         tenant: {
           include: {
-            subscription: true, // サブスクリプションも含める
+            subscription: true,
             users: {
               select: {
                 id: true,
@@ -72,12 +72,6 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    console.log('[API] ユーザー情報取得成功:', {
-      hasAdminTenant: !!user.adminOfTenant,
-      hasTenant: !!user.tenant,
-      hasSubscription: !!user.subscription,
-    });
-
     // 法人テナント情報を取得（管理者または一般メンバー）
     const tenant = user.adminOfTenant || user.tenant;
 
@@ -87,18 +81,17 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'No tenant associated with this user' }, { status: 404 });
     }
 
-    // サブスクリプションチェック
-    const hasCorporateSubscription =
-      user.subscription &&
-      (user.subscription.plan === 'business' ||
-        user.subscription.plan === 'business-plus' ||
-        user.subscription.plan === 'enterprise') &&
-      user.subscription.status === 'active';
+    // 管理者権限の確認
+    const isAdmin = !!user.adminOfTenant;
+    const userRole = isAdmin ? 'admin' : 'member';
 
-    if (!hasCorporateSubscription) {
-      console.log('[API] 有効な法人サブスクリプションがありません:', userId);
-      return NextResponse.json({ error: 'No active corporate subscription' }, { status: 403 });
-    }
+    console.log('[API] テナント情報取得成功:', {
+      hasAdminTenant: !!user.adminOfTenant,
+      hasTenant: !!user.tenant,
+      hasSubscription: !!user.subscription,
+      isAdmin,
+      userRole,
+    });
 
     // アカウント停止状態確認
     if (tenant.accountStatus === 'suspended') {
@@ -110,6 +103,8 @@ export async function GET(req: NextRequest) {
             ...tenant,
             accountStatus: 'suspended',
           },
+          isAdmin,
+          userRole,
         },
         { status: 403 },
       );
@@ -117,8 +112,12 @@ export async function GET(req: NextRequest) {
 
     console.log('[API] テナント情報返却:', tenant.id);
 
-    // 正常レスポンス
-    return NextResponse.json({ tenant });
+    // 正常レスポンス - ユーザーロールとisAdminフラグを追加
+    return NextResponse.json({
+      tenant,
+      isAdmin,
+      userRole,
+    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('[API] テナント情報取得エラー:', error);

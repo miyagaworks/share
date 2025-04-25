@@ -23,31 +23,29 @@ export function DashboardCard({
     onClick,
 }: DashboardCardProps) {
     return (
-        <motion.div
-            className={cn(
-                "relative overflow-hidden rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md",
-                onClick && "cursor-pointer",
-                className
-            )}
-            whileHover={{ y: -4, transition: { duration: 0.2 } }}
-            onClick={onClick}
-        >
-            <div className="flex items-start justify-between gap-4">
-                <div>
-                    <h3 className="flex items-center text-lg font-semibold text-gray-900">
-                        {icon && <span className="mr-2">{icon}</span>}
-                        {title}
-                    </h3>
-                    {description && (
-                        <p className="mt-1 text-sm text-gray-500">{description}</p>
-                    )}
-                </div>
-            </div>
+      <motion.div
+        className={cn(
+          'relative rounded-xl border border-gray-100 bg-white p-6 shadow-sm transition-all duration-200 hover:shadow-md',
+          onClick && 'cursor-pointer',
+          className,
+        )}
+        whileHover={{ y: -4, transition: { duration: 0.2 } }}
+        onClick={onClick}
+      >
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h3 className="flex items-center text-lg font-semibold text-gray-900">
+              {icon && <span className="mr-2">{icon}</span>}
+              {title}
+            </h3>
+            {description && <p className="mt-1 text-sm text-gray-500">{description}</p>}
+          </div>
+        </div>
 
-            {children && <div className="mt-4">{children}</div>}
+        {children && <div className="mt-4">{children}</div>}
 
-            {footer && <div className="mt-4">{footer}</div>}
-        </motion.div>
+        {footer && <div className="mt-4">{footer}</div>}
+      </motion.div>
     );
 }
 

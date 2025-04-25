@@ -1,0 +1,103 @@
+// app/api/corporate/users/route.ts
+import { NextResponse } from 'next/server';
+import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
+
+export async function GET() {
+  try {
+    console.log('[API] /api/corporate/users リクエスト受信');
+
+    // セッション認証チェック
+    const session = await auth();
+
+    if (!session || !session.user?.id) {
+      console.log('[API] 認証されていないアクセス');
+      return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
+    }
+
+    const userId = session.user.id;
+    console.log('[API] ユーザーID:', userId);
+
+    // ユーザー情報を取得（より単純なクエリ）
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+    });
+
+    if (!user) {
+      console.log('[API] ユーザーが見つかりません');
+      return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+    }
+
+    // テナントIDを取得するための追加クエリ
+    // adminOfTenantの関係を持つユーザーを検索
+    const corporateTenant = await prisma.corporateTenant.findFirst({
+      where: { adminId: userId },
+    });
+
+    // 管理者権限を持つか確認
+    const isAdmin = !!corporateTenant;
+
+    if (!isAdmin) {
+      console.log('[API] 管理者権限がありません');
+      return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
+    }
+
+    if (!corporateTenant) {
+      console.log('[API] テナントが見つかりません');
+      return NextResponse.json({ error: 'テナント情報が見つかりません' }, { status: 404 });
+    }
+
+    // テナントのユーザー一覧を取得
+    const users = await prisma.user.findMany({
+      where: {
+        OR: [{ tenantId: corporateTenant.id }, { id: corporateTenant.adminId }],
+      },
+      include: {
+        department: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    // ユーザー情報を整形
+    const formattedUsers = users.map((user) => {
+      const isUserAdmin = user.id === corporateTenant.adminId;
+
+      return {
+        id: user.id,
+        name: user.name || '名前未設定',
+        email: user.email,
+        corporateRole: user.corporateRole || (isUserAdmin ? 'admin' : 'member'),
+        department: user.department,
+        isAdmin: isUserAdmin,
+        isInvited: !user.emailVerified,
+        invitedAt: user.emailVerified ? null : user.createdAt.toISOString(),
+        createdAt: user.createdAt.toISOString(),
+      };
+    });
+
+    console.log('[API] 成功: ユーザー数', formattedUsers.length);
+
+    return NextResponse.json({
+      success: true,
+      users: formattedUsers,
+      isAdmin: true,
+      tenantId: corporateTenant.id,
+    });
+  } catch (error) {
+    console.error('[API] エラー:', error);
+    return NextResponse.json(
+      {
+        error: 'ユーザー情報の取得に失敗しました',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
+  }
+}
