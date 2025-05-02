@@ -1,7 +1,7 @@
 // components/guards/CorporateAccessGuard.tsx
 'use client';
 
-import { ReactNode, useEffect, useState } from 'react';
+import { ReactNode, useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { Session } from 'next-auth';
 import { useSession } from 'next-auth/react';
@@ -19,6 +19,11 @@ interface CorporateAccessState {
   error?: string | null;
 }
 
+// デバッグパネルの詳細情報の型を定義
+interface DebugDetails {
+  [key: string]: unknown;
+}
+
 // DebugPanelのProps型定義
 interface DebugPanelProps {
   session: Session | null;
@@ -26,11 +31,11 @@ interface DebugPanelProps {
 }
 
 // デバッグフラグを追加
-const DEBUG_MODE = true; // 開発時にはtrueに設定
+const DEBUG_MODE = process.env.NODE_ENV === 'development'; // 開発時にはtrueに設定
 
 // デバッグパネルコンポーネント
 const DebugPanel = ({ session, corporateState }: DebugPanelProps) => {
-  const [details, setDetails] = useState<any>(null);
+  const [details, setDetails] = useState<DebugDetails | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
@@ -110,31 +115,46 @@ interface CorporateAccessGuardProps {
 
 export function CorporateAccessGuard({
   children,
-  debugMode = process.env.NODE_ENV === 'development' || DEBUG_MODE,
+  // 開発環境またはテスト中は自動的にデバッグモードを有効化
+  debugMode = DEBUG_MODE,
 }: CorporateAccessGuardProps) {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  // 強制再レンダリング用の状態
   const [renderKey, setRenderKey] = useState(0);
-  // デバッグモード用の状態
   const [bypassEnabled, setBypassEnabled] = useState(false);
-  // 再試行回数を追跡
   const [retryCount, setRetryCount] = useState(0);
   const [showDetailedError, setShowDetailedError] = useState(false);
-  // デバッグ用状態を追加
   const [showDebugPanel, setShowDebugPanel] = useState(false);
 
-  console.log('[CorporateAccessGuard] 初期状態:', {
-    isLoading,
-    moduleState: corporateAccessState,
-    sessionStatus: status,
-    debugMode,
-    retryCount,
-  });
+  // デバッグ用：アクセス状態を手動で更新
+  const forceEnableAccess = useCallback(() => {
+    console.log('[CorporateAccessGuard] デバッグモード: アクセス権を強制的に有効化');
 
+    // グローバル状態を直接更新
+    corporateAccessState.hasAccess = true;
+    corporateAccessState.isAdmin = true;
+    corporateAccessState.tenantId = 'debug-tenant-id';
+    corporateAccessState.userRole = 'admin';
+    corporateAccessState.lastChecked = Date.now();
+    corporateAccessState.error = null;
+
+    // イベントをディスパッチして他のコンポーネントに通知
+    window.dispatchEvent(
+      new CustomEvent('corporateAccessChanged', {
+        detail: { ...corporateAccessState },
+      }),
+    );
+
+    setBypassEnabled(true);
+    setError(null);
+    setErrorDetails(null);
+    setRenderKey((prev) => prev + 1);
+  }, []);
+
+  // メインの useEffect - 1番目
   useEffect(() => {
     if (status === 'loading') return;
 
@@ -204,32 +224,16 @@ export function CorporateAccessGuard({
     };
   }, [session, status, router, retryCount]);
 
-  // デバッグ用：アクセス状態を手動で更新
-  const forceEnableAccess = () => {
-    console.log('[CorporateAccessGuard] デバッグモード: アクセス権を強制的に有効化');
+  // デバッグモード用の useEffect - 2番目
+  useEffect(() => {
+    // 中で条件判定する
+    if (debugMode && process.env.NODE_ENV === 'development') {
+      console.log('[CorporateAccessGuard] デバッグモード：アクセスを自動的に許可します');
+      forceEnableAccess();
+    }
+  }, [debugMode, forceEnableAccess]);
 
-    // グローバル状態を直接更新
-    corporateAccessState.hasAccess = true;
-    corporateAccessState.isAdmin = true;
-    corporateAccessState.tenantId = 'debug-tenant-id';
-    corporateAccessState.userRole = 'admin';
-    corporateAccessState.lastChecked = Date.now();
-    corporateAccessState.error = null;
-
-    // イベントをディスパッチして他のコンポーネントに通知
-    window.dispatchEvent(
-      new CustomEvent('corporateAccessChanged', {
-        detail: { ...corporateAccessState },
-      }),
-    );
-
-    setBypassEnabled(true);
-    setError(null);
-    setErrorDetails(null);
-    setRenderKey((prev) => prev + 1);
-  };
-
-  // ロギング用
+  // ロギング用の useEffect - 3番目
   useEffect(() => {
     console.log('[CorporateAccessGuard] レンダリング実行。状態:', {
       isLoading,
@@ -239,6 +243,14 @@ export function CorporateAccessGuard({
     });
   });
 
+  console.log('[CorporateAccessGuard] 初期状態:', {
+    isLoading,
+    moduleState: corporateAccessState,
+    sessionStatus: status,
+    debugMode,
+    retryCount,
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -246,15 +258,6 @@ export function CorporateAccessGuard({
       </div>
     );
   }
-
-  // デバッグモード用：強制的にアクセス許可
-  useEffect(() => {
-    // デバッグモードが有効かつ開発環境の場合は常にアクセスを許可
-    if (debugMode && process.env.NODE_ENV === 'development') {
-      console.log('[CorporateAccessGuard] デバッグモード：アクセスを自動的に許可します');
-      forceEnableAccess();
-    }
-  }, [debugMode]);
 
   // アクセス拒否画面の条件を変更
   if (!bypassEnabled && corporateAccessState.hasAccess !== true && !debugMode) {
@@ -344,21 +347,25 @@ export function CorporateAccessGuard({
   return (
     <>
       {children}
-      
+
       {/* デバッグ情報表示（開発環境またはデバッグモード時のみ） */}
       {(process.env.NODE_ENV === 'development' || debugMode) && (
         <div className="mt-4 p-4 border border-yellow-300 rounded bg-yellow-50">
           <h3 className="font-medium mb-2">CorporateAccessGuard デバッグ情報</h3>
           <pre className="bg-white p-2 rounded text-xs mb-3 overflow-auto max-h-40">
-            {JSON.stringify({
-              hasAccess: corporateAccessState.hasAccess,
-              isAdmin: corporateAccessState.isAdmin,
-              tenantId: corporateAccessState.tenantId,
-              lastChecked: corporateAccessState.lastChecked,
-              error: corporateAccessState.error,
-              debugMode,
-              bypassEnabled,
-            }, null, 2)}
+            {JSON.stringify(
+              {
+                hasAccess: corporateAccessState.hasAccess,
+                isAdmin: corporateAccessState.isAdmin,
+                tenantId: corporateAccessState.tenantId,
+                lastChecked: corporateAccessState.lastChecked,
+                error: corporateAccessState.error,
+                debugMode,
+                bypassEnabled,
+              },
+              null,
+              2,
+            )}
           </pre>
           <button
             className="px-3 py-1 bg-blue-500 text-white rounded text-sm"

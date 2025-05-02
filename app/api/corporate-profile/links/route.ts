@@ -53,7 +53,7 @@ export async function GET() {
       ...link,
       corporateColors: {
         primaryColor: tenantInfo?.primaryColor || '#3B82F6',
-        secondaryColor: tenantInfo?.secondaryColor || '#1E40AF',
+        secondaryColor: tenantInfo?.secondaryColor || 'var(--color-corporate-secondary)',
       },
     }));
 
@@ -61,7 +61,7 @@ export async function GET() {
       ...link,
       corporateColors: {
         primaryColor: tenantInfo?.primaryColor || '#3B82F6',
-        secondaryColor: tenantInfo?.secondaryColor || '#1E40AF',
+        secondaryColor: tenantInfo?.secondaryColor || 'var(--color-corporate-secondary)',
       },
     }));
 
@@ -71,7 +71,7 @@ export async function GET() {
       customLinks: enrichedCustomLinks,
       corporateColors: {
         primaryColor: tenantInfo?.primaryColor || '#3B82F6',
-        secondaryColor: tenantInfo?.secondaryColor || '#1E40AF',
+        secondaryColor: tenantInfo?.secondaryColor || 'var(--color-corporate-secondary)',
       },
     });
   } catch (error) {

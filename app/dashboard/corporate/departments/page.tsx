@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { Input } from '@/components/ui/Input';
-import { HiPlus, HiPencil, HiTrash, HiOfficeBuilding, HiUsers } from 'react-icons/hi';
+import { HiPlus, HiPencil, HiTrash, HiOfficeBuilding, HiInformationCircle, HiUsers } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
 
 // 部署情報の型定義
@@ -422,14 +422,18 @@ export default function DepartmentsPage() {
       )}
 
       {/* 部署管理のヒント */}
-      <div className="bg-blue-50 border border-blue-100 rounded-lg p-6 mt-8">
-        <h3 className="font-medium text-blue-800 mb-2">部署管理のポイント</h3>
-        <ul className="space-y-2 text-sm text-blue-700">
-          <li>• 部署を作成すると、ユーザーを適切に分類できます</li>
-          <li>• 部署名は簡潔かつ明確にすることをおすすめします</li>
-          <li>• ユーザーが所属している部署は削除できません</li>
-          <li>• 部署ごとにプロフィールテンプレートを設定できます（近日公開）</li>
-        </ul>
+      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 w-full">
+        <div className="flex flex-row items-start">
+          <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
+          <div className="w-full">
+            <h3 className="font-medium text-blue-900 mb-1">部署管理について</h3>
+            <p className="text-sm text-corporate-secondary break-words hyphens-auto text-justify">
+              法人アカウントに所属する部署を管理できます。部署を作成するとユーザーを適切に分類でき、
+              組織の構造を明確にすることができます。部署名は簡潔かつ明確にすることをおすすめします。
+              ユーザーが所属している部署は削除できません。
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

@@ -2,7 +2,12 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
+import {
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription
+} from '@/components/ui/Dialog';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { SNS_METADATA, type SnsPlatform, SNS_PLATFORMS } from '@/types/sns';
 import { SnsGuideModalWithDescription } from '@/components/shared/SnsGuideModalWithDescription';
@@ -27,7 +32,6 @@ export function CorporateSnsAddForm({
   const [username, setUsername] = useState('');
   const [url, setUrl] = useState('');
   const [isRequired, setIsRequired] = useState(false);
-  const [description, setDescription] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // ガイドモーダル用のステート
@@ -104,7 +108,6 @@ export function CorporateSnsAddForm({
     setUsername('');
     setUrl('');
     setIsRequired(false);
-    setDescription('');
   };
 
   // 送信処理
@@ -135,7 +138,6 @@ export function CorporateSnsAddForm({
         username,
         url: finalUrl,
         isRequired,
-        description: description || undefined,
       });
 
       if (result.error) {
@@ -184,6 +186,7 @@ export function CorporateSnsAddForm({
     <DialogContent className="sm:max-w-md bg-white w-full max-w-full">
       <DialogHeader>
         <DialogTitle>法人共通SNSリンクを追加</DialogTitle>
+        <DialogDescription>法人共通のSNSリンク設定を行います。</DialogDescription>
       </DialogHeader>
 
       <div className="space-y-4 mt-4">
@@ -298,15 +301,6 @@ export function CorporateSnsAddForm({
                 </div>
               </>
             )}
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">説明（任意）</label>
-              <Input
-                value={description}
-                onChange={(e) => setDescription(e.target.value)}
-                placeholder="このSNSアカウントの説明"
-              />
-            </div>
 
             <div className="flex items-center">
               <input

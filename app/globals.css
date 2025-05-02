@@ -1,7 +1,18 @@
 @import "tailwindcss";
 :root {
+    /* 既存の変数 */
     --background: #E8EAEE;
     --foreground: #171717;
+
+    /* 追加する変数 */
+    --color-blue-primary: #3B82F6;
+    --color-blue-secondary: #1E40AF;
+
+    /* 法人用の色 */
+    --color-corporate-primary: #1E3A8A;
+    --color-corporate-secondary: #122153;
+
+    /* 残りの変数 */
     --color-background: var(--background);
     --color-foreground: var(--foreground);
     --font-sans: var(--font-geist-sans);
@@ -19,6 +30,201 @@ body {
     background: var(--background);
     color: var(--foreground);
     font-family: Arial, Helvetica, sans-serif;
+}
+
+/* 法人テーマ用のカスタムスタイル */
+.corporate-theme {
+    /* テーマカラーを指定 */
+    --theme-primary: var(--color-corporate-primary);
+    --theme-secondary: var(--color-corporate-secondary);
+}
+
+/* カードやコンテナのアクセント */
+.corporate-theme .bg-blue-50 {
+    background-color: rgba(30, 58, 138, 0.05);
+}
+
+.corporate-theme .border-blue-100 {
+    border-color: rgba(30, 58, 138, 0.1);
+}
+
+.corporate-theme .text-blue-600,
+.corporate-theme .text-blue-700,
+.corporate-theme .text-blue-800 {
+    color: var(--color-corporate-primary);
+}
+
+/* ボタンスタイルのオーバーライド */
+.corporate-theme .bg-blue-600 {
+    background-color: var(--color-corporate-primary);
+}
+
+.corporate-theme .hover\:bg-blue-700:hover,
+.corporate-theme .hover\:bg-blue-800:hover {
+    background-color: var(--color-corporate-secondary);
+}
+
+.corporate-theme .focus-visible\:ring-blue-500:focus-visible {
+    --tw-ring-color: var(--color-corporate-primary);
+}
+
+.btn-corporate {
+    background-color: #1E3A8A !important;
+    color: white !important;
+}
+
+.btn-corporate:hover {
+    background-color: #122153 !important;
+}
+
+.btn-corporate-outline {
+    background-color: white !important;
+    color: #1E3A8A !important;
+    border: 1px solid #1E3A8A !important;
+}
+
+.btn-corporate-outline:hover {
+    background-color: rgba(30, 58, 138, 0.05) !important;
+}
+
+[variant="corporate"] {
+    background-color: #1E3A8A !important;
+    color: white !important;
+}
+
+[variant="corporateOutline"] {
+    background-color: white !important;
+    color: #1E3A8A !important;
+    border: 1px solid #1E3A8A !important;
+}
+
+/* チェックボックスを紺色に変更する明示的なスタイル */
+.corporate-theme input[type="checkbox"] {
+    accent-color: #1E3A8A !important;
+    /* corporate-primary */
+}
+
+.corporate-theme input[type="checkbox"]:checked {
+    background-color: #1E3A8A !important;
+    border-color: #1E3A8A !important;
+}
+
+/* チェックボックスのフォーカス時のスタイル */
+.corporate-theme input[type="checkbox"]:focus {
+    outline: 2px solid rgba(30, 58, 138, 0.5) !important;
+}
+
+.corporate-theme .btn-corporate,
+.corporate-theme button[variant="corporate"] {
+    background-color: #1E3A8A !important;
+    color: white !important;
+}
+
+.corporate-theme .btn-corporate:hover,
+.corporate-theme button[variant="corporate"]:hover {
+    background-color: #122153 !important;
+}
+
+/* 設定を保存ボタンなどに適用 */
+.corporate-theme button[type="submit"],
+.corporate-theme .save-button {
+    background-color: #1E3A8A !important;
+    color: white !important;
+}
+
+/* フォーカスリングの色を変更 */
+.corporate-theme *:focus {
+    --tw-ring-color: rgba(30, 58, 138, 0.5) !important;
+}
+
+.corporate-theme input:focus,
+.corporate-theme select:focus,
+.corporate-theme textarea:focus {
+    border-color: #1E3A8A !important;
+    box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2) !important;
+}
+
+/* 法人メニューのアクティブスタイル */
+.corporate-menu-active {
+    background-color: rgba(30, 58, 138, 0.1);
+    color: var(--color-corporate-primary);
+}
+
+.corporate-icon-active {
+    color: var(--color-corporate-primary);
+}
+
+/* 法人メンバープロフィールページのアイコン用スタイル */
+[class*="dashboard/corporate-member"] svg,
+[class*="dashboard/corporate-member"] .h-5.w-5,
+[class*="dashboard/corporate-member"] .h-8.w-8 {
+    color: var(--color-corporate-primary) !important;
+}
+
+/* hover時も同じスタイルを適用 */
+.hover\:corporate-menu-active:hover {
+    background-color: rgba(30, 58, 138, 0.1);
+    color: var(--color-corporate-primary);
+}
+
+.group:hover .group-hover\:corporate-icon-active {
+    color: var(--color-corporate-primary);
+}
+
+/* 設定ページのタブスタイル - モバイルフレンドリー */
+.active-tab {
+    color: #1E3A8A;
+    background-color: rgba(30, 58, 138, 0.05);
+    border-left: 4px solid #1E3A8A;
+}
+
+.inactive-tab {
+    color: #374151;
+    background-color: transparent;
+    border-left: 4px solid transparent;
+}
+
+.inactive-tab:hover {
+    background-color: rgba(30, 58, 138, 0.05);
+    border-left: 4px solid #1E3A8A;
+    color: #1E3A8A;
+}
+
+/* ホバー時のアイコン色変更 - より具体的なセレクタ */
+.inactive-tab:hover svg,
+.inactive-tab:hover .h-5,
+.inactive-tab:hover .h-6 {
+    color: #1E3A8A !important;
+}
+
+/* レスポンシブ対応 */
+@media (max-width: 640px) {
+
+    .active-tab,
+    .inactive-tab {
+        padding-top: 1rem;
+        padding-bottom: 1rem;
+    }
+
+    .active-tab svg,
+    .inactive-tab svg {
+        width: 1.5rem;
+        height: 1.5rem;
+    }
+}
+
+/* 法人セクション内での特別リンク（ご利用プラン・個人ダッシュボード）用スタイル */
+.corporate-special-link {
+    background-color: rgba(59, 130, 246, 0.1);
+    color: #3B82F6;
+}
+
+.corporate-special-link:hover {
+    background-color: rgba(59, 130, 246, 0.2);
+}
+
+.corporate-special-icon {
+    color: #3B82F6;
 }
 
 

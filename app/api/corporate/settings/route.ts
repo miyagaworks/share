@@ -119,6 +119,12 @@ export async function PUT(req: Request) {
         billingDescription = '基本設定の更新';
         break;
 
+      case 'security':
+        const { securitySettings } = body;
+        updateData.securitySettings = securitySettings;
+        billingDescription = 'セキュリティ設定の更新';
+        break;
+
       case 'notifications':
         const { notificationSettings } = body;
         updateData.notificationSettings = notificationSettings;
@@ -161,8 +167,12 @@ export async function PUT(req: Request) {
 
     return NextResponse.json({
       success: true,
-      tenant: result,
+      tenant: {
+        ...result,
+        securitySettings: result.securitySettings, // これが重要！明示的にsecuritySettingsを含める
+      },
       message: '法人アカウント設定を更新しました',
+      updatedType: type, // どの種類の設定が更新されたかも返す
     });
   } catch (error) {
     console.error('法人アカウント設定更新エラー:', error);

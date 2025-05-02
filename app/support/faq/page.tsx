@@ -43,7 +43,7 @@ const generalFaqs = [
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-blue-500 mr-2 flex-shrink-0"></div>
-            <span>X（旧Twitter）</span>
+            <span>X</span>
           </div>
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-blue-500 mr-2 flex-shrink-0"></div>

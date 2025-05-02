@@ -39,6 +39,9 @@ share/
 │   │   ├── corporate
 │   │   │   ├── access
 │   │   │   │   └── route.ts
+│   │   │   ├── admin
+│   │   │   │   └── transfer
+│   │   │   │       └── route.ts
 │   │   │   ├── branding
 │   │   │   │   └── route.ts
 │   │   │   ├── departments
@@ -67,7 +70,30 @@ share/
 │   │   │       │   │   └── route.ts
 │   │   │       │   └── route.ts
 │   │   │       ├── invite
+│   │   │       │   ├── accept
+│   │   │       │   │   └── route.ts
+│   │   │       │   ├── info
+│   │   │       │   │   └── route.ts
 │   │   │       │   └── route.ts
+│   │   │       └── route.ts
+│   │   ├── corporate-member
+│   │   │   ├── design
+│   │   │   │   └── route.ts
+│   │   │   ├── links
+│   │   │   │   ├── custom
+│   │   │   │   │   ├── [id]
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── route.ts
+│   │   │   │   └── sns
+│   │   │   │       ├── [id]
+│   │   │   │       │   └── route.ts
+│   │   │   │       └── route.ts
+│   │   │   ├── profile
+│   │   │   │   ├── route.ts
+│   │   │   │   └── update
+│   │   │   │       └── route.ts
+│   │   │   └── share
 │   │   │       └── route.ts
 │   │   ├── corporate-profile
 │   │   │   ├── links
@@ -107,6 +133,8 @@ share/
 │   │   │       └── route.ts
 │   │   ├── test-db
 │   │   │   └── route.ts
+│   │   ├── test-email
+│   │   │   └── route.ts
 │   │   ├── user
 │   │   │   ├── check-password
 │   │   │   │   └── route.ts
@@ -124,6 +152,8 @@ share/
 │   │   ├── error
 │   │   │   └── page.tsx
 │   │   ├── forgot-password
+│   │   │   └── page.tsx
+│   │   ├── invite
 │   │   │   └── page.tsx
 │   │   ├── reset-password
 │   │   │   └── page.tsx
@@ -167,6 +197,17 @@ share/
 │   │   │   └── users
 │   │   │       ├── invite
 │   │   │       │   └── page.tsx
+│   │   │       └── page.tsx
+│   │   ├── corporate-member
+│   │   │   ├── design
+│   │   │   │   └── page.tsx
+│   │   │   ├── layout.tsx
+│   │   │   ├── links
+│   │   │   │   └── page.tsx
+│   │   │   ├── page.tsx
+│   │   │   ├── profile
+│   │   │   │   └── page.tsx
+│   │   │   └── share
 │   │   │       └── page.tsx
 │   │   ├── corporate-profile
 │   │   │   ├── design
@@ -668,6 +709,16 @@ share/
 │       └── tinycolor2.d.ts
 ├── components
 │   ├── corporate
+│   │   ├── BrandingPreview.tsx
+│   │   ├── CorporateSnsIntegration.tsx
+│   │   ├── EnhancedBrandingPreview.tsx
+│   │   ├── ImprovedBrandingPreview.tsx
+│   │   ├── ImprovedMemberDesignSettings.tsx
+│   │   ├── MemberDesignSettings.tsx
+│   │   ├── MemberProfileForm.tsx
+│   │   ├── MemberShareSettings.tsx
+│   │   ├── MemberSnsManager.tsx
+│   │   ├── QrCodeGenerator.tsx
 │   │   └── SuspendedBanner.tsx
 │   ├── dashboard
 │   │   ├── CustomLinkClient.tsx
@@ -686,7 +737,8 @@ share/
 │   │   ├── ProfileForm.tsx
 │   │   └── SNSLinkFormWithGuideIntegration.tsx
 │   ├── guards
-│   │   └── CorporateAccessGuard.tsx
+│   │   ├── CorporateAccessGuard.tsx
+│   │   └── CorporateMemberGuard.tsx
 │   ├── layout
 │   │   ├── AuthLayout.tsx
 │   │   ├── DashboardHeader.tsx
@@ -719,7 +771,9 @@ share/
 │   └── ui
 │       ├── Button.tsx
 │       ├── Card.tsx
+│       ├── CorporateBranding.tsx
 │       ├── DashboardCard.tsx
+│       ├── DepartmentBadge.tsx
 │       ├── Dialog.tsx
 │       ├── EnhancedColorPicker.tsx
 │       ├── ImageUpload.tsx
@@ -729,6 +783,7 @@ share/
 │       ├── Spinner.tsx
 │       └── Tabs.tsx
 ├── docs
+│   ├── corporate-member-dashboard-plan.md
 │   ├── corporate-plan.md
 │   ├── development-process.md
 │   ├── mvp-requirements.md
@@ -887,6 +942,7 @@ share/
 │   ├── generate-prisma-migration.js
 │   └── setup-guide-images.mjs
 ├── share_db_backup.sql
+├── tailwind.config.js
 ├── tsconfig.json
 └── types
     ├── next-auth.d.ts
@@ -894,3 +950,4 @@ share/
     ├── sns-guide.ts
     ├── sns.ts
     └── tinycolor2.d.ts
+

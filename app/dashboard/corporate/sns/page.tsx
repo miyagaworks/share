@@ -1,7 +1,7 @@
 // app/dashboard/corporate/sns/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
@@ -19,9 +19,272 @@ import {
   HiRefresh,
   HiInformationCircle,
   HiOutlineExclamation,
+  HiMenuAlt4,
 } from 'react-icons/hi';
 import { CorporateSnsLink } from './types';
 import { CorporateSnsAddForm, CorporateSnsEditForm, CorporateSnsDeleteConfirm } from './components';
+import { DndProvider, useDrag, useDrop } from 'react-dnd';
+import { HTML5Backend } from 'react-dnd-html5-backend';
+
+// ドラッグアイテムの型定義
+interface DragItem {
+  id: string;
+  index: number;
+}
+
+// ドラッグアイテムタイプ
+const ITEM_TYPE = 'snsLink';
+
+// ドラッグ可能なSNSリンク項目コンポーネント
+const DraggableSnsItem = ({
+  link,
+  index,
+  moveItem,
+  isAdmin,
+  onEdit,
+  onDelete,
+  onDragEnd,
+}: {
+  link: CorporateSnsLink;
+  index: number;
+  moveItem: (fromIndex: number, toIndex: number) => void;
+  isAdmin: boolean;
+  onEdit: (link: CorporateSnsLink) => void;
+  onDelete: (id: string) => void;
+  onDragEnd: () => void;
+}) => {
+  const ref = useRef<HTMLTableRowElement>(null);
+
+  // ドラッグの設定
+  const [{ isDragging }, drag] = useDrag({
+    type: ITEM_TYPE,
+    item: { id: link.id, index } as DragItem,
+    canDrag: isAdmin, // 管理者のみドラッグ可能
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+    end: () => {
+      onDragEnd(); // ドラッグ終了時に呼び出す
+    },
+  });
+
+  // ドロップの設定
+  const [, drop] = useDrop({
+    accept: ITEM_TYPE,
+    hover: (item: DragItem) => {
+      if (!ref.current) {
+        return;
+      }
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      // 自分自身の上にドラッグしている場合は何もしない
+      if (dragIndex === hoverIndex) {
+        return;
+      }
+
+      // ドラッグしている要素の位置を更新
+      moveItem(dragIndex, hoverIndex);
+
+      // 監視しているインデックスを更新
+      item.index = hoverIndex;
+    },
+  });
+
+  // ドラッグとドロップの参照を結合
+  drag(drop(ref));
+
+  return (
+    <tr
+      ref={ref}
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+      className={`hover:bg-gray-50 ${isDragging ? 'bg-blue-50' : ''}`}
+    >
+      {isAdmin && (
+        <td className="px-2 text-center cursor-move">
+          <HiMenuAlt4 className="mx-auto h-5 w-5 text-gray-400" />
+        </td>
+      )}
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+        <div className="flex items-center">
+          <ImprovedSnsIcon platform={link.platform as SnsPlatform} size={24} color="original" />
+          <span className="ml-3 font-medium">
+            {SNS_METADATA[link.platform as SnsPlatform]?.name || link.platform}
+          </span>
+        </div>
+      </td>
+      <td className="px-4 sm:px-6 py-4">
+        <div>
+          <a
+            href={link.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-600 hover:text-blue-800 flex items-center"
+          >
+            <span className="truncate block max-w-[150px] sm:max-w-[200px] md:max-w-xs">
+              {link.url}
+            </span>
+            <HiExternalLink className="ml-1 h-4 w-4 flex-shrink-0" />
+          </a>
+        </div>
+      </td>
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
+        {link.isRequired ? (
+          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+            必須
+          </span>
+        ) : (
+          <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+            任意
+          </span>
+        )}
+      </td>
+      <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-800 mr-2"
+          onClick={() => onEdit(link)}
+        >
+          <HiPencil className="h-4 w-4" />
+        </Button>
+
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-red-600 hover:text-red-800"
+          onClick={() => onDelete(link.id)}
+        >
+          <HiTrash className="h-4 w-4" />
+        </Button>
+      </td>
+    </tr>
+  );
+};
+
+// ドラッグ可能なSNSリンクカードコンポーネント（モバイル用）
+const DraggableSnsCard = ({
+  link,
+  index,
+  moveItem,
+  isAdmin,
+  onEdit,
+  onDelete,
+  onDragEnd,
+}: {
+  link: CorporateSnsLink;
+  index: number;
+  moveItem: (fromIndex: number, toIndex: number) => void;
+  isAdmin: boolean;
+  onEdit: (link: CorporateSnsLink) => void;
+  onDelete: (id: string) => void;
+  onDragEnd: () => void;
+}) => {
+  const ref = useRef<HTMLTableRowElement>(null);
+
+  // ドラッグの設定
+  const [{ isDragging }, drag] = useDrag({
+    type: ITEM_TYPE,
+    item: { id: link.id, index } as DragItem,
+    canDrag: isAdmin, // 管理者のみドラッグ可能
+    collect: (monitor) => ({
+      isDragging: monitor.isDragging(),
+    }),
+    end: () => {
+      onDragEnd(); // ドラッグ終了時に呼び出す
+    },
+  });
+
+  // ドロップの設定
+  const [, drop] = useDrop({
+    accept: ITEM_TYPE,
+    hover: (item: DragItem) => {
+      if (!ref.current) {
+        return;
+      }
+      const dragIndex = item.index;
+      const hoverIndex = index;
+
+      // 自分自身の上にドラッグしている場合は何もしない
+      if (dragIndex === hoverIndex) {
+        return;
+      }
+
+      // ドラッグしている要素の位置を更新
+      moveItem(dragIndex, hoverIndex);
+
+      // 監視しているインデックスを更新
+      item.index = hoverIndex;
+    },
+  });
+
+  // ドラッグとドロップの参照を結合
+  drag(drop(ref));
+
+  return (
+    <div
+      ref={ref}
+      style={{ opacity: isDragging ? 0.5 : 1 }}
+      className={`bg-white rounded-lg border border-gray-200 p-4 w-full ${
+        isDragging ? 'bg-blue-50 shadow-lg' : ''
+      }`}
+    >
+      <div className="flex items-center justify-between mb-3">
+        <div className="flex items-center">
+          {isAdmin && (
+            <div className="mr-4 cursor-move">
+              <HiMenuAlt4 className="h-5 w-5 text-gray-400" />
+            </div>
+          )}
+          <ImprovedSnsIcon platform={link.platform as SnsPlatform} size={24} color="original" />
+          <span className="ml-3 font-medium">
+            {SNS_METADATA[link.platform as SnsPlatform]?.name || link.platform}
+          </span>
+        </div>
+        <div>
+          {link.isRequired ? (
+            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+              必須
+            </span>
+          ) : (
+            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+              任意
+            </span>
+          )}
+        </div>
+      </div>
+      <div className="mb-3">
+        <a
+          href={link.url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-600 hover:text-blue-800 flex items-start"
+        >
+          <span className="text-sm break-all mr-1">{link.url}</span>
+          <HiExternalLink className="h-4 w-4 flex-shrink-0 mt-0.5" />
+        </a>
+      </div>
+      <div className="flex justify-end space-x-2">
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-800"
+          onClick={() => onEdit(link)}
+        >
+          <HiPencil className="h-4 w-4" />
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-red-600 hover:text-red-800"
+          onClick={() => onDelete(link.id)}
+        >
+          <HiTrash className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+};
 
 export default function CorporateSnsMangementPage() {
   const { data: session } = useSession();
@@ -63,6 +326,16 @@ export default function CorporateSnsMangementPage() {
 
     fetchCorporateSnsLinks();
   }, [session]);
+
+  // アイテムの順序を変更する関数
+  const moveItem = (fromIndex: number, toIndex: number) => {
+    setCorporateSnsLinks((prevLinks) => {
+      const updatedLinks = [...prevLinks];
+      const [movedItem] = updatedLinks.splice(fromIndex, 1);
+      updatedLinks.splice(toIndex, 0, movedItem);
+      return updatedLinks;
+    });
+  };
 
   // SNSリンク編集を開始
   const handleEditLink = (link: CorporateSnsLink) => {
@@ -118,6 +391,40 @@ export default function CorporateSnsMangementPage() {
     }
   };
 
+  // ドラッグ終了時に呼び出される関数
+  const handleDragEnd = async () => {
+    try {
+      // APIに新しい順序を送信
+      const response = await fetch('/api/corporate/sns', {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          operation: 'reorder',
+          data: corporateSnsLinks.map((item) => item.id),
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '表示順の更新に失敗しました');
+      }
+
+      toast.success('SNSリンクの表示順を更新しました');
+    } catch (error) {
+      console.error('表示順更新エラー:', error);
+      toast.error(error instanceof Error ? error.message : '表示順の更新に失敗しました');
+
+      // エラーの場合は元の順序に戻す
+      const response = await fetch('/api/corporate/sns');
+      if (response.ok) {
+        const data = await response.json();
+        setCorporateSnsLinks(data.snsLinks || []);
+      }
+    }
+  };
+
   // 読み込み中
   if (isLoading) {
     return (
@@ -166,276 +473,197 @@ export default function CorporateSnsMangementPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-full overflow-hidden px-2 sm:px-4">
-      {/* ヘッダー部分 */}
-      <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">法人共通SNS設定</h1>
-          <p className="text-gray-500 mt-1">全社員に共通のSNSリンクを設定・管理します</p>
-        </div>
+    <DndProvider backend={HTML5Backend}>
+      <div className="space-y-6 max-w-full overflow-hidden px-2 sm:px-4">
+        {/* ヘッダー部分 */}
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
+          <div>
+            <h1 className="text-2xl font-bold">法人共通SNS設定</h1>
+            <p className="text-gray-500 mt-1">全社員に共通のSNSリンクを設定・管理します</p>
+          </div>
 
-        <div className="flex gap-2 flex-wrap">
-          <Button onClick={() => setIsAddFormOpen(true)} className="flex items-center">
-            <HiPlus className="mr-2 h-4 w-4" />
-            SNSリンクを追加
-          </Button>
-          <Button
-            variant="outline"
-            onClick={handleSyncToUsers}
-            disabled={isSyncing || corporateSnsLinks.length === 0}
-            className="flex items-center"
-          >
-            {isSyncing ? (
-              <>
-                <Spinner size="sm" className="mr-2" />
-                同期中...
-              </>
-            ) : (
-              <>
-                <HiRefresh className="mr-2 h-4 w-4" />
-                ユーザーに同期
-              </>
-            )}
-          </Button>
-        </div>
-      </div>
-
-      {/* 説明セクション */}
-      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 w-full">
-        <div className="flex flex-col sm:flex-row">
-          <HiInformationCircle className="text-blue-500 h-5 w-5 flex-shrink-0 mb-2 sm:mb-0 sm:mr-2 sm:mt-1" />
-          <div className="w-full">
-            <h3 className="font-medium text-blue-800 mb-1">法人共通SNS設定について</h3>
-            <p className="text-sm text-blue-700 break-words hyphens-auto">
-              ここで設定したSNSリンクは法人アカウントに所属するすべてのユーザーのプロフィールに表示されます。
-              「必須」に設定すると、そのSNSリンクは全ユーザーのプロフィールに自動的に追加され、
-              ユーザーが削除できなくなります。
-            </p>
+          <div className="flex gap-2 flex-wrap">
+            <Button onClick={() => setIsAddFormOpen(true)} className="flex items-center">
+              <HiPlus className="mr-2 h-4 w-4" />
+              SNSリンクを追加
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleSyncToUsers}
+              disabled={isSyncing || corporateSnsLinks.length === 0}
+              className="flex items-center"
+            >
+              {isSyncing ? (
+                <>
+                  <Spinner size="sm" className="mr-2" />
+                  同期中...
+                </>
+              ) : (
+                <>
+                  <HiRefresh className="mr-2 h-4 w-4" />
+                  ユーザーに同期
+                </>
+              )}
+            </Button>
           </div>
         </div>
-      </div>
 
-      {/* SNSリンク一覧 - PC表示用テーブル */}
-      {corporateSnsLinks.length > 0 ? (
-        <>
-          <div className="hidden sm:block w-full">
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="overflow-x-auto">
-                <table className="min-w-full divide-y divide-gray-200">
-                  <thead className="bg-gray-50">
-                    <tr>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        プラットフォーム
-                      </th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        URL
-                      </th>
-                      <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        ステータス
-                      </th>
-                      <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
-                        操作
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody className="bg-white divide-y divide-gray-200">
-                    {corporateSnsLinks.map((link) => (
-                      <tr key={link.id} className="hover:bg-gray-50">
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          <div className="flex items-center">
-                            <ImprovedSnsIcon platform={link.platform as SnsPlatform} size={24} />
-                            <span className="ml-3 font-medium">
-                              {SNS_METADATA[link.platform as SnsPlatform]?.name || link.platform}
-                            </span>
-                          </div>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4">
-                          <div>
-                            <a
-                              href={link.url}
-                              target="_blank"
-                              rel="noopener noreferrer"
-                              className="text-blue-600 hover:text-blue-800 flex items-center"
-                            >
-                              <span className="truncate block max-w-[150px] sm:max-w-[200px] md:max-w-xs">
-                                {link.url}
-                              </span>
-                              <HiExternalLink className="ml-1 h-4 w-4 flex-shrink-0" />
-                            </a>
-                            {link.description && (
-                              <p className="text-sm text-gray-500 mt-1 truncate max-w-[150px] sm:max-w-[200px] md:max-w-xs">
-                                {link.description}
-                              </p>
-                            )}
-                          </div>
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap">
-                          {link.isRequired ? (
-                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                              必須
-                            </span>
-                          ) : (
-                            <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                              任意
-                            </span>
-                          )}
-                        </td>
-                        <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-blue-600 hover:text-blue-800 mr-2"
-                            onClick={() => handleEditLink(link)}
-                          >
-                            <HiPencil className="h-4 w-4" />
-                          </Button>
-
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-600 hover:text-red-800"
-                            onClick={() => handleDeleteConfirm(link.id)}
-                          >
-                            <HiTrash className="h-4 w-4" />
-                          </Button>
-                        </td>
+        {/* SNSリンク一覧 - PC表示用テーブル */}
+        {corporateSnsLinks.length > 0 ? (
+          <>
+            <div className="hidden sm:block w-full">
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <div className="overflow-x-auto">
+                  <table className="min-w-full divide-y divide-gray-200">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        {isAdmin && (
+                          <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider w-20">
+                            順序
+                          </th>
+                        )}
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          プラットフォーム
+                        </th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          URL
+                        </th>
+                        <th className="px-4 sm:px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          ステータス
+                        </th>
+                        <th className="px-4 sm:px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
+                          操作
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody className="bg-white divide-y divide-gray-200">
+                      {corporateSnsLinks.map((link, index) => (
+                        <DraggableSnsItem
+                          key={link.id}
+                          link={link}
+                          index={index}
+                          moveItem={moveItem}
+                          isAdmin={isAdmin}
+                          onEdit={handleEditLink}
+                          onDelete={handleDeleteConfirm}
+                          onDragEnd={handleDragEnd}
+                        />
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             </div>
-          </div>
 
-          {/* SNSリンク一覧 - スマホ表示用カード */}
-          <div className="block sm:hidden space-y-4 w-full">
-            {corporateSnsLinks.map((link) => (
-              <div key={link.id} className="bg-white rounded-lg border border-gray-200 p-4 w-full">
-                <div className="flex items-center justify-between mb-3">
-                  <div className="flex items-center">
-                    <ImprovedSnsIcon platform={link.platform as SnsPlatform} size={24} />
-                    <span className="ml-3 font-medium">
-                      {SNS_METADATA[link.platform as SnsPlatform]?.name || link.platform}
-                    </span>
-                  </div>
-                  <div>
-                    {link.isRequired ? (
-                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        必須
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        任意
+            {/* SNSリンク一覧 - スマホ表示用カード */}
+            <div className="block sm:hidden space-y-4 w-full">
+              {corporateSnsLinks.map((link, index) => (
+                <DraggableSnsCard
+                  key={link.id}
+                  link={link}
+                  index={index}
+                  moveItem={moveItem}
+                  isAdmin={isAdmin}
+                  onEdit={handleEditLink}
+                  onDelete={handleDeleteConfirm}
+                  onDragEnd={handleDragEnd}
+                />
+              ))}
+            </div>
+
+            {/* 説明セクション */}
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 w-full">
+              <div className="flex flex-row items-start">
+                <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
+                <div className="w-full">
+                  <h3 className="font-medium text-blue-900 mb-1">法人共通SNS設定について</h3>
+                  <p className="text-sm text-corporate-secondary break-words hyphens-auto text-justify">
+                    ここで設定したSNSリンクは法人アカウントに所属するすべてのユーザーのプロフィールに表示されます。
+                    「必須」に設定すると、そのSNSリンクは全ユーザーのプロフィールに自動的に追加され、
+                    ユーザーが削除できなくなります。
+                    {isAdmin && (
+                      <span className="block mt-2">
+                        ドラッグ&ドロップで並び順を変更することができます。順序はプロフィールの表示順に反映されます。
                       </span>
                     )}
-                  </div>
-                </div>
-                <div className="mb-3">
-                  <a
-                    href={link.url}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="text-blue-600 hover:text-blue-800 flex items-start"
-                  >
-                    <span className="text-sm break-all mr-1">{link.url}</span>
-                    <HiExternalLink className="h-4 w-4 flex-shrink-0 mt-0.5" />
-                  </a>
-                  {link.description && (
-                    <p className="text-sm text-gray-500 mt-1 break-words">{link.description}</p>
-                  )}
-                </div>
-                <div className="flex justify-end space-x-2">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-blue-600 hover:text-blue-800"
-                    onClick={() => handleEditLink(link)}
-                  >
-                    <HiPencil className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-600 hover:text-red-800"
-                    onClick={() => handleDeleteConfirm(link.id)}
-                  >
-                    <HiTrash className="h-4 w-4" />
-                  </Button>
+                  </p>
                 </div>
               </div>
-            ))}
+            </div>
+          </>
+        ) : (
+          <div className="bg-white rounded-lg border border-gray-200 p-8 text-center w-full">
+            <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
+              <HiLink className="h-6 w-6 text-blue-600" />
+            </div>
+            <h3 className="mt-4 text-lg font-medium">法人共通SNSリンクがありません</h3>
+            <p className="mt-2 text-gray-500 mb-6">
+              「SNSリンクを追加」ボタンをクリックして、法人共通のSNSリンクを設定してください。
+            </p>
+            <Button onClick={() => setIsAddFormOpen(true)}>
+              <HiPlus className="mr-2 h-4 w-4" />
+              SNSリンクを追加
+            </Button>
           </div>
-        </>
-      ) : (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center w-full">
-          <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
-            <HiLink className="h-6 w-6 text-blue-600" />
-          </div>
-          <h3 className="mt-4 text-lg font-medium">法人共通SNSリンクがありません</h3>
-          <p className="mt-2 text-gray-500 mb-6">
-            「SNSリンクを追加」ボタンをクリックして、法人共通のSNSリンクを設定してください。
-          </p>
-          <Button onClick={() => setIsAddFormOpen(true)}>
-            <HiPlus className="mr-2 h-4 w-4" />
-            SNSリンクを追加
-          </Button>
-        </div>
-      )}
-
-      {/* SNSリンク追加ダイアログ */}
-      <Dialog open={isAddFormOpen} onOpenChange={setIsAddFormOpen}>
-        {isAddFormOpen && (
-          <CorporateSnsAddForm
-            existingLinks={corporateSnsLinks}
-            onCancel={() => setIsAddFormOpen(false)}
-            onSuccess={(newLink) => {
-              setCorporateSnsLinks([...corporateSnsLinks, newLink]);
-              setIsAddFormOpen(false);
-            }}
-          />
         )}
-      </Dialog>
 
-      {/* SNSリンク編集ダイアログ */}
-      <Dialog open={!!editingLink} onOpenChange={(open) => !open && setEditingLink(null)}>
-        {editingLink && (
-          <CorporateSnsEditForm
-            link={editingLink}
-            onCancel={() => setEditingLink(null)}
-            onSuccess={(updatedLink) => {
-              setCorporateSnsLinks(
-                corporateSnsLinks.map((link) => (link.id === updatedLink.id ? updatedLink : link)),
-              );
-              setEditingLink(null);
-            }}
-          />
-        )}
-      </Dialog>
+        {/* SNSリンク追加ダイアログ */}
+        <Dialog open={isAddFormOpen} onOpenChange={setIsAddFormOpen}>
+          {isAddFormOpen && (
+            <CorporateSnsAddForm
+              existingLinks={corporateSnsLinks}
+              onCancel={() => setIsAddFormOpen(false)}
+              onSuccess={(newLink) => {
+                setCorporateSnsLinks([...corporateSnsLinks, newLink]);
+                setIsAddFormOpen(false);
+              }}
+            />
+          )}
+        </Dialog>
 
-      {/* 削除確認ダイアログ */}
-      <Dialog
-        open={isDeleteConfirmOpen}
-        onOpenChange={(open) => {
-          if (!open) {
-            setDeletingLinkId(null);
-          }
-          setIsDeleteConfirmOpen(open);
-        }}
-      >
-        {deletingLinkId && (
-          <CorporateSnsDeleteConfirm
-            linkId={deletingLinkId}
-            isRequired={
-              corporateSnsLinks.find((link) => link.id === deletingLinkId)?.isRequired || false
-            }
-            onCancel={() => {
-              setIsDeleteConfirmOpen(false);
+        {/* SNSリンク編集ダイアログ */}
+        <Dialog open={!!editingLink} onOpenChange={(open) => !open && setEditingLink(null)}>
+          {editingLink && (
+            <CorporateSnsEditForm
+              link={editingLink}
+              onCancel={() => setEditingLink(null)}
+              onSuccess={(updatedLink) => {
+                setCorporateSnsLinks(
+                  corporateSnsLinks.map((link) =>
+                    link.id === updatedLink.id ? updatedLink : link,
+                  ),
+                );
+                setEditingLink(null);
+              }}
+            />
+          )}
+        </Dialog>
+
+        {/* 削除確認ダイアログ */}
+        <Dialog
+          open={isDeleteConfirmOpen}
+          onOpenChange={(open) => {
+            if (!open) {
               setDeletingLinkId(null);
-            }}
-            onSuccess={handleDeleteSuccess}
-          />
-        )}
-      </Dialog>
-    </div>
+            }
+            setIsDeleteConfirmOpen(open);
+          }}
+        >
+          {deletingLinkId && (
+            <CorporateSnsDeleteConfirm
+              linkId={deletingLinkId}
+              isRequired={
+                corporateSnsLinks.find((link) => link.id === deletingLinkId)?.isRequired || false
+              }
+              onCancel={() => {
+                setIsDeleteConfirmOpen(false);
+                setDeletingLinkId(null);
+              }}
+              onSuccess={handleDeleteSuccess}
+            />
+          )}
+        </Dialog>
+      </div>
+    </DndProvider>
   );
 }

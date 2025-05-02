@@ -4,14 +4,16 @@
     "type": "module",
     "private": true,
     "scripts": {
-        "dev": "next dev --turbopack",
+        "dev": "next dev",
         "build": "prisma generate && next build",
         "start": "next start",
         "lint": "next lint",
-        "prepare": "husky install"
+        "prepare": "husky install",
+        "migrate-text-settings": "ts-node scripts/migrate-text-settings.ts",
+        "cleanup-sns-usernames": "ts-node scripts/clean-corporate-sns-username.ts"
     },
     "dependencies": {
-        "@auth/prisma-adapter": "^2.8.0",
+        "@auth/prisma-adapter": "^2.9.0",
         "@aws-sdk/client-ses": "^3.782.0",
         "@google/generative-ai": "^0.24.0",
         "@headlessui/react": "^2.2.0",
@@ -31,11 +33,14 @@
         "jotai": "^2.12.1",
         "lucide-react": "^0.487.0",
         "next": "^14.1.0",
-        "next-auth": "^4.24.5",
-        "nodemailer": "^6.10.0",
+        "next-auth": "^5.0.0-beta.27",
+        "nodemailer": "^6.10.1",
         "prisma": "^6.4.1",
         "qrcode.react": "^4.2.0",
         "react": "^18.3.1",
+        "react-beautiful-dnd": "^13.1.1",
+        "react-dnd": "^16.0.1",
+        "react-dnd-html5-backend": "^16.0.1",
         "react-dom": "^18.3.1",
         "react-hook-form": "^7.54.2",
         "react-hot-toast": "^2.5.2",
@@ -53,6 +58,7 @@
         "@types/node": "^20",
         "@types/nodemailer": "^6.4.17",
         "@types/react": "^19",
+        "@types/react-beautiful-dnd": "^13.1.8",
         "@types/react-dom": "^19",
         "@types/tinycolor2": "^1.4.6",
         "async_hooks": "^1.0.0",
@@ -63,6 +69,7 @@
         "lint-staged": "^15.4.3",
         "prettier": "^3.5.3",
         "tailwindcss": "^4",
+        "ts-node": "^10.9.2",
         "typescript": "^5"
     }
 }

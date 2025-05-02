@@ -21,7 +21,13 @@ import {
   HiOfficeBuilding,
 } from 'react-icons/hi';
 
-// 型定義（実際のプロジェクトの型に合わせて調整してください）
+// 型定義
+interface Department {
+  id: string;
+  name: string;
+  description?: string;
+}
+
 interface CorporateUser {
   id: string;
   name: string;
@@ -42,60 +48,82 @@ export default function CorporateUsersPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [users, setUsers] = useState<CorporateUser[]>([]);
+  const [departments, setDepartments] = useState<Department[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isInviteDialogOpen, setIsInviteDialogOpen] = useState(false);
   const [isEditRoleDialogOpen, setIsEditRoleDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [selectedDepartmentId, setSelectedDepartmentId] = useState<string>('');
+  const [selectedRole, setSelectedRole] = useState<string>('');
+  const [isUpdating, setIsUpdating] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<CorporateUser | null>(null);
 
-  // ユーザー情報を取得
+  // ユーザー情報と部署情報を取得
   useEffect(() => {
-    const fetchUsers = async () => {
+    const fetchData = async () => {
       if (!session?.user?.id) return;
 
       try {
         setIsLoading(true);
 
-        // 前のコード: const response = await fetch('/api/corporate/users');
-        // エラーの詳細を取得するために修正
-        const response = await fetch('/api/corporate/users', {
+        // ユーザー情報取得
+        const userResponse = await fetch('/api/corporate/users', {
           method: 'GET',
           headers: {
             'Content-Type': 'application/json',
           },
         });
 
-        // エラーレスポンスの詳細な処理
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
+        if (!userResponse.ok) {
+          const errorData = await userResponse.json().catch(() => ({}));
           console.error('API error details:', errorData);
           throw new Error(errorData.error || 'ユーザー情報の取得に失敗しました');
         }
 
-        const data = await response.json();
-        setUsers(data.users || []);
-        setIsAdmin(data.isAdmin);
+        const userData = await userResponse.json();
+        setUsers(userData.users || []);
+        setIsAdmin(userData.isAdmin);
+
+        // 部署情報取得を改善
+        const deptResponse = await fetch('/api/corporate/departments', {
+          method: 'GET',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+        });
+
+        if (!deptResponse.ok) {
+          const errorData = await deptResponse.json().catch(() => ({}));
+          console.error('部署情報取得エラー:', errorData);
+          toast.error('部署情報の取得に失敗しました。一部の機能が制限されます');
+        } else {
+          const deptData = await deptResponse.json();
+          setDepartments(deptData.departments || []);
+        }
+
         setError(null);
       } catch (err) {
-        console.error('ユーザー情報取得エラー:', err);
-        setError(err instanceof Error ? err.message : 'ユーザー情報を読み込めませんでした');
+        console.error('データ取得エラー:', err);
+        setError(err instanceof Error ? err.message : 'データを読み込めませんでした');
       } finally {
         setIsLoading(false);
       }
     };
 
-    fetchUsers();
+    fetchData();
   }, [session]);
 
   // ユーザー招待ダイアログを開く
   const handleOpenInviteDialog = () => {
-    // モックのトースト通知ではなく、実際に遷移するように修正
     router.push('/dashboard/corporate/users/invite');
   };
 
   // ユーザー編集ダイアログを開く
   const handleEditUser = (user: CorporateUser) => {
-    toast.success(`${user.name}の編集ダイアログを開きます（実装予定）`);
+    setSelectedUser(user);
+    setSelectedRole(user.corporateRole || 'member');
+    setSelectedDepartmentId(user.department?.id || '');
+    setIsEditRoleDialogOpen(true);
   };
 
   // ユーザー削除ダイアログを開く
@@ -104,12 +132,77 @@ export default function CorporateUsersPage() {
     setIsDeleteDialogOpen(true);
   };
 
+  // ユーザー情報更新処理
+  const handleUpdateUser = async () => {
+    if (!selectedUser) return;
+
+    try {
+      setIsUpdating(true);
+      console.log('更新リクエスト:', {
+        userId: selectedUser.id,
+        role: selectedRole,
+        departmentId: selectedDepartmentId || null,
+      });
+
+      const response = await fetch(`/api/corporate/users/${selectedUser.id}`, {
+        method: 'PATCH',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          role: selectedRole,
+          departmentId: selectedDepartmentId || null,
+        }),
+      });
+
+      const responseData = await response.json();
+      console.log('API レスポンス:', responseData);
+
+      if (!response.ok) {
+        throw new Error(responseData.error || 'ユーザー情報の更新に失敗しました');
+      }
+
+      // 成功時の処理
+      // ユーザーリストを更新
+      setUsers(
+        users.map((user) => {
+          if (user.id === selectedUser.id) {
+            // 部署名を安全に取得
+            const dept = departments.find((d) => d.id === selectedDepartmentId);
+
+            // 更新されたユーザー情報
+            const updatedUser: CorporateUser = {
+              ...user,
+              corporateRole: responseData.user.corporateRole,
+              department:
+                selectedDepartmentId && dept
+                  ? { id: selectedDepartmentId, name: dept.name }
+                  : undefined,
+            };
+            return updatedUser;
+          }
+          return user;
+        }),
+      );
+
+      toast.success(`${selectedUser.name}の情報を更新しました`);
+      setIsEditRoleDialogOpen(false);
+      setSelectedUser(null);
+    } catch (error) {
+      console.error('ユーザー更新エラー:', error);
+      toast.error(error instanceof Error ? error.message : 'ユーザー情報の更新に失敗しました');
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   // 招待再送信処理
   const handleResendInvitation = async (userId: string) => {
     try {
-      // 処理中の表示などがあれば追加
+      // ボタンの状態を「送信中」に変更する変数を追加してもよい
+      // const [isResending, setIsResending] = useState<{[key: string]: boolean}>({});
+      // setIsResending({...isResending, [userId]: true});
 
-      // APIを呼び出す
       const response = await fetch(`/api/corporate/users/${userId}/resend-invite`, {
         method: 'POST',
         headers: {
@@ -122,23 +215,39 @@ export default function CorporateUsersPage() {
         throw new Error(errorData.error || '招待の再送信に失敗しました');
       }
 
-      // 成功メッセージを表示
-      toast.success('招待を再送信しました');
+      // レスポンスのJSONを取得して使用する
+      const result = await response.json();
+
+      // resultのmessageを使ってトースト表示（もしAPIから返ってくる場合）
+      toast.success(result.message || '招待を再送信しました');
+
+      // 必要に応じてユーザーリストを更新
+      setUsers(
+        users.map((user) => {
+          if (user.id === userId) {
+            return {
+              ...user,
+              isInvited: true,
+              invitedAt: new Date().toISOString(), // 最新の招待日時に更新
+            };
+          }
+          return user;
+        }),
+      );
     } catch (err) {
       console.error('招待再送信エラー:', err);
       toast.error(err instanceof Error ? err.message : '招待の再送信に失敗しました');
+    } finally {
+      // 状態を元に戻す場合
+      // setIsResending({...isResending, [userId]: false});
     }
   };
-
-  // 削除ボタン
-  const [selectedUser, setSelectedUser] = useState<CorporateUser | null>(null);
 
   // 削除処理の実装
   const handleConfirmDelete = async () => {
     if (!selectedUser) return;
 
     try {
-      // 削除処理開始
       const response = await fetch(`/api/corporate/users/${selectedUser.id}`, {
         method: 'DELETE',
         headers: {
@@ -151,13 +260,8 @@ export default function CorporateUsersPage() {
         throw new Error(errorData.error || 'ユーザーの削除に失敗しました');
       }
 
-      // 成功時の処理
       toast.success(`${selectedUser.name}のアカウントを削除しました`);
-
-      // ユーザーリストから削除
       setUsers(users.filter((user) => user.id !== selectedUser.id));
-
-      // ダイアログを閉じる
       setIsDeleteDialogOpen(false);
     } catch (err) {
       console.error('ユーザー削除エラー:', err);
@@ -172,14 +276,14 @@ export default function CorporateUsersPage() {
         return '管理者';
       case 'member':
         return '一般メンバー';
-      case 'viewer':
+      case 'restricted':
         return '閲覧のみ';
       default:
         return '一般メンバー';
     }
   };
 
-  // 読み込み中
+  // 読み込み中表示
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -215,7 +319,11 @@ export default function CorporateUsersPage() {
           <div>
             <h3 className="text-lg font-medium text-yellow-800">管理者権限が必要です</h3>
             <p className="mt-2 text-yellow-700">ユーザー管理には法人管理者権限が必要です。</p>
-            <Button className="mt-4" onClick={() => router.push('/dashboard/corporate')}>
+            <Button
+              className="mt-4"
+              variant="corporate"
+              onClick={() => router.push('/dashboard/corporate')}
+            >
               管理者ダッシュボードへ戻る
             </Button>
           </div>
@@ -240,21 +348,19 @@ export default function CorporateUsersPage() {
           </Button>
         </div>
       </div>
-
       {/* 説明セクション */}
       <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 w-full">
-        <div className="flex flex-col sm:flex-row">
-          <HiInformationCircle className="text-blue-500 h-5 w-5 flex-shrink-0 mb-2 sm:mb-0 sm:mr-2 sm:mt-1" />
+        <div className="flex flex-row items-start">
+          <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
           <div className="w-full">
-            <h3 className="font-medium text-blue-800 mb-1">ユーザー管理について</h3>
-            <p className="text-sm text-blue-700 break-words hyphens-auto text-justify">
+            <h3 className="font-medium text-blue-900 mb-1">ユーザー管理について</h3>
+            <p className="text-sm text-corporate-secondary break-words hyphens-auto text-justify">
               法人アカウントに所属するユーザーを管理できます。招待メールを送信してユーザーを追加したり、
-              役割を変更したりすることができます。管理者は全ての操作が可能で、一般メンバーは自身のプロフィールのみ編集できます。
+              役割や部署を変更したりすることができます。管理者は全ての操作が可能で、一般メンバーは自身のプロフィールのみ編集できます。
             </p>
           </div>
         </div>
       </div>
-
       {/* ユーザー一覧 - PC表示用テーブル */}
       {users.length > 0 ? (
         <>
@@ -332,7 +438,8 @@ export default function CorporateUsersPage() {
                         {/* PC表示のボタン部分 */}
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                           <div className="flex items-center justify-end">
-                            {user.isInvited ? (
+                            {/* 招待中のユーザーに対しては招待再送ボタンを表示 */}
+                            {user.isInvited && (
                               <Button
                                 variant="ghost"
                                 size="sm"
@@ -341,16 +448,18 @@ export default function CorporateUsersPage() {
                               >
                                 招待再送
                               </Button>
-                            ) : (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-blue-600 hover:text-blue-800 mr-2"
-                                onClick={() => handleEditUser(user)}
-                              >
-                                <HiPencil className="h-4 w-4" />
-                              </Button>
                             )}
+
+                            {/* 全てのユーザーに対して編集ボタンを表示 */}
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              className="text-blue-600 hover:text-blue-800 mr-2"
+                              onClick={() => handleEditUser(user)}
+                            >
+                              <HiPencil className="h-4 w-4" />
+                            </Button>
+
                             {/* 管理者の場合は削除ボタンを無効化 */}
                             <Button
                               variant="ghost"
@@ -432,25 +541,27 @@ export default function CorporateUsersPage() {
 
                 {/* スマホ表示のボタン部分 */}
                 <div className="flex items-center justify-end space-x-2">
-                  {user.isInvited ? (
+                  {/* 招待中のユーザーに対しては招待再送ボタンを表示 */}
+                  {user.isInvited && (
                     <Button
                       variant="ghost"
                       size="sm"
-                      className="text-blue-600 hover:text-blue-800"
+                      className="text-blue-600 hover:text-blue-800 mr-2"
                       onClick={() => handleResendInvitation(user.id)}
                     >
                       招待再送
                     </Button>
-                  ) : (
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-blue-600 hover:text-blue-800"
-                      onClick={() => handleEditUser(user)}
-                    >
-                      <HiPencil className="h-4 w-4" />
-                    </Button>
                   )}
+
+                  {/* 全てのユーザーに対して編集ボタンを表示 */}
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="text-blue-600 hover:text-blue-800 mr-2"
+                    onClick={() => handleEditUser(user)}
+                  >
+                    <HiPencil className="h-4 w-4" />
+                  </Button>
 
                   {/* 管理者の場合は削除ボタンを無効化 */}
                   <Button
@@ -486,24 +597,92 @@ export default function CorporateUsersPage() {
           </Button>
         </div>
       )}
-
-      {/* 各種ダイアログは実際の実装に合わせて作成してください */}
-      {/* 例: ユーザー招待ダイアログ */}
-      <Dialog open={isInviteDialogOpen} onOpenChange={setIsInviteDialogOpen}>
-        <div className="p-6">
-          <h2 className="text-xl font-bold mb-4">ユーザーを招待</h2>
-          <p>招待ダイアログの内容（実装予定）</p>
-          <Button className="mt-4" onClick={() => setIsInviteDialogOpen(false)}>
-            閉じる
-          </Button>
-        </div>
-      </Dialog>
-
       {/* 役割編集ダイアログ */}
       <Dialog open={isEditRoleDialogOpen} onOpenChange={setIsEditRoleDialogOpen}>
-        {/* 役割編集ダイアログの内容はここに実装 */}
-      </Dialog>
+        <div className="p-6">
+          <h2 className="text-xl font-bold mb-4">ユーザー情報を編集</h2>
+          {selectedUser && (
+            <div className="space-y-4">
+              <div className="flex items-center mb-4">
+                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 mr-3">
+                  <HiUserCircle className="h-8 w-8" />
+                </div>
+                <div>
+                  <div className="font-medium">{selectedUser.name}</div>
+                  <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                </div>
+              </div>
 
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">役割</label>
+                <select
+                  value={selectedRole}
+                  onChange={(e) => setSelectedRole(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="admin">管理者（全ての権限）</option>
+                  <option value="member">メンバー（通常権限）</option>
+                  <option value="restricted">制限付き（閲覧のみ）</option>
+                </select>
+                {/* 警告メッセージを削除 */}
+              </div>
+
+              <div className="space-y-2">
+                <label className="block text-sm font-medium text-gray-700">部署</label>
+                <select
+                  value={selectedDepartmentId}
+                  onChange={(e) => setSelectedDepartmentId(e.target.value)}
+                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                >
+                  <option value="">部署なし</option>
+                  {departments && departments.length > 0 ? (
+                    departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>部署情報を読み込めませんでした</option>
+                  )}
+                </select>
+                {departments.length === 0 && (
+                  <p className="text-xs text-yellow-600">
+                    部署情報を取得できませんでした。部署管理ページで部署を設定してください。
+                  </p>
+                )}
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    setIsEditRoleDialogOpen(false);
+                    setSelectedUser(null);
+                  }}
+                  type="button"
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={handleUpdateUser}
+                  type="button"
+                  disabled={isUpdating}
+                  className="bg-blue-600 hover:bg-blue-700 text-white"
+                >
+                  {isUpdating ? (
+                    <>
+                      <Spinner size="sm" className="mr-2" />
+                      更新中...
+                    </>
+                  ) : (
+                    '更新する'
+                  )}
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </Dialog>
       {/* 削除確認ダイアログ */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <div className="p-6">

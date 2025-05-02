@@ -145,7 +145,7 @@ export async function POST(req: NextRequest) {
               adminId: session.user.id,
               users: { connect: [{ id: session.user.id }] },
               primaryColor: '#3B82F6',
-              secondaryColor: '#1E40AF',
+              secondaryColor: 'var(--color-corporate-secondary)',
             },
           });
           corporateTenant = newTenant;

@@ -4,7 +4,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HiChevronLeft, HiChevronRight, HiHome, HiOfficeBuilding } from 'react-icons/hi';
+import { HiChevronLeft, HiChevronRight, HiHome, HiOfficeBuilding, HiUser } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { corporateAccessState } from '@/lib/corporateAccessState';
@@ -23,8 +23,10 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
 
-  // 現在の URL が法人ダッシュボードかどうかを確認
+  // 現在の URL パスをチェック
   const isCorporateSection = pathname?.startsWith('/dashboard/corporate');
+  const isCorporateMemberSection = pathname?.startsWith('/dashboard/corporate-member');
+  const isCorporateRelated = isCorporateSection || isCorporateMemberSection;
 
   useEffect(() => {
     setIsMounted(true);
@@ -51,28 +53,66 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   const mainMenuItems = [...items];
 
   // 追加リンク用変数
-  let additionalLink = null;
+  const additionalLinks = [];
 
-  // 法人セクションにいる場合、個人ダッシュボードへのリンクを追加
+  // 法人セクションにいる場合、個人ダッシュボードと法人メンバーダッシュボードへのリンクを追加
   if (isCorporateSection) {
-    additionalLink = {
+    additionalLinks.push({
       title: '個人ダッシュボード',
       href: '/dashboard',
       icon: <HiHome className="h-5 w-5" />,
-    };
+    });
+
+    // 法人管理者は法人メンバーダッシュボードも表示
+    if (corporateAccessState.hasAccess) {
+      additionalLinks.push({
+        title: '法人メンバープロフィール',
+        href: '/dashboard/corporate-member',
+        icon: <HiUser className="h-5 w-5" />,
+      });
+    }
   }
-  
-  // 個人セクションにいて法人アクセス権がある場合、法人ダッシュボードへのリンクを追加
+
+  // 法人メンバーセクションにいる場合、個人ダッシュボードと法人ダッシュボードへのリンクを追加
+  else if (isCorporateMemberSection) {
+    additionalLinks.push({
+      title: '個人ダッシュボード',
+      href: '/dashboard',
+      icon: <HiHome className="h-5 w-5" />,
+    });
+
+    // 法人管理者の場合は法人管理ダッシュボードへのリンクも表示
+    if (corporateAccessState.isAdmin) {
+      additionalLinks.push({
+        title: '法人管理ダッシュボード',
+        href: '/dashboard/corporate',
+        icon: <HiOfficeBuilding className="h-5 w-5" />,
+      });
+    }
+  }
+
+  // 個人セクションにいて法人アクセス権がある場合、法人関連リンクを追加
   else if (
     !isCorporateSection &&
+    !isCorporateMemberSection &&
     pathname?.startsWith('/dashboard') &&
     corporateAccessState.hasAccess
   ) {
-    additionalLink = {
-      title: '法人ダッシュボード',
-      href: '/dashboard/corporate',
-      icon: <HiOfficeBuilding className="h-5 w-5" />,
-    };
+    // 法人メンバーダッシュボードへのリンクを追加
+    additionalLinks.push({
+      title: '法人メンバープロフィール',
+      href: '/dashboard/corporate-member',
+      icon: <HiUser className="h-5 w-5" />,
+    });
+
+    // 法人管理者の場合は法人管理ダッシュボードへのリンクも追加
+    if (corporateAccessState.isAdmin) {
+      additionalLinks.push({
+        title: '法人管理ダッシュボード',
+        href: '/dashboard/corporate',
+        icon: <HiOfficeBuilding className="h-5 w-5" />,
+      });
+    }
   }
 
   return (
@@ -107,42 +147,75 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
         {/* メインメニュー項目 */}
         <nav className="space-y-1 px-2">
-          {mainMenuItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors group',
-                pathname === item.href
-                  ? 'bg-blue-50 text-blue-700'
-                  : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700',
-                collapsed ? 'justify-center' : 'justify-start',
-              )}
-            >
-              <div
+          {mainMenuItems.map((item) => {
+            // アクティブなリンクかどうか
+            const isActive = pathname === item.href;
+            // 法人関連のリンクかどうか
+            const isCorporateLink = item.href.includes('/corporate');
+
+            // 特別処理が必要なリンク（ご利用プランと個人ダッシュボード）
+            const isSpecialLink =
+              item.href === '/dashboard/subscription' || item.href === '/dashboard';
+
+            // 条件に応じたクラス生成
+            let itemClass = '';
+            let iconClass = '';
+
+            if (isActive) {
+              if (isCorporateRelated || isCorporateLink) {
+                // 法人セクションまたは法人関連リンクのアクティブスタイル
+                itemClass = 'corporate-menu-active';
+                iconClass = 'corporate-icon-active';
+              } else {
+                // 通常セクションのアクティブスタイル
+                itemClass = 'bg-blue-50 text-blue-700';
+                iconClass = 'text-blue-700';
+              }
+            } else {
+              // 非アクティブスタイル
+              if (isCorporateRelated || isCorporateLink) {
+                if (isSpecialLink) {
+                  // 法人セクション内での特別リンク（ご利用プランと個人ダッシュボード）
+                  itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
+                  iconClass = 'text-gray-600 group-hover:text-blue-700';
+                } else {
+                  // 法人セクションでの通常の非アクティブ（hover含む）
+                  itemClass = 'text-gray-600 hover:corporate-menu-active';
+                  iconClass = 'text-gray-600 group-hover:corporate-icon-active';
+                }
+              } else {
+                // 通常セクションでの非アクティブ
+                itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
+                iconClass = 'text-gray-600 group-hover:text-blue-700';
+              }
+            }
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
                 className={cn(
-                  'flex-shrink-0',
-                  pathname === item.href
-                    ? 'text-blue-700'
-                    : 'text-gray-600 group-hover:text-blue-700',
+                  'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors group',
+                  itemClass,
+                  collapsed ? 'justify-center' : 'justify-start',
                 )}
               >
-                {item.icon}
-              </div>
-              <span
-                className={cn(
-                  'ml-3 transition-opacity duration-200',
-                  collapsed ? 'opacity-0 hidden' : 'opacity-100',
-                )}
-              >
-                {item.title}
-              </span>
-            </Link>
-          ))}
+                <div className={cn('flex-shrink-0', iconClass)}>{item.icon}</div>
+                <span
+                  className={cn(
+                    'ml-3 transition-opacity duration-200',
+                    collapsed ? 'opacity-0 hidden' : 'opacity-100',
+                  )}
+                >
+                  {item.title}
+                </span>
+              </Link>
+            );
+          })}
         </nav>
 
         {/* 区切り線と追加リンク */}
-        {additionalLink && (
+        {additionalLinks.length > 0 && (
           <div className="mt-4">
             {/* 区切り線 */}
             <div
@@ -151,35 +224,71 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
             {/* 追加リンク */}
             <nav className="space-y-1 px-2">
-              <Link
-                href={additionalLink.href}
-                className={cn(
-                  'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors group',
-                  pathname === additionalLink.href
-                    ? 'bg-blue-50 text-blue-700'
-                    : 'text-gray-600 hover:bg-blue-50 hover:text-blue-700',
-                  collapsed ? 'justify-center' : 'justify-start',
-                )}
-              >
-                <div
-                  className={cn(
-                    'flex-shrink-0',
-                    pathname === additionalLink.href
-                      ? 'text-blue-700'
-                      : 'text-gray-600 group-hover:text-blue-700',
-                  )}
-                >
-                  {additionalLink.icon}
-                </div>
-                <span
-                  className={cn(
-                    'ml-3 transition-opacity duration-200',
-                    collapsed ? 'opacity-0 hidden' : 'opacity-100',
-                  )}
-                >
-                  {additionalLink.title}
-                </span>
-              </Link>
+              {additionalLinks.map((link, index) => {
+                // アクティブなリンクかどうか
+                const isActive = pathname === link.href;
+                // 法人関連のリンクかどうか
+                const isCorporateLink = link.href.includes('/corporate');
+
+                // 特別処理が必要なリンク（ご利用プランと個人ダッシュボード）
+                const isSpecialLink =
+                  link.href === '/dashboard/subscription' || link.href === '/dashboard';
+
+                // 条件に応じたクラス生成
+                let itemClass = '';
+                let iconClass = '';
+
+                if (isActive) {
+                  if (isCorporateRelated || isCorporateLink) {
+                    // 法人セクションまたは法人関連リンクのアクティブスタイル
+                    itemClass = 'corporate-menu-active';
+                    iconClass = 'corporate-icon-active';
+                  } else {
+                    // 通常セクションのアクティブスタイル
+                    itemClass = 'bg-blue-50 text-blue-700';
+                    iconClass = 'text-blue-700';
+                  }
+                } else {
+                  // 非アクティブスタイル
+                  if (isCorporateRelated || isCorporateLink) {
+                    if (isSpecialLink) {
+                      // 法人セクション内での特別リンク（ご利用プランと個人ダッシュボード）
+                      itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
+                      iconClass = 'text-gray-600 group-hover:text-blue-700';
+                    } else {
+                      // 法人セクションでの通常の非アクティブ（hover含む）
+                      itemClass = 'text-gray-600 hover:corporate-menu-active';
+                      iconClass = 'text-gray-600 group-hover:corporate-icon-active';
+                    }
+                  } else {
+                    // 通常セクションでの非アクティブ
+                    itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
+                    iconClass = 'text-gray-600 group-hover:text-blue-700';
+                  }
+                }
+
+                return (
+                  <Link
+                    key={`${link.href}-${index}`}
+                    href={link.href}
+                    className={cn(
+                      'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors group',
+                      itemClass,
+                      collapsed ? 'justify-center' : 'justify-start',
+                    )}
+                  >
+                    <div className={cn('flex-shrink-0', iconClass)}>{link.icon}</div>
+                    <span
+                      className={cn(
+                        'ml-3 transition-opacity duration-200',
+                        collapsed ? 'opacity-0 hidden' : 'opacity-100',
+                      )}
+                    >
+                      {link.title}
+                    </span>
+                  </Link>
+                );
+              })}
             </nav>
           </div>
         )}

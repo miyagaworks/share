@@ -1,6 +1,7 @@
 // app/dashboard/corporate/page.tsx
 'use client';
 
+import { CorporateBranding } from '@/components/ui/CorporateBranding';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -92,16 +93,16 @@ type CardColor = 'blue' | 'green' | 'indigo' | 'purple' | 'gray';
 // カラーマップの定義
 const colorMap = {
   blue: {
-    bg: 'bg-blue-100',
-    text: 'text-blue-600',
+    bg: 'bg-corporate-primary/10',
+    text: 'text-corporate-primary',
   },
   green: {
     bg: 'bg-green-100',
     text: 'text-green-600',
   },
   indigo: {
-    bg: 'bg-indigo-100',
-    text: 'text-indigo-600',
+    bg: 'bg-corporate-secondary/10',
+    text: 'text-corporate-secondary',
   },
   purple: {
     bg: 'bg-purple-100',
@@ -263,29 +264,38 @@ export default function CorporateDashboardPage() {
 
       {/* テナント概要 */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mb-4 sm:mb-5 mx-1 sm:mx-2">
-        <div className="flex flex-col sm:flex-row sm:items-center">
-          <div className="flex items-center mb-2 sm:mb-0">
-            {displayTenant.logoUrl ? (
-              <Image
-                src={displayTenant.logoUrl}
-                alt={`${displayTenant.name}のロゴ`}
-                width={48}
-                height={48}
-                className="h-10 w-10 sm:h-12 sm:w-12 rounded-full mr-3 object-contain bg-gray-300"
-              />
-            ) : (
-              <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 flex items-center justify-center mr-3">
-                <HiOfficeBuilding className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+        <CorporateBranding
+          primaryColor={displayTenant.primaryColor || undefined}
+          secondaryColor={displayTenant.secondaryColor || undefined}
+          logoUrl={displayTenant.logoUrl}
+          tenantName={displayTenant.name}
+          headerText={`${displayTenant.name} ダッシュボード`}
+          shadow={true}
+        >
+          <div className="flex flex-col sm:flex-row sm:items-center">
+            <div className="flex items-center mb-2 sm:mb-0">
+              {displayTenant.logoUrl ? (
+                <Image
+                  src={displayTenant.logoUrl}
+                  alt={`${displayTenant.name}のロゴ`}
+                  width={48}
+                  height={48}
+                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-full mr-3 object-contain bg-gray-300"
+                />
+              ) : (
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                  <HiOfficeBuilding className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                </div>
+              )}
+              <div>
+                <h1 className="text-lg sm:text-xl font-bold break-words">{displayTenant.name}</h1>
+                <p className="text-xs sm:text-sm text-gray-500">
+                  法人プラン: 最大{displayTenant.maxUsers}ユーザー
+                </p>
               </div>
-            )}
-            <div>
-              <h1 className="text-lg sm:text-xl font-bold break-words">{displayTenant.name}</h1>
-              <p className="text-xs sm:text-sm text-gray-500">
-                法人プラン: 最大{displayTenant.maxUsers}ユーザー
-              </p>
             </div>
           </div>
-        </div>
+        </CorporateBranding>
       </div>
 
       {/* メニューグリッド */}

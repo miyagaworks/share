@@ -2,8 +2,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
-import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
+import { DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
 import { SNS_METADATA, type SnsPlatform } from '@/types/sns';
 import { SnsGuideModalWithDescription } from '@/components/shared/SnsGuideModalWithDescription';
 import { toast } from 'react-hot-toast';
@@ -22,7 +21,6 @@ export function CorporateSnsEditForm({ link, onCancel, onSuccess }: CorporateSns
   const [username, setUsername] = useState(link.username || '');
   const [url, setUrl] = useState(link.url);
   const [isRequired, setIsRequired] = useState(link.isRequired);
-  const [description, setDescription] = useState(link.description || '');
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isGuideOpen, setIsGuideOpen] = useState(false);
 
@@ -121,7 +119,6 @@ export function CorporateSnsEditForm({ link, onCancel, onSuccess }: CorporateSns
         username,
         url: finalUrl,
         isRequired,
-        description: description || undefined,
       });
 
       if (result.error) {
@@ -149,10 +146,8 @@ export function CorporateSnsEditForm({ link, onCancel, onSuccess }: CorporateSns
   return (
     <DialogContent className="sm:max-w-md bg-white w-full max-w-full">
       <DialogHeader>
-        <DialogTitle className="flex items-center">
-          <ImprovedSnsIcon platform={platform} size={20} />
-          <span className="ml-2">{SNS_METADATA[platform]?.name || platform}を編集</span>
-        </DialogTitle>
+        <DialogTitle>法人共通SNSリンクを追加</DialogTitle>
+        <DialogDescription>法人共通のSNSリンク設定を行います。</DialogDescription>
       </DialogHeader>
 
       <div className="space-y-4 mt-4">
@@ -229,16 +224,6 @@ export function CorporateSnsEditForm({ link, onCancel, onSuccess }: CorporateSns
             </div>
           </>
         )}
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-1">説明（任意）</label>
-          <Input
-            value={description}
-            onChange={(e) => setDescription(e.target.value)}
-            placeholder="このSNSアカウントの説明"
-            disabled={isSubmitting}
-          />
-        </div>
 
         <div className="flex items-center">
           <input

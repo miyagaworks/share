@@ -91,7 +91,13 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
     };
 
     // snsIconColorに基づいてアイコンの色を設定
-    const iconColor = snsIconColor === "original" ? "original" : (snsIconColor || "#333333");
+    const iconColor =
+      snsIconColor === 'original'
+        ? 'original'
+        : snsIconColor === 'corporate-primary' ||
+            document.documentElement.classList.contains('corporate-theme')
+          ? 'var(--color-corporate-primary)'
+          : snsIconColor || '#333333';
 
     return (
         <a

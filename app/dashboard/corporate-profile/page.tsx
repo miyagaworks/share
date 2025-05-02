@@ -183,7 +183,7 @@ export default function CorporateProfilePage() {
   // 法人テーマカラーを適用するためのスタイル
   const corporateStyle = {
     primaryColor: tenantData.primaryColor || '#3B82F6',
-    secondaryColor: tenantData.secondaryColor || '#1E40AF',
+    secondaryColor: tenantData.secondaryColor || 'var(--color-corporate-secondary)',
   };
 
   return (

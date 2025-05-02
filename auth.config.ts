@@ -9,12 +9,19 @@ import { prisma } from '@/lib/prisma';
 export default {
   providers: [
     Google({
-      clientId: process.env.GOOGLE_CLIENT_ID,
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET,
+      clientId: process.env.GOOGLE_CLIENT_ID ?? '',
+      clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
       allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
+      // credentialsフィールドが必須
+      credentials: {
+        email: { label: 'メールアドレス', type: 'email' },
+        password: { label: 'パスワード', type: 'password' },
+      },
       async authorize(credentials) {
+        if (!credentials) return null;
+
         const validatedFields = LoginSchema.safeParse(credentials);
 
         if (!validatedFields.success) return null;
@@ -23,6 +30,13 @@ export default {
 
         const user = await prisma.user.findUnique({
           where: { email },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            password: true,
+            corporateRole: true,
+          },
         });
 
         if (!user || !user.password) return null;
@@ -31,7 +45,12 @@ export default {
 
         if (!passwordsMatch) return null;
 
-        return user;
+        return {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          role: user.corporateRole,
+        };
       },
     }),
   ],
@@ -39,33 +58,5 @@ export default {
     signIn: '/auth/signin',
     error: '/auth/error',
   },
-  cookies: {
-    csrfToken: {
-      name: 'next-auth.csrf-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-  },
-  callbacks: {
-    async session({ token, session }) {
-      if (token.sub && session.user) {
-        session.user.id = token.sub;
-      }
-
-      if (token.role && session.user) {
-        session.user.role = token.role as string;
-      }
-
-      return session;
-    },
-    async jwt({ token }) {
-      if (!token.sub) return token;
-
-      return token;
-    },
-  },
+  // callbacksプロパティを削除（auth.tsで定義する）
 } satisfies NextAuthConfig;

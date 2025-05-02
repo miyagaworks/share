@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { toast } from 'react-hot-toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
+import Link from 'next/link';
 
 // お問い合わせの種類
 type ContactType =
@@ -165,7 +166,7 @@ export default function ContactPageContent() {
         ) : success ? (
           <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
             <h3 className="text-lg font-medium text-green-800 mb-2">送信完了</h3>
-            <p className="text-green-700 mb-4">
+            <p className="text-green-700 mb-4 text-justify">
               お問い合わせありがとうございます。内容を確認の上、必要に応じてご連絡いたします。
             </p>
             <Button
@@ -301,7 +302,16 @@ export default function ContactPageContent() {
                 className="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded"
               />
               <label htmlFor="privacy" className="ml-2 block text-sm text-gray-700">
-                <span className="text-red-500">*</span> プライバシーポリシーに同意します
+                <span className="text-red-500">*</span>{' '}
+                <Link
+                  href="/legal/privacy"
+                  className="text-blue-600 hover:underline"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                >
+                  プライバシーポリシー
+                </Link>
+                に同意します
               </label>
             </div>
 

@@ -1,16 +1,16 @@
 // auth.ts
 import NextAuth from 'next-auth';
-import { DefaultSession } from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
-import Google from 'next-auth/providers/google';
-import bcrypt from 'bcryptjs';
+import authConfig from './auth.config';
+import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
+import type { DefaultSession } from 'next-auth';
 
-// NextAuthの型定義に拡張を行う
+// 型定義の拡張
 declare module 'next-auth' {
   interface User {
     role?: string | null;
   }
+
   interface Session {
     user: {
       id: string;
@@ -19,84 +19,37 @@ declare module 'next-auth' {
   }
 }
 
-// JWTの型拡張
+// JWT型の拡張
 declare module 'next-auth/jwt' {
   interface JWT {
     role?: string | null;
   }
 }
 
+// NextAuth設定
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  providers: [
-    Google({
-      clientId: process.env.GOOGLE_CLIENT_ID || '',
-      clientSecret: process.env.GOOGLE_CLIENT_SECRET || '',
-    }),
-    Credentials({
-      async authorize(credentials) {
-        try {
-          if (!credentials) return null;
-
-          const email = credentials.email as string;
-          const password = credentials.password as string;
-
-          if (!email || !password) {
-            return null;
-          }
-
-          const normalizedEmail = email.toLowerCase();
-
-          const user = await prisma.user.findUnique({
-            where: { email: normalizedEmail },
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              password: true,
-              corporateRole: true,
-            },
-          });
-
-          if (!user || !user.password) {
-            return null;
-          }
-
-          const passwordsMatch = await bcrypt.compare(password, user.password);
-          if (!passwordsMatch) {
-            return null;
-          }
-
-          return {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            role: user.corporateRole,
-          };
-        } catch (error) {
-          console.error('認証エラー:', error);
-          return null;
-        }
-      },
-    }),
-  ],
-  pages: {
-    signIn: '/auth/signin',
-  },
+  adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
+  // callbacksをここで定義（auth.config.tsでは定義しない）
   callbacks: {
-    async session({ token, session }) {
-      if (session.user) {
-        session.user.id = token.sub || '';
-        session.user.role = token.role;
+    async session({ session, token }) {
+      if (token.sub && session.user) {
+        session.user.id = token.sub;
       }
+
+      if (token.role && session.user) {
+        session.user.role = token.role as string;
+      }
+
       return session;
     },
     async jwt({ token, user }) {
       if (user) {
-        token.id = user.id;
         token.role = user.role;
       }
+
       return token;
     },
   },
+  ...authConfig,
 });

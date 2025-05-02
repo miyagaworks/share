@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { ImprovedDesignForm } from '@/components/forms/ImprovedDesignForm';
-import { ImprovedDesignPreview } from '@/components/dashboard/ImprovedDesignPreview'; // ここを変更
+import { ImprovedDesignPreview } from '@/components/dashboard/ImprovedDesignPreview';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import type { User } from '@prisma/client';

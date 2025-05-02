@@ -5,7 +5,6 @@ import React from 'react';
 import { FaYoutube, FaInstagram, FaTiktok, FaFacebook, FaPinterest } from 'react-icons/fa';
 import { SiThreads } from 'react-icons/si';
 import { RiTwitterXFill } from 'react-icons/ri';
-
 import { type SnsPlatform } from '@/types/sns';
 
 interface ImprovedSnsIconProps {
@@ -60,6 +59,9 @@ export function ImprovedSnsIcon({
   } else if (color === 'original') {
     // 元々のアイコンカラーを使用
     finalColor = SNS_COLORS[platform] || '#333333';
+  } else if (color === 'corporate-primary') {
+    // 法人カラーを適用
+    finalColor = 'var(--color-corporate-primary)';
   } else {
     // 指定された色を使用
     finalColor = color;
@@ -91,10 +93,6 @@ export function ImprovedSnsIcon({
       return renderCustomSvg(LINE_SVG_PATH);
     case 'official-line':
       return renderCustomSvg(LINE_SVG_PATH);
-    case 'note':
-      return renderCustomSvg(NOTE_SVG_PATH);
-    case 'bereal':
-      return renderCustomSvg(BEREAL_SVG_PATH);
     case 'youtube':
       return <FaYoutube style={style} className={className} />;
     case 'x':
@@ -109,6 +107,10 @@ export function ImprovedSnsIcon({
       return <FaPinterest style={style} className={className} />;
     case 'threads':
       return <SiThreads style={style} className={className} />;
+    case 'note':
+      return renderCustomSvg(NOTE_SVG_PATH);
+    case 'bereal':
+      return renderCustomSvg(BEREAL_SVG_PATH);
     default:
       return null;
   }

@@ -36,8 +36,12 @@ export async function GET() {
       success: true,
       branding: {
         logoUrl: tenant.logoUrl,
+        logoWidth: tenant.logoWidth || null,
+        logoHeight: tenant.logoHeight || null,
         primaryColor: tenant.primaryColor,
         secondaryColor: tenant.secondaryColor,
+        headerText: tenant.headerText || null, // 追加
+        textColor: tenant.textColor || null, // 追加
       },
     });
   } catch (error) {
@@ -46,7 +50,7 @@ export async function GET() {
   }
 }
 
-// ブランディング設定の更新（PUT）
+// app/api/corporate/branding/route.ts の PUT メソッド修正
 export async function PUT(req: Request) {
   try {
     const session = await auth();
@@ -57,7 +61,15 @@ export async function PUT(req: Request) {
 
     // リクエストボディの取得
     const body = await req.json();
-    const { primaryColor, secondaryColor, logoUrl } = body;
+    const {
+      primaryColor,
+      secondaryColor,
+      logoUrl,
+      logoWidth,
+      logoHeight,
+      headerText, // 追加
+      textColor, // 追加
+    } = body;
 
     // ユーザーとテナント情報を取得
     const user = await prisma.user.findUnique({
@@ -79,14 +91,45 @@ export async function PUT(req: Request) {
       );
     }
 
+    // 更新データを準備（明示的な型を使用）
+    type UpdateData = {
+      primaryColor: string | null;
+      secondaryColor: string | null;
+      logoUrl: string | null;
+      logoWidth?: number;
+      logoHeight?: number;
+      headerText?: string | null; // 追加
+      textColor?: string | null; // 追加
+    };
+
+    const updateData: UpdateData = {
+      primaryColor,
+      secondaryColor,
+      logoUrl,
+    };
+
+    // 数値型に変換して保存 (値が存在する場合のみ)
+    if (logoWidth !== undefined) {
+      updateData.logoWidth = Number(logoWidth);
+    }
+    if (logoHeight !== undefined) {
+      updateData.logoHeight = Number(logoHeight);
+    }
+
+    // 追加したフィールドを設定
+    if (headerText !== undefined) {
+      updateData.headerText = headerText;
+    }
+    if (textColor !== undefined) {
+      updateData.textColor = textColor;
+    }
+
+    console.log('テナント更新データ:', updateData);
+
     // テナント情報を更新
     const updatedTenant = await prisma.corporateTenant.update({
       where: { id: user.adminOfTenant.id },
-      data: {
-        primaryColor,
-        secondaryColor,
-        logoUrl,
-      },
+      data: updateData,
     });
 
     return NextResponse.json({

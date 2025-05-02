@@ -56,49 +56,33 @@ export function ShareOptionClient({ profileUrl }: ShareOptionClientProps) {
     };
 
     return (
-        <div className="space-y-4">
-            <Button
-                className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-800 text-white"
-                onClick={handleCopyUrl}
-            >
-                <FaLink className="h-4 w-4" />
-                {isCopied ? "コピーしました！" : "URLをコピー"}
-            </Button>
+      <div className="space-y-4">
+        <Button
+          className="w-full flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-800 text-white"
+          onClick={handleCopyUrl}
+        >
+          <FaLink className="h-4 w-4" />
+          {isCopied ? 'コピーしました！' : 'URLをコピー'}
+        </Button>
 
-            <div className="grid grid-cols-4 gap-2">
-                <Button
-                    variant="outline"
-                    className="p-2 h-auto"
-                    onClick={() => handleShare("x")}
-                >
-                    <RiTwitterXFill className="h-5 w-5" />
-                    <span className="sr-only">Xで共有</span>
-                </Button>
-                <Button
-                    variant="outline"
-                    className="p-2 h-auto"
-                    onClick={() => handleShare("facebook")}
-                >
-                    <FaFacebook className="h-5 w-5" />
-                    <span className="sr-only">Facebookで共有</span>
-                </Button>
-                <Button
-                    variant="outline"
-                    className="p-2 h-auto"
-                    onClick={() => handleShare("line")}
-                >
-                    <FaLine className="h-5 w-5" />
-                    <span className="sr-only">LINEで共有</span>
-                </Button>
-                <Button
-                    variant="outline"
-                    className="p-2 h-auto"
-                    onClick={() => handleShare("mail")}
-                >
-                    <HiMail className="h-5 w-5" />
-                    <span className="sr-only">メールで共有</span>
-                </Button>
-            </div>
+        <div className="grid grid-cols-4 gap-2">
+          <Button variant="outline" className="p-2 h-auto" onClick={() => handleShare('line')}>
+            <FaLine className="h-5 w-5" />
+            <span className="sr-only">LINEで共有</span>
+          </Button>
+          <Button variant="outline" className="p-2 h-auto" onClick={() => handleShare('x')}>
+            <RiTwitterXFill className="h-5 w-5" />
+            <span className="sr-only">Xで共有</span>
+          </Button>
+          <Button variant="outline" className="p-2 h-auto" onClick={() => handleShare('facebook')}>
+            <FaFacebook className="h-5 w-5" />
+            <span className="sr-only">Facebookで共有</span>
+          </Button>
+          <Button variant="outline" className="p-2 h-auto" onClick={() => handleShare('mail')}>
+            <HiMail className="h-5 w-5" />
+            <span className="sr-only">メールで共有</span>
+          </Button>
         </div>
+      </div>
     );
 }

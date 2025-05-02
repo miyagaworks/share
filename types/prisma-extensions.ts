@@ -1,5 +1,5 @@
 // types/prisma-extensions.ts
-import { User } from '@prisma/client';
+import { User, CorporateTenant } from '@prisma/client';
 
 /**
  * 拡張されたユーザー型定義
@@ -8,8 +8,7 @@ import { User } from '@prisma/client';
 export interface ExtendedUser extends User {
   companyUrl: string | null; // 'undefined' を許可しないように修正
   companyLabel: string | null; // 'undefined' を許可しないように修正
-  headerText: string | null; // ヘッダーテキスト
-  textColor: string | null; // テキストカラー
+  // headerText と textColor を削除
 }
 
 /**
@@ -22,7 +21,27 @@ export function asExtendedUser(user: User): ExtendedUser {
     ...extendedUser,
     companyUrl: extendedUser.companyUrl || null,
     companyLabel: extendedUser.companyLabel || null,
-    headerText: extendedUser.headerText || null,
-    textColor: extendedUser.textColor || null,
+    // headerText と textColor を削除
+  };
+}
+
+/**
+ * 拡張された法人テナント型定義
+ */
+export interface ExtendedCorporateTenant extends CorporateTenant {
+  headerText: string | null; // ヘッダーテキスト
+  textColor: string | null; // テキストカラー
+}
+
+/**
+ * CorporateTenant型をExtendedCorporateTenant型に安全に変換する型ガード関数
+ */
+export function asExtendedCorporateTenant(tenant: CorporateTenant): ExtendedCorporateTenant {
+  // 明示的に型を持つオブジェクトとして変換
+  const extendedTenant = tenant as unknown as ExtendedCorporateTenant;
+  return {
+    ...extendedTenant,
+    headerText: extendedTenant.headerText || null,
+    textColor: extendedTenant.textColor || null,
   };
 }

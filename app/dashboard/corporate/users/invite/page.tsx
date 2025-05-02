@@ -6,7 +6,7 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
-import { HiMail, HiArrowLeft } from 'react-icons/hi';
+import { HiMail, HiArrowLeft, HiInformationCircle } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
 
 // 部署情報の型定義
@@ -184,7 +184,11 @@ export default function InviteUserPage() {
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-yellow-800 mb-2">法人プランが有効ではありません</h3>
         <p className="text-yellow-700">法人プランにアップグレードしてこの機能をご利用ください。</p>
-        <Button className="mt-4" onClick={() => router.push('/dashboard/subscription')}>
+        <Button
+          className="mt-4"
+          variant="corporate"
+          onClick={() => router.push('/dashboard/subscription')}
+        >
           プランを見る
         </Button>
       </div>
@@ -286,12 +290,18 @@ export default function InviteUserPage() {
             <div className="flex justify-end space-x-4">
               <Button
                 type="button"
-                variant="outline"
+                variant="corporateOutline"
                 onClick={() => router.push('/dashboard/corporate/users')}
               >
                 キャンセル
               </Button>
-              <Button type="submit" disabled={isSending} className="flex items-center">
+              <Button
+                type="submit"
+                variant="corporate"
+                disabled={isSending}
+                className="flex items-center"
+                style={{ backgroundColor: '#1E3A8A', color: 'white' }}
+              >
                 {isSending ? (
                   <>
                     <Spinner size="sm" className="mr-2" />
@@ -309,14 +319,19 @@ export default function InviteUserPage() {
         </form>
       </div>
 
-      {/* ヘルプセクション */}
-      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
-        <h3 className="text-sm font-medium text-blue-800 mb-2">招待について</h3>
-        <p className="text-sm text-blue-700 text-justify">
-          招待されたユーザーには、メールで招待リンクが送信されます。
-          ユーザーがリンクをクリックすると、パスワードの設定後にテナントに参加できます。
-          招待は72時間有効です。
-        </p>
+      {/* ヘルプセクション - スタイルクラスを変更 */}
+      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 w-full">
+        <div className="flex flex-row items-start">
+          <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
+          <div className="w-full">
+            <h3 className="font-medium text-blue-900 mb-1">招待について</h3>
+            <p className="text-sm text-corporate-secondary break-words hyphens-auto text-justify">
+              招待されたユーザーには、メールで招待リンクが送信されます。
+              ユーザーがリンクをクリックすると、パスワードの設定後にテナントに参加できます。
+              招待は72時間有効です。
+            </p>
+          </div>
+        </div>
       </div>
     </div>
   );

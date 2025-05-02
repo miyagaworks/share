@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { HiMenu, HiX, HiOfficeBuilding, HiHome } from 'react-icons/hi';
+import { HiMenu, HiX, HiOfficeBuilding, HiHome, HiUser } from 'react-icons/hi';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -12,6 +12,7 @@ interface MenuItemType {
   title: string;
   href: string;
   icon: React.ReactNode;
+  adminOnly?: boolean;
 }
 
 interface MobileMenuButtonProps {
@@ -57,34 +58,87 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
 
   // メニュー項目
   const mainMenuItems = [...items];
-  const isCorporateSection = pathname?.startsWith('/dashboard/corporate') || false;
+  // 現在のURLのセクションをチェック
+  const isCorporateSection = pathname?.startsWith('/dashboard/corporate');
+  const isCorporateMemberSection = pathname?.startsWith('/dashboard/corporate-member');
+  const isCorporateRelated = isCorporateSection || isCorporateMemberSection;
 
   // 追加リンク処理
-  const additionalLinks = [];
+  const additionalLinks: MenuItemType[] = [];
 
-  // 法人セクションにいる場合、個人ダッシュボードへのリンクを追加
+  // 法人セクションにいる場合、個人ダッシュボードと法人メンバーダッシュボードへのリンクを追加
   if (isCorporateSection) {
     additionalLinks.push({
       title: '個人ダッシュボード',
       href: '/dashboard',
       icon: <HiHome className="h-5 w-5" />,
     });
+
+    // 法人管理者は法人メンバーダッシュボードも表示
+    if (corporateAccessState.hasAccess) {
+      additionalLinks.push({
+        title: '法人メンバープロフィール',
+        href: '/dashboard/corporate-member',
+        icon: <HiUser className="h-5 w-5" />,
+      });
+    }
   }
 
-  // 個人セクションで法人アクセス権がある場合は法人ダッシュボードへのリンクを追加
-  else if (pathname?.startsWith('/dashboard') && corporateAccessState.hasAccess === true) {
-    // 法人ダッシュボードへのリンクが既にitemsにある場合は使用
-    const corporateLink = items.find((item) => item.href === '/dashboard/corporate');
+  // 法人メンバーセクションにいる場合、個人ダッシュボードと法人ダッシュボードへのリンクを追加
+  else if (isCorporateMemberSection) {
+    additionalLinks.push({
+      title: '個人ダッシュボード',
+      href: '/dashboard',
+      icon: <HiHome className="h-5 w-5" />,
+    });
 
-    // 法人プランの場合のみ追加リンクを表示
-    additionalLinks.push(
-      corporateLink || {
-        title: '法人ダッシュボード',
+    // 法人管理者の場合は法人管理ダッシュボードへのリンクも表示
+    if (corporateAccessState.isAdmin) {
+      additionalLinks.push({
+        title: '法人管理ダッシュボード',
         href: '/dashboard/corporate',
         icon: <HiOfficeBuilding className="h-5 w-5" />,
-      },
-    );
+      });
+    }
   }
+
+  // 個人セクションにいて法人アクセス権がある場合、法人関連リンクを追加
+  else if (
+    !isCorporateSection &&
+    !isCorporateMemberSection &&
+    pathname?.startsWith('/dashboard') &&
+    corporateAccessState.hasAccess
+  ) {
+    // 法人メンバーダッシュボードへのリンクを追加
+    additionalLinks.push({
+      title: '法人メンバープロフィール',
+      href: '/dashboard/corporate-member',
+      icon: <HiUser className="h-5 w-5" />,
+    });
+
+    // 法人管理者の場合は法人管理ダッシュボードへのリンクも追加
+    if (corporateAccessState.isAdmin) {
+      additionalLinks.push({
+        title: '法人管理ダッシュボード',
+        href: '/dashboard/corporate',
+        icon: <HiOfficeBuilding className="h-5 w-5" />,
+      });
+    }
+  }
+
+  // 管理者権限によるフィルタリング
+  const filteredMainItems = mainMenuItems.filter(
+    (item) => !item.adminOnly || corporateAccessState.isAdmin,
+  );
+
+  // 法人セクション関連のメニューボタンスタイル
+  const getMenuButtonStyle = () => {
+    if (isCorporateRelated) {
+      // 明示的に色を指定する
+      return 'lg:hidden fixed bottom-6 right-3 z-50 bg-[#1E3A8A] text-white p-5 rounded-full shadow-lg focus:outline-none';
+    }
+    return 'lg:hidden fixed bottom-6 right-3 z-50 bg-blue-600 text-white p-5 rounded-full shadow-lg focus:outline-none';
+  };
 
   return (
     <>
@@ -92,7 +146,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
       <button
         type="button"
         onClick={() => setIsOpen(true)}
-        className="lg:hidden fixed bottom-6 right-3 z-50 bg-blue-600 text-white p-5 rounded-full shadow-lg focus:outline-none"
+        className={getMenuButtonStyle()}
         aria-label="メニューを開く"
       >
         <HiMenu className="h-8 w-8" />
@@ -130,56 +184,108 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
           {/* メニュー項目 */}
           <div className="flex-1 overflow-y-auto p-4">
             <nav className="space-y-3">
-              {mainMenuItems.map((item) => (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={cn(
-                    'flex items-center px-4 py-4 text-lg font-medium rounded-md transition-colors',
-                    pathname === item.href
-                      ? 'bg-blue-50 text-blue-700'
-                      : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700',
-                  )}
-                  onClick={() => setIsOpen(false)}
-                >
-                  <div
+              {filteredMainItems.map((item) => {
+                // アクティブなリンクかどうか
+                const isActive = pathname === item.href;
+                // 法人関連のリンクかどうか
+                const isCorporateLink = item.href.includes('/corporate');
+
+                // 条件に応じたクラス生成
+                let itemClass = '';
+                let iconClass = '';
+
+                if (isActive) {
+                  if (isCorporateRelated || isCorporateLink) {
+                    // 法人セクションまたは法人関連リンクのアクティブスタイル
+                    itemClass = 'corporate-menu-active';
+                    iconClass = 'corporate-icon-active';
+                  } else {
+                    // 通常セクションのアクティブスタイル
+                    itemClass = 'bg-blue-50 text-blue-700';
+                    iconClass = 'text-blue-700';
+                  }
+                } else {
+                  // 非アクティブスタイル
+                  if (isCorporateRelated || isCorporateLink) {
+                    // 法人セクションでの非アクティブ（hover含む）
+                    itemClass = 'text-gray-700 hover:corporate-menu-active';
+                    iconClass = 'text-gray-600 group-hover:corporate-icon-active';
+                  } else {
+                    // 通常セクションでの非アクティブ
+                    itemClass = 'text-gray-700 hover:bg-blue-50 hover:text-blue-700';
+                    iconClass = 'text-gray-600 group-hover:text-blue-700';
+                  }
+                }
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
                     className={cn(
-                      'flex-shrink-0 mr-4 text-2xl',
-                      pathname === item.href ? 'text-blue-700' : 'text-gray-600',
+                      'flex items-center px-4 py-4 text-lg font-medium rounded-md transition-colors group',
+                      itemClass,
                     )}
+                    onClick={() => setIsOpen(false)}
                   >
-                    {item.icon}
-                  </div>
-                  <span>{item.title}</span>
-                </Link>
-              ))}
+                    <div className={cn('flex-shrink-0 mr-4 text-2xl', iconClass)}>{item.icon}</div>
+                    <span>{item.title}</span>
+                  </Link>
+                );
+              })}
 
               {/* 追加リンク */}
               {additionalLinks.length > 0 && (
                 <div className="pt-4 mt-4 border-t border-gray-200">
-                  {additionalLinks.map((link, index) => (
-                    <Link
-                      key={link.href + index}
-                      href={link.href}
-                      className={cn(
-                        'flex items-center px-4 py-4 text-lg font-medium rounded-md transition-colors',
-                        pathname === link.href
-                          ? 'bg-blue-50 text-blue-700'
-                          : 'text-gray-700 hover:bg-blue-50 hover:text-blue-700',
-                      )}
-                      onClick={() => setIsOpen(false)}
-                    >
-                      <div
+                  {additionalLinks.map((link, index) => {
+                    // アクティブなリンクかどうか
+                    const isActive = pathname === link.href;
+                    // 法人関連のリンクかどうか
+                    const isCorporateLink = link.href.includes('/corporate');
+
+                    // 条件に応じたクラス生成
+                    let itemClass = '';
+                    let iconClass = '';
+
+                    if (isActive) {
+                      if (isCorporateRelated || isCorporateLink) {
+                        // 法人セクションまたは法人関連リンクのアクティブスタイル
+                        itemClass = 'corporate-menu-active';
+                        iconClass = 'corporate-icon-active';
+                      } else {
+                        // 通常セクションのアクティブスタイル
+                        itemClass = 'bg-blue-50 text-blue-700';
+                        iconClass = 'text-blue-700';
+                      }
+                    } else {
+                      // 非アクティブスタイル
+                      if (isCorporateRelated || isCorporateLink) {
+                        // 法人セクションでの非アクティブ（hover含む）
+                        itemClass = 'text-gray-700 hover:corporate-menu-active';
+                        iconClass = 'text-gray-600 group-hover:corporate-icon-active';
+                      } else {
+                        // 通常セクションでの非アクティブ
+                        itemClass = 'text-gray-700 hover:bg-blue-50 hover:text-blue-700';
+                        iconClass = 'text-gray-600 group-hover:text-blue-700';
+                      }
+                    }
+
+                    return (
+                      <Link
+                        key={link.href + index}
+                        href={link.href}
                         className={cn(
-                          'flex-shrink-0 mr-4 text-2xl',
-                          pathname === link.href ? 'text-blue-700' : 'text-gray-600',
+                          'flex items-center px-4 py-4 text-lg font-medium rounded-md transition-colors group',
+                          itemClass,
                         )}
+                        onClick={() => setIsOpen(false)}
                       >
-                        {link.icon}
-                      </div>
-                      <span>{link.title}</span>
-                    </Link>
-                  ))}
+                        <div className={cn('flex-shrink-0 mr-4 text-2xl', iconClass)}>
+                          {link.icon}
+                        </div>
+                        <span>{link.title}</span>
+                      </Link>
+                    );
+                  })}
                 </div>
               )}
             </nav>

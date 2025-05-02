@@ -12,7 +12,7 @@ export function QuickIntroButton() {
         <Button
           type="button"
           variant="outline"
-          className="w-full py-3 group relative flex items-center justify-center bg-blue-600 hover:bg-blue-700"
+          className="w-full py-3 group relative flex items-center justify-center bg-blue-700 hover:bg-blue-800"
         >
           <HiSparkles className="mr-2 h-5 w-5 text-yellow-300 animate-pulse" />
           <span className="text-white font-medium">かんたん自己紹介を作成</span>

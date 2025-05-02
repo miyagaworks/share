@@ -117,98 +117,87 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
 }
 
 // APIチェック関数
-export async function checkCorporateAccess(forceCheck = false): Promise<CorporateAccessState> {
+export const checkCorporateAccess = async (force = false) => {
+  // キャッシュ時間を1分に延長
+  const CACHE_DURATION = 60 * 1000; // 60秒
+
   const now = Date.now();
-  const CACHE_DURATION = 30000; // 30秒
-
-  logDebug('チェック開始', {
-    ...corporateAccessState,
-    forceCheck,
-    cacheExpiredTime: corporateAccessState.lastChecked + CACHE_DURATION,
-    cacheValidFor: corporateAccessState.lastChecked + CACHE_DURATION - now,
-  });
-
-  // キャッシュが有効な場合は再チェックしない
   if (
-    !forceCheck &&
-    corporateAccessState.hasAccess !== null &&
+    !force &&
+    corporateAccessState.lastChecked &&
     now - corporateAccessState.lastChecked < CACHE_DURATION
   ) {
-    logDebug('キャッシュ有効', {
-      timeSinceLastCheck: now - corporateAccessState.lastChecked,
-      cacheDuration: CACHE_DURATION,
+    logDebug('キャッシュ使用', {
+      age: now - corporateAccessState.lastChecked,
+      state: { ...corporateAccessState },
     });
     return corporateAccessState;
   }
 
   try {
-    logDebug('APIリクエスト送信', { timestamp: now });
-
-    // キャッシュを無効化するためのパラメータを追加
-    const response = await fetch('/api/corporate/access?t=' + now, {
-      cache: 'no-store',
-      headers: {
-        'Cache-Control': 'no-cache',
-        Pragma: 'no-cache',
-      },
-    });
-
+    logDebug('APIリクエスト開始', { timestamp: now });
+    // キャッシュバスティングのためのタイムスタンプを追加
+    const response = await fetch('/api/corporate/access?t=' + now);
     logDebug('APIレスポンス受信', {
       status: response.status,
+      ok: response.ok,
       statusText: response.statusText,
-      headers: Object.fromEntries([...response.headers.entries()]),
     });
 
-    if (response.ok) {
-      const data = await response.json();
-      logDebug('APIレスポンスデータ', data);
-
+    // 403は個人プランユーザーとして正常に処理
+    if (response.status === 403) {
+      logDebug('個人プランユーザー検出', { status: 403 });
+      // 個人プランユーザーと判定
       updateCorporateAccessState({
-        hasAccess: data.hasCorporateAccess === true,
-        isAdmin: data.isAdmin === true,
-        tenantId: data.tenant?.id || null,
-        userRole: data.userRole || null,
+        hasAccess: false,
+        isAdmin: false,
+        tenantId: null,
         lastChecked: now,
-        error: data.error || null,
+        error: null,
+      });
+    } else if (response.ok) {
+      const data = await response.json();
+      logDebug('法人プランユーザー検出', data);
+      // 法人プランユーザーと判定
+      updateCorporateAccessState({
+        hasAccess: true,
+        isAdmin: data.isAdmin || false,
+        tenantId: data.tenantId || null,
+        userRole: data.role || null,
+        lastChecked: now,
+        error: null,
       });
     } else {
-      const errorData = await response.text();
-      logDebug('APIエラー', {
+      // その他のエラー（例: 500内部サーバーエラーなど）
+      logDebug('予期しないAPIエラー', {
         status: response.status,
-        errorData,
+        statusText: response.statusText,
       });
 
-      // 401/403ではアクセス権限なしと判断
-      if (response.status === 401 || response.status === 403) {
-        updateCorporateAccessState({
-          hasAccess: false,
-          isAdmin: false,
-          lastChecked: now,
-          error: `アクセス権限がありません: ${response.status}`,
-        });
-      } else {
-        // その他のエラーの場合は、以前の状態を維持してエラーのみ更新
-        updateCorporateAccessState({
-          lastChecked: now,
-          error: `APIレスポンスエラー: ${response.status} ${response.statusText}`,
-        });
-      }
+      // 一時的なエラーとして処理し、既存の状態を保持
+      updateCorporateAccessState({
+        lastChecked: now,
+        error: `APIエラー: ${response.status} ${response.statusText}`,
+      });
     }
+
+    return corporateAccessState;
   } catch (error) {
-    logDebug('APIリクエストエラー', error);
+    // ネットワークエラーなどの例外処理
+    logDebug('APIリクエスト例外', error);
 
-    // エラー時は以前の状態を維持し、エラーのみ更新
+    // エラーが発生した場合も状態を更新
     updateCorporateAccessState({
+      error: error instanceof Error ? error.message : 'APIリクエスト中にエラーが発生しました',
       lastChecked: now,
-      error:
-        '法人アクセス権の確認中にエラーが発生しました: ' +
-        (error instanceof Error ? error.message : String(error)),
     });
-  }
 
-  logDebug('チェック完了', { ...corporateAccessState });
-  return corporateAccessState;
-}
+    // エラー情報をコンソールに出力するが、例外は再スローしない
+    console.error('法人アクセス権確認エラー:', error);
+
+    return corporateAccessState;
+  }
+};
 
 // ユーザーが法人管理者かどうかを確認
 export function isUserCorporateAdmin(): boolean {

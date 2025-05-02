@@ -63,7 +63,7 @@ export const SNS_METADATA: Record<SnsPlatform, SnsMetadata> = {
     name: 'TikTok',
     icon: 'tiktok-icon.svg',
     baseUrl: 'https://www.tiktok.com/@',
-    placeholderText: 'TikTokユーザー名（@マーク除く）',
+    placeholderText: 'TikTokのユーザー名（@マーク除く）',
     helpText: '@マークなしでユーザー名を入力してください',
   },
   facebook: {

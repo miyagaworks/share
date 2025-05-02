@@ -7,7 +7,14 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { Input } from '@/components/ui/Input';
-import { HiOfficeBuilding, HiCog, HiLockClosed, HiMail } from 'react-icons/hi';
+import {
+  HiOfficeBuilding,
+  HiCog,
+  HiLockClosed,
+  HiMail,
+  HiInformationCircle,
+  HiExclamation,
+} from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
 
 // 型定義
@@ -133,6 +140,11 @@ export default function CorporateSettingsPage() {
 
           // フォーム初期値を設定
           setCompanyName(defaultTenant.name);
+
+          // passwordPolicyの初期値を設定
+          if (defaultTenant.securitySettings?.passwordPolicy) {
+            setPasswordPolicy(defaultTenant.securitySettings.passwordPolicy);
+          }
 
           // フォーム初期値を設定
           if (defaultTenant.notificationSettings?.adminEmail) {
@@ -602,7 +614,10 @@ export default function CorporateSettingsPage() {
       case 'general':
         return (
           <div className="space-y-6">
-            <h2 className="text-lg font-medium">基本設定</h2>
+            <div className="flex items-center">
+              <HiOfficeBuilding className="h-6 w-6 text-corporate-primary mr-2" />
+              <h2 className="text-lg font-medium">基本設定</h2>
+            </div>
             <form onSubmit={handleSaveSettings}>
               <div className="space-y-4">
                 <div>
@@ -630,7 +645,7 @@ export default function CorporateSettingsPage() {
 
                 {isAdmin && (
                   <div className="flex justify-end">
-                    <Button type="submit" disabled={isSaving}>
+                    <Button variant="corporate" type="submit" disabled={isSaving}>
                       {isSaving ? (
                         <>
                           <Spinner size="sm" className="mr-2" />
@@ -650,7 +665,10 @@ export default function CorporateSettingsPage() {
       case 'security':
         return (
           <div className="space-y-6">
-            <h2 className="text-lg font-medium">セキュリティ設定</h2>
+            <div className="flex items-center">
+              <HiLockClosed className="h-6 w-6 text-corporate-primary mr-2" />
+              <h2 className="text-lg font-medium">セキュリティ設定</h2>
+            </div>
             <div className="space-y-4">
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <h3 className="font-medium mb-2">パスワードポリシー</h3>
@@ -680,7 +698,7 @@ export default function CorporateSettingsPage() {
                       onChange={(e) =>
                         setPasswordPolicy({ ...passwordPolicy, requireUppercase: e.target.checked })
                       }
-                      className="h-4 w-4 text-blue-600 rounded"
+                      className="h-4 w-4 text-corporate-primary rounded focus:ring-corporate-primary"
                       disabled={!isAdmin}
                     />
                     <label htmlFor="requireUppercase" className="ml-2 text-sm text-gray-700">
@@ -696,7 +714,7 @@ export default function CorporateSettingsPage() {
                       onChange={(e) =>
                         setPasswordPolicy({ ...passwordPolicy, requireNumbers: e.target.checked })
                       }
-                      className="h-4 w-4 text-blue-600 rounded"
+                      className="h-4 w-4 text-corporate-primary rounded focus:ring-corporate-primary"
                       disabled={!isAdmin}
                     />
                     <label htmlFor="requireNumbers" className="ml-2 text-sm text-gray-700">
@@ -715,7 +733,7 @@ export default function CorporateSettingsPage() {
                           requireSpecialChars: e.target.checked,
                         })
                       }
-                      className="h-4 w-4 text-blue-600 rounded"
+                      className="h-4 w-4 text-corporate-primary rounded focus:ring-corporate-primary"
                       disabled={!isAdmin}
                     />
                     <label htmlFor="requireSpecialChars" className="ml-2 text-sm text-gray-700">
@@ -745,7 +763,11 @@ export default function CorporateSettingsPage() {
 
               {isAdmin && (
                 <div className="flex justify-end">
-                  <Button onClick={handleSaveSecuritySettings} disabled={isSaving}>
+                  <Button
+                    variant="corporate"
+                    onClick={handleSaveSecuritySettings}
+                    disabled={isSaving}
+                  >
                     {isSaving ? (
                       <>
                         <Spinner size="sm" className="mr-2" />
@@ -764,7 +786,10 @@ export default function CorporateSettingsPage() {
       case 'notifications':
         return (
           <div className="space-y-6">
-            <h2 className="text-lg font-medium">通知設定</h2>
+            <div className="flex items-center">
+              <HiMail className="h-6 w-6 text-corporate-primary mr-2" />
+              <h2 className="text-lg font-medium">通知設定</h2>
+            </div>
             <div className="space-y-4">
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <h3 className="font-medium mb-3">メール通知</h3>
@@ -780,7 +805,7 @@ export default function CorporateSettingsPage() {
                           userAdded: e.target.checked,
                         })
                       }
-                      className="h-4 w-4 text-blue-600 rounded"
+                      className="h-4 w-4 text-corporate-primary rounded focus:ring-corporate-primary"
                     />
                     <label htmlFor="userAdded" className="ml-2 text-sm text-gray-700">
                       新しいユーザーが追加された時
@@ -798,7 +823,7 @@ export default function CorporateSettingsPage() {
                           userRemoved: e.target.checked,
                         })
                       }
-                      className="h-4 w-4 text-blue-600 rounded"
+                      className="h-4 w-4 text-corporate-primary rounded focus:ring-corporate-primary"
                     />
                     <label htmlFor="userRemoved" className="ml-2 text-sm text-gray-700">
                       ユーザーが削除された時
@@ -816,7 +841,7 @@ export default function CorporateSettingsPage() {
                           planChanges: e.target.checked,
                         })
                       }
-                      className="h-4 w-4 text-blue-600 rounded"
+                      className="h-4 w-4 text-corporate-primary rounded focus:ring-corporate-primary"
                     />
                     <label htmlFor="planChanges" className="ml-2 text-sm text-gray-700">
                       プラン変更時
@@ -834,7 +859,7 @@ export default function CorporateSettingsPage() {
                           securityAlerts: e.target.checked,
                         })
                       }
-                      className="h-4 w-4 text-blue-600 rounded"
+                      className="h-4 w-4 text-corporate-primary rounded focus:ring-corporate-primary"
                     />
                     <label htmlFor="securityAlerts" className="ml-2 text-sm text-gray-700">
                       セキュリティアラート
@@ -852,7 +877,7 @@ export default function CorporateSettingsPage() {
                           weeklyReports: e.target.checked,
                         })
                       }
-                      className="h-4 w-4 text-blue-600 rounded"
+                      className="h-4 w-4 text-corporate-primary rounded focus:ring-corporate-primary"
                     />
                     <label htmlFor="weeklyReports" className="ml-2 text-sm text-gray-700">
                       週次利用レポート
@@ -897,7 +922,10 @@ export default function CorporateSettingsPage() {
       case 'billing':
         return (
           <div className="space-y-6">
-            <h2 className="text-lg font-medium">請求情報</h2>
+            <div className="flex items-center">
+              <HiCog className="h-6 w-6 text-corporate-primary mr-2" />
+              <h2 className="text-lg font-medium">請求情報</h2>
+            </div>
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <h3 className="font-medium mb-3">現在のプラン</h3>
               <div className="space-y-3">
@@ -928,7 +956,7 @@ export default function CorporateSettingsPage() {
               </div>
               <div className="mt-4">
                 <Button
-                  variant="outline"
+                  variant="corporateOutline"
                   className="w-full"
                   onClick={() => router.push('/dashboard/subscription')}
                 >
@@ -981,7 +1009,11 @@ export default function CorporateSettingsPage() {
                 </div>
                 {isAdmin && (
                   <div className="flex justify-end">
-                    <Button onClick={handleSaveBillingSettings} disabled={isSaving}>
+                    <Button
+                      variant="corporate"
+                      onClick={handleSaveBillingSettings}
+                      disabled={isSaving}
+                    >
                       {isSaving ? (
                         <>
                           <Spinner size="sm" className="mr-2" />
@@ -1002,7 +1034,10 @@ export default function CorporateSettingsPage() {
       case 'advanced':
         return (
           <div className="space-y-6">
-            <h2 className="text-lg font-medium">詳細設定</h2>
+            <div className="flex items-center">
+              <HiCog className="h-6 w-6 text-corporate-primary mr-2" />
+              <h2 className="text-lg font-medium">詳細設定</h2>
+            </div>
 
             {/* アカウントステータス表示 */}
             {tenantData.accountStatus && (
@@ -1120,19 +1155,24 @@ export default function CorporateSettingsPage() {
 
             {/* 危険な操作に関する注意事項 */}
             <div className="bg-red-50 border border-red-100 rounded-lg p-4">
-              <h3 className="font-medium text-red-800 mb-2">注意事項</h3>
-              <ul className="space-y-1 text-sm text-red-700">
-                <li>
-                  •
-                  アカウントを一時停止すると、テナントに所属するすべてのユーザーがログインできなくなります
-                </li>
-                <li>
-                  •
-                  アカウントを削除すると、すべてのユーザーデータ、部署情報、プロフィール情報が完全に削除されます
-                </li>
-                <li>• 削除されたデータは復元できません</li>
-                <li>• 削除前に必ずデータのエクスポートを行うことをお勧めします</li>
-              </ul>
+              <div className="flex flex-row items-start">
+                <HiExclamation className="text-red-600 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
+                <div className="w-full">
+                  <h3 className="font-medium text-red-800 mb-2">注意事項</h3>
+                  <ul className="space-y-1 text-sm text-red-700 text-justify">
+                    <li>
+                      •
+                      アカウントを一時停止すると、テナントに所属するすべてのユーザーがログインできなくなります。
+                    </li>
+                    <li>
+                      •
+                      アカウントを削除すると、すべてのユーザーデータ、部署情報、プロフィール情報が完全に削除されます。
+                    </li>
+                    <li>• 削除されたデータは復元できません。</li>
+                    <li>• 削除前に必ずデータのエクスポートを行うことをお勧めします。</li>
+                  </ul>
+                </div>
+              </div>
             </div>
           </div>
         );
@@ -1158,58 +1198,67 @@ export default function CorporateSettingsPage() {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
             <nav className="flex flex-col">
               <button
-                className={`flex items-center px-4 py-3 text-sm font-medium ${
-                  activeTab === 'general'
-                    ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
-                    : 'text-gray-700 hover:bg-blue-50'
+                className={`flex items-center px-4 py-4 text-base font-medium ${
+                  activeTab === 'general' ? 'active-tab' : 'inactive-tab'
                 }`}
                 onClick={() => setActiveTab('general')}
               >
-                <HiOfficeBuilding className="h-5 w-5 mr-3" />
+                <HiOfficeBuilding
+                  className="h-6 w-6 mr-3 transition-colors"
+                  style={{ color: activeTab === 'general' ? '#1E3A8A' : '#374151' }}
+                />
                 基本設定
               </button>
+
               <button
-                className={`flex items-center px-4 py-3 text-sm font-medium ${
-                  activeTab === 'security'
-                    ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
-                    : 'text-gray-700 hover:bg-blue-50'
+                className={`flex items-center px-4 py-4 text-base font-medium ${
+                  activeTab === 'security' ? 'active-tab' : 'inactive-tab'
                 }`}
                 onClick={() => setActiveTab('security')}
               >
-                <HiLockClosed className="h-5 w-5 mr-3" />
+                <HiLockClosed
+                  className="h-6 w-6 mr-3 transition-colors"
+                  style={{ color: activeTab === 'security' ? '#1E3A8A' : '#374151' }}
+                />
                 セキュリティ設定
               </button>
+
               <button
-                className={`flex items-center px-4 py-3 text-sm font-medium ${
-                  activeTab === 'notifications'
-                    ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
-                    : 'text-gray-700 hover:bg-blue-50'
+                className={`flex items-center px-4 py-4 text-base font-medium ${
+                  activeTab === 'notifications' ? 'active-tab' : 'inactive-tab'
                 }`}
                 onClick={() => setActiveTab('notifications')}
               >
-                <HiMail className="h-5 w-5 mr-3" />
+                <HiMail
+                  className="h-6 w-6 mr-3 transition-colors"
+                  style={{ color: activeTab === 'notifications' ? '#1E3A8A' : '#374151' }}
+                />
                 通知設定
               </button>
+
               <button
-                className={`flex items-center px-4 py-3 text-sm font-medium ${
-                  activeTab === 'billing'
-                    ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
-                    : 'text-gray-700 hover:bg-blue-50'
+                className={`flex items-center px-4 py-4 text-base font-medium ${
+                  activeTab === 'billing' ? 'active-tab' : 'inactive-tab'
                 }`}
                 onClick={() => setActiveTab('billing')}
               >
-                <HiCog className="h-5 w-5 mr-3" />
+                <HiCog
+                  className="h-6 w-6 mr-3 transition-colors"
+                  style={{ color: activeTab === 'billing' ? '#1E3A8A' : '#374151' }}
+                />
                 請求情報
               </button>
+
               <button
-                className={`flex items-center px-4 py-3 text-sm font-medium ${
-                  activeTab === 'advanced'
-                    ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-500'
-                    : 'text-gray-700 hover:bg-blue-50'
+                className={`flex items-center px-4 py-4 text-base font-medium ${
+                  activeTab === 'advanced' ? 'active-tab' : 'inactive-tab'
                 }`}
                 onClick={() => setActiveTab('advanced')}
               >
-                <HiCog className="h-5 w-5 mr-3" />
+                <HiCog
+                  className="h-6 w-6 mr-3 transition-colors"
+                  style={{ color: activeTab === 'advanced' ? '#1E3A8A' : '#374151' }}
+                />
                 詳細設定
               </button>
             </nav>
@@ -1217,18 +1266,23 @@ export default function CorporateSettingsPage() {
 
           {/* サポート情報 */}
           <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-4">
-            <h3 className="font-medium text-blue-800 mb-2">サポート</h3>
-            <p className="text-sm text-blue-700 mb-4">
-              設定に関するお問い合わせやサポートが必要な場合は、以下よりお問い合わせください。
-            </p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-blue-700 border-blue-200 hover:bg-blue-100 w-full"
-              onClick={() => router.push('/support/contact?subject=法人プランサポート')}
-            >
-              サポートに問い合わせる
-            </Button>
+            <div className="flex flex-row items-start">
+              <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
+              <div className="w-full">
+                <h3 className="font-medium text-blue-900 mb-1">サポート</h3>
+                <p className="text-sm text-corporate-secondary break-words hyphens-auto text-justify">
+                  設定に関するお問い合わせやサポートが必要な場合は、以下よりお問い合わせください。
+                </p>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-blue-700 border-blue-200 hover:bg-blue-100 w-full mt-4"
+                  onClick={() => router.push('/support/contact?subject=法人プランサポート')}
+                >
+                  サポートに問い合わせる
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
 

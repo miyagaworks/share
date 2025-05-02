@@ -97,11 +97,11 @@ export default function CorporateDesignPage() {
   }
 
   const primaryColor = tenantData.primaryColor || '#3B82F6';
-  const secondaryColor = tenantData.secondaryColor || '#1E40AF';
+  const secondaryColor = tenantData.secondaryColor || 'var(--color-corporate-secondary)';
 
   // プレビューカード用のサンプルSNSアイコン
   const snsIcons = [
-    { name: 'Twitter', icon: 'X' },
+    { name: 'X', icon: 'X' },
     { name: 'Instagram', icon: 'Instagram' },
     { name: 'LinkedIn', icon: 'LinkedIn' },
   ];
@@ -118,10 +118,7 @@ export default function CorporateDesignPage() {
 
       <div className="grid gap-6 lg:grid-cols-2">
         {/* デザイン情報カード */}
-        <div
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
-          style={{ borderColor: `${primaryColor}40` }}
-        >
+        <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold flex items-center">
               <HiColorSwatch className="mr-2 h-5 w-5 text-gray-600" />
@@ -203,8 +200,7 @@ export default function CorporateDesignPage() {
 
         {/* プレビューカード */}
         <motion.div
-          className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
-          style={{ borderColor: `${primaryColor}40` }}
+          className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm"
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.3, delay: 0.1 }}
@@ -310,8 +306,7 @@ export default function CorporateDesignPage() {
 
       {/* 法人設定情報 */}
       <div
-        className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
-        style={{ borderColor: `${primaryColor}40` }}
+        className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm"
       >
         <h2 className="text-lg font-semibold mb-4">カラー設定のガイドライン</h2>
         <p className="text-sm text-gray-600 mb-4">

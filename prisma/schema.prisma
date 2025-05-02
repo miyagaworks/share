@@ -26,8 +26,6 @@ model User {
   bio             String?   // 自己紹介
   mainColor       String    @default("#3B82F6") // デフォルトは青
   snsIconColor    String?   @default("#333333") // デフォルトは黒に近いグレー
-  headerText      String?
-  textColor       String?
   phone           String?   // 電話番号
   company         String?   // 会社/組織名
   companyUrl      String?   // 会社/組織のWebサイト
@@ -195,8 +193,12 @@ model CorporateTenant {
   id                String    @id @default(cuid())
   name              String
   logoUrl           String?
+  logoWidth         Int?
+  logoHeight        Int?
   primaryColor      String?
   secondaryColor    String?
+  headerText        String?
+  textColor         String?
   customDomain      String?   @unique
   maxUsers          Int
   createdAt         DateTime  @default(now())
@@ -247,7 +249,6 @@ model CorporateSnsLink {
   url           String   // 完全なURL
   displayOrder  Int      // 表示順序（並べ替え用）
   isRequired    Boolean  @default(false) // 全メンバーに必須かどうか（削除不可）
-  description   String?  // 説明（任意）
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 

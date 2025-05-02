@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { sendEmail } from '@/lib/email';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -30,6 +31,44 @@ export async function POST(request: Request, { params }: { params: { id: string 
         expires: expiresAt,
         userId: params.id,
       },
+    });
+
+    // ユーザーとテナント情報を取得
+    const user = await prisma.user.findUnique({
+      where: { id: params.id },
+      include: {
+        tenant: true,
+      },
+    });
+
+    if (!user || !user.tenant) {
+      return NextResponse.json(
+        { error: 'ユーザーまたはテナント情報が見つかりません' },
+        { status: 404 },
+      );
+    }
+
+    // 環境変数からベースURLを取得
+    const baseUrl =
+      process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+    const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
+
+    // 招待リンクの生成
+    const inviteUrl = `${normalizedBaseUrl}/auth/invite?token=${token}`;
+
+    // メール送信
+    await sendEmail({
+      to: user.email,
+      subject: `${user.tenant.name}からの招待（再送信）`,
+      text: `${user.tenant.name}に招待されました。以下のリンクからアクセスしてください。\n\n${inviteUrl}\n\nこのリンクは72時間有効です。`,
+      html: `
+        <div>
+          <h1>${user.tenant.name}からの招待（再送信）</h1>
+          <p>${user.tenant.name}に招待されました。以下のリンクからアクセスしてください。</p>
+          <p><a href="${inviteUrl}">招待を受け入れる</a></p>
+          <p>このリンクは72時間有効です。</p>
+        </div>
+      `,
     });
 
     // ユーザー情報を更新

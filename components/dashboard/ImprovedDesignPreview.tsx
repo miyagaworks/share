@@ -75,27 +75,25 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
           </div>
 
           {/* SNSリンク（サンプル） */}
-          <div className="mt-4">
-            <div className="grid grid-cols-4 gap-3">
-              {dummySnsLinks.map((link, index) => (
-                <motion.div
-                  key={link.platform}
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.2, delay: index * 0.05 }}
-                  className="flex flex-col items-center"
-                >
-                  <div className="w-16 h-16 flex items-center justify-center rounded-2xl bg-white shadow-sm mb-1 transition-transform hover:shadow-md">
-                    <ImprovedSnsIcon
-                      platform={link.platform as SnsPlatform}
-                      size={38}
-                      color={snsIconColor === 'original' ? 'original' : snsIconColor}
-                    />
-                  </div>
-                  <span className="text-xs">{link.name}</span>
-                </motion.div>
-              ))}
-            </div>
+          <div className="grid grid-cols-4 gap-3">
+            {dummySnsLinks.map((link, index) => (
+              <motion.div
+                key={link.platform}
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.2, delay: index * 0.05 }}
+                className="flex flex-col items-center"
+              >
+                <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-white shadow-sm mb-1 transition-transform hover:shadow-md">
+                  <ImprovedSnsIcon
+                    platform={link.platform as SnsPlatform}
+                    size={30}
+                    color={snsIconColor === 'original' ? 'original' : snsIconColor}
+                  />
+                </div>
+                <span className="text-xs">{link.name}</span>
+              </motion.div>
+            ))}
           </div>
 
           {/* アクションボタン（プロフィール情報、会社HP、メール、電話） */}
@@ -234,7 +232,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
             <motion.button
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
-              className="w-full py-2 rounded-md text-sm font-medium border transition-all flex items-center justify-center"
+              className="w-full py-2 rounded-md text-sm font-medium border transition-all flex items-center justify-center bg-white"
               style={{ borderColor: mainColor, color: '#333' }}
             >
               <svg
@@ -259,11 +257,13 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
           </div>
 
           {/* フッター */}
-          <div className="mt-6 pt-4 border-t border-gray-300 text-center">
+          <div className="mt-6 text-center">
             <a href="#" className="text-sm text-blue-600">
               このサービスを使ってみる
             </a>
-            <p className="text-xs text-gray-500 mt-2">Powered by Share</p>
+            <div className="mt-2 pt-2 border-t border-gray-300">
+              <p className="text-xs text-gray-500">Powered by Share</p>
+            </div>
           </div>
         </div>
       </motion.div>

@@ -253,10 +253,7 @@ export default function CorporateProfileEditPage() {
 
       <form onSubmit={handleSubmit}>
         {/* 基本プロフィール */}
-        <div
-          className="rounded-lg border border-gray-200 bg-white p-6 mb-6 shadow-sm"
-          style={{ borderColor: `${primaryColor}40` }}
-        >
+        <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 mb-6 shadow-sm">
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold flex items-center">
               <HiUser className="mr-2 h-5 w-5 text-gray-600" />
@@ -346,10 +343,7 @@ export default function CorporateProfileEditPage() {
         </div>
 
         {/* 連絡先情報 */}
-        <div
-          className="rounded-lg border border-gray-200 bg-white p-6 mb-6 shadow-sm"
-          style={{ borderColor: `${primaryColor}40` }}
-        >
+        <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 mb-6 shadow-sm">
           <h2 className="text-lg font-semibold flex items-center mb-4">
             <HiPhone className="mr-2 h-5 w-5 text-gray-600" />
             連絡先情報
@@ -389,8 +383,7 @@ export default function CorporateProfileEditPage() {
 
         {/* 会社/組織情報 */}
         <div
-          className="rounded-lg border border-gray-200 bg-white p-6 mb-6 shadow-sm"
-          style={{ borderColor: `${primaryColor}40` }}
+          className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 mb-6 shadow-sm"
         >
           <div className="flex items-center justify-between mb-4">
             <h2 className="text-lg font-semibold flex items-center">

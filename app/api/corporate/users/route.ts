@@ -47,6 +47,14 @@ export async function GET() {
       return NextResponse.json({ error: 'テナント情報が見つかりません' }, { status: 404 });
     }
 
+    // 管理者数をカウント
+    const adminCount = await prisma.user.count({
+      where: {
+        tenantId: corporateTenant.id,
+        corporateRole: 'admin',
+      },
+    });
+
     // テナントのユーザー一覧を取得
     const users = await prisma.user.findMany({
       where: {
@@ -68,6 +76,7 @@ export async function GET() {
     // ユーザー情報を整形
     const formattedUsers = users.map((user) => {
       const isUserAdmin = user.id === corporateTenant.adminId;
+      const isSoleAdmin = user.corporateRole === 'admin' && adminCount === 1;
 
       return {
         id: user.id,
@@ -76,19 +85,19 @@ export async function GET() {
         corporateRole: user.corporateRole || (isUserAdmin ? 'admin' : 'member'),
         department: user.department,
         isAdmin: isUserAdmin,
+        isSoleAdmin: isSoleAdmin, // 唯一の管理者かどうか
         isInvited: !user.emailVerified,
         invitedAt: user.emailVerified ? null : user.createdAt.toISOString(),
         createdAt: user.createdAt.toISOString(),
       };
     });
 
-    console.log('[API] 成功: ユーザー数', formattedUsers.length);
-
     return NextResponse.json({
       success: true,
       users: formattedUsers,
       isAdmin: true,
       tenantId: corporateTenant.id,
+      adminCount: adminCount, // 管理者の総数
     });
   } catch (error) {
     console.error('[API] エラー:', error);

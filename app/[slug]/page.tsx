@@ -6,11 +6,18 @@ import { ProfileSnsLink } from "@/components/profile/ProfileSnsLink";
 import { ProfileCustomLink } from "@/components/profile/ProfileCustomLink";
 import { Metadata } from "next";
 import Link from "next/link";
-import type { User } from "@prisma/client";
+import type { User, CorporateTenant } from "@prisma/client";
+
 interface ExtendedUser extends User {
-    snsIconColor: string | null;
-    companyUrl: string | null;
-    companyLabel: string | null;
+  snsIconColor: string | null;
+  companyUrl: string | null;
+  companyLabel: string | null;
+  tenant?: CorporateTenant | null;
+  adminOfTenant?: CorporateTenant | null;
+  department?: {
+    id: string;
+    name: string;
+  } | null;
 }
 
 type ProfileParams = {
@@ -48,12 +55,18 @@ export async function generateMetadata({ params }: ProfileParams): Promise<Metad
 export default async function ProfilePage({ params }: { params: { slug: string } }) {
     const { slug } = params;
 
-    // プロフィールデータの取得
+    // プロフィールデータの取得（テナント情報も含める）
     const profile = await prisma.profile.findUnique({
-        where: { slug },
-        include: {
-            user: true,
+      where: { slug },
+      include: {
+        user: {
+          include: {
+            tenant: true,
+            adminOfTenant: true,
+            department: true, // 部署情報を明示的に含める
+          },
         },
+      },
     });
 
     // プロフィールが存在しない場合は404
@@ -84,11 +97,26 @@ export default async function ProfilePage({ params }: { params: { slug: string }
         orderBy: { displayOrder: "asc" },
     });
 
+    // 法人SNSリンクを取得（ユーザーが法人テナントに所属している場合）
+    const tenant = profile.user.tenant || profile.user.adminOfTenant;
+
     const user = profile.user as ExtendedUser;
-    const mainColor = user.mainColor || "#A88C3D";
+ 
+    // 色設定：テナントがある場合はテナントのprimaryColorを優先
+    const mainColor = tenant?.primaryColor || user.mainColor || "#A88C3D";
+    const secondaryColor = tenant?.secondaryColor || "#333333"; // セカンダリーカラー追加
+    
+    // SNSアイコン色：ユーザー設定を維持
     const snsIconColor = user.snsIconColor || "#333333";
+    
+    // 会社関連情報
+    const companyName = tenant?.name || user.company || "";
     const companyLabel = user.companyLabel || "会社HP";
-    const hasCompanyUrl = user.company && user.companyUrl;
+    const hasCompanyUrl = tenant ? true : (user.company && user.companyUrl);
+    
+    // ヘッダーテキストとテキストカラー（テナントからの取得を優先）
+    const headerText = tenant?.headerText || "シンプルにつながる、スマートにシェア。";
+    const headerTextColor = tenant?.textColor || "#FFFFFF";
 
     return (
       <div
@@ -111,7 +139,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           <div
             style={{
               backgroundColor: mainColor,
-              height: '3rem',
               width: 'calc(100% - 40px)', // 左右に20pxずつの余白
               display: 'flex',
               alignItems: 'center',
@@ -119,21 +146,85 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               borderBottomLeftRadius: '15px',
               borderBottomRightRadius: '15px',
               margin: '0 auto', // 中央寄せにするための設定
+              padding: '0.75rem 1rem', // 固定高さ削除、paddingで調整
             }}
           >
-            <p style={{ color: 'white', textAlign: 'center', fontWeight: '500' }}>
-              シンプルにつながる、スマートにシェア。
+            <p
+              style={{
+                color: headerTextColor,
+                textAlign: 'center',
+                fontWeight: '500',
+                whiteSpace: 'pre-wrap', // 改行を保持
+              }}
+            >
+              {headerText}
             </p>
           </div>
 
           <div style={{ padding: '1.5rem' }}>
+            {/* 法人ロゴ（テナントに所属している場合のみ表示） */}
+            {tenant?.logoUrl && (
+              <div
+                style={{
+                  textAlign: 'center',
+                  marginBottom: '1rem',
+                  display: 'flex',
+                  justifyContent: 'center',
+                }}
+              >
+                <div
+                  style={{
+                    width: tenant.logoWidth ? `${tenant.logoWidth}px` : 'auto',
+                    height: tenant.logoHeight ? `${tenant.logoHeight}px` : 'auto',
+                    maxWidth: '100%',
+                    maxHeight: '120px',
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
+                >
+                  <Image
+                    src={tenant.logoUrl}
+                    alt={`${tenant.name}のロゴ`}
+                    width={tenant.logoWidth || 200}
+                    height={tenant.logoHeight || 100}
+                    style={{
+                      width: 'auto',
+                      height: 'auto',
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                    }}
+                  />
+                </div>
+              </div>
+            )}
+
+            {/* テナント名または会社名（テナントに所属している場合のみ表示） */}
+            {tenant && (
+              <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{tenant.name}</h3>
+              </div>
+            )}
+
+            {/* 部署と役職情報（ユーザーが法人テナントに所属している場合） */}
+            {profile.user.department && (
+              <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+                <p style={{ fontSize: '0.875rem', color: '#4B5563' }}>
+                  {profile.user.department.name}
+                </p>
+                {profile.user.position && (
+                  <p style={{ fontSize: '0.875rem', color: '#4B5563' }}>{profile.user.position}</p>
+                )}
+              </div>
+            )}
+
             {/* ユーザー名 */}
             <div style={{ textAlign: 'center', marginTop: '0.8rem', marginBottom: '2rem' }}>
               <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{profile.user.name}</h1>
               {profile.user.nameEn && <p style={{ color: '#4B5563' }}>{profile.user.nameEn}</p>}
             </div>
 
-            {/* SNSアイコングリッド */}
+            {/* SNSアイコングリッド（法人SNSリンクを優先） */}
             <div
               style={{
                 display: 'grid',
@@ -171,7 +262,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginBottom: '0.3rem',
-                    backgroundColor: '#333',
+                    backgroundColor: secondaryColor, // セカンダリーカラーを使用
                     boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                   }}
                 >
@@ -197,8 +288,9 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               {hasCompanyUrl && (
                 <a
                   href={
-                    (profile.user as unknown as { companyUrl?: string | null }).companyUrl ||
-                    (profile.user.company ? `https://${profile.user.company}` : '#')
+                    tenant?.customDomain
+                      ? `https://${tenant.customDomain}`
+                      : user.companyUrl || (user.company ? `https://${user.company}` : '#')
                   }
                   target="_blank"
                   rel="noopener noreferrer"
@@ -213,7 +305,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                       alignItems: 'center',
                       justifyContent: 'center',
                       marginBottom: '0.3rem',
-                      backgroundColor: '#333',
+                      backgroundColor: secondaryColor, // セカンダリーカラーを使用
                       boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                     }}
                   >
@@ -251,7 +343,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginBottom: '0.3rem',
-                    backgroundColor: '#333',
+                    backgroundColor: secondaryColor, // セカンダリーカラーを使用
                     boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                   }}
                 >
@@ -288,7 +380,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                       alignItems: 'center',
                       justifyContent: 'center',
                       marginBottom: '0.3rem',
-                      backgroundColor: '#333',
+                      backgroundColor: secondaryColor, // セカンダリーカラーを使用
                       boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                     }}
                   >
@@ -333,7 +425,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     padding: '0.75rem',
                     borderRadius: '0.375rem',
                     fontWeight: '500',
-                    color: 'white',
+                    color: headerTextColor,
                     backgroundColor: mainColor,
                     boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                     marginBottom: '0.75rem',
@@ -368,7 +460,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                   borderRadius: '0.375rem',
                   fontWeight: '500',
                   color: '#333',
-                  border: `1px solid ${mainColor}`,
+                  border: `1px solid ${secondaryColor}`,
                   boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                   background: '#fff',
                 }}
@@ -445,7 +537,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 ) : (
                   <div
                     className="w-20 h-20 rounded-full flex items-center justify-center text-xl font-bold mb-3 text-white"
-                    style={{ backgroundColor: '#3954ED' }}
+                    style={{ backgroundColor: secondaryColor }} // セカンダリーカラーを使用
                   >
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
@@ -477,9 +569,22 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               </div>
 
               <div className="border-t pt-4">
-                {profile.user.company && (
+                {companyName && (
                   <p className="text-sm mb-2">
-                    <span className="font-medium">会社 / 組織：</span> {profile.user.company}
+                    <span className="font-medium">会社 / 組織：</span> {companyName}
+                  </p>
+                )}
+
+                {/* 部署と役職情報 */}
+                {user.department?.name && (
+                  <p className="text-sm mb-2">
+                    <span className="font-medium">部署：</span> {user.department.name}
+                  </p>
+                )}
+
+                {user.position && (
+                  <p className="text-sm mb-2">
+                    <span className="font-medium">役職：</span> {user.position}
                   </p>
                 )}
 

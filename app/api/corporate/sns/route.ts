@@ -81,7 +81,6 @@ export async function POST(req: NextRequest) {
       username: z.string().optional(),
       url: z.string().url({ message: '有効なURLを入力してください' }),
       isRequired: z.boolean().optional().default(false),
-      description: z.string().optional(),
     });
 
     const validationResult = schema.safeParse(body);
@@ -126,7 +125,6 @@ export async function POST(req: NextRequest) {
         url: data.url,
         displayOrder,
         isRequired: data.isRequired,
-        description: data.description,
       },
     });
 
