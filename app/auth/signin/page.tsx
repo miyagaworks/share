@@ -23,17 +23,33 @@ export default function SigninPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
-  // Google認証を開始する関数
-  const handleGoogleSignIn = () => {
+  // Google認証を開始する関数の修正
+  const handleGoogleSignIn = async () => {
     if (!termsAccepted) {
       setError('Googleでログインする場合も利用規約に同意していただく必要があります');
       return;
     }
 
-    // 直接next-auth/reactのsignInを使用
-    import('next-auth/react').then(({ signIn }) => {
-      signIn('google', { callbackUrl: '/dashboard' });
-    });
+    try {
+      const { signIn } = await import('next-auth/react');
+      await signIn('google', {
+        callbackUrl: '/dashboard',
+        redirect: false,
+      }).then((result) => {
+        if (result?.error === 'OAuthAccountNotLinked') {
+          setError(
+            'このGoogleアカウントは既に別のアカウントに関連付けられています。メールアドレスとパスワードでログインしてください。',
+          );
+        } else if (result?.error) {
+          setError('Googleログイン中にエラーが発生しました。もう一度お試しください。');
+        } else {
+          router.push(result?.url || '/dashboard');
+        }
+      });
+    } catch (error) {
+      console.error('Googleログインエラー:', error);
+      setError('Googleログイン処理中にエラーが発生しました。');
+    }
   };
 
   const {
