@@ -105,7 +105,7 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      // next-auth/reactのsignIn関数を直接使用
+      // next-auth/reactのsignIn関数を使用
       const result = await signIn('credentials', {
         email: data.email.toLowerCase(),
         password: data.password,
@@ -116,10 +116,10 @@ export default function SigninPage() {
 
       if (result?.error) {
         setError('メールアドレスまたはパスワードが正しくありません');
-      } else if (result?.url) {
-        router.push(result.url);
-      } else {
-        router.push('/dashboard');
+      } else if (result?.ok) {
+        // 成功したらダッシュボードにリダイレクト
+        // router.pushではなくwindow.location.hrefを使ってみる
+        window.location.href = '/dashboard';
       }
     } catch (error) {
       console.error('ログインエラー:', error);
@@ -198,7 +198,8 @@ export default function SigninPage() {
                   {...register('email')}
                   error={errors.email?.message}
                   disabled={isPending}
-                  className={`bg-white shadow-sm transition-colors ${isEmailFilled && isEmailValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
+                  className={`bg-white shadow-sm transition-colors ${isPasswordFilled && isPasswordValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
+                  autoComplete="email" // この行を追加
                 />
                 {isEmailFilled && !isEmailValid && !errors.email?.message && (
                   <p className="text-xs text-amber-600 mt-1">
@@ -217,6 +218,7 @@ export default function SigninPage() {
                     error={errors.password?.message}
                     disabled={isPending}
                     className={`bg-white shadow-sm transition-colors ${isPasswordFilled && isPasswordValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
+                    autoComplete="current-password" // この行を追加
                   />
                   <button
                     type="button"
