@@ -24,9 +24,18 @@ const nextConfig = {
 
   // 既存の実験的設定を維持
   experimental: {
+    // 既存の実験的機能
     turbotrace: {
       logLevel: 'error',
     },
+    // 追加の設定
+    serverComponentsExternalPackages: ['@prisma/client'],
+  },
+
+  // publicRuntimeConfigを追加（必要に応じて）
+  publicRuntimeConfig: {
+    // APIルートが常に動的に実行されるように設定
+    apiRoutesDynamic: true,
   },
 
   // 既存のwebpackの設定を維持

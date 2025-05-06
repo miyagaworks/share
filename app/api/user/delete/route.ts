@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 // app/api/user/delete/route.ts
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';

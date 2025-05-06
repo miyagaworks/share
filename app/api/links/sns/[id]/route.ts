@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 // app/api/links/sns/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";

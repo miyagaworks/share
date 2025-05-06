@@ -1,3 +1,4 @@
+export const dynamic = "force-dynamic";
 // app/api/auth/signin/route.ts
 import { NextResponse } from 'next/server';
 import { signIn } from '@/auth';
