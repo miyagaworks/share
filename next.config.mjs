@@ -1,7 +1,7 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 出力を'standalone'から'server'に変更
-  output: 'server',
+  // 'server'から'standalone'に変更（Vercelで有効な値）
+  output: 'standalone',
 
   // 画像最適化 - 既存の設定を維持
   images: {
@@ -11,42 +11,32 @@ const nextConfig = {
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
   },
 
-  // TypeScriptの設定 - 既存の設定を維持
+  // TypeScriptの設定
   typescript: {
     ignoreBuildErrors: process.env.NODE_ENV !== 'production',
   },
 
-  // ESLintの設定 - 明示的に設定
+  // ESLintの設定 - ビルド中に無視
   eslint: {
-    // ビルド中にESLintを完全に無視する設定に変更
     ignoreDuringBuilds: true,
   },
 
-  // styled-jsxの処理を明示的に設定
-  transpilePackages: ['styled-jsx'],
-
-  // 既存の実験的設定を維持
+  // 実験的機能
   experimental: {
-    // 既存の実験的機能
+    // 既存の設定
     turbotrace: {
       logLevel: 'error',
     },
-    // 追加の設定
-    serverComponentsExternalPackages: ['@prisma/client'],
+    // styled-jsxのサポートを追加
+    transpilePackages: ['styled-jsx'],
   },
 
-  // publicRuntimeConfigを追加（必要に応じて）
-  publicRuntimeConfig: {
-    // APIルートが常に動的に実行されるように設定
-    apiRoutesDynamic: true,
-  },
-
-  // 既存のwebpackの設定を維持
+  // webpack設定 - ES Modulesに対応した書き方に変更
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.resolve.alias = {
-        ...config.resolve.alias,
-        'styled-jsx/style': require.resolve('styled-jsx/style'),
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        async_hooks: false,
       };
     }
 
@@ -63,10 +53,19 @@ const nextConfig = {
       };
     }
 
+    // styled-jsxの設定 - requireを使わない方法に変更
+    if (!isServer) {
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        // ES Modules形式で書く
+        'styled-jsx/style': 'styled-jsx/style',
+      };
+    }
+
     return config;
   },
 
-  // 既存のヘッダー設定を維持
+  // CSPヘッダーを追加 - unsafe-evalを含める
   async headers() {
     return [
       {
@@ -85,7 +84,7 @@ const nextConfig = {
               "object-src 'none'",
             ].join('; '),
           },
-          // 他のヘッダー設定は変更なし
+          // 他のヘッダー設定
           {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
