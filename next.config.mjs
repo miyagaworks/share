@@ -1,7 +1,7 @@
 // next.config.mjs の修正案
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 基本設定（standaloneは無効化）
+  // 基本設定
   reactStrictMode: true,
 
   // TypeScript と ESLint エラーを無視
@@ -18,19 +18,19 @@ const nextConfig = {
     formats: ['image/avif', 'image/webp'],
   },
 
-  // Next.js 14の設定
-  experimental: {
-    // serverActions: true,
-  },
-
-  // 環境変数をクライアントにも公開する設定
+  // 環境変数の設定
   env: {
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    DEBUG: process.env.NODE_ENV === 'development' ? 'next-auth:*' : '',
+    DEBUG: 'next-auth:*', // Next-Authのデバッグログを有効化
   },
 
-  // transpilePackagesをexperimentalの外に
+  // その他の設定
   transpilePackages: ['styled-jsx'],
+
+  // エラー表示の改善
+  onDemandEntries: {
+    // 開発サーバーがページをメモリに保持する時間
+    maxInactiveAge: 60 * 1000,
+  },
 };
 
 export default nextConfig;

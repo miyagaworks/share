@@ -3,6 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import { Inter, Roboto_Mono } from 'next/font/google';
 import { ToastProvider } from '@/components/providers/ToastProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
+import { AuthDebugger } from '@/components/shared/AuthDebugger';
 import './globals.css';
 
 const inter = Inter({
@@ -71,6 +72,7 @@ export default function RootLayout({
         <SessionProvider>
           <ToastProvider />
           {children}
+          {process.env.NODE_ENV === 'development' && <AuthDebugger />}
         </SessionProvider>
       </body>
     </html>

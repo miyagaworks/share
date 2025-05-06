@@ -32,24 +32,31 @@ export default function SigninPage() {
     }
 
     try {
-      const { signIn } = await import('next-auth/react');
-      await signIn('google', {
+      setIsPending(true);
+      // next-auth/reactのsignIn関数を直接使用
+      const result = await signIn('google', {
         callbackUrl: '/dashboard',
         redirect: false,
-      }).then((result) => {
-        if (result?.error === 'OAuthAccountNotLinked') {
+      });
+
+      console.log('Google認証結果:', result);
+
+      if (result?.error) {
+        if (result.error === 'OAuthAccountNotLinked') {
           setError(
             'このGoogleアカウントは既に別のアカウントに関連付けられています。メールアドレスとパスワードでログインしてください。',
           );
-        } else if (result?.error) {
-          setError('Googleログイン中にエラーが発生しました。もう一度お試しください。');
         } else {
-          router.push(result?.url || '/dashboard');
+          setError('Googleログイン中にエラーが発生しました。もう一度お試しください。');
         }
-      });
+      } else if (result?.url) {
+        router.push(result.url);
+      }
     } catch (error) {
       console.error('Googleログインエラー:', error);
       setError('Googleログイン処理中にエラーが発生しました。');
+    } finally {
+      setIsPending(false);
     }
   };
 
@@ -98,22 +105,26 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      // 標準的なNext-Authの認証フローを使用
+      // next-auth/reactのsignIn関数を直接使用
       const result = await signIn('credentials', {
         email: data.email.toLowerCase(),
         password: data.password,
         redirect: false,
       });
 
+      console.log('認証結果:', result);
+
       if (result?.error) {
         setError('メールアドレスまたはパスワードが正しくありません');
-        setIsPending(false);
+      } else if (result?.url) {
+        router.push(result.url);
       } else {
         router.push('/dashboard');
       }
     } catch (error) {
       console.error('ログインエラー:', error);
       setError('ログイン処理中にエラーが発生しました。');
+    } finally {
       setIsPending(false);
     }
   };
