@@ -4,8 +4,6 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
 
-export const dynamic = 'force-dynamic';
-
 export async function GET(request: Request) {
   try {
     const url = new URL(request.url);
