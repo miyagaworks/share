@@ -13,23 +13,19 @@ export async function middleware(request: NextRequest) {
 
   // ダッシュボードへのアクセスを制御
   if (pathname.startsWith('/dashboard')) {
-    // secretパラメータを追加
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
     });
 
-    // デバッグ出力
-    console.log(`Middleware: Path ${pathname}, Token exists: ${!!token}`);
+    console.log(`Middleware詳細ログ: ${pathname}`, {
+      hasToken: !!token,
+      tokenData: JSON.stringify(token || {}),
+    });
 
-    // 未認証ユーザーはログインページへリダイレクト
     if (!token) {
-      console.log('未認証ユーザー: ログインページにリダイレクト');
       return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
-
-    // 認証済みユーザーはそのまま進める
-    console.log('認証済みユーザー: アクセス許可');
   }
 
   return NextResponse.next();

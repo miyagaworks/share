@@ -20,7 +20,7 @@ const nextConfig = {
 
   // 環境変数の設定
   env: {
-    DEBUG: 'next-auth:*', // Next-Authのデバッグログを有効化
+    DEBUG: 'next-auth:*,next-auth:core,next-auth:jwt',
   },
 
   // その他の設定

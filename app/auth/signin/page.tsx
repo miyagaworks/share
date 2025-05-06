@@ -105,11 +105,14 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      // next-auth/reactのsignIn関数を使用
+      console.log('認証試行:', { email: data.email });
+
+      // callbackUrlを明示的に指定
       const result = await signIn('credentials', {
         email: data.email.toLowerCase(),
         password: data.password,
         redirect: false,
+        callbackUrl: '/dashboard', // ここを追加
       });
 
       console.log('認証結果:', result);
@@ -117,8 +120,13 @@ export default function SigninPage() {
       if (result?.error) {
         setError('メールアドレスまたはパスワードが正しくありません');
       } else if (result?.ok) {
-        // 成功したらダッシュボードにリダイレクト
-        router.push('/dashboard');
+        // router.pushではなくresult.urlを使用する
+        if (result.url) {
+          router.push(result.url);
+        } else {
+          // fallback
+          router.push('/dashboard');
+        }
       }
     } catch (error) {
       console.error('ログインエラー:', error);

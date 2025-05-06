@@ -65,7 +65,7 @@ export default {
             id: user.id,
             name: user.name,
             email: user.email,
-            role: user.corporateRole || undefined, // null の代わりに undefined を使用
+            role: user.corporateRole || undefined,
           };
         } catch (error) {
           console.error('認証中のエラー:', error);
