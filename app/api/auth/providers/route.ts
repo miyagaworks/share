@@ -1,19 +1,29 @@
 // app/api/auth/providers/route.ts
-export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    // 設定済みのプロバイダー情報を直接返す
-    const providers = {
-      google: { id: 'google', name: 'Google' },
-      credentials: { id: 'credentials', name: 'Credentials' },
-    };
-
-    return NextResponse.json(providers);
+    // 静的なプロバイダーリストを返す
+    return NextResponse.json({
+      google: {
+        id: 'google',
+        name: 'Google',
+        type: 'oauth',
+        signinUrl: '/api/auth/signin/google',
+        callbackUrl: '/api/auth/callback/google',
+      },
+      credentials: {
+        id: 'credentials',
+        name: 'メールアドレス/パスワード',
+        type: 'credentials',
+        signinUrl: '/api/auth/signin/credentials',
+        callbackUrl: '/api/auth/callback/credentials',
+      },
+    });
   } catch (error) {
     console.error('Providers API error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return NextResponse.json({ error: '認証エラーが発生しました' }, { status: 500 });
   }
 }
