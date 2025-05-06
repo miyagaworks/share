@@ -1,4 +1,4 @@
-// auth.config.ts
+// auth.config.ts の修正
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
@@ -14,7 +14,6 @@ export default {
       allowDangerousEmailAccountLinking: true,
     }),
     Credentials({
-      // credentialsフィールドが必須
       credentials: {
         email: { label: 'メールアドレス', type: 'email' },
         password: { label: 'パスワード', type: 'password' },
@@ -45,36 +44,14 @@ export default {
 
         if (!passwordsMatch) return null;
 
+        // User 型に合わせる
         return {
           id: user.id,
           name: user.name,
           email: user.email,
-          role: user.corporateRole,
+          role: user.corporateRole || undefined, // null の代わりに undefined を使用
         };
       },
     }),
   ],
-  pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
-  },
-  // CSRF保護を明示的に有効化
-  secret: process.env.NEXTAUTH_SECRET,
-  // 本番環境でのセキュリティ強化
-  // 開発環境用の設定
-  cookies:
-    process.env.NODE_ENV === 'production'
-      ? {
-          // 本番環境設定
-          sessionToken: {
-            name: `__Secure-next-auth.session-token`,
-            options: {
-              httpOnly: true,
-              sameSite: 'lax',
-              path: '/',
-              secure: true,
-            },
-          },
-        }
-      : undefined, // 開発環境では NextAuth のデフォルト設定を使用
 } satisfies NextAuthConfig;

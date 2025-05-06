@@ -19,7 +19,7 @@ const nextConfig = {
 
   // Next.js 14の設定
   experimental: {
-    serverActions: true,
+    // serverActions: true,
   },
 
   // transpilePackagesをexperimentalの外に
