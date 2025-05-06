@@ -4,7 +4,6 @@ import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import type { DefaultSession } from 'next-auth';
-// import { logCorporateActivity } from '@/lib/utils/activity-logger';
 import { signOut as nextAuthSignOut } from 'next-auth/react';
 
 // 型定義の拡張
@@ -55,6 +54,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   ...authConfig,
 });
+
+export const enhancedSignIn = async (
+  provider: string,
+  credentials?: Record<string, string>, // any から string に変更
+  redirectTo?: string,
+) => {
+  try {
+    const result = await signIn(provider, {
+      redirect: !!redirectTo,
+      callbackUrl: redirectTo,
+      ...credentials,
+    });
+    return result;
+  } catch (error) {
+    console.error('認証エラー:', error);
+    return { error: '認証処理中にエラーが発生しました', success: false };
+  }
+};
 
 // セキュリティ問題発生時の強制ログアウト
 export const forceSecurityLogout = async (reason: string): Promise<void> => {
