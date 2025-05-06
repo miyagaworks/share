@@ -1,7 +1,7 @@
 // app/auth/invite/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -9,7 +9,8 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { signIn } from 'next-auth/react';
 
-export default function InvitePage() {
+// useSearchParamsを使用するコンテンツコンポーネント
+function InvitePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -310,5 +311,31 @@ export default function InvitePage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// メインコンポーネント - Suspenseでラップ
+export default function InvitePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex min-h-screen">
+          <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 flex-col justify-center items-center p-12 relative overflow-hidden"></div>
+          <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-6 py-12 bg-white">
+            <div className="w-full max-w-md text-center">
+              <div className="mb-8">
+                <div className="w-[90px] h-[90px] mx-auto bg-gray-200 animate-pulse rounded-md"></div>
+              </div>
+              <div className="h-8 bg-gray-200 rounded-md w-3/4 mx-auto mb-4 animate-pulse"></div>
+              <div className="flex justify-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      }
+    >
+      <InvitePageContent />
+    </Suspense>
   );
 }
