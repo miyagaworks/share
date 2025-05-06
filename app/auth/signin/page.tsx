@@ -10,7 +10,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@/schemas/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { signIn } from 'next-auth/react';
 
 export default function SigninPage() {
   const router = useRouter();
@@ -31,7 +30,10 @@ export default function SigninPage() {
       return;
     }
 
-    signIn('google', { callbackUrl: '/dashboard' });
+    // 直接next-auth/reactのsignInを使用
+    import('next-auth/react').then(({ signIn }) => {
+      signIn('google', { callbackUrl: '/dashboard' });
+    });
   };
 
   const {
@@ -79,30 +81,30 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      // signInをdirect importして使う
-      import('next-auth/react')
-        .then(async ({ signIn }) => {
-          const result = await signIn('credentials', {
-            email: data.email.toLowerCase(),
-            password: data.password,
-            redirect: false,
-          });
+      // API経由でサーバーサイド認証を実行
+      const response = await fetch('/api/auth/signin', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: data.email.toLowerCase(),
+          password: data.password,
+          callbackUrl: '/dashboard',
+        }),
+      });
 
-          if (result?.error) {
-            setError('メールアドレスまたはパスワードが正しくありません。');
-            return;
-          }
+      const result = await response.json();
 
-          router.push('/dashboard');
-          router.refresh();
-        })
-        .catch((error) => {
-          console.error('ログインエラー:', error);
-          setError('ログイン処理中にエラーが発生しました。');
-        })
-        .finally(() => {
-          setIsPending(false);
-        });
+      if (!response.ok || result.error) {
+        setError(result.error || 'メールアドレスまたはパスワードが正しくありません。');
+        setIsPending(false);
+        return;
+      }
+
+      // 成功したらクライアント側のセッションを更新し、リダイレクト
+      router.push(result.url || '/dashboard');
+      router.refresh();
     } catch (error) {
       console.error('ログインエラー:', error);
       setError('ログイン処理中にエラーが発生しました。');
