@@ -81,8 +81,8 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      // API経由でサーバーサイド認証を実行
-      const response = await fetch('/api/auth/signin', {
+      // 1. 先に直接APIエンドポイントで認証
+      const apiResponse = await fetch('/api/auth/signin', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -90,20 +90,34 @@ export default function SigninPage() {
         body: JSON.stringify({
           email: data.email.toLowerCase(),
           password: data.password,
-          callbackUrl: '/dashboard',
         }),
       });
 
-      const result = await response.json();
+      const apiResult = await apiResponse.json();
 
-      if (!response.ok || result.error) {
-        setError(result.error || 'メールアドレスまたはパスワードが正しくありません。');
+      // APIエラーがある場合
+      if (!apiResponse.ok || apiResult.error) {
+        setError(apiResult.error || 'メールアドレスまたはパスワードが正しくありません。');
         setIsPending(false);
         return;
       }
 
-      // 成功したらクライアント側のセッションを更新し、リダイレクト
-      router.push(result.url || '/dashboard');
+      // 2. 成功したら、クライアント側のsignIn関数で認証を完了
+      const { signIn } = await import('next-auth/react');
+      const result = await signIn('credentials', {
+        email: data.email.toLowerCase(),
+        password: data.password,
+        redirect: false,
+      });
+
+      if (result?.error) {
+        setError('セッションの開始に失敗しました。もう一度お試しください。');
+        setIsPending(false);
+        return;
+      }
+
+      // 3. ダッシュボードにリダイレクト
+      router.push('/dashboard');
       router.refresh();
     } catch (error) {
       console.error('ログインエラー:', error);
