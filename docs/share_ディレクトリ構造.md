@@ -27,11 +27,17 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── change-password
 │   │   │   │   └── route.ts
+│   │   │   ├── error
+│   │   │   │   └── route.ts
 │   │   │   ├── forgot-password
+│   │   │   │   └── route.ts
+│   │   │   ├── providers
 │   │   │   │   └── route.ts
 │   │   │   ├── register
 │   │   │   │   └── route.ts
 │   │   │   ├── reset-password
+│   │   │   │   └── route.ts
+│   │   │   ├── session
 │   │   │   │   └── route.ts
 │   │   │   ├── signin
 │   │   │   │   └── route.ts
@@ -116,6 +122,7 @@ share/
 │   │   │           └── route.ts
 │   │   ├── profile
 │   │   │   └── route.ts
+│   │   ├── route-config.ts
 │   │   ├── subscription
 │   │   │   ├── cancel
 │   │   │   │   └── route.ts
@@ -519,7 +526,6 @@ share/
 │   ├── clean-corporate-sns-username.ts
 │   ├── create-missing-subscriptions.ts
 │   ├── generate-prisma-migration.js
-│   ├── migrate-text-settings.ts
 │   └── setup-guide-images.mjs
 ├── share_db_backup.sql
 ├── tailwind.config.js
@@ -530,6 +536,4 @@ share/
     ├── sns-guide.ts
     ├── sns.ts
     └── tinycolor2.d.ts
-
-
 
