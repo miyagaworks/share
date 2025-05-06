@@ -13,19 +13,34 @@ export async function middleware(request: NextRequest) {
 
   // ダッシュボードへのアクセスを制御
   if (pathname.startsWith('/dashboard')) {
+    // secretパラメータを追加
     const token = await getToken({
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
+      secureCookie: process.env.NODE_ENV === 'production',
+      cookieName: 'next-auth.session-token', // クッキー名を明示的に指定
     });
 
+    // デバッグ出力
     console.log(`Middleware詳細ログ: ${pathname}`, {
       hasToken: !!token,
-      tokenData: JSON.stringify(token || {}),
+      cookieHeader: request.headers.get('cookie'),
+      tokenData: token
+        ? JSON.stringify({
+            name: token.name,
+            email: token.email,
+            sub: token.sub,
+          })
+        : 'トークンなし',
     });
 
+    // 未認証ユーザーはログインページへリダイレクト
     if (!token) {
+      console.log('未認証ユーザー: ログインページにリダイレクト');
       return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
+
+    console.log('認証済みユーザー: アクセス許可');
   }
 
   return NextResponse.next();

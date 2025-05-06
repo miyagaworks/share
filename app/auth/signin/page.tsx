@@ -105,31 +105,33 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      console.log('認証試行:', { email: data.email });
+      console.log('API認証試行:', data.email);
 
-      // callbackUrlを明示的に指定
+      // より詳細なデバッグ情報のためのオプション
       const result = await signIn('credentials', {
         email: data.email.toLowerCase(),
         password: data.password,
         redirect: false,
-        callbackUrl: '/dashboard', // ここを追加
+        callbackUrl: '/dashboard', // 明示的にコールバックURLを指定
       });
 
-      console.log('認証結果:', result);
+      console.log('認証結果詳細:', result);
 
       if (result?.error) {
         setError('メールアドレスまたはパスワードが正しくありません');
       } else if (result?.ok) {
-        // router.pushではなくresult.urlを使用する
-        if (result.url) {
-          router.push(result.url);
-        } else {
-          // fallback
+        console.log('認証成功: リダイレクト先 =', result.url || '/dashboard');
+
+        // ブラウザ強制リダイレクトを試す
+        window.location.href = result.url || '/dashboard';
+
+        // 上記が失敗した場合のフォールバック（通常は実行されないはず）
+        setTimeout(() => {
           router.push('/dashboard');
-        }
+        }, 1000);
       }
     } catch (error) {
-      console.error('ログインエラー:', error);
+      console.error('ログインエラー詳細:', error);
       setError('ログイン処理中にエラーが発生しました。');
     } finally {
       setIsPending(false);

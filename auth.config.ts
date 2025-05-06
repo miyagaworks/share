@@ -76,8 +76,12 @@ export default {
   ],
 
   callbacks: {
-    // 認証関連のコールバックをここに集約
     async session({ session, token }) {
+      console.log('セッションコールバック詳細:', {
+        sessionBefore: JSON.stringify(session),
+        tokenData: JSON.stringify(token),
+      });
+
       if (token.sub && session.user) {
         session.user.id = token.sub;
       }
@@ -86,7 +90,9 @@ export default {
         session.user.role = token.role;
       }
 
-      console.log('Session callback called:', { session });
+      console.log('セッションコールバック完了:', {
+        sessionAfter: JSON.stringify(session),
+      });
 
       return session;
     },

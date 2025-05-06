@@ -30,8 +30,19 @@ declare module 'next-auth/jwt' {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
-  // コールバックはここではなく auth.config.ts で定義
-  // auth.config.ts からインポートされたコールバックを使用
+  cookies: {
+    sessionToken: {
+      name: `next-auth.session-token`,
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: process.env.NODE_ENV === 'production' ? '.sns-share.com' : undefined,
+      },
+    },
+  },
+  // 既存の設定...
   ...authConfig,
 });
 
