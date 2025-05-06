@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { logCorporateActivity } from '@/lib/utils/activity-logger';
 
 // 部署一覧取得（GET）
 export async function GET() {
@@ -105,6 +106,20 @@ export async function POST(req: Request) {
         tenant: {
           connect: { id: user.adminOfTenant.id },
         },
+      },
+    });
+
+    // 部署作成後のアクティビティログ
+    await logCorporateActivity({
+      tenantId: user.adminOfTenant.id,
+      userId: session.user.id,
+      action: 'create_department',
+      entityType: 'department',
+      entityId: newDepartment.id,
+      description: `部署「${name}」を作成しました`,
+      metadata: {
+        name,
+        description: description || null,
       },
     });
 

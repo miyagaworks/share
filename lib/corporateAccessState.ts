@@ -1,15 +1,8 @@
 // lib/corporateAccessState.ts
+import { logger } from '@/lib/utils/logger';
 declare global {
   interface Window {
     _corporateAccessState?: CorporateAccessState;
-    _corporateAccessDebug?: {
-      logs: Array<{
-        timestamp: number;
-        action: string;
-        data: unknown; // anyではなくunknown型を使用
-      }>;
-      version: string;
-    };
   }
 }
 
@@ -31,31 +24,8 @@ export interface CorporateAccessState {
 
 // デバッグログを記録する関数
 function logDebug(action: string, data: unknown) {
-  // anyではなくunknown型を使用
-  if (typeof window !== 'undefined') {
-    // デバッグ構造がなければ初期化
-    if (!window._corporateAccessDebug) {
-      window._corporateAccessDebug = {
-        logs: [],
-        version: '1.0.0',
-      };
-    }
-
-    // ログを追加（最大100件まで）
-    window._corporateAccessDebug.logs.unshift({
-      timestamp: Date.now(),
-      action,
-      data: JSON.parse(JSON.stringify(data)), // ディープコピーして保存
-    });
-
-    // 最大100件を超えたら古いものを削除
-    if (window._corporateAccessDebug.logs.length > 100) {
-      window._corporateAccessDebug.logs = window._corporateAccessDebug.logs.slice(0, 100);
-    }
-  }
-
-  // コンソールにも出力
-  console.log(`[corporateAccessState:${action}]`, data);
+  // 統合ロガーを使用
+  logger.corporate(action, data);
 }
 
 // アプリ全体で共有される状態
@@ -101,15 +71,18 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
   // イベントをより確実にディスパッチ
   if (typeof window !== 'undefined') {
     try {
-      window.dispatchEvent(
-        new CustomEvent('corporateAccessChanged', {
-          detail: { ...corporateAccessState }, // オブジェクトをコピーして渡す
-        }),
-      );
-      logDebug('イベントディスパッチ', {
-        type: 'corporateAccessChanged',
-        detail: { ...corporateAccessState },
-      });
+      // モバイル環境を考慮したタイムアウト処理を追加
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('corporateAccessChanged', {
+            detail: { ...corporateAccessState }, // オブジェクトをコピーして渡す
+          }),
+        );
+        logDebug('イベントディスパッチ', {
+          type: 'corporateAccessChanged',
+          detail: { ...corporateAccessState },
+        });
+      }, 0);
     } catch (e) {
       logDebug('イベントディスパッチエラー', e);
     }
@@ -118,13 +91,33 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
 
 // APIチェック関数
 export const checkCorporateAccess = async (force = false) => {
-  // キャッシュ時間を1分に延長
-  const CACHE_DURATION = 60 * 1000; // 60秒
+  // キャッシュ時間を調整（モバイル環境考慮）
+  const CACHE_DURATION = 30 * 1000; // 30秒
 
   const now = Date.now();
+  // ここを追加：モバイル環境検出を強化
+  const isMobile =
+    typeof navigator !== 'undefined' &&
+    (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+      (typeof window !== 'undefined' && window.innerWidth < 768)); // 画面サイズでも判定
+
+  // すぐにログ出力
+  if (isMobile) {
+    logDebug('モバイル環境検出', {
+      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
+      innerWidth: typeof window !== 'undefined' ? window.innerWidth : 'unknown',
+    });
+
+    // モバイルなら常に強制更新
+    force = true;
+  }
+
+  // キャッシュの使用条件を改善
   if (
     !force &&
-    corporateAccessState.lastChecked &&
+    corporateAccessState.lastChecked > 0 && // 少なくとも1回はチェック済み
+    corporateAccessState.hasAccess !== null && // 明示的な値が設定されている
+    corporateAccessState.tenantId && // テナントIDが設定されていて空文字列やnullではない
     now - corporateAccessState.lastChecked < CACHE_DURATION
   ) {
     logDebug('キャッシュ使用', {
@@ -135,9 +128,17 @@ export const checkCorporateAccess = async (force = false) => {
   }
 
   try {
-    logDebug('APIリクエスト開始', { timestamp: now });
-    // キャッシュバスティングのためのタイムスタンプを追加
-    const response = await fetch('/api/corporate/access?t=' + now);
+    logDebug('APIリクエスト開始', { timestamp: now, isMobile });
+    // キャッシュバスティングのためのタイムスタンプとモバイルフラグを追加
+    const response = await fetch(`/api/corporate/access?t=${now}&mobile=${isMobile ? 1 : 0}`, {
+      headers: {
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        Pragma: 'no-cache',
+        Expires: '0',
+      },
+    });
+
+    // APIレスポンスのログ出力を詳細化
     logDebug('APIレスポンス受信', {
       status: response.status,
       ok: response.ok,
@@ -158,15 +159,60 @@ export const checkCorporateAccess = async (force = false) => {
     } else if (response.ok) {
       const data = await response.json();
       logDebug('法人プランユーザー検出', data);
-      // 法人プランユーザーと判定
-      updateCorporateAccessState({
-        hasAccess: true,
-        isAdmin: data.isAdmin || false,
-        tenantId: data.tenantId || null,
-        userRole: data.role || null,
-        lastChecked: now,
-        error: null,
+
+      // レスポンスからテナントID候補を取得する処理を強化
+      const possibleTenantId = data.tenantId || (data.tenant && data.tenant.id) || null;
+
+      logDebug('テナントID検証', {
+        responseData: data,
+        possibleTenantId,
+        tenantId: data.tenantId,
+        tenantObjId: data.tenant?.id,
+        isNull: possibleTenantId === null,
+        isDefined: typeof possibleTenantId !== 'undefined',
       });
+
+      // テナントIDが取得できない場合でも、アクセス権があればモバイル環境用の対応を追加
+      if (data.hasCorporateAccess === true && !possibleTenantId && isMobile) {
+        // モバイル環境専用の対応：常にフォールバック
+        logDebug('モバイル環境でテナントID取得不可、強制フォールバック', { responseData: data });
+        updateCorporateAccessState({
+          hasAccess: true,
+          isAdmin: data.isAdmin || false,
+          tenantId: 'mobile-fallback-tenant-id', // モバイル用フォールバック
+          userRole: data.userRole || data.role || 'member',
+          lastChecked: now,
+          error: null,
+        });
+
+        // 成功として返す
+        return corporateAccessState;
+      }
+
+      // テナントIDが取得できない場合でも、アクセス権があれば代替IDを設定
+      if (data.hasCorporateAccess === true && !possibleTenantId) {
+        logDebug('テナントID取得できずフォールバック使用', { originalData: data });
+
+        // 開発環境・本番環境どちらでも使用できるフォールバック処理
+        updateCorporateAccessState({
+          hasAccess: true,
+          isAdmin: data.isAdmin || false,
+          tenantId: 'fallback-tenant-id', // フォールバックID
+          userRole: data.userRole || data.role || null,
+          lastChecked: now,
+          error: null,
+        });
+      } else {
+        // 通常の状態更新
+        updateCorporateAccessState({
+          hasAccess: true,
+          isAdmin: data.isAdmin || false,
+          tenantId: possibleTenantId,
+          userRole: data.userRole || data.role || null,
+          lastChecked: now,
+          error: null,
+        });
+      }
     } else {
       // その他のエラー（例: 500内部サーバーエラーなど）
       logDebug('予期しないAPIエラー', {
@@ -174,8 +220,9 @@ export const checkCorporateAccess = async (force = false) => {
         statusText: response.statusText,
       });
 
-      // 一時的なエラーとして処理し、既存の状態を保持
+      // エラー時はアクセス権を明示的に拒否する
       updateCorporateAccessState({
+        hasAccess: false,
         lastChecked: now,
         error: `APIエラー: ${response.status} ${response.statusText}`,
       });
@@ -186,13 +233,14 @@ export const checkCorporateAccess = async (force = false) => {
     // ネットワークエラーなどの例外処理
     logDebug('APIリクエスト例外', error);
 
-    // エラーが発生した場合も状態を更新
+    // エラーが発生した場合もアクセス権を明示的に拒否する
     updateCorporateAccessState({
+      hasAccess: false,
       error: error instanceof Error ? error.message : 'APIリクエスト中にエラーが発生しました',
       lastChecked: now,
     });
 
-    // エラー情報をコンソールに出力するが、例外は再スローしない
+    // エラー情報をコンソールに出力
     console.error('法人アクセス権確認エラー:', error);
 
     return corporateAccessState;
@@ -222,37 +270,31 @@ export function resetCorporateAccessState(): void {
   logDebug('状態リセット後', { ...corporateAccessState });
 }
 
-// デバッグログを取得する関数
-export function getCorporateAccessDebugLogs(): Array<{
-  timestamp: number;
-  action: string;
-  data: unknown;
-}> {
-  if (typeof window !== 'undefined' && window._corporateAccessDebug) {
-    return window._corporateAccessDebug.logs;
+// クッキーを保存する際のオプション
+export function setCorporateAccessCookies(hasAccess: boolean, role: string | null): void {
+  // 環境判定
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // 開発環境では簡易な設定で
+  if (!isProduction) {
+    document.cookie = `corporateAccess=${hasAccess}; path=/;`;
+    document.cookie = `corporateRole=${role || ''}; path=/;`;
+  } else {
+    // 本番環境ではセキュリティ強化
+    document.cookie = `corporateAccess=${hasAccess}; path=/; secure; max-age=${24 * 60 * 60}; samesite=strict`;
+    document.cookie = `corporateRole=${role || ''}; path=/; secure; max-age=${24 * 60 * 60}; samesite=strict`;
   }
-  return [];
+
+  logDebug('クッキー設定', { hasAccess, role, isProduction });
 }
 
-// デバッグ用の強制アクセス許可機能
-export function enableDebugMode(durationMinutes = 30): boolean {
-  logDebug('デバッグモード有効化', { durationMinutes });
+// checkCorporateAccess関数内の修正部分
+// return corporateAccessState; の直前に以下を追加
 
-  updateCorporateAccessState({
-    hasAccess: true,
-    isAdmin: true,
-    tenantId: 'debug-tenant-id',
-    userRole: 'admin',
-    lastChecked: Date.now(),
-    error: null,
-  });
-
-  // 指定時間後に自動リセット
-  const timeoutMs = durationMinutes * 60 * 1000;
-  setTimeout(() => {
-    logDebug('デバッグモード有効期限切れ', { durationMinutes });
-    resetCorporateAccessState();
-  }, timeoutMs);
-
-  return true;
+if (typeof document !== 'undefined') {
+  // クッキーを更新（userRoleがundefinedの場合はnullを使用）
+  setCorporateAccessCookies(
+    corporateAccessState.hasAccess === true,
+    corporateAccessState.userRole !== undefined ? corporateAccessState.userRole : null,
+  );
 }

@@ -1,7 +1,6 @@
 // components/corporate/BrandingPreview.tsx
-import React from 'react';
+import React, { useState } from 'react';
 import Image from 'next/image';
-// import { HiUser, HiGlobe, HiMail, HiPhone, HiPlus } from 'react-icons/hi';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
 
@@ -34,10 +33,14 @@ interface BrandingPreviewProps {
   textColor?: string | null;
   snsIconColor?: string | null;
   bio?: string | null;
+  bioBackgroundColor?: string | null; // 追加: 自己紹介ページの背景色
+  bioTextColor?: string | null; // 追加: 自己紹介ページのテキスト色
   corporateSnsLinks?: CorporateSnsLink[];
   personalSnsLinks?: SnsLink[];
   department?: string | null;
   position?: string | null;
+  highlightSns?: boolean; // SNSアイコンのハイライト表示
+  highlightBio?: boolean; // 自己紹介のハイライト表示
 }
 
 export function BrandingPreview({
@@ -49,15 +52,24 @@ export function BrandingPreview({
   tenantName,
   userName,
   userNameEn,
+  userImage = null,
   headerText,
   textColor = '#FFFFFF',
   snsIconColor = '#333333',
+  bio = '自己紹介文',
+  bioBackgroundColor = '#FFFFFF',
+  bioTextColor = '#333333',
   corporateSnsLinks = [],
   personalSnsLinks = [],
-  department,
+  department = '営業部',
   position,
+  highlightSns = false,
+  highlightBio = false,
 }: BrandingPreviewProps) {
-  // null チェックを行い、デフォルト値を設定
+  // 状態管理
+  const [showBioModal, setShowBioModal] = useState(false);
+
+  // 安全な値を設定
   const safeTextColor = textColor || '#FFFFFF';
   const safeSnsIconColor = snsIconColor === 'original' ? 'original' : snsIconColor || '#333333';
 
@@ -137,7 +149,6 @@ export function BrandingPreview({
           {headerText || 'シンプルにつながる、スマートにシェア。'}
         </div>
       </div>
-
       <div className="p-5">
         {/* 法人ロゴと名前 */}
         {logoUrl && (
@@ -147,7 +158,7 @@ export function BrandingPreview({
                 width: `${logoWidth}px`,
                 height: `${logoHeight}px`,
                 maxWidth: '100%',
-                maxHeight: '120px',
+                maxHeight: '80px',
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -172,9 +183,9 @@ export function BrandingPreview({
           </div>
         )}
 
-        {/* テナント名 */}
+        {/* テナント名 - 改行防止のために whitespace-nowrap を追加 */}
         <div className="text-center mb-4 px-2">
-          <h3 className="text-base font-medium max-w-full">{tenantName}</h3>
+          <h3 className="text-base font-medium max-w-full whitespace-nowrap">{tenantName}</h3>
         </div>
 
         {/* 部署情報 */}
@@ -190,7 +201,16 @@ export function BrandingPreview({
         </div>
 
         {/* SNSリンク */}
-        <div className="mt-4 grid grid-cols-4 gap-3">
+        <div className="mt-4 grid grid-cols-4 gap-3 relative">
+          {/* SNSアイコン全体を囲むハイライト枠 */}
+          {highlightSns && (
+            <div
+              className="absolute inset-0 border-2 border-red-500 rounded-lg animate-pulse"
+              style={{ top: '-8px', left: '-8px', right: '-8px', bottom: '-8px', zIndex: 5 }}
+            ></div>
+          )}
+
+          {/* 個別のSNSアイコン（ハイライト枠は削除） */}
           {displaySnsLinks.map((link, index) => (
             <div key={index} className="flex flex-col items-center">
               <div className="w-12 h-12 flex items-center justify-center rounded-xl bg-white shadow-sm mb-1 transition-transform hover:shadow-md">
@@ -200,20 +220,33 @@ export function BrandingPreview({
                   color={safeSnsIconColor}
                 />
               </div>
-              <span className="text-xs text-center truncate w-full">
+              <span className="text-xs text-center w-full">
                 {getPlatformDisplayName(link.platform)}
               </span>
             </div>
           ))}
         </div>
 
-        {/* アクションボタン（プロフィール情報、会社HP、メール、電話） */}
+        {/* アクションボタン部分 */}
         <div className="mt-6 grid grid-cols-4 gap-3">
-          {/* 自己紹介ボタン */}
-          <div className="flex flex-col items-center">
-            <div
-              className="w-12 h-12 rounded-full flex items-center justify-center mb-1"
-              style={{ backgroundColor: secondaryColor }} // 修正: 背景色をセカンダリーカラーに
+          {/* 自己紹介ボタンにハイライト表示を追加 */}
+          <div className="flex flex-col items-center relative">
+            {highlightBio && (
+              <div
+                className="absolute border-2 border-red-500 rounded-xl animate-pulse pointer-events-none"
+                style={{
+                  top: '-8px',
+                  left: '-8px',
+                  right: '-8px',
+                  bottom: '-8px',
+                  zIndex: 5,
+                }}
+              ></div>
+            )}
+            <button
+              onClick={() => setShowBioModal(true)}
+              className="w-12 h-12 rounded-full flex items-center justify-center mb-1 cursor-pointer z-10"
+              style={{ backgroundColor: secondaryColor }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -229,7 +262,7 @@ export function BrandingPreview({
                 <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
                 <circle cx="12" cy="7" r="4" />
               </svg>
-            </div>
+            </button>
             <span className="text-xs">自己紹介</span>
           </div>
 
@@ -237,7 +270,7 @@ export function BrandingPreview({
           <div className="flex flex-col items-center">
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center mb-1"
-              style={{ backgroundColor: secondaryColor }} // 修正: 背景色をセカンダリーカラーに
+              style={{ backgroundColor: secondaryColor }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -262,7 +295,7 @@ export function BrandingPreview({
           <div className="flex flex-col items-center">
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center mb-1"
-              style={{ backgroundColor: secondaryColor }} // 修正: 背景色をセカンダリーカラーに
+              style={{ backgroundColor: secondaryColor }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -286,7 +319,7 @@ export function BrandingPreview({
           <div className="flex flex-col items-center">
             <div
               className="w-12 h-12 rounded-full flex items-center justify-center mb-1"
-              style={{ backgroundColor: secondaryColor }} // 修正: 背景色をセカンダリーカラーに
+              style={{ backgroundColor: secondaryColor }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -354,9 +387,9 @@ export function BrandingPreview({
           </button>
         </div>
 
-        {/* フッター */}
+        {/* フッター - サービスリンクの色を修正 */}
         <div className="mt-6 text-center">
-          <a href="#" className="text-sm text-blue-600">
+          <a href="#" className="text-sm text-[#2563EB]">
             このサービスを使ってみる
           </a>
           <div className="mt-2 pt-2 border-t border-gray-300">
@@ -364,6 +397,124 @@ export function BrandingPreview({
           </div>
         </div>
       </div>
+      {/* 自己紹介モーダル */}
+      {showBioModal && (
+        <div className="fixed inset-0 z-50">
+          <div className="absolute inset-0">
+            <div className="max-w-[100%] w-full h-full mx-auto flex items-center justify-center">
+              <div
+                className="w-full max-w-md bg-white rounded-lg shadow-xl overflow-hidden relative"
+                style={{ maxWidth: '360px' }}
+              >
+                {/* モーダルを閉じるボタン */}
+                <button
+                  className="absolute top-4 right-4 z-10 text-gray-500"
+                  onClick={() => setShowBioModal(false)}
+                >
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="18" y1="6" x2="6" y2="18"></line>
+                    <line x1="6" y1="6" x2="18" y2="18"></line>
+                  </svg>
+                </button>
+
+                {/* ユーザー情報部分 */}
+                <div className="flex flex-col items-center py-8">
+                  {/* プロフィール画像 */}
+                  <div className="w-24 h-24 rounded-full overflow-hidden bg-blue-600 mb-4 flex items-center justify-center">
+                    {userImage ? (
+                      <Image
+                        src={userImage}
+                        alt={userName}
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* ユーザー名 */}
+                  <h2 className="text-2xl font-bold text-center mb-1">{userName}</h2>
+                  {userNameEn && <p className="text-sm text-gray-500 mb-4">{userNameEn}</p>}
+
+                  {/* 自己紹介文 */}
+                  <div className="px-8 w-full">
+                    <p className="text-base text-center whitespace-pre-wrap">
+                      {bio ||
+                        '自己紹介テスト。自己紹介テスト。自己紹介テスト。自己紹介テスト。自己紹介テスト。自己紹介テスト。'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 区切り線 */}
+                <div className="border-t border-gray-200 w-full"></div>
+
+                {/* 会社情報と連絡先 */}
+                <div
+                  className="p-6 text-base"
+                  style={{
+                    color: bioTextColor || '#333333',
+                    backgroundColor: bioBackgroundColor || '#FFFFFF',
+                  }}
+                >
+                  <div className="space-y-4">
+                    <div>
+                      <p className="font-semibold">会社 / 組織：</p>
+                      <p>{tenantName}</p>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold">部署：</p>
+                      <p>{department}</p>
+                    </div>
+
+                    {position && (
+                      <div>
+                        <p className="font-semibold">役職：</p>
+                        <p>{position}</p>
+                      </div>
+                    )}
+
+                    <div>
+                      <p className="font-semibold">TEL：</p>
+                      <p>09016868728</p>
+                    </div>
+
+                    <div>
+                      <p className="font-semibold">メール：</p>
+                      <p>moe@yamaguchi.com</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

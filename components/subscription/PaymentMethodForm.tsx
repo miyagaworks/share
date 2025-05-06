@@ -1,7 +1,7 @@
 // components/subscription/PaymentMethodForm.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { loadStripe } from '@stripe/stripe-js';
 import {
@@ -43,15 +43,27 @@ function PaymentMethodFormContent({
         '::placeholder': {
           color: '#aab7c4',
         },
-        padding: '10px 0',
       },
       invalid: {
         color: '#9e2146',
         iconColor: '#9e2146',
       },
     },
-    hidePostalCode: true,
   };
+
+  // パッシブイベントリスナーの設定
+  useEffect(() => {
+    // パッシブリスナーを使うための空の関数を定義
+    const handleTouchStart = () => {};
+
+    // 正しいオプション指定
+    document.addEventListener('touchstart', handleTouchStart, { passive: true });
+
+    return () => {
+      // 同じ関数参照で削除（オプションはboolean指定のみ必要）
+      document.removeEventListener('touchstart', handleTouchStart);
+    };
+  }, []);
 
   // カード入力状態変更のハンドラー
   const handleElementChange = (event: StripeElementChangeEvent, field: keyof typeof complete) => {
@@ -135,9 +147,7 @@ function PaymentMethodFormContent({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">
-                CVV（3桁）
-              </label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">CVV（3桁）</label>
               <div className="border border-gray-300 rounded-md p-3 focus-within:ring-1 focus-within:ring-primary focus-within:border-primary">
                 <CardCvcElement
                   options={elementStyle}

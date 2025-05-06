@@ -5,7 +5,7 @@ import Image from 'next/image';
 interface CorporateBrandingProps {
   children: ReactNode;
   primaryColor?: string;
-  secondaryColor?: string; // セカンダリーカラーは維持
+  secondaryColor?: string;
   logoUrl?: string | null;
   tenantName?: string;
   headerText?: string | null;
@@ -13,12 +13,13 @@ interface CorporateBrandingProps {
   rounded?: boolean;
   shadow?: boolean;
   border?: boolean;
+  showLogo?: boolean; // ロゴ表示の制御用
 }
 
 export function CorporateBranding({
   children,
   primaryColor = 'var(--color-corporate-primary)',
-  secondaryColor = 'var(--color-corporate-secondary)', // セカンダリーカラーは維持
+  secondaryColor = 'var(--color-corporate-secondary)',
   logoUrl = null,
   tenantName = '',
   headerText = null,
@@ -26,6 +27,7 @@ export function CorporateBranding({
   rounded = true,
   shadow = true,
   border = true,
+  showLogo = false, // デフォルトでロゴを非表示に変更
 }: CorporateBrandingProps) {
   // スタイルの設定
   const containerClasses = `
@@ -35,7 +37,8 @@ export function CorporateBranding({
     ${border ? `border border-gray-200` : ''}
   `;
 
-  const headerClasses = 'w-full h-32 flex items-center justify-center relative';
+  // ヘッダー高さを調整（スマホ表示を考慮）
+  const headerClasses = 'w-full flex items-center justify-center relative py-4 px-2';
 
   // 動的スタイル
   const headerStyle = {
@@ -45,20 +48,16 @@ export function CorporateBranding({
   const borderStyle = border
     ? {
         borderColor: `${primaryColor}40`,
-        // セカンダリーカラーをボーダーのホバー効果などに使用
-        '--secondary-color': secondaryColor, // CSSカスタムプロパティとして使用
+        '--secondary-color': secondaryColor,
       }
     : {};
 
-  // セカンダリーカラーは将来的に以下のようなコンポーネントで使用される可能性があります
-  // 現時点では使用していませんが、将来の拡張性のために保持しています
-  // 例: セカンダリーボタン、リンク、ボーダーアクセントなど
-
   return (
     <div className={containerClasses} style={borderStyle}>
-      {/* ヘッダー部分 */}
+      {/* ヘッダー部分 - 高さを調整して可変に */}
       <div className={headerClasses} style={headerStyle}>
-        {logoUrl && (
+        {/* ロゴ表示(showLogoがtrueの場合のみ表示) */}
+        {showLogo && logoUrl && (
           <div className="absolute top-2 right-2 bg-white rounded-full p-1 h-10 w-10 flex items-center justify-center">
             <Image
               src={logoUrl}
@@ -70,16 +69,19 @@ export function CorporateBranding({
           </div>
         )}
 
-        {/* ヘッダーテキスト */}
+        {/* ヘッダーテキスト - スマホ表示でもきれいに */}
         {headerText && (
-          <div className="text-lg font-bold z-10" style={{ color: textColor || '#FFFFFF' }}>
+          <div
+            className="text-base sm:text-lg font-bold z-10 text-center break-words px-2"
+            style={{ color: textColor || '#FFFFFF' }}
+          >
             {headerText}
           </div>
         )}
       </div>
 
       {/* コンテンツ部分 */}
-      <div className="p-6">{children}</div>
+      <div className="p-4 sm:p-6">{children}</div>
     </div>
   );
 }

@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
+import { logUserActivity } from '@/lib/utils/activity-logger';
 
 // POSTリクエストでユーザー招待を処理
 export async function POST(request: Request) {
@@ -151,6 +152,41 @@ export async function POST(request: Request) {
         console.error(`招待エラー (${email}):`, error);
         errors.push(`${email}: 招待の処理中にエラーが発生しました`);
       }
+    }
+
+    // 成功した招待ごとにアクティビティを記録
+    for (const result of inviteResults) {
+      await logUserActivity(
+        corporateTenant.id,
+        userId, // 管理者（招待した人）のID
+        result.userId, // 招待されたユーザーID
+        'invite_user',
+        `ユーザー「${result.email}」を招待しました`,
+        {
+          email: result.email,
+          role: role || 'member',
+          departmentId: departmentId || null,
+          departmentName: department?.name || null,
+        },
+      );
+    }
+
+    // 成功した招待ごとにアクティビティを記録
+    for (const result of inviteResults) {
+      // logUserActivityを使う場合（ユーザー関連のアクティビティ）
+      await logUserActivity(
+        corporateTenant.id,
+        userId, // アクションを実行したユーザー（管理者）
+        result.userId, // 対象ユーザー
+        'invite_user',
+        `ユーザー「${result.email}」を招待しました`,
+        {
+          email: result.email,
+          role: role || 'member',
+          departmentId: departmentId || null,
+          departmentName: department?.name || null,
+        },
+      );
     }
 
     return NextResponse.json({

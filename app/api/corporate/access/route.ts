@@ -8,18 +8,23 @@ import { prisma } from '@/lib/prisma';
  * ユーザーの法人アクセス権を確認するためのAPI
  * クライアントサイドで使用することを想定
  */
-export async function GET() {
+export async function GET(request: Request) {
   try {
-    console.log('[API:corporate/access] API呼び出し開始');
+    // URLからクエリパラメータを取得
+    const url = new URL(request.url);
+    const isMobile = url.searchParams.get('mobile') === '1';
+    const timestamp = url.searchParams.get('t') || Date.now().toString();
+
+    console.log(
+      `[API:corporate/access] API呼び出し開始 (t=${timestamp}, mobile=${isMobile ? 'true' : 'false'})`,
+    );
+
     const session = await auth();
     console.log('[API:corporate/access] 認証セッション:', session ? '取得済み' : 'なし');
 
     if (!session?.user?.id) {
       console.log('[API:corporate/access] 認証されていません');
-      return NextResponse.json(
-        { hasCorporateAccess: false, error: '認証されていません' },
-        { status: 401 },
-      );
+      return NextResponse.json({ hasAccess: false, error: '認証されていません' }, { status: 401 });
     }
 
     console.log('[API:corporate/access] ユーザーID:', session.user.id);
@@ -39,7 +44,7 @@ export async function GET() {
     if (!user) {
       console.log('[API:corporate/access] ユーザーが見つかりません');
       return NextResponse.json(
-        { hasCorporateAccess: false, error: 'ユーザーが見つかりません' },
+        { hasAccess: false, error: 'ユーザーが見つかりません' },
         { status: 404 },
       );
     }
@@ -58,7 +63,8 @@ export async function GET() {
     const hasCorporateSubscription =
       user.subscription &&
       (user.subscription.plan === 'business' ||
-        user.subscription.plan === 'business-plus' ||
+        user.subscription.plan === 'business_plus' || // アンダースコア形式も対応
+        user.subscription.plan === 'business-plus' || // ハイフン形式も対応
         user.subscription.plan === 'enterprise') &&
       user.subscription.status === 'active';
 
@@ -73,7 +79,7 @@ export async function GET() {
     );
 
     // 両方の条件を満たす場合のみアクセス権あり
-    const hasCorporateAccess = hasTenant && hasCorporateSubscription;
+    const hasAccess = hasTenant && hasCorporateSubscription;
     console.log(
       '[API:corporate/access] 法人アクセス権判定:',
       'テナントあり:',
@@ -81,10 +87,10 @@ export async function GET() {
       '法人サブスクリプションあり:',
       hasCorporateSubscription,
       '→ アクセス権:',
-      hasCorporateAccess,
+      hasAccess,
     );
 
-    if (!hasCorporateAccess) {
+    if (!hasAccess) {
       let error = '法人プランにアップグレードしてください。';
       if (hasTenant && !hasCorporateSubscription) {
         error = '法人プランのサブスクリプションが有効ではありません。';
@@ -95,7 +101,7 @@ export async function GET() {
       console.log('[API:corporate/access] アクセス拒否理由:', error);
       return NextResponse.json(
         {
-          hasCorporateAccess: false,
+          hasAccess: false,
           error: error,
           isAuthenticated: true,
         },
@@ -105,23 +111,24 @@ export async function GET() {
 
     // テナント情報を取得（管理者または一般メンバーのいずれか）
     const tenant = user.adminOfTenant || user.tenant;
-    console.log('[API:corporate/access] アクセス許可、テナント情報:', tenant?.name);
+    console.log('[API:corporate/access] アクセス許可、詳細テナント情報:', JSON.stringify(tenant));
 
     return NextResponse.json({
-      hasCorporateAccess: true,
+      hasAccess: true,
       isAdmin: !!user.adminOfTenant,
       userRole: user.adminOfTenant ? 'admin' : user.corporateRole || 'member',
       tenant: {
         id: tenant?.id,
         name: tenant?.name,
       },
+      tenantId: tenant?.id, // 明示的にtenantIdも返す
       isAuthenticated: true,
     });
   } catch (error) {
     console.error('[API:corporate/access] 法人アクセス確認エラー:', error);
     return NextResponse.json(
       {
-        hasCorporateAccess: false,
+        hasAccess: false,
         error: '法人アクセス権の確認中にエラーが発生しました',
         isAuthenticated: true,
       },

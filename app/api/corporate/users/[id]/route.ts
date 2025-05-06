@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
+import { logUserActivity } from '@/lib/utils/activity-logger';
 
 // ユーザー情報を更新するAPI（役割と部署の変更）
 export async function PATCH(
@@ -101,6 +102,20 @@ export async function PATCH(
 
     console.log(`[API] ユーザー情報を更新しました: ${updatedUser.id}, 役割: ${updatedUser.corporateRole}`);
 
+    await logUserActivity(
+      corporateTenant.id,
+      userId,
+      params.id,
+      'update_user',
+      `ユーザー「${targetUser.name || targetUser.email}」の情報を更新しました`,
+      {
+        previousRole: targetUser.corporateRole || null,
+        newRole: role || null,
+        previousDepartmentId: targetUser.departmentId || null,
+        newDepartmentId: departmentId || null,
+      },
+    );
+
     return NextResponse.json({
       success: true,
       user: {
@@ -189,6 +204,20 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
         where: { id: params.id },
       }),
     ]);
+
+    // ユーザー削除後のアクティビティログ
+    await logUserActivity(
+      corporateTenant.id,
+      userId,
+      params.id,
+      'delete_user',
+      `ユーザー「${targetUser.name || targetUser.email}」を削除しました`,
+      {
+        email: targetUser.email,
+        role: targetUser.corporateRole || null,
+        departmentId: targetUser.departmentId || null,
+      },
+    );
 
     return NextResponse.json({
       success: true,

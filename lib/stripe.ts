@@ -17,24 +17,29 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 // プラン定義 - クライアントサイドとサーバーサイドの両方で使用可能
 export const PLANS = {
-    MONTHLY: {
-        name: '月額プラン',
-        price: 500, // 円
-        interval: 'month',
-        priceId: process.env.STRIPE_MONTHLY_PRICE_ID || '',
-    },
-    YEARLY: {
-        name: '年額プラン',
-        price: 5000, // 円
-        interval: 'year',
-        priceId: process.env.STRIPE_YEARLY_PRICE_ID || '',
-    },
-    BUSINESS: {
-        name: '法人プラン',
-        price: 3000, // 円
-        interval: 'month',
-        priceId: process.env.STRIPE_BUSINESS_PRICE_ID || '',
-    },
+  MONTHLY: {
+    name: '月額プラン',
+    price: 500, // 円
+    interval: 'month',
+    priceId: process.env.STRIPE_MONTHLY_PRICE_ID || '',
+  },
+  YEARLY: {
+    name: '年額プラン',
+    price: 5000, // 円
+    interval: 'year',
+    priceId: process.env.STRIPE_YEARLY_PRICE_ID || '',
+  },
+  BUSINESS: {
+    name: '法人プラン',
+    price: 3000, // 円
+    interval: 'month',
+    priceId: process.env.STRIPE_BUSINESS_PRICE_ID || '',
+  },
+  BUSINESS_PLUS: {
+    name: 'ビジネスプラン',
+    priceId: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PLUS_PRICE_ID || '',
+    price: 12000,
+  },
 };
 
 // planIdからプラン名を直接取得する関数

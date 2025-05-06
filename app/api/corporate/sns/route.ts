@@ -5,6 +5,7 @@ import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { SNS_PLATFORMS } from '@/types/sns';
 import type { CorporateSnsLink } from '@prisma/client';
+import { logCorporateActivity } from '@/lib/utils/activity-logger';
 
 // 法人共通SNSリンクの取得
 export async function GET() {
@@ -125,6 +126,21 @@ export async function POST(req: NextRequest) {
         url: data.url,
         displayOrder,
         isRequired: data.isRequired,
+      },
+    });
+
+    await logCorporateActivity({
+      tenantId: user.adminOfTenant.id,
+      userId: session.user.id,
+      action: 'update_sns',
+      entityType: 'sns_link',
+      entityId: newLink.id, // newLinkが定義されていることを確認
+      description: `${data.platform}のSNSリンクを追加しました`,
+      metadata: {
+        platform: data.platform,
+        username: data.username || null,
+        url: data.url,
+        isRequired: !!data.isRequired,
       },
     });
 

@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { logCorporateActivity } from '@/lib/utils/activity-logger';
 
 // ブランディング設定の取得（GET）
 export async function GET() {
@@ -130,6 +131,37 @@ export async function PUT(req: Request) {
     const updatedTenant = await prisma.corporateTenant.update({
       where: { id: user.adminOfTenant.id },
       data: updateData,
+    });
+
+    // ブランディング更新後のアクティビティログ
+    await logCorporateActivity({
+      tenantId: user.adminOfTenant.id,
+      userId: session.user.id,
+      action: 'update_branding',
+      entityType: 'tenant',
+      entityId: user.adminOfTenant.id,
+      description: 'ブランディング設定を更新しました',
+      metadata: {
+        updatedFields: Object.keys(updateData),
+        previousValues: {
+          logoUrl: user.adminOfTenant.logoUrl,
+          primaryColor: user.adminOfTenant.primaryColor,
+          secondaryColor: user.adminOfTenant.secondaryColor,
+          headerText: user.adminOfTenant.headerText,
+          textColor: user.adminOfTenant.textColor,
+        },
+        newValues: {
+          // 明示的に各プロパティを追加
+          primaryColor: updateData.primaryColor,
+          secondaryColor: updateData.secondaryColor,
+          logoUrl: updateData.logoUrl,
+          // 省略可能なプロパティは条件付きで追加
+          ...(updateData.logoWidth !== undefined && { logoWidth: updateData.logoWidth }),
+          ...(updateData.logoHeight !== undefined && { logoHeight: updateData.logoHeight }),
+          ...(updateData.headerText !== undefined && { headerText: updateData.headerText }),
+          ...(updateData.textColor !== undefined && { textColor: updateData.textColor }),
+        },
+      },
     });
 
     return NextResponse.json({

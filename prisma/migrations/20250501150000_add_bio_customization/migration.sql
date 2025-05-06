@@ -1,0 +1,3 @@
+-- 自己紹介ページのカスタマイズフィールドを追加
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "bioBackgroundColor" TEXT DEFAULT '#FFFFFF';
+ALTER TABLE "User" ADD COLUMN IF NOT EXISTS "bioTextColor" TEXT DEFAULT '#333333';

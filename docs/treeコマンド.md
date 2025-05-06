@@ -1,4 +1,5 @@
 tree -I 'node_modules|.git|.next|dist|build'
+tree -I 'node_modules|.git|.next|dist|build|backup_*'
 
 
 

@@ -5,8 +5,9 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
-import { HiColorSwatch, HiInformationCircle } from 'react-icons/hi';
+import { HiColorSwatch, HiInformationCircle, HiSave } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
+import { Button } from '@/components/ui/Button';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { BrandingPreview } from '@/components/corporate/BrandingPreview';
 import { ImprovedMemberDesignSettings } from '@/components/corporate/ImprovedMemberDesignSettings';
@@ -17,7 +18,7 @@ interface TenantData {
   name: string;
   logoUrl: string | null;
   primaryColor: string | null;
-  secondaryColor: string | null; // 表示用に残す
+  secondaryColor: string | null;
   logoWidth?: number;
   logoHeight?: number;
   headerText?: string | null;
@@ -27,6 +28,8 @@ interface TenantData {
 interface DesignData {
   mainColor: string | null;
   snsIconColor: string | null;
+  bioBackgroundColor?: string | null;
+  bioTextColor?: string | null;
 }
 
 interface UserData {
@@ -35,7 +38,10 @@ interface UserData {
   nameEn?: string | null;
   bio?: string | null;
   image: string | null;
-  department?: string | null;
+  department?: {
+    id: string;
+    name: string;
+  } | null;
   position?: string | null;
 }
 
@@ -47,6 +53,11 @@ export default function ImprovedCorporateMemberDesignPage() {
   const [designData, setDesignData] = useState<DesignData | null>(null);
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [activeTab, setActiveTab] = useState<'sns' | 'bio'>('sns');
+  const handleTabChange = (tab: 'sns' | 'bio') => {
+    setActiveTab(tab);
+  };
 
   // データ取得
   useEffect(() => {
@@ -82,14 +93,13 @@ export default function ImprovedCorporateMemberDesignPage() {
           nameEn: profileData.user.nameEn,
           bio: profileData.user.bio,
           image: profileData.user.image,
-          department: profileData.user.department?.name || '営業部',
+          department: profileData.user.department,
           position: profileData.user.position || '',
         });
 
         // デザイン情報を設定
         setDesignData({
           ...designData.design,
-          // デフォルトのセカンダリーカラーをテナントから取得
           secondaryColor: designData.design.secondaryColor || designData.tenant.secondaryColor,
         });
 
@@ -111,14 +121,18 @@ export default function ImprovedCorporateMemberDesignPage() {
   const handleSaveDesign = async (values: {
     snsIconColor?: string | null;
     mainColor?: string | null;
+    bioBackgroundColor?: string | null; // 追加
+    bioTextColor?: string | null; // 追加
   }) => {
     try {
+      setIsSaving(true);
+
       const response = await fetch('/api/corporate-member/design', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify(values),
+        body: JSON.stringify(values), // ここで追加したフィールドも送信されます
       });
 
       if (!response.ok) {
@@ -130,7 +144,8 @@ export default function ImprovedCorporateMemberDesignPage() {
 
       // 更新されたデータをセット
       setDesignData({
-        ...updatedData.design,
+        ...designData,
+        ...updatedData.design, // 更新されたデータですべてのフィールドを上書き
       });
 
       toast.success('デザイン設定を更新しました');
@@ -138,50 +153,66 @@ export default function ImprovedCorporateMemberDesignPage() {
       console.error('設定更新エラー:', error);
       toast.error(error instanceof Error ? error.message : 'デザイン設定の更新に失敗しました');
       throw error;
+    } finally {
+      setIsSaving(false);
     }
   };
 
   return (
     <CorporateMemberGuard>
       <div className="space-y-6">
-        <div className="flex items-center mb-6">
-          <HiColorSwatch className="h-8 w-8 text-gray-700 mr-3" />
+        <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
           <div>
-            <h1 className="text-3xl font-bold tracking-tight">デザイン設定</h1>
-            <p className="text-muted-foreground">
-              法人ブランディングに合わせたデザインのカスタマイズ
+            <h1 className="text-2xl font-bold">デザイン設定</h1>
+            <p className="text-gray-500 mt-1 text-justify">
+              プロフィールのデザインを法人カラーに合わせて設定します
             </p>
           </div>
+
+          <Button
+            variant="corporate"
+            onClick={() => handleSaveDesign(designData || {})}
+            disabled={isSaving}
+            className="flex items-center"
+          >
+            {isSaving ? (
+              <>
+                <Spinner size="sm" className="mr-2" />
+                保存中...
+              </>
+            ) : (
+              <>
+                <HiSave className="mr-2 h-4 w-4" />
+                変更を保存
+              </>
+            )}
+          </Button>
         </div>
 
         {isLoading ? (
-          <div className="flex flex-col items-center justify-center min-h-[400px]">
+          <div className="flex justify-center items-center min-h-[300px]">
             <Spinner size="lg" />
-            <p className="mt-4 text-sm text-gray-500">デザイン情報を読み込んでいます...</p>
           </div>
         ) : error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+          <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
+            <h3 className="text-lg font-medium text-red-800 mb-2">エラーが発生しました</h3>
             <p className="text-red-700">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 text-white rounded-md"
-              style={{ backgroundColor: 'var(--color-corporate-primary)' }}
-            >
+            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
               再読み込み
-            </button>
+            </Button>
           </div>
         ) : (
-          <>
-            {/* メインコンテンツ */}
-            <div className="grid gap-6 sm:grid-cols-1 md:grid-cols-2">
-              {/* 左: 設定フォーム */}
-              <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
-                <h2 className="text-lg font-semibold mb-4 flex items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            {/* 設定フォーム */}
+            <div className="space-y-6">
+              {/* SNSアイコン設定 */}
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                <h2 className="text-lg font-medium mb-4 flex items-center">
                   <HiColorSwatch className="mr-2 h-5 w-5 text-gray-600" />
-                  カスタマイズ設定
+                  SNSアイコン設定
                 </h2>
-                <p className="text-sm text-gray-500 mb-6">
-                  法人ブランディングの範囲内で、個人プロフィールのデザインをカスタマイズできます。
+                <p className="text-sm text-gray-500 mb-4 text-justify">
+                  プロフィールに表示するSNSアイコンのカラー設定をカスタマイズします。
                 </p>
 
                 {designData && tenantData && (
@@ -191,26 +222,76 @@ export default function ImprovedCorporateMemberDesignPage() {
                     secondaryColor={tenantData.secondaryColor || '#1E40AF'}
                     isLoading={isLoading}
                     onSave={handleSaveDesign}
+                    activeTab={activeTab}
+                    onTabChange={handleTabChange}
                   />
                 )}
               </div>
 
-              {/* 右: プレビュー */}
-              <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-lg font-semibold flex items-center">
-                    <HiInformationCircle className="mr-2 h-5 w-5 text-gray-600" />
-                    プレビュー
-                  </h2>
+              {/* デザインガイドライン */}
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                <h2 className="text-lg font-medium mb-4 flex items-center">
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    className="h-5 w-5 mr-2 text-gray-600"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                    />
+                  </svg>
+                  デザインガイドライン
+                </h2>
+                <p className="text-sm text-gray-500 mb-4 text-justify">
+                  法人プロファイルでは以下の要素をカスタマイズできます:
+                </p>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <div className="border border-gray-200 rounded-md p-4">
+                    <h3 className="font-medium mb-2">カスタマイズ可能な項目</h3>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• SNSアイコンの色</li>
+                      <li>• 自己紹介ページの背景色</li>
+                      <li>• 自己紹介ページの文字色</li>
+                    </ul>
+                  </div>
+
+                  <div className="border border-gray-200 rounded-md p-4">
+                    <h3 className="font-medium mb-2">法人設定による固定項目</h3>
+                    <ul className="text-sm text-gray-600 space-y-1">
+                      <li>• プライマリーカラー (ヘッダー背景色など)</li>
+                      <li>• セカンダリーカラー (アイコン背景色など)</li>
+                      <li>• ヘッダーテキスト</li>
+                      <li>• ヘッダーテキストの色</li>
+                      <li>• 法人ロゴ</li>
+                      <li>• プライマリーボタン背景色</li>
+                      <li>• 法人共通SNSリンク</li>
+                    </ul>
+                  </div>
                 </div>
-                <p className="text-sm text-gray-500 mb-4">
-                  設定が反映されたプロフィールのプレビューです。リアルタイムに変更が表示されます。
+              </div>
+            </div>
+
+            {/* プレビュー - こちらを branding/page.tsx と同じレイアウトに修正 */}
+            <div className="space-y-6">
+              <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+                <h2 className="text-lg font-medium mb-4 text-center flex items-center justify-center">
+                  <HiEye className="mr-2 h-5 w-5 text-gray-600" />
+                  プレビュー
+                </h2>
+                <p className="text-sm text-gray-500 mb-6 text-center">
+                  設定がユーザープロフィールにどのように表示されるかのプレビューです
                 </p>
 
                 {userData && tenantData && designData && (
                   <BrandingPreview
                     primaryColor={tenantData.primaryColor || '#1E3A8A'}
-                    secondaryColor={tenantData.secondaryColor || '#1E40AF'} // テナントから取得
+                    secondaryColor={tenantData.secondaryColor || '#1E40AF'}
                     logoUrl={tenantData.logoUrl}
                     logoWidth={tenantData.logoWidth}
                     logoHeight={tenantData.logoHeight}
@@ -218,61 +299,86 @@ export default function ImprovedCorporateMemberDesignPage() {
                     userName={userData.name || '名前未設定'}
                     userNameEn={userData.nameEn}
                     userImage={userData.image}
-                    headerText={tenantData.headerText} // テナントのヘッダーテキストを使用
-                    textColor={tenantData.textColor || '#FFFFFF'} // テナントのテキストカラーを使用
+                    headerText={tenantData.headerText}
+                    textColor={tenantData.textColor || '#FFFFFF'}
                     snsIconColor={designData.snsIconColor}
-                    bio={
-                      userData.bio
-                        ? userData.bio
-                        : `${userData.department || '営業部'} ${userData.position ? '- ' + userData.position : ''}`
-                    }
-                    department={userData.department}
+                    department={userData.department?.name}
                     position={userData.position}
+                    bio={userData.bio}
+                    bioBackgroundColor={designData.bioBackgroundColor}
+                    bioTextColor={designData.bioTextColor}
+                    highlightSns={activeTab === 'sns'}
+                    highlightBio={activeTab === 'bio'}
                   />
                 )}
-              </div>
-            </div>
 
-            {/* デザインガイドライン */}
-            <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
-              <h2 className="text-lg font-semibold mb-4">デザインのガイドライン</h2>
-              <p className="text-sm text-gray-600 mb-4">
-                法人プロファイルでは以下の要素をカスタマイズできます:
-              </p>
-
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="border border-gray-200 rounded-md p-4">
-                  <h3 className="font-medium mb-2">カスタマイズ可能な項目</h3>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• SNSアイコンの色</li>
-                  </ul>
-                </div>
-
-                <div className="border border-gray-200 rounded-md p-4">
-                  <h3 className="font-medium mb-2">法人設定による固定項目</h3>
-                  <ul className="text-sm text-gray-600 space-y-1">
-                    <li>• プライマリーカラー (ヘッダー背景色など)</li>
-                    <li>• セカンダリーカラー (アイコン背景色など)</li>
-                    <li>• ヘッダーテキスト</li>
-                    <li>• ヘッダーテキストの色</li>
-                    <li>• 法人ロゴ</li>
-                    <li>• プライマリーボタン背景色</li>
-                    <li>• 法人共通SNSリンク</li>
-                  </ul>
+                {/* 保存ボタン（プレビューの下に配置） */}
+                <div className="mt-6 flex justify-center">
+                  <Button
+                    variant="corporate"
+                    onClick={() => handleSaveDesign(designData || {})}
+                    disabled={isSaving}
+                    className="w-full sm:w-auto flex items-center justify-center"
+                  >
+                    {isSaving ? (
+                      <>
+                        <Spinner size="sm" className="mr-2" />
+                        保存中...
+                      </>
+                    ) : (
+                      <>
+                        <HiSave className="mr-2 h-4 w-4" />
+                        変更を保存
+                      </>
+                    )}
+                  </Button>
                 </div>
               </div>
 
-              <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mt-6">
-                <p className="text-sm text-blue-900 text-justify">
-                  <strong>ヒント:</strong>{' '}
-                  自分のブランドや個性を表現したい場合は、プロフィール編集ページで自己紹介文を編集するとともに、
-                  SNSアイコンカラーを工夫することで、法人ブランディングの統一感を保ちながらも個性を出すことができます。
-                </p>
+              {/* ブランディングの活用方法 */}
+              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+                <div className="flex flex-row items-start">
+                  <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
+                  <div className="w-full">
+                    <h3 className="font-medium text-blue-900 mb-1">SNSアイコンカラーについて</h3>
+                    <p className="text-sm text-corporate-secondary break-words hyphens-auto text-justify">
+                      SNSアイコンの色は、オリジナルのSNSカラーを使用するか、単色で統一するかを選べます。
+                      オリジナルカラーは視認性が高く親しみやすい一方、単色にすることで法人プロフィールとしての統一感が生まれます。
+                      色選びの際は法人のブランドカラーに合わせることで洗練された印象になります。
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-          </>
+          </div>
         )}
       </div>
     </CorporateMemberGuard>
+  );
+}
+
+// HiEyeコンポーネント
+function HiEye(props: { className: string }) {
+  return (
+    <svg
+      xmlns="http://www.w3.org/2000/svg"
+      className={props.className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+      />
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+      />
+    </svg>
   );
 }

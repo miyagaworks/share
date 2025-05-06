@@ -96,3 +96,50 @@ export function generateVCard(user: UserForVCard) {
 
     return vCardLines.join('\n');
 }
+
+// 日付フォーマット用の関数
+export function formatRelativeTime(dateString: string): string {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+
+  // 経過時間を計算
+  const diffSec = Math.floor(diffMs / 1000);
+  const diffMin = Math.floor(diffSec / 60);
+  const diffHour = Math.floor(diffMin / 60);
+  const diffDay = Math.floor(diffHour / 24);
+
+  // 相対時間を返す
+  if (diffDay > 30) {
+    return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
+  } else if (diffDay > 0) {
+    return `${diffDay}日前`;
+  } else if (diffHour > 0) {
+    return `${diffHour}時間前`;
+  } else if (diffMin > 0) {
+    return `${diffMin}分前`;
+  } else {
+    return `${diffSec}秒前`;
+  }
+}
+
+/**
+ * プラン名を日本語に変換する
+ */
+export function getPlanNameInJapanese(planName: string): string {
+  switch (planName) {
+    case 'monthly':
+      return '月額プラン';
+    case 'yearly':
+      return '年額プラン';
+    case 'business':
+      return 'スタータープラン';
+    case 'business_plus':
+    case 'business-plus':
+      return 'ビジネスプラン';
+    case 'enterprise':
+      return 'エンタープライズプラン';
+    default:
+      return planName || '不明なプラン';
+  }
+}

@@ -2,13 +2,14 @@
 'use client';
 
 import { CorporateBranding } from '@/components/ui/CorporateBranding';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { useCorporateAccess } from '@/hooks/useCorporateAccess';
 import { corporateAccessState } from '@/lib/corporateAccessState';
-import { CorporateDebugPanel } from '@/components/debug/CorporateDebugPanel';
+import { Spinner } from '@/components/ui/Spinner';
+import { ActivityFeed } from '@/components/corporate/ActivityFeed';
 
 // アイコンを代替
 import {
@@ -20,23 +21,6 @@ import {
   HiCog,
   HiExclamation,
 } from 'react-icons/hi';
-
-// ローディングスピナー
-const Spinner = ({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) => {
-  const sizeClass = {
-    sm: 'h-4 w-4',
-    md: 'h-8 w-8',
-    lg: 'h-12 w-12',
-  }[size];
-
-  return (
-    <div className="flex justify-center items-center">
-      <div
-        className={`${sizeClass} animate-spin rounded-full border-4 border-solid border-blue-600 border-r-transparent`}
-      />
-    </div>
-  );
-};
 
 // フォールバック用のデフォルトテナント情報
 const DEFAULT_TENANT = {
@@ -75,14 +59,20 @@ interface CorporateTenant {
   }[];
 }
 
-// 警告バナーコンポーネント
-const WarningBanner = ({ message }: { message: string }) => (
+// リトライボタン付きの警告バナー
+const RetryableWarningBanner = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 mx-2">
-    <div className="flex items-start">
-      <HiExclamation className="h-5 w-5 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" />
-      <div>
+    <div className="flex items-start justify-between">
+      <div className="flex items-start">
+        <HiExclamation className="h-5 w-5 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" />
         <p className="text-sm text-yellow-700">{message}</p>
       </div>
+      <button
+        onClick={onRetry}
+        className="ml-4 px-3 py-1 bg-yellow-100 text-yellow-800 text-xs font-medium rounded hover:bg-yellow-200"
+      >
+        再試行
+      </button>
     </div>
   </div>
 );
@@ -93,24 +83,29 @@ type CardColor = 'blue' | 'green' | 'indigo' | 'purple' | 'gray';
 // カラーマップの定義
 const colorMap = {
   blue: {
-    bg: 'bg-corporate-primary/10',
-    text: 'text-corporate-primary',
+    bg: 'bg-blue-100',
+    text: 'text-blue-600',
+    iconBg: 'bg-blue-50',
   },
   green: {
     bg: 'bg-green-100',
     text: 'text-green-600',
+    iconBg: 'bg-green-50',
   },
   indigo: {
-    bg: 'bg-corporate-secondary/10',
-    text: 'text-corporate-secondary',
+    bg: 'bg-indigo-100',
+    text: 'text-indigo-600',
+    iconBg: 'bg-indigo-50',
   },
   purple: {
     bg: 'bg-purple-100',
     text: 'text-purple-600',
+    iconBg: 'bg-purple-50',
   },
   gray: {
     bg: 'bg-gray-100',
     text: 'text-gray-600',
+    iconBg: 'bg-gray-50',
   },
 };
 
@@ -133,7 +128,11 @@ const MenuCard = ({
       className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden cursor-pointer transform transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
       onClick={onClick}
     >
-      <div className="border-b border-gray-200 px-2 sm:px-4 py-2 sm:py-3">
+      <div
+        className={`border-b border-gray-200 px-2 sm:px-4 py-2 sm:py-3 ${colorMap[color].bg} bg-opacity-30`}
+      >
+        {' '}
+        {/* ヘッダー背景色を追加 */}
         <div className="flex items-center">
           <div className={`${colorMap[color].text}`}>{icon}</div>
           <h2 className="ml-2 text-sm sm:text-base font-semibold truncate">{title}</h2>
@@ -161,9 +160,16 @@ export default function CorporateDashboardPage() {
   const { data: session } = useSession();
   const router = useRouter();
 
-  // 法人アクセス権を確認するフックを使用
-  const { isLoading: isAccessLoading } = useCorporateAccess({
-    redirectIfNoAccess: false,
+  // 改善: 法人アクセス権チェックオプションを変更
+  const {
+    isLoading: isAccessLoading,
+    error: accessError,
+    refreshAccess,
+  } = useCorporateAccess({
+    redirectIfNoAccess: true,
+    redirectPath: '/dashboard',
+    checkOnMount: true,
+    forceCheck: false,
   });
 
   const [isLoading, setIsLoading] = useState(true);
@@ -171,75 +177,183 @@ export default function CorporateDashboardPage() {
   const [error, setError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(false);
 
-  // テナント情報を取得
+  // アクセス権エラーを統合
   useEffect(() => {
-    const fetchTenantData = async () => {
+    if (accessError) {
+      setError(accessError);
+    }
+  }, [accessError]);
+
+  // テナント情報を取得
+  const fetchTenantData = useCallback(async () => {
+    if (!session?.user?.id) {
+      return;
+    }
+
+    // アクセス権チェックが完了していない場合はまだ待機
+    if (isAccessLoading) {
+      return;
+    }
+
+    // 現在のアクセス状態とテナントIDを取得
+    const hasAccess = corporateAccessState.hasAccess;
+    const currentTenantId = corporateAccessState.tenantId;
+
+    try {
+      setIsLoading(true);
+
+      // アクセス権があってもtenantIdがnullの場合は再取得
+      if (hasAccess === true && !currentTenantId) {
+        console.log('アクセス権はあるがテナントIDがありません。APIで再確認します。');
+        try {
+          await refreshAccess(); // 強制的に再チェック
+          // 再チェック後もtenantIdがない場合はフォールバック
+          if (!corporateAccessState.tenantId) {
+            setError('テナントIDが取得できません。管理者にお問い合わせください。');
+            // デバッグ用にダミーテナントを設定（開発環境のみ）
+            if (process.env.NODE_ENV === 'development') {
+              setTenantData({
+                ...DEFAULT_TENANT,
+                id: 'debug-tenant-id',
+              });
+              corporateAccessState.tenantId = 'debug-tenant-id';
+              setUsingFallback(true);
+              return;
+            } else {
+              router.push('/dashboard');
+              return;
+            }
+          }
+        } catch (error) {
+          console.error('アクセス権再チェックエラー:', error);
+          router.push('/dashboard');
+          return;
+        }
+      }
+
+      // 再確認した後のテナントIDを取得
+      const finalTenantId = corporateAccessState.tenantId;
+
+      // テナントIDがある場合はAPIからデータを取得
+      if (finalTenantId) {
+        try {
+          console.log('テナントデータを取得します。テナントID:', finalTenantId);
+          const response = await fetch('/api/corporate/tenant', {
+            headers: {
+              'Cache-Control': 'no-cache',
+            },
+          });
+
+          // 以下は元のコードと同じ...
+          if (response.ok) {
+            const data = await response.json();
+            setTenantData(data.tenant);
+            setError(null);
+            setUsingFallback(false);
+          } else if (response.status === 404) {
+            // テナントが見つからない場合
+            setError('テナント情報が見つかりませんでした。管理者にお問い合わせください。');
+            setUsingFallback(true);
+            setTenantData({
+              ...DEFAULT_TENANT,
+              id: finalTenantId,
+            });
+          } else if (response.status === 403) {
+            // アクセス権限がない場合
+            setError('このテナントへのアクセス権限がありません。');
+            router.push('/dashboard');
+          } else {
+            throw new Error('API接続エラー: ' + response.status);
+          }
+        } catch (error) {
+          console.error('API接続エラー:', error);
+          // APIエラー時のみフォールバック処理
+          setTenantData({
+            ...DEFAULT_TENANT,
+            id: finalTenantId,
+          });
+          setUsingFallback(true);
+          setError('サーバーに接続できないため、簡易表示モードを使用しています');
+        }
+        return;
+      } else {
+        // テナントIDがない場合は、ダッシュボードにリダイレクト
+        console.error('テナントIDがありません。ダッシュボードにリダイレクトします。');
+        router.push('/dashboard');
+      }
+    } catch (error) {
+      console.error('テナント情報取得エラー:', error);
+      setTenantData(DEFAULT_TENANT);
+      setUsingFallback(true);
+      setError('テナント情報を読み込めませんでした。デフォルト表示を使用します。');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [session, isAccessLoading, router, refreshAccess]);
+
+  // コンポーネントマウント時の初期化処理
+  useEffect(() => {
+    const initializeData = async () => {
+      // セッションがない場合は処理しない
       if (!session?.user?.id) {
         return;
       }
 
-      // アクセス権チェックが完了していない場合はまだ待機
-      if (isAccessLoading) {
-        return;
-      }
-
-      // 現在のテナントIDを取得
-      const currentTenantId = corporateAccessState.tenantId;
-
-      try {
-        setIsLoading(true);
-
-        // テナントIDがある場合はAPIからデータを取得
-        if (currentTenantId) {
+      // アクセス権チェックが完了したときにデータを取得
+      if (!isAccessLoading) {
+        // corporateAccessStateの状態を確認し、必要に応じて強制更新
+        if (corporateAccessState.hasAccess === null) {
+          console.log('corporateAccessStateが未初期化のため、強制更新します');
           try {
-            const response = await fetch('/api/corporate/tenant');
-
-            if (response.ok) {
-              const data = await response.json();
-              setTenantData(data.tenant);
-              setError(null);
-              setUsingFallback(false);
-            } else {
-              throw new Error('API接続エラー: ' + response.status);
-            }
+            await refreshAccess();
           } catch (error) {
-            console.error('API接続エラー:', error);
-            // エラー時のみフォールバック処理
-            setTenantData({
-              id: currentTenantId,
-              name: '未登録',
-              logoUrl: null,
-              primaryColor: null,
-              secondaryColor: null,
-              maxUsers: 10,
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-              users: [],
-              departments: [],
-            });
-            setUsingFallback(true);
-            setError('APIに接続できないため、簡易表示モードを使用しています');
+            console.error('アクセス権チェックエラー:', error);
           }
-          return;
         }
 
-        // ダミーデータを使用
-        setTenantData(DEFAULT_TENANT);
-        setUsingFallback(true);
-        setError('テナント情報を読み込めませんでした。デフォルト表示を使用します。');
-      } catch (error) {
-        console.error('テナント情報取得エラー:', error);
-        // フォールバックとしてデフォルトテナント情報を使用
-        setTenantData(DEFAULT_TENANT);
-        setUsingFallback(true);
-        setError('テナント情報を読み込めませんでした。デフォルト表示を使用します。');
-      } finally {
-        setIsLoading(false);
+        await fetchTenantData();
       }
     };
 
-    fetchTenantData();
-  }, [session, isAccessLoading]);
+    initializeData();
+  }, [session, isAccessLoading, refreshAccess, fetchTenantData]);
+
+  // テナント情報を再取得する関数
+  const reloadTenantData = async () => {
+    try {
+      await refreshAccess();
+      fetchTenantData();
+    } catch (error) {
+      console.error('テナント情報更新エラー:', error);
+    }
+  };
+
+  // コンポーネントマウント時の初期化を改善
+  useEffect(() => {
+    const initializeData = async () => {
+      // セッションがない場合は処理しない
+      if (!session?.user?.id) {
+        return;
+      }
+
+      // アクセス権チェックが完了したときにデータを取得
+      if (!isAccessLoading) {
+        // corporateAccessStateの状態を確認し、必要に応じて強制更新
+        if (corporateAccessState.hasAccess === null) {
+          console.log('corporateAccessStateが未初期化のため、強制更新します');
+          try {
+            await refreshAccess();
+          } catch (error) {
+            console.error('アクセス権チェックエラー:', error);
+          }
+        }
+
+        await fetchTenantData();
+      }
+    };
+
+    initializeData();
+  }, [session, isAccessLoading, fetchTenantData, refreshAccess]);
 
   // 読み込み中
   if (isAccessLoading || isLoading) {
@@ -255,10 +369,11 @@ export default function CorporateDashboardPage() {
 
   return (
     <div className="max-w-full px-1 sm:px-0">
-      {/* フォールバック使用時の警告バナー */}
+      {/* フォールバック使用時の警告バナー（再試行ボタン付き） */}
       {usingFallback && (
-        <WarningBanner
+        <RetryableWarningBanner
           message={error || 'テナント情報を取得できませんでした。基本機能のみ表示しています。'}
+          onRetry={reloadTenantData}
         />
       )}
 
@@ -270,24 +385,34 @@ export default function CorporateDashboardPage() {
           logoUrl={displayTenant.logoUrl}
           tenantName={displayTenant.name}
           headerText={`${displayTenant.name} ダッシュボード`}
-          shadow={true}
+          shadow={false}
+          border={false}
+          showLogo={false} // ヘッダーロゴを非表示に
         >
           <div className="flex flex-col sm:flex-row sm:items-center">
             <div className="flex items-center mb-2 sm:mb-0">
               {displayTenant.logoUrl ? (
-                <Image
-                  src={displayTenant.logoUrl}
-                  alt={`${displayTenant.name}のロゴ`}
-                  width={48}
-                  height={48}
-                  className="h-10 w-10 sm:h-12 sm:w-12 rounded-full mr-3 object-contain bg-gray-300"
-                />
+                <div className="rounded-full p-2 bg-gray-50 mr-3">
+                  {' '}
+                  {/* パディングと背景色を追加 */}
+                  <Image
+                    src={displayTenant.logoUrl}
+                    alt={`${displayTenant.name}のロゴ`}
+                    width={48}
+                    height={48}
+                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-contain"
+                  />
+                </div>
               ) : (
-                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 flex items-center justify-center mr-3">
+                <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 flex items-center justify-center mr-3 p-2">
+                  {' '}
+                  {/* パディングを追加 */}
                   <HiOfficeBuilding className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                 </div>
               )}
               <div>
+                {' '}
+                {/* マージンを調整 */}
                 <h1 className="text-lg sm:text-xl font-bold break-words">{displayTenant.name}</h1>
                 <p className="text-xs sm:text-sm text-gray-500">
                   法人プラン: 最大{displayTenant.maxUsers}ユーザー
@@ -349,24 +474,10 @@ export default function CorporateDashboardPage() {
       {/* 最近の活動 */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mx-1 sm:mx-2">
         <h2 className="text-base sm:text-lg font-medium mb-2 sm:mb-3">最近の活動</h2>
-        <div className="text-xs sm:text-sm text-center text-gray-500 py-4 sm:py-6">
-          活動データは現在利用できません
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mx-1 sm:mx-2">
+          <ActivityFeed limit={5} className="w-full" autoRefresh={true} />
         </div>
       </div>
-
-      {/* 開発環境かどうかをチェックして表示 */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="mt-4 sm:mt-5 mx-1 sm:mx-2 mb-16">
-          <details className="bg-gray-50 border border-gray-200 rounded-lg">
-            <summary className="px-4 py-2 text-sm font-medium cursor-pointer">
-              開発者ツール - 法人アクセス情報
-            </summary>
-            <div className="p-4 border-t border-gray-200">
-              <CorporateDebugPanel />
-            </div>
-          </details>
-        </div>
-      )}
     </div>
   );
 }

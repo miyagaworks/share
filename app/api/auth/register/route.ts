@@ -4,19 +4,18 @@ import { prisma } from '@/lib/prisma';
 import { RegisterSchema } from '@/schemas/auth';
 import bcrypt from 'bcryptjs';
 import { generateSlug } from '@/lib/utils';
+import { logger } from '@/lib/utils/logger';
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    // 本番環境のログ出力を制限
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('受信したリクエストボディ:', {
-        name: body.name,
-        email: body.email ? `${body.email.substring(0, 3)}...` : undefined, // メールアドレスの一部のみログ出力
-        hasPassword: !!body.password,
-      });
-    }
+    // 統合ロガーを使用
+    logger.debug('ユーザー登録リクエスト受信', {
+      name: body.name ? 'provided' : 'missing',
+      email: body.email ? 'provided' : 'missing',
+      password: body.password ? 'provided' : 'missing',
+    });
 
     const validatedFields = RegisterSchema.safeParse(body);
 
@@ -54,13 +53,9 @@ export async function POST(req: NextRequest) {
     const trialEndsAt = new Date(now);
     trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('トライアル期間を設定:', {
-        開始日: now.toISOString(),
-        終了日: trialEndsAt.toISOString(),
-        日数: '7日間',
-      });
-    }
+    logger.debug('トライアル期間設定', {
+      period: '7日間',
+    });
 
     // ユーザーの作成 - 正規化されたメールアドレスを使用
     const user = await prisma.user.create({
@@ -115,9 +110,7 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`ユーザー登録完了: ID ${user.id}`);
-    }
+    logger.debug('ユーザー登録完了', { userId: user.id });
 
     return NextResponse.json(
       {
@@ -127,7 +120,7 @@ export async function POST(req: NextRequest) {
       { status: 201 },
     );
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error('ユーザー登録エラー:', error);
     return NextResponse.json(
       { message: 'ユーザー登録中にエラーが発生しました。' },
       { status: 500 },

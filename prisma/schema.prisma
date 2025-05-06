@@ -10,149 +10,152 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
   directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id              String    @id @default(cuid())
-  email           String    @unique
-  name            String?
-  nameEn          String?
-  password        String?   // ハッシュ化されたパスワード、OAuthの場合はnull
+  id                  String                 @id @default(cuid())
+  email               String                 @unique
+  name                String?
+  nameEn              String?
+  password            String? // ハッシュ化されたパスワード、OAuthの場合はnull
   passwordResetTokens PasswordResetToken[]
-  image           String?   // プロフィール画像URL
-  bio             String?   // 自己紹介
-  mainColor       String    @default("#3B82F6") // デフォルトは青
-  snsIconColor    String?   @default("#333333") // デフォルトは黒に近いグレー
-  phone           String?   // 電話番号
-  company         String?   // 会社/組織名
-  companyUrl      String?   // 会社/組織のWebサイト
-  companyLabel    String?   // 会社/組織のリンク表示名
-  
+  image               String? // プロフィール画像URL
+  bio                 String? // 自己紹介
+  mainColor           String                 @default("#3B82F6") // デフォルトは青
+  snsIconColor        String?                @default("#333333") // デフォルトは黒に近いグレー
+  bioBackgroundColor  String?                @default("#FFFFFF")
+  bioTextColor        String?                @default("#333333")
+  phone               String? // 電話番号
+  company             String? // 会社/組織名
+  companyUrl          String? // 会社/組織のWebサイト
+  companyLabel        String? // 会社/組織のリンク表示名
+  activityLogs        CorporateActivityLog[] @relation("UserActivities")
+
   // 認証関連
-  emailVerified   DateTime?
-  accounts        Account[]
-  
+  emailVerified DateTime?
+  accounts      Account[]
+
   // プロフィール関連
-  profile         Profile?
-  customLinks     CustomLink[]
-  snsLinks        SnsLink[]
-  
+  profile     Profile?
+  customLinks CustomLink[]
+  snsLinks    SnsLink[]
+
   // ご利用プラン関連
-  stripeCustomerId String?   // Stripeカスタマー識別子
-  subscription    Subscription?
-  billingHistory   BillingRecord[]
-  trialEndsAt     DateTime?
+  stripeCustomerId   String? // Stripeカスタマー識別子
+  subscription       Subscription?
+  billingHistory     BillingRecord[]
+  trialEndsAt        DateTime?
   subscriptionStatus String?
 
-    // 法人テナント関連
-  corporateRole     String?         // "admin", "member" など
-  position          String?         // 役職
-  department        Department?     @relation(fields: [departmentId], references: [id])
-  departmentId      String?
-  tenant            CorporateTenant? @relation("TenantUsers", fields: [tenantId], references: [id])
-  tenantId          String?
-  adminOfTenant     CorporateTenant? @relation("TenantAdmin")
-  
+  // 法人テナント関連
+  corporateRole String? // "admin", "member" など
+  position      String? // 役職
+  department    Department?      @relation(fields: [departmentId], references: [id])
+  departmentId  String?
+  tenant        CorporateTenant? @relation("TenantUsers", fields: [tenantId], references: [id])
+  tenantId      String?
+  adminOfTenant CorporateTenant? @relation("TenantAdmin")
+
   // 問い合わせ関連
-  contacts        Contact[]
-  
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  contacts Contact[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Profile {
-  id              String    @id @default(cuid())
-  userId          String    @unique
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  slug            String    @unique // カスタムURLスラッグ（12345）
-  views           Int       @default(0) // プロフィール閲覧数
-  isPublic        Boolean   @default(true)
-  lastAccessed    DateTime?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String    @id @default(cuid())
+  userId       String    @unique
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  slug         String    @unique // カスタムURLスラッグ（12345）
+  views        Int       @default(0) // プロフィール閲覧数
+  isPublic     Boolean   @default(true)
+  lastAccessed DateTime?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
 }
 
 model SnsLink {
-  id              String    @id @default(cuid())
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform        String    // 'line', 'youtube', 'x', 'instagram', 等
-  username        String?   // ユーザー名
-  url             String    // 完全なURL
-  displayOrder    Int       // 表示順序（並べ替え用）
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform     String // 'line', 'youtube', 'x', 'instagram', 等
+  username     String? // ユーザー名
+  url          String // 完全なURL
+  displayOrder Int // 表示順序（並べ替え用）
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 
   @@unique([userId, platform]) // 1ユーザーあたり各プラットフォーム1つまで
 }
 
 model CustomLink {
-  id              String    @id @default(cuid())
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name            String    // リンクの表示名
-  url             String    // URL
-  displayOrder    Int       // 表示順序
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id           String   @id @default(cuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String // リンクの表示名
+  url          String // URL
+  displayOrder Int // 表示順序
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model Account {
-  id              String    @id @default(cuid())
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type            String    // oauth, email
-  provider        String    // google, apple, email
+  id                String   @id @default(cuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type              String // oauth, email
+  provider          String // google, apple, email
   providerAccountId String?
-  refresh_token   String?
-  access_token    String?
-  expires_at      Int?
-  token_type      String?
-  scope           String?
-  id_token        String?
-  session_state   String?
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 
   @@unique([provider, providerAccountId])
 }
 
 // ご利用プランモデル
 model Subscription {
-  id              String   @id @default(cuid())
-  userId          String   @unique
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status          String   // 'trialing', 'active', 'past_due', 'canceled', 'incomplete'
-  plan            String   // 'monthly', 'yearly', 'business'
-  priceId         String?  // Stripe価格ID
-  subscriptionId  String?  // Stripe ご利用プランID
+  id                 String           @id @default(cuid())
+  userId             String           @unique
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status             String // 'trialing', 'active', 'past_due', 'canceled', 'incomplete'
+  plan               String // 'monthly', 'yearly', 'business'
+  priceId            String? // Stripe価格ID
+  subscriptionId     String? // Stripe ご利用プランID
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
-  cancelAtPeriodEnd  Boolean @default(false)
-  trialStart      DateTime?
-  trialEnd        DateTime?
-  canceledAt      DateTime?
-  cancelReason    String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  corporateTenant CorporateTenant?
+  cancelAtPeriodEnd  Boolean          @default(false)
+  trialStart         DateTime?
+  trialEnd           DateTime?
+  canceledAt         DateTime?
+  cancelReason       String?
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  corporateTenant    CorporateTenant?
 }
 
 // 請求履歴モデル
 model BillingRecord {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  invoiceId       String?  // Stripe インボイスID
-  amount          Int      // 金額（円）
-  status          String   // 'paid', 'pending', 'failed'
-  description     String?  // 請求内容
-  paidAt          DateTime?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+  id          String    @id @default(cuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  invoiceId   String? // Stripe インボイスID
+  amount      Int // 金額（円）
+  status      String // 'paid', 'pending', 'failed'
+  description String? // 請求内容
+  paidAt      DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
 }
 
 model PasswordResetToken {
@@ -168,89 +171,108 @@ model PasswordResetToken {
 
 // お問い合わせモデル
 model Contact {
-  id          String    @id @default(cuid())
-  createdAt   DateTime  @default(now())
-  updatedAt   DateTime  @updatedAt
-  
+  id        String   @id @default(cuid())
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   name        String
   email       String
   companyName String?
-  type        String    // 'account', 'billing', 'technical', 'feature', 'feedback', 'corporate', 'other'
+  type        String // 'account', 'billing', 'technical', 'feature', 'feedback', 'corporate', 'other'
   subject     String
-  message     String    @db.Text
-  
-  status      String    @default("pending") // 'pending', 'in_progress', 'resolved', 'closed'
-  notes       String?   @db.Text
-  assignedTo  String?   // スタッフのIDなど
-  
+  message     String  @db.Text
+
+  status     String  @default("pending") // 'pending', 'in_progress', 'resolved', 'closed'
+  notes      String? @db.Text
+  assignedTo String? // スタッフのIDなど
+
   // ユーザーとの関連付け
-  userId      String?
-  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  userId String?
+  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
 }
 
 // 法人テナント情報
 model CorporateTenant {
-  id                String    @id @default(cuid())
-  name              String
-  logoUrl           String?
-  logoWidth         Int?
-  logoHeight        Int?
-  primaryColor      String?
-  secondaryColor    String?
-  headerText        String?
-  textColor         String?
-  customDomain      String?   @unique
-  maxUsers          Int
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
+  id             String                 @id @default(cuid())
+  name           String
+  logoUrl        String?
+  logoWidth      Int?
+  logoHeight     Int?
+  primaryColor   String?
+  secondaryColor String?
+  headerText     String?
+  textColor      String?
+  customDomain   String?                @unique
+  maxUsers       Int
+  createdAt      DateTime               @default(now())
+  updatedAt      DateTime               @updatedAt
+  activityLogs   CorporateActivityLog[] @relation("TenantActivities")
 
   // 追加する設定関連フィールド
-  securitySettings  Json?     // パスワードポリシー等のセキュリティ設定
-  notificationSettings Json?  // 通知設定
-  billingAddress    Json?     // 請求先情報
-  billingEmail      String?   // 請求先メールアドレス
-  billingContact    String?   // 請求担当者名
-  
+  securitySettings     Json? // パスワードポリシー等のセキュリティ設定
+  notificationSettings Json? // 通知設定
+  billingAddress       Json? // 請求先情報
+  billingEmail         String? // 請求先メールアドレス
+  billingContact       String? // 請求担当者名
+
   // 高度な設定
-  accountStatus     String    @default("active") // "active", "suspended", "deleted"
-  dataRetentionDays Int       @default(365)      // データ保持期間（日数）
-  
+  accountStatus     String @default("active") // "active", "suspended", "deleted"
+  dataRetentionDays Int    @default(365) // データ保持期間（日数）
+
   // リレーション
-  subscription      Subscription?  @relation(fields: [subscriptionId], references: [id])
-  subscriptionId    String?        @unique
-  admin             User           @relation("TenantAdmin", fields: [adminId], references: [id])
-  adminId           String         @unique
-  users             User[]         @relation("TenantUsers")
+  subscription      Subscription?      @relation(fields: [subscriptionId], references: [id])
+  subscriptionId    String?            @unique
+  admin             User               @relation("TenantAdmin", fields: [adminId], references: [id])
+  adminId           String             @unique
+  users             User[]             @relation("TenantUsers")
   departments       Department[]
   corporateSnsLinks CorporateSnsLink[] // 新しく追加
 }
 
 // 部署/チーム管理
 model Department {
-  id                String    @id @default(cuid())
-  name              String
-  description       String?
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-  
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
   // リレーション
-  tenant            CorporateTenant @relation(fields: [tenantId], references: [id])
-  tenantId          String
-  users             User[]
+  tenant   CorporateTenant @relation(fields: [tenantId], references: [id])
+  tenantId String
+  users    User[]
 }
 
 // 法人共通SNSリンクモデル
 model CorporateSnsLink {
-  id            String   @id @default(cuid())
-  tenantId      String
-  tenant        CorporateTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  platform      String   // 'line', 'youtube', 'x', 'instagram', 等
-  username      String?  // ユーザー名
-  url           String   // 完全なURL
-  displayOrder  Int      // 表示順序（並べ替え用）
-  isRequired    Boolean  @default(false) // 全メンバーに必須かどうか（削除不可）
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
+  id           String          @id @default(cuid())
+  tenantId     String
+  tenant       CorporateTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  platform     String // 'line', 'youtube', 'x', 'instagram', 等
+  username     String? // ユーザー名
+  url          String // 完全なURL
+  displayOrder Int // 表示順序（並べ替え用）
+  isRequired   Boolean         @default(false) // 全メンバーに必須かどうか（削除不可）
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
 
   @@unique([tenantId, platform]) // 1テナントあたり各プラットフォーム1つまで
+}
+
+// 法人アクティビティログ
+model CorporateActivityLog {
+  id          String          @id @default(cuid())
+  tenantId    String
+  tenant      CorporateTenant @relation("TenantActivities", fields: [tenantId], references: [id], onDelete: Cascade)
+  userId      String?
+  user        User?           @relation("UserActivities", fields: [userId], references: [id], onDelete: SetNull)
+  action      String // 'create_user', 'update_settings', 'add_department', 等
+  entityType  String // 'user', 'department', 'tenant', 'sns_link', 'settings', 等
+  entityId    String? // 対象エンティティのID（存在する場合）
+  description String // 「ユーザーを追加しました」等の人間が読める説明
+  metadata    Json? // 追加情報（変更前後の値など）
+  createdAt   DateTime        @default(now())
+
+  @@index([tenantId, createdAt(sort: Desc)])
+  @@index([userId])
 }

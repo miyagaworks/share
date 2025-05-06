@@ -1,12 +1,17 @@
 // components/layout/DashboardLayout.tsx
 'use client';
 
-import React, { ReactNode, useState, useEffect } from 'react';
+import React, { ReactNode, useState, useEffect, memo, useMemo } from 'react';
 import { Header } from '@/components/layout/Header';
 import { Sidebar } from '@/components/layout/Sidebar';
 import { MobileMenuButton } from '@/components/layout/MobileMenuButton';
-import { motion } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import { cn } from '@/lib/utils';
+
+// React.memoを使用して不要な再レンダリングを防止
+const MemoizedHeader = memo(Header);
+const MemoizedSidebar = memo(Sidebar);
+const MemoizedMobileMenu = memo(MobileMenuButton);
 
 interface DashboardLayoutProps {
   children: ReactNode;
@@ -22,19 +27,33 @@ interface DashboardSectionProps {
   className?: string;
 }
 
-// DashboardSectionコンポーネントの追加
-export function DashboardSection({ children, className }: DashboardSectionProps) {
+// DashboardSectionコンポーネントを最適化
+export const DashboardSection = memo(function DashboardSection({
+  children,
+  className,
+}: DashboardSectionProps) {
   return <div className={cn('space-y-4', className)}>{children}</div>;
-}
+});
 
 export function DashboardLayout({ children, items }: DashboardLayoutProps) {
   const [isMobile, setIsMobile] = useState(false);
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMounted, setIsMounted] = useState(false);
 
-  // 画面サイズの変更を監視
+  // Hydration問題を防止 - マウント後のみレンダリング
   useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
+  // デバウンスされたリサイズハンドラー - パフォーマンス向上
+  useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+
     const handleResize = () => {
-      setIsMobile(window.innerWidth < 1024);
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(() => {
+        setIsMobile(window.innerWidth < 1024);
+      }, 100); // 100msのデバウンス
     };
 
     handleResize();
@@ -42,40 +61,51 @@ export function DashboardLayout({ children, items }: DashboardLayoutProps) {
 
     return () => {
       window.removeEventListener('resize', handleResize);
+      clearTimeout(timeoutId);
     };
   }, []);
 
+  // メインコンテナのクラスをメモ化
+  const mainContainerClass = useMemo(
+    () => `flex-1 pt-16 transition-all ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`,
+    [isSidebarCollapsed],
+  );
+
+  // ハイドレーション前は最小限のコンテンツを表示
+  if (!isMounted) {
+    return <div className="min-h-screen bg-gray-50"></div>;
+  }
+
   return (
     <div className="flex min-h-screen bg-gray-50">
-      <Header />
+      <MemoizedHeader />
 
-      {/* PCではサイドバー表示、モバイルでは非表示 */}
-      <div className="hidden lg:block">
-        <Sidebar items={items} onToggleCollapse={(collapsed) => setIsSidebarCollapsed(collapsed)} />
-      </div>
+      {/* PCではサイドバー表示 */}
+      {!isMobile && <MemoizedSidebar items={items} onToggleCollapse={setIsSidebarCollapsed} />}
 
-      {/* モバイルではボタンでメニュー表示 */}
-      <div className="lg:hidden">
-        <MobileMenuButton items={items} />
-      </div>
+      {/* モバイルではメニューボタン表示 */}
+      {isMobile && <MemoizedMobileMenu items={items} />}
 
       {/* メインコンテンツ */}
-      <div
-        className={`flex-1 pt-16 transition-all ${isSidebarCollapsed ? 'lg:ml-16' : 'lg:ml-64'}`}
-      >
-        {/* 修正：コンテナのpx-4とmd:px-6を削除して一貫した余白を適用 */}
+      <div className={mainContainerClass}>
         <main className="px-4 md:px-6 py-4 md:py-10">
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3 }}
-            className={cn('pb-12', isMobile && 'pt-4')}
-          >
-            {/* 修正：すべてのページで一貫した余白を適用するためのラッパー追加 */}
-            <div className="space-y-6 px-2 sm:px-4 w-full">{children}</div>
-          </motion.div>
+          <AnimatePresence mode="wait">
+            <motion.div
+              key={isMounted ? 'mounted' : 'not-mounted'}
+              initial={{ opacity: 0, y: 10 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -10 }}
+              transition={{ duration: 0.3 }}
+              className={cn('pb-12', isMobile && 'pt-4')}
+            >
+              <div className="space-y-6 px-2 sm:px-4 w-full">{children}</div>
+            </motion.div>
+          </AnimatePresence>
         </main>
       </div>
     </div>
   );
 }
+
+// デフォルトエクスポートも最適化
+export default memo(DashboardLayout);

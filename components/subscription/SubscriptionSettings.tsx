@@ -7,12 +7,13 @@ import { Spinner } from '@/components/ui/Spinner';
 import PaymentMethodForm from '@/components/subscription/PaymentMethodForm';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { getPlanNameInJapanese } from '@/lib/utils';
 import { HiCheck, HiOutlineOfficeBuilding } from 'react-icons/hi';
 import { FiUsers } from 'react-icons/fi';
 import { HiUser, HiOfficeBuilding } from 'react-icons/hi';
 
 // ご利用プラン種類の型定義
-type SubscriptionPlan = 'monthly' | 'yearly' | 'business';
+type SubscriptionPlan = 'monthly' | 'yearly' | 'business' | 'business_plus';
 
 interface SubscriptionData {
   id: string;
@@ -49,6 +50,7 @@ const PLAN_PRICE_IDS = {
   monthly: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || 'price_monthly_placeholder',
   yearly: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID || 'price_yearly_placeholder',
   business: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID || 'price_business_placeholder',
+  business_plus: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PLUS_PRICE_ID || 'price_business_plus_placeholder',
 };
 
 // 法人プランの特徴リスト
@@ -170,7 +172,7 @@ export default function SubscriptionSettings() {
           plan: selectedPlan,
           priceId: priceId,
           paymentMethodId: paymentMethodId,
-          isCorporate: true, // 法人プラン指定フラグ
+          isCorporate: true,
         }),
       });
 
@@ -224,7 +226,9 @@ export default function SubscriptionSettings() {
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 my-6 text-center">
         <div className="flex flex-col items-center">
           <Spinner size="lg" className="mb-4" />
-          <h2 className="text-xl font-semibold mb-2">法人プランの設定を完了しています</h2>
+          <h2 className="text-xl font-semibold mb-2">
+            {getPlanNameInJapanese(selectedPlan)}の設定を完了しています
+          </h2>
           <p className="text-gray-600 mb-4">
             まもなく初期設定ページに移動します。しばらくお待ちください...
           </p>
@@ -239,24 +243,28 @@ export default function SubscriptionSettings() {
         {/* タブスタイルの切り替え */}
         <div className="mb-6">
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex">
-            <button
+            <Button
               className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
-                !showCorporatePlans ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-50'
+                !showCorporatePlans
+                  ? 'bg-blue-600 text-white'
+                  : 'bg-white text-blue-600 hover:bg-blue-600 hover:text-white'
               }`}
               onClick={() => setShowCorporatePlans(false)}
             >
               <HiUser className="h-5 w-5" />
               個人プラン
-            </button>
-            <button
+            </Button>
+            <Button
               className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
-                showCorporatePlans ? 'bg-blue-600 text-white' : 'text-gray-700 hover:bg-gray-50'
+                showCorporatePlans
+                  ? 'bg-[#1E3A8A] text-white'
+                  : 'bg-white text-[#1E3A8A] hover:bg-[#1E3A8A] hover:text-white'
               }`}
               onClick={() => setShowCorporatePlans(true)}
             >
               <HiOfficeBuilding className="h-5 w-5" />
               法人プラン
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -382,7 +390,9 @@ export default function SubscriptionSettings() {
               {/* スタータープラン */}
               <motion.div
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                  selectedPlan === 'business' ? 'border-blue-500 bg-blue-50' : 'border-gray-200'
+                  selectedPlan === 'business'
+                    ? 'border-[#1E3A8A] bg-[#1E3A8A]/5'
+                    : 'border-gray-200'
                 }`}
                 onClick={() => setSelectedPlan('business')}
                 whileHover={{ scale: 1.02 }}
@@ -391,7 +401,7 @@ export default function SubscriptionSettings() {
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center">
-                      <HiOutlineOfficeBuilding className="h-5 w-5 text-blue-600 mr-2" />
+                      <HiOutlineOfficeBuilding className="h-5 w-5 text-[#1E3A8A] mr-2" />
                       <h3 className="font-semibold">スタータープラン</h3>
                     </div>
                     <p className="text-2xl font-bold mt-2">
@@ -417,7 +427,7 @@ export default function SubscriptionSettings() {
                       <Button
                         onClick={handleCorporateSubscribe}
                         disabled={!paymentMethodId || processing || selectedPlan !== 'business'}
-                        className="w-full"
+                        className="w-full bg-[#1E3A8A] hover:bg-[#122153]"
                         size="sm"
                       >
                         {processing && selectedPlan === 'business' ? (
@@ -432,7 +442,7 @@ export default function SubscriptionSettings() {
                     </div>
                   </div>
                   {selectedPlan === 'business' && (
-                    <div className="bg-blue-500 rounded-full p-1">
+                    <div className="bg-[#1E3A8A] rounded-full p-1">
                       <HiCheck className="h-4 w-4 text-white" />
                     </div>
                   )}
@@ -440,15 +450,21 @@ export default function SubscriptionSettings() {
               </motion.div>
 
               {/* ビジネスプラン */}
-              <div className="border rounded-lg p-4 border-gray-200 bg-gray-50">
+              <motion.div
+                className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                  selectedPlan === 'business_plus' 
+                    ? 'border-[#1E3A8A] bg-[#1E3A8A]/5' 
+                    : 'border-gray-200'
+                }`}
+                onClick={() => setSelectedPlan('business_plus')}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
                 <div className="flex justify-between items-start">
                   <div>
                     <div className="flex items-center">
-                      <HiOutlineOfficeBuilding className="h-5 w-5 text-blue-600 mr-2" />
+                      <HiOutlineOfficeBuilding className="h-5 w-5 text-[#1E3A8A] mr-2" />
                       <h3 className="font-semibold">ビジネスプラン</h3>
-                      <span className="ml-2 text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded">
-                        近日公開
-                      </span>
                     </div>
                     <p className="text-2xl font-bold mt-2">
                       ¥12,000 <span className="text-sm font-normal text-gray-500">/月</span>
@@ -459,7 +475,7 @@ export default function SubscriptionSettings() {
                         <FiUsers className="mr-1" /> 最大50名
                       </span>
                     </div>
-                    <ul className="mt-4 space-y-2 text-sm text-gray-500">
+                    <ul className="mt-4 space-y-2 text-sm">
                       {BUSINESS_PLUS_FEATURES.map((feature, index) => (
                         <li key={index} className="flex items-center">
                           <HiCheck className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
@@ -468,15 +484,32 @@ export default function SubscriptionSettings() {
                       ))}
                     </ul>
 
-                    {/* ビジネスプランは近日公開のため無効 */}
+                    {/* ビジネスプラン選択ボタン - 有効化 */}
                     <div className="mt-4">
-                      <Button disabled={true} className="w-full" size="sm">
-                        近日公開
+                      <Button
+                        onClick={handleCorporateSubscribe}
+                        disabled={!paymentMethodId || processing || selectedPlan !== 'business_plus'}
+                        className="w-full bg-[#1E3A8A] hover:bg-[#122153]"
+                        size="sm"
+                      >
+                        {processing && selectedPlan === 'business_plus' ? (
+                          <>
+                            <Spinner size="sm" className="mr-2" />
+                            処理中...
+                          </>
+                        ) : (
+                          '選択して申し込む'
+                        )}
                       </Button>
                     </div>
                   </div>
+                  {selectedPlan === 'business_plus' && (
+                    <div className="bg-[#1E3A8A] rounded-full p-1">
+                      <HiCheck className="h-4 w-4 text-white" />
+                    </div>
+                  )}
                 </div>
-              </div>
+              </motion.div>
             </div>
 
             {/* 追加オプションの情報 */}
@@ -484,25 +517,25 @@ export default function SubscriptionSettings() {
               <h3 className="font-semibold text-gray-800 mb-2">追加オプション</h3>
               <ul className="space-y-2 text-sm text-gray-700">
                 <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
+                  <span className="text-[#1E3A8A] mr-2">•</span>
                   <span>
                     <strong>追加ユーザー</strong>: スタータープラン 300円/ユーザー/月
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
+                  <span className="text-[#1E3A8A] mr-2">•</span>
                   <span>
-                    <strong>カスタムQRコードデザイン</strong>: 20,000円（一括）
+                    <strong>カスタムQRコードデザイン</strong>: 10,000円（一括）
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
+                  <span className="text-[#1E3A8A] mr-2">•</span>
                   <span>
-                    <strong>NFCカード作成</strong>: 1,500円/枚（10枚以上で割引）
+                    <strong>NFCタグ作成</strong>: 1,500円/枚（10枚以上で割引）
                   </span>
                 </li>
                 <li className="flex items-start">
-                  <span className="text-blue-500 mr-2">•</span>
+                  <span className="text-[#1E3A8A] mr-2">•</span>
                   <span>
                     <strong>オンサイトトレーニング</strong>: 50,000円/回
                   </span>
@@ -519,7 +552,7 @@ export default function SubscriptionSettings() {
               <Button
                 onClick={handleCorporateSubscribe}
                 disabled={!paymentMethodId || processing}
-                className="px-8"
+                className="px-8 bg-[#1E3A8A] hover:bg-[#122153]"
               >
                 {processing ? (
                   <>

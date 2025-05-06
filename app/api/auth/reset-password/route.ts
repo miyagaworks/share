@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
+import { logger } from '@/lib/utils/logger';
 
 export async function POST(request: Request) {
   try {
@@ -12,22 +13,23 @@ export async function POST(request: Request) {
       return NextResponse.json({ message: 'トークンとパスワードが必要です' }, { status: 400 });
     }
 
-    // 本番環境のログ出力を制限
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`パスワードリセット試行: トークン ${token.substring(0, 8)}...`);
-    }
+    // 統合ロガーを使用
+    logger.debug(`パスワードリセット試行`, { tokenPrefix: token.substring(0, 4) });
 
     // トークンの検証
     const resetToken = await prisma.passwordResetToken.findUnique({
       where: { token },
     });
 
-    // トークンが存在しない、または期限切れの場合
-    if (!resetToken || resetToken.expires < new Date()) {
-      if (process.env.NODE_ENV !== 'production') {
-        console.log(`無効なトークン: ${!resetToken ? 'トークンが存在しません' : '期限切れです'}`);
-      }
+    // トークンが存在しない場合
+    if (!resetToken) {
+      logger.debug(`無効なトークン`, { exists: false });
+      return NextResponse.json({ message: '無効または期限切れのトークンです' }, { status: 400 });
+    }
 
+    // 期限切れかどうか別途チェック
+    if (resetToken.expires < new Date()) {
+      logger.debug(`期限切れのトークン`, { expired: true });
       return NextResponse.json({ message: '無効または期限切れのトークンです' }, { status: 400 });
     }
 
@@ -45,13 +47,10 @@ export async function POST(request: Request) {
       where: { id: resetToken.id },
     });
 
-    if (process.env.NODE_ENV !== 'production') {
-      console.log(`パスワードがリセットされました: ユーザーID ${resetToken.userId}`);
-    }
-
+    logger.debug(`パスワードリセット完了`, { userId: resetToken.userId });
     return NextResponse.json({ message: 'パスワードが正常にリセットされました' }, { status: 200 });
   } catch (error) {
-    console.error('パスワードリセットエラー:', error);
+    logger.error('パスワードリセットエラー:', error);
     return NextResponse.json({ message: '処理中にエラーが発生しました' }, { status: 500 });
   }
 }

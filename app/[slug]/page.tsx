@@ -510,95 +510,134 @@ export default async function ProfilePage({ params }: { params: { slug: string }
         </div>
 
         {/* 自己紹介モーダル (クライアント側でJavaScriptで制御) */}
-        <div id="profile-modal" className="fixed inset-0 bg-transparent z-50 hidden">
-          <div className="bg-white rounded-xl max-w-md mx-auto mt-20 overflow-hidden shadow-lg">
-            <div className="p-6">
-              <div className="flex justify-between items-start">
-                <div></div>
-                <button
-                  className="text-2xl font-bold text-gray-500 hover:text-gray-700"
-                  id="close-modal"
+        <div id="profile-modal" className="fixed inset-0 z-50 hidden">
+          <div className="absolute inset-0 flex items-center justify-center px-4">
+            <div
+              className="relative w-full max-w-md bg-white rounded-lg shadow-xl"
+              style={{ maxWidth: '360px' }}
+            >
+              {/* モーダルを閉じるボタン */}
+              <button className="absolute top-4 right-4 z-10 text-gray-500" id="close-modal">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  width="24"
+                  height="24"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
                 >
-                  &times;
-                </button>
-              </div>
+                  <line x1="18" y1="6" x2="6" y2="18"></line>
+                  <line x1="6" y1="6" x2="18" y2="18"></line>
+                </svg>
+              </button>
 
-              <div className="flex flex-col items-center mb-4">
-                {profile.user.image ? (
-                  <div className="w-20 h-20 rounded-full overflow-hidden mb-3">
+              {/* ユーザー情報 */}
+              <div className="flex flex-col items-center py-8">
+                {/* プロフィール画像 */}
+                <div
+                  className="w-24 h-24 rounded-full overflow-hidden mb-4 flex items-center justify-center"
+                  style={{ backgroundColor: secondaryColor || '#1E40AF' }}
+                >
+                  {profile.user.image ? (
                     <Image
                       src={profile.user.image}
                       alt={profile.user.name || 'プロフィール画像'}
-                      width={80}
-                      height={80}
+                      width={96}
+                      height={96}
                       className="w-full h-full object-cover"
                     />
-                  </div>
-                ) : (
-                  <div
-                    className="w-20 h-20 rounded-full flex items-center justify-center text-xl font-bold mb-3 text-white"
-                    style={{ backgroundColor: secondaryColor }} // セカンダリーカラーを使用
-                  >
+                  ) : (
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
+                      width="40"
+                      height="40"
                       viewBox="0 0 24 24"
                       fill="none"
-                      stroke="currentColor"
+                      stroke="white"
                       strokeWidth="2"
                       strokeLinecap="round"
                       strokeLinejoin="round"
-                      className="w-10 h-10"
                     >
-                      <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                      <circle cx="12" cy="7" r="4"></circle>
+                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                      <circle cx="12" cy="7" r="4" />
                     </svg>
-                  </div>
-                )}
+                  )}
+                </div>
 
-                <h2 className="text-xl font-bold text-center">{profile.user.name}</h2>
-
+                {/* ユーザー名 */}
+                <h2 className="text-2xl font-bold text-center mb-1">{profile.user.name}</h2>
                 {profile.user.nameEn && (
-                  <p className="text-sm text-muted-foreground text-center">{profile.user.nameEn}</p>
+                  <p className="text-sm text-gray-500 mb-4">{profile.user.nameEn}</p>
                 )}
+
+                {/* 自己紹介文 */}
+                <div className="px-8 w-full mb-6">
+                  <p className="text-base text-center whitespace-pre-wrap">
+                    {profile.user.bio || '自己紹介がここに入ります。'}
+                  </p>
+                </div>
               </div>
 
-              <div className="mb-6">
-                {profile.user.bio && (
-                  <p className="text-sm leading-relaxed text-justify">{profile.user.bio}</p>
-                )}
-              </div>
+              {/* 区切り線 */}
+              <div className="border-t border-gray-200 w-full"></div>
 
-              <div className="border-t pt-4">
-                {companyName && (
-                  <p className="text-sm mb-2">
-                    <span className="font-medium">会社 / 組織：</span> {companyName}
-                  </p>
-                )}
+              {/* 会社情報と連絡先 */}
+              <div
+                className="p-6 text-base rounded-b-lg"
+                style={{
+                  backgroundColor: user.bioBackgroundColor || '#FFFFFF',
+                  color: user.bioTextColor || '#333333',
+                }}
+              >
+                <div className="space-y-4">
+                  {companyName && (
+                    <div>
+                      <p className="font-semibold" style={{ color: mainColor || '#1E3A8A' }}>
+                        会社 / 組織：
+                      </p>
+                      <p>{companyName}</p>
+                    </div>
+                  )}
 
-                {/* 部署と役職情報 */}
-                {user.department?.name && (
-                  <p className="text-sm mb-2">
-                    <span className="font-medium">部署：</span> {user.department.name}
-                  </p>
-                )}
+                  {user.department?.name && (
+                    <div>
+                      <p className="font-semibold" style={{ color: mainColor || '#1E3A8A' }}>
+                        部署：
+                      </p>
+                      <p>{user.department.name}</p>
+                    </div>
+                  )}
 
-                {user.position && (
-                  <p className="text-sm mb-2">
-                    <span className="font-medium">役職：</span> {user.position}
-                  </p>
-                )}
+                  {user.position && (
+                    <div>
+                      <p className="font-semibold" style={{ color: mainColor || '#1E3A8A' }}>
+                        役職：
+                      </p>
+                      <p>{user.position}</p>
+                    </div>
+                  )}
 
-                {profile.user.phone && (
-                  <p className="text-sm mb-2">
-                    <span className="font-medium">TEL：</span> {profile.user.phone}
-                  </p>
-                )}
+                  {profile.user.phone && (
+                    <div>
+                      <p className="font-semibold" style={{ color: mainColor || '#1E3A8A' }}>
+                        TEL：
+                      </p>
+                      <p>{profile.user.phone}</p>
+                    </div>
+                  )}
 
-                {profile.user.email && (
-                  <p className="text-sm mb-2">
-                    <span className="font-medium">メール：</span> {profile.user.email}
-                  </p>
-                )}
+                  {profile.user.email && (
+                    <div>
+                      <p className="font-semibold" style={{ color: mainColor || '#1E3A8A' }}>
+                        メール：
+                      </p>
+                      <p>{profile.user.email}</p>
+                    </div>
+                  )}
+                </div>
               </div>
             </div>
           </div>
@@ -609,49 +648,32 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           dangerouslySetInnerHTML={{
             __html: `
                 document.addEventListener('DOMContentLoaded', function() {
-                    const modal = document.getElementById('profile-modal');
-                    const closeBtn = document.getElementById('close-modal');
-                    const profileBtn = document.querySelector('[data-modal-target="profile-modal"]');
-                    
-                    if (profileBtn) {
-                        profileBtn.addEventListener('click', function(e) {
-                            e.preventDefault();
-                            modal.classList.remove('hidden');
-                            document.body.classList.add('modal-open');
-                            setTimeout(() => {
-                                const modalContent = modal.querySelector('.bg-white');
-                                if (modalContent) {
-                                    modalContent.classList.add('modal-transition-in');
-                                }
-                            }, 10);
-                        });
-                    }
-                    
-                    function closeModal() {
-                        const modalContent = modal.querySelector('.bg-white');
-                        if (modalContent) {
-                            modalContent.classList.remove('modal-transition-in');
-                            modalContent.classList.add('modal-transition-out');
-                            setTimeout(() => {
-                                modal.classList.add('hidden');
-                                document.body.classList.remove('modal-open');
-                                modalContent.classList.remove('modal-transition-out');
-                            }, 200);
-                        } else {
-                            modal.classList.add('hidden');
-                            document.body.classList.remove('modal-open');
-                        }
-                    }
-                    
-                    if (closeBtn) {
-                        closeBtn.addEventListener('click', closeModal);
-                    }
-                    
-                    window.addEventListener('click', function(e) {
-                        if (e.target === modal) {
-                            closeModal();
-                        }
+                  const modal = document.getElementById('profile-modal');
+                  const closeBtn = document.getElementById('close-modal');
+                  const profileBtn = document.querySelector('[data-modal-target="profile-modal"]');
+                  
+                  if (profileBtn) {
+                    profileBtn.addEventListener('click', function(e) {
+                      e.preventDefault();
+                      modal.classList.remove('hidden');
+                      document.body.classList.add('modal-open');
                     });
+                  }
+                  
+                  function closeModal() {
+                    modal.classList.add('hidden');
+                    document.body.classList.remove('modal-open');
+                  }
+                  
+                  if (closeBtn) {
+                    closeBtn.addEventListener('click', closeModal);
+                  }
+                  
+                  window.addEventListener('click', function(e) {
+                    if (e.target === modal) {
+                      closeModal();
+                    }
+                  });
                 });
                 `,
           }}

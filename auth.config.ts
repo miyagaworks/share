@@ -58,5 +58,23 @@ export default {
     signIn: '/auth/signin',
     error: '/auth/error',
   },
-  // callbacksプロパティを削除（auth.tsで定義する）
+  // CSRF保護を明示的に有効化
+  secret: process.env.NEXTAUTH_SECRET,
+  // 本番環境でのセキュリティ強化
+  // 開発環境用の設定
+  cookies:
+    process.env.NODE_ENV === 'production'
+      ? {
+          // 本番環境設定
+          sessionToken: {
+            name: `__Secure-next-auth.session-token`,
+            options: {
+              httpOnly: true,
+              sameSite: 'lax',
+              path: '/',
+              secure: true,
+            },
+          },
+        }
+      : undefined, // 開発環境では NextAuth のデフォルト設定を使用
 } satisfies NextAuthConfig;

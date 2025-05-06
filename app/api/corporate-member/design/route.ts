@@ -8,6 +8,8 @@ import { z } from 'zod';
 const DesignUpdateSchema = z.object({
   mainColor: z.string().optional().nullable(),
   snsIconColor: z.string().optional().nullable(),
+  bioBackgroundColor: z.string().optional().nullable(),
+  bioTextColor: z.string().optional().nullable(),
 });
 
 // GET: ユーザーのデザイン設定を取得
@@ -52,6 +54,8 @@ export async function GET() {
       design: {
         mainColor: user.mainColor,
         snsIconColor: user.snsIconColor,
+        bioBackgroundColor: user.bioBackgroundColor || '#FFFFFF',
+        bioTextColor: user.bioTextColor || '#333333',
       },
       tenant: {
         id: tenant.id,
@@ -117,6 +121,15 @@ export async function POST(req: NextRequest) {
       updateData.snsIconColor = data.snsIconColor;
     }
 
+    // 追加: 自己紹介ページの設定を更新
+    if (data.bioBackgroundColor !== undefined) {
+      updateData.bioBackgroundColor = data.bioBackgroundColor;
+    }
+
+    if (data.bioTextColor !== undefined) {
+      updateData.bioTextColor = data.bioTextColor;
+    }
+
     // ユーザー情報を更新
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
@@ -128,6 +141,8 @@ export async function POST(req: NextRequest) {
       design: {
         mainColor: updatedUser.mainColor,
         snsIconColor: updatedUser.snsIconColor,
+        bioBackgroundColor: updatedUser.bioBackgroundColor || '#FFFFFF', // 追加
+        bioTextColor: updatedUser.bioTextColor || '#333333', // 追加
       },
     });
   } catch (error) {

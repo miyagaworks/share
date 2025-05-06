@@ -78,6 +78,9 @@ export async function GET() {
       const isUserAdmin = user.id === corporateTenant.adminId;
       const isSoleAdmin = user.corporateRole === 'admin' && adminCount === 1;
 
+      // 管理者の場合は特別扱いし、常にアクティブとみなす
+      const isInvitedStatus = isUserAdmin ? false : !user.emailVerified;
+
       return {
         id: user.id,
         name: user.name || '名前未設定',
@@ -85,9 +88,9 @@ export async function GET() {
         corporateRole: user.corporateRole || (isUserAdmin ? 'admin' : 'member'),
         department: user.department,
         isAdmin: isUserAdmin,
-        isSoleAdmin: isSoleAdmin, // 唯一の管理者かどうか
-        isInvited: !user.emailVerified,
-        invitedAt: user.emailVerified ? null : user.createdAt.toISOString(),
+        isSoleAdmin: isSoleAdmin,
+        isInvited: isInvitedStatus, // 管理者は常にfalse（招待中ではない）
+        invitedAt: isInvitedStatus ? user.createdAt.toISOString() : null,
         createdAt: user.createdAt.toISOString(),
       };
     });
