@@ -87,11 +87,8 @@ export async function updateProfile(data: ProfileData) {
         image: data.image ?? undefined,
         mainColor: data.mainColor ?? undefined,
         snsIconColor: data.snsIconColor ?? undefined,
-        headerText: data.headerText ?? undefined,
-        textColor: data.textColor ?? undefined,
         phone: data.phone ?? undefined,
         company: data.company ?? undefined,
-        // 明示的にcompanyUrlとcompanyLabelを追加
         companyUrl: data.companyUrl ?? undefined,
         companyLabel: data.companyLabel ?? undefined,
       },

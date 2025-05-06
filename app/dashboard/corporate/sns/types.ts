@@ -2,12 +2,12 @@
 
 export interface CorporateSnsLink {
   id: string;
+  tenantId: string;
   platform: string;
   username: string | null;
   url: string;
   displayOrder: number;
   isRequired: boolean;
-  description: string | null;
   createdAt: string;
   updatedAt: string;
 }

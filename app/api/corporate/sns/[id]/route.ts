@@ -101,7 +101,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
       username: z.string().optional(),
       url: z.string().url({ message: '有効なURLを入力してください' }),
       isRequired: z.boolean().optional(),
-      description: z.string().optional(),
     });
 
     const validationResult = schema.safeParse(body);
@@ -122,7 +121,6 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         username: data.username,
         url: data.url,
         isRequired: data.isRequired !== undefined ? data.isRequired : link.isRequired,
-        description: data.description,
       },
     });
 
