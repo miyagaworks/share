@@ -6,18 +6,26 @@ import { getToken } from 'next-auth/jwt';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // ダッシュボードへのアクセスを制御
-  if (pathname.startsWith('/dashboard')) {
-    // secretパラメータを追加
-    const token = await getToken({
-      req: request,
-      secret: process.env.NEXTAUTH_SECRET,
-    });
+  // 認証が必要なパスかどうかチェック
+  const isAuthRequired =
+    pathname.startsWith('/dashboard') ||
+    pathname.startsWith('/api/corporate') ||
+    pathname.startsWith('/api/corporate-member');
 
-    // 未認証ユーザーはログインページへリダイレクト
-    if (!token) {
-      return NextResponse.redirect(new URL('/auth/signin', request.url));
-    }
+  // セッショントークンを取得
+  const token = await getToken({
+    req: request,
+    secret: process.env.NEXTAUTH_SECRET,
+  });
+
+  // デバッグ出力
+  console.log(
+    `Middleware: Path ${pathname}, Auth Required: ${isAuthRequired}, Token exists: ${!!token}`,
+  );
+
+  // 認証が必要なパスで未認証の場合、リダイレクト
+  if (isAuthRequired && !token) {
+    return NextResponse.redirect(new URL('/auth/signin', request.url));
   }
 
   return NextResponse.next();
@@ -25,5 +33,10 @@ export async function middleware(request: NextRequest) {
 
 // ミドルウェアを適用するパスを設定
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: [
+    '/dashboard/:path*',
+    '/api/corporate/:path*',
+    '/api/corporate-member/:path*',
+    '/api/user/:path*',
+  ],
 };

@@ -4,7 +4,6 @@ import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import type { DefaultSession } from 'next-auth';
-import { signOut as nextAuthSignOut } from 'next-auth/react';
 
 // 型定義の拡張
 declare module 'next-auth' {
@@ -41,6 +40,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role;
       }
 
+      // デバッグ用：セッション情報をコンソールに出力
+      console.log('Session callback called:', { session });
+
       return session;
     },
     async jwt({ token, user }) {
@@ -48,42 +50,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.role = user.role;
       }
 
+      // デバッグ用：トークン情報をコンソールに出力
+      console.log('JWT callback called:', { token });
+
       return token;
     },
   },
-  pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error',
-  },
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-      },
-    },
-  },
+  debug: process.env.NODE_ENV === 'development', // 開発環境ではデバッグモードを有効に
   ...authConfig,
 });
-
-// セキュリティ問題発生時の強制ログアウト
-export const forceSecurityLogout = async (reason: string): Promise<void> => {
-  console.error(`セキュリティ上の理由によるログアウト: ${reason}`);
-
-  await nextAuthSignOut({
-    redirect: true,
-    callbackUrl: '/auth/signin?security=1',
-  });
-};
-
-// トークン改ざんを検出する機能
-export const detectTokenTampering = (token: Record<string, unknown>): boolean => {
-  if (!token || typeof token !== 'object') return true;
-  if (!token.sub || !token.iat || !token.exp) return true;
-  const expTime = token.exp as number;
-  if (Date.now() / 1000 > expTime) return true;
-  return false;
-};

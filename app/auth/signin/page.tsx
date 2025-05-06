@@ -8,6 +8,7 @@ import { useRouter } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@/schemas/auth';
+import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
@@ -97,25 +98,19 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      // クライアント側の認証のみ使用
-      const { signIn } = await import('next-auth/react');
+      // 標準的なNext-Authの認証フローを使用
       const result = await signIn('credentials', {
         email: data.email.toLowerCase(),
         password: data.password,
         redirect: false,
       });
 
-      console.log('サインイン結果:', result);
-
       if (result?.error) {
-        setError('メールアドレスまたはパスワードが正しくありません。');
+        setError('メールアドレスまたはパスワードが正しくありません');
         setIsPending(false);
-        return;
+      } else {
+        router.push('/dashboard');
       }
-
-      // 成功したらダッシュボードにリダイレクト
-      router.push('/dashboard');
-      router.refresh();
     } catch (error) {
       console.error('ログインエラー:', error);
       setError('ログイン処理中にエラーが発生しました。');

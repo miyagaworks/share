@@ -54,4 +54,12 @@ export default {
       },
     }),
   ],
+
+  pages: {
+    signIn: '/auth/signin',
+    signOut: '/auth/signin',
+    error: '/auth/error',
+    verifyRequest: '/auth/verify-request',
+    newUser: '/dashboard', // 新規ユーザー用のリダイレクト先
+  },
 } satisfies NextAuthConfig;
