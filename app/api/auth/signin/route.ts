@@ -63,8 +63,18 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     // エラータイプの明示
     const errorMessage = error instanceof Error ? error.message : '不明なエラー';
-    console.error('API route - サインインエラー:', errorMessage);
+    console.error('API route - サインインエラー詳細:', {
+      errorType: error instanceof Error ? error.constructor.name : typeof error,
+      message: errorMessage,
+      stack: error instanceof Error ? error.stack : undefined,
+    });
 
-    return NextResponse.json({ error: 'ログイン処理中にエラーが発生しました' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'ログイン処理中にエラーが発生しました',
+        details: process.env.NODE_ENV === 'development' ? errorMessage : undefined,
+      },
+      { status: 500 },
+    );
   }
 }

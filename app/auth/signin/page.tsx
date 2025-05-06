@@ -118,8 +118,7 @@ export default function SigninPage() {
         setError('メールアドレスまたはパスワードが正しくありません');
       } else if (result?.ok) {
         // 成功したらダッシュボードにリダイレクト
-        // router.pushではなくwindow.location.hrefを使ってみる
-        window.location.href = '/dashboard';
+        router.push('/dashboard');
       }
     } catch (error) {
       console.error('ログインエラー:', error);
