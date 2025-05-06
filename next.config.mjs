@@ -22,6 +22,9 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  // styled-jsxの処理を明示的に設定
+  transpilePackages: ['styled-jsx'],
+
   // 既存の実験的設定を維持
   experimental: {
     // 既存の実験的機能
@@ -41,9 +44,9 @@ const nextConfig = {
   // 既存のwebpackの設定を維持
   webpack: (config, { isServer }) => {
     if (!isServer) {
-      config.resolve.fallback = {
-        ...config.resolve.fallback,
-        async_hooks: false,
+      config.resolve.alias = {
+        ...config.resolve.alias,
+        'styled-jsx/style': require.resolve('styled-jsx/style'),
       };
     }
 
