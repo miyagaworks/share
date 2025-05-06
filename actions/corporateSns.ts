@@ -57,7 +57,6 @@ export async function addCorporateSnsLink(data: {
   username?: string;
   url: string;
   isRequired?: boolean;
-  description?: string;
 }) {
   try {
     const session = await auth();
@@ -85,7 +84,6 @@ export async function addCorporateSnsLink(data: {
         username: z.string().optional(),
         url: z.string().url({ message: '有効なURLを入力してください' }),
         isRequired: z.boolean().optional().default(false),
-        description: z.string().optional(),
       })
       .safeParse(data);
 
@@ -121,7 +119,6 @@ export async function addCorporateSnsLink(data: {
         url: data.url,
         displayOrder,
         isRequired: data.isRequired || false,
-        description: data.description,
       },
     });
 
@@ -265,7 +262,6 @@ export async function updateCorporateSnsLink(
     username?: string;
     url: string;
     isRequired?: boolean;
-    description?: string;
   },
 ) {
   try {
@@ -305,7 +301,6 @@ export async function updateCorporateSnsLink(
         username: z.string().optional(),
         url: z.string().url({ message: '有効なURLを入力してください' }),
         isRequired: z.boolean().optional(),
-        description: z.string().optional(),
       })
       .safeParse(data);
 
@@ -320,7 +315,6 @@ export async function updateCorporateSnsLink(
         username: data.username,
         url: data.url,
         isRequired: data.isRequired !== undefined ? data.isRequired : link.isRequired,
-        description: data.description,
       },
     });
 
