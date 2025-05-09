@@ -83,10 +83,10 @@ export async function GET(request: Request) {
       user.tenant?.id,
     );
 
-    // テナントのステータスをチェック
-    const isTenantActive = tenant ? tenant.accountStatus !== 'suspended' : false;
+    // テナントのステータスをチェック - accountStatusを確認
+    const isSuspended = tenant?.accountStatus === 'suspended';
 
-    // 法人サブスクリプションが有効かチェック - より柔軟なチェック
+    // 法人サブスクリプションが有効かチェック - 専用関数を使用
     const hasCorporateSubscription = checkCorporateSubscription(user.subscription);
 
     console.log(
@@ -97,30 +97,29 @@ export async function GET(request: Request) {
       user.subscription?.plan,
       'ステータス:',
       user.subscription?.status,
-      '→ 法人サブスクリプション:',
-      hasCorporateSubscription,
+      'テナント停止:',
+      isSuspended,
     );
 
-    // 条件を満たす場合のみアクセス権あり
-    const hasAccess = hasTenant && isTenantActive && hasCorporateSubscription;
+    // 全ての条件を満たす場合のみアクセス権あり
+    const hasAccess = hasTenant && !isSuspended && hasCorporateSubscription;
 
     console.log(
       '[API:corporate/access] 法人アクセス権判定:',
       'テナントあり:',
       hasTenant,
-      'テナント有効:',
-      isTenantActive,
+      'テナントが有効:',
+      !isSuspended,
       '法人サブスクリプションあり:',
       hasCorporateSubscription,
-      '→ 最終アクセス権:',
+      '→ アクセス権:',
       hasAccess,
     );
 
     if (!hasAccess) {
       let error = '法人プランにアップグレードしてください。';
-
-      if (hasTenant && !isTenantActive) {
-        error = 'テナントが一時停止されています。管理者にお問い合わせください。';
+      if (isSuspended) {
+        error = 'テナントが停止されています。管理者にお問い合わせください。';
       } else if (hasTenant && !hasCorporateSubscription) {
         error = '法人プランのサブスクリプションが有効ではありません。';
       } else if (!hasTenant && hasCorporateSubscription) {

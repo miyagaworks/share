@@ -55,27 +55,27 @@ export default function SigninPage() {
     try {
       setIsPending(true);
 
-      // 古いセッション情報をクリア
+      // セッション関連のストレージをクリア
       if (typeof window !== 'undefined') {
-        console.log('Google認証開始: セッションクリア実行');
+        // ログアウト前のセッション情報をクリア
+        window.localStorage.removeItem('nextauth.message');
+        window.sessionStorage.removeItem('nextauth.message');
 
-        // LocalStorageとSessionStorageをクリア
-        window.localStorage.clear();
-        window.sessionStorage.clear();
-
-        // 関連するCookieを削除
+        // セッション関連のCookieのみを削除
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
           const cookie = cookies[i];
           const eqPos = cookie.indexOf('=');
           const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+          if (name.startsWith('next-auth') || name.includes('csrf-token')) {
+            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+          }
         }
       }
 
-      console.log('Google認証開始: 完全リダイレクト実行');
+      console.log('Google認証: 完全リダイレクト実行');
 
-      // 完全にリダイレクトする方式を使用
+      // 完全なリダイレクト方式を使用（APIを直接呼び出す）
       window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent('/dashboard')}`;
 
       // 以下のコードは実行されません（リダイレクトのため）
