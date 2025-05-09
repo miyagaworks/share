@@ -25,6 +25,9 @@ share/
 │   │   ├── auth
 │   │   │   ├── [...nextauth]
 │   │   │   │   └── route.ts
+│   │   │   ├── callback
+│   │   │   │   └── google
+│   │   │   │       └── route.ts
 │   │   │   ├── change-password
 │   │   │   │   └── route.ts
 │   │   │   ├── error
@@ -328,6 +331,7 @@ share/
 │   │   ├── SessionProvider.tsx
 │   │   └── ToastProvider.tsx
 │   ├── shared
+│   │   ├── AuthDebugger.tsx
 │   │   ├── Breadcrumb.tsx
 │   │   ├── ErrorMessage.tsx
 │   │   ├── FaqItem.tsx

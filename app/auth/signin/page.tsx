@@ -57,28 +57,28 @@ export default function SigninPage() {
 
       // セッション関連のストレージをクリア
       if (typeof window !== 'undefined') {
-        // ログアウト前のセッション情報をクリア
-        window.localStorage.removeItem('nextauth.message');
-        window.sessionStorage.removeItem('nextauth.message');
+        // LocalStorageとSessionStorageをクリア
+        window.localStorage.clear();
+        window.sessionStorage.clear();
 
-        // セッション関連のCookieのみを削除
+        // セッション関連のCookieを削除
         const cookies = document.cookie.split(';');
         for (let i = 0; i < cookies.length; i++) {
           const cookie = cookies[i];
           const eqPos = cookie.indexOf('=');
           const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-          if (name.startsWith('next-auth') || name.includes('csrf-token')) {
+          if (name.startsWith('next-auth') || name.includes('csrf')) {
             document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
           }
         }
       }
 
-      console.log('Google認証: 完全リダイレクト実行');
+      console.log('Google認証: 直接リダイレクト方式使用');
 
-      // 完全なリダイレクト方式を使用（APIを直接呼び出す）
+      // APIルートを使用せずに認証プロバイダに直接リダイレクト
       window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent('/dashboard')}`;
 
-      // 以下のコードは実行されません（リダイレクトのため）
+      // 以下は実行されません（リダイレクトのため）
     } catch (error) {
       console.error('Googleログインエラー:', error);
       setError('Googleログイン処理中にエラーが発生しました。');

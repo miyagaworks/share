@@ -180,11 +180,19 @@ function checkCorporateSubscription(
   // ステータスが有効かチェック
   const isStatusActive = subscription.status === 'active';
 
-  // 有効なプランに含まれているかチェック
+  // 有効なプランに含まれているかチェック（より柔軟なマッチング）
   const isPlanValid = validPlans.some(
     (plan) =>
       normalizedPlan === plan || normalizedPlan.replace(/[-_]/g, '') === plan.replace(/[-_]/g, ''),
   );
+
+  // デバッグログ
+  console.log('[checkCorporateSubscription]', {
+    normalizedPlan,
+    isStatusActive,
+    isPlanValid,
+    result: isStatusActive && isPlanValid,
+  });
 
   return isStatusActive && isPlanValid;
 }
