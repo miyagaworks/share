@@ -202,49 +202,49 @@ export default function CorporateDashboardPage() {
     try {
       setIsLoading(true);
 
-      // アクセス権があってもtenantIdがnullの場合は再取得
-      if (hasAccess === true && !currentTenantId) {
-        console.log('アクセス権はあるがテナントIDがありません。APIで再確認します。');
+      // アクセス権があるがテナントIDがない場合は最初に再チェック
+      if (
+        hasAccess === true &&
+        (!currentTenantId ||
+          currentTenantId === 'fallback-tenant-id' ||
+          currentTenantId === 'mobile-fallback-tenant-id')
+      ) {
+        console.log('アクセス権はあるがテナントIDが不十分です。再確認します。', {
+          hasAccess,
+          currentTenantId,
+        });
+
         try {
-          await refreshAccess(); // 強制的に再チェック
-          // 再チェック後もtenantIdがない場合はフォールバック
-          if (!corporateAccessState.tenantId) {
-            setError('テナントIDが取得できません。管理者にお問い合わせください。');
-            // デバッグ用にダミーテナントを設定（開発環境のみ）
-            if (process.env.NODE_ENV === 'development') {
-              setTenantData({
-                ...DEFAULT_TENANT,
-                id: 'debug-tenant-id',
-              });
-              corporateAccessState.tenantId = 'debug-tenant-id';
-              setUsingFallback(true);
-              return;
-            } else {
-              router.push('/dashboard');
-              return;
-            }
-          }
-        } catch (error) {
-          console.error('アクセス権再チェックエラー:', error);
-          router.push('/dashboard');
-          return;
+          // 強制的に再チェック
+          await refreshAccess();
+        } catch (refreshError) {
+          console.error('アクセス権再チェックエラー:', refreshError);
         }
       }
 
-      // 再確認した後のテナントIDを取得
+      // 再確認した後のテナントIDとアクセス状態
       const finalTenantId = corporateAccessState.tenantId;
+      const finalAccessState = corporateAccessState.hasAccess;
 
       // テナントIDがある場合はAPIからデータを取得
-      if (finalTenantId) {
+      if (finalAccessState === true) {
         try {
           console.log('テナントデータを取得します。テナントID:', finalTenantId);
+
+          // タイムアウト処理を追加
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒タイムアウト
+
           const response = await fetch('/api/corporate/tenant', {
             headers: {
               'Cache-Control': 'no-cache',
+              Pragma: 'no-cache',
+              Accept: 'application/json',
             },
-          });
+            credentials: 'include',
+            signal: controller.signal,
+          }).finally(() => clearTimeout(timeoutId));
 
-          // 以下は元のコードと同じ...
           if (response.ok) {
             const data = await response.json();
             setTenantData(data.tenant);
@@ -256,36 +256,63 @@ export default function CorporateDashboardPage() {
             setUsingFallback(true);
             setTenantData({
               ...DEFAULT_TENANT,
-              id: finalTenantId,
+              id: finalTenantId || 'unknown-tenant',
             });
           } else if (response.status === 403) {
             // アクセス権限がない場合
             setError('このテナントへのアクセス権限がありません。');
-            router.push('/dashboard');
+
+            // APIからのレスポンスデータを取得
+            const errorData = await response.json().catch(() => ({}));
+
+            // 停止状態のテナント情報があれば使用
+            if (errorData && errorData.tenant) {
+              setTenantData(errorData.tenant);
+              setUsingFallback(false);
+            } else {
+              router.push('/dashboard');
+            }
           } else {
-            throw new Error('API接続エラー: ' + response.status);
+            // その他のエラー
+            // 最低限のエラーデータを取得
+            const errorText = await response.text().catch(() => '');
+            console.error('APIエラー詳細:', {
+              status: response.status,
+              text: errorText.slice(0, 500), // 長すぎる場合は切り詰め
+            });
+
+            throw new Error(`API接続エラー: ${response.status} ${response.statusText}`);
           }
-        } catch (error) {
-          console.error('API接続エラー:', error);
-          // APIエラー時のみフォールバック処理
+        } catch (apiError) {
+          console.error('API接続エラー:', apiError);
+
+          // フォールバック処理の強化
+          const fallbackId = finalTenantId || 'error-fallback-tenant';
+
           setTenantData({
             ...DEFAULT_TENANT,
-            id: finalTenantId,
+            id: fallbackId,
+            name: '接続エラー - 基本情報のみ表示',
           });
           setUsingFallback(true);
           setError('サーバーに接続できないため、簡易表示モードを使用しています');
         }
-        return;
       } else {
-        // テナントIDがない場合は、ダッシュボードにリダイレクト
-        console.error('テナントIDがありません。ダッシュボードにリダイレクトします。');
+        // アクセス権がない場合
+        console.log('法人アクセス権がありません。ダッシュボードにリダイレクトします。', {
+          accessState: finalAccessState,
+        });
         router.push('/dashboard');
       }
     } catch (error) {
       console.error('テナント情報取得エラー:', error);
-      setTenantData(DEFAULT_TENANT);
+      setTenantData({
+        ...DEFAULT_TENANT,
+        id: 'error-tenant',
+        name: 'エラー時表示',
+      });
       setUsingFallback(true);
-      setError('テナント情報を読み込めませんでした。デフォルト表示を使用します。');
+      setError('テナント情報を読み込めませんでした。簡易表示を使用します。');
     } finally {
       setIsLoading(false);
     }

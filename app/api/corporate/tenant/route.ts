@@ -19,106 +19,126 @@ export async function GET() {
     const userId = session.user.id;
     console.log('[API] ユーザーID:', userId);
 
-    // ユーザーの法人テナント情報を取得
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        adminOfTenant: {
-          include: {
-            subscription: true,
-            users: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                corporateRole: true,
+    // 例外処理の強化
+    try {
+      // ユーザーの法人テナント情報を取得
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        include: {
+          adminOfTenant: {
+            include: {
+              subscription: true,
+              users: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  corporateRole: true,
+                },
               },
-            },
-            departments: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
-              },
-            },
-          },
-        },
-        tenant: {
-          include: {
-            subscription: true,
-            users: {
-              select: {
-                id: true,
-                name: true,
-                email: true,
-                corporateRole: true,
-              },
-            },
-            departments: {
-              select: {
-                id: true,
-                name: true,
-                description: true,
+              departments: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                },
               },
             },
           },
+          tenant: {
+            include: {
+              subscription: true,
+              users: {
+                select: {
+                  id: true,
+                  name: true,
+                  email: true,
+                  corporateRole: true,
+                },
+              },
+              departments: {
+                select: {
+                  id: true,
+                  name: true,
+                  description: true,
+                },
+              },
+            },
+          },
+          subscription: true,
         },
-        subscription: true,
-      },
-    });
+      });
 
-    // ユーザーが見つからない場合
-    if (!user) {
-      console.log('[API] ユーザーが見つかりません:', userId);
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
+      // ユーザーが見つからない場合
+      if (!user) {
+        console.log('[API] ユーザーが見つかりません:', userId);
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
 
-    // 法人テナント情報を取得（管理者または一般メンバー）
-    const tenant = user.adminOfTenant || user.tenant;
+      // 法人テナント情報を取得（管理者または一般メンバー）
+      const tenant = user.adminOfTenant || user.tenant;
 
-    // テナントが見つからない場合
-    if (!tenant) {
-      console.log('[API] テナントが見つかりません:', userId);
-      return NextResponse.json({ error: 'No tenant associated with this user' }, { status: 404 });
-    }
+      // テナントが見つからない場合
+      if (!tenant) {
+        console.log('[API] テナントが見つかりません:', userId);
+        return NextResponse.json({ 
+          error: 'No tenant associated with this user',
+          // エラーレスポンスでも最小限の情報を提供
+          isAdmin: false,
+          hasTenant: false
+        }, { status: 404 });
+      }
 
-    // 管理者権限の確認
-    const isAdmin = !!user.adminOfTenant;
-    const userRole = isAdmin ? 'admin' : 'member';
+      // 管理者権限の確認
+      const isAdmin = !!user.adminOfTenant;
+      const userRole = isAdmin ? 'admin' : 'member';
 
-    console.log('[API] テナント情報取得成功:', {
-      hasAdminTenant: !!user.adminOfTenant,
-      hasTenant: !!user.tenant,
-      hasSubscription: !!user.subscription,
-      isAdmin,
-      userRole,
-    });
+      console.log('[API] テナント情報取得成功:', {
+        hasAdminTenant: !!user.adminOfTenant,
+        hasTenant: !!user.tenant,
+        hasSubscription: !!user.subscription,
+        isAdmin,
+        userRole,
+      });
 
-    // アカウント停止状態確認
-    if (tenant.accountStatus === 'suspended') {
-      console.log('[API] テナントは停止状態です:', tenant.id);
+      // アカウント停止状態確認
+      if (tenant.accountStatus === 'suspended') {
+        console.log('[API] テナントは停止状態です:', tenant.id);
+        return NextResponse.json(
+          {
+            error: 'Account is suspended',
+            tenant: {
+              id: tenant.id,
+              name: tenant.name,
+              accountStatus: 'suspended',
+            },
+            isAdmin,
+            userRole,
+          },
+          { status: 403 },
+        );
+      }
+
+      console.log('[API] テナント情報返却:', tenant.id);
+
+      // 正常レスポンス - ユーザーロールとisAdminフラグを追加
+      return NextResponse.json({
+        tenant,
+        isAdmin,
+        userRole,
+      });
+    } catch (dbError) {
+      // データベースエラーのより詳細なロギングと処理
+      console.error('[API] データベースエラー:', dbError);
       return NextResponse.json(
         {
-          error: 'Account is suspended',
-          tenant: {
-            ...tenant,
-            accountStatus: 'suspended',
-          },
-          isAdmin,
-          userRole,
+          error: 'Database operation failed',
+          details: dbError instanceof Error ? dbError.message : String(dbError),
+          code: 'DB_ERROR',
         },
-        { status: 403 },
+        { status: 500 },
       );
     }
-
-    console.log('[API] テナント情報返却:', tenant.id);
-
-    // 正常レスポンス - ユーザーロールとisAdminフラグを追加
-    return NextResponse.json({
-      tenant,
-      isAdmin,
-      userRole,
-    });
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
     console.error('[API] テナント情報取得エラー:', error);
