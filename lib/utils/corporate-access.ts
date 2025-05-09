@@ -49,12 +49,24 @@ export async function checkCorporateAccess(userId: string) {
       (user.adminOfTenant && user.adminOfTenant.accountStatus === 'suspended') ||
       (user.tenant && user.tenant.accountStatus === 'suspended');
 
-    // 法人サブスクリプションが有効かチェック
+    // 法人サブスクリプションが有効かチェック - 判定ロジックを拡張
     const hasCorporateSubscription =
       user.subscription &&
-      ['business', 'business-plus', 'business_plus', 'enterprise'].includes(
-        user.subscription.plan || '',
-      ) &&
+      // 正確な一致
+      ([
+        'business',
+        'business-plus',
+        'business_plus',
+        'businessplus',
+        'enterprise',
+        'corp',
+        'corporate',
+        'pro',
+      ].includes((user.subscription.plan || '').toLowerCase().trim()) ||
+        // 部分一致
+        (user.subscription.plan || '').toLowerCase().includes('business') ||
+        (user.subscription.plan || '').toLowerCase().includes('corp') ||
+        (user.subscription.plan || '').toLowerCase().includes('pro')) &&
       user.subscription.status === 'active';
 
     // テナントが存在し、停止されておらず、有効なサブスクリプションがある場合のみアクセス権あり

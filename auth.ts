@@ -73,8 +73,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         `ユーザーログイン: ${user.id}, ${account?.provider || 'credentials'}, 新規: ${isNewUser ? 'はい' : 'いいえ'}`,
       );
     },
+    // 型安全にするためeventは引数として使わない実装にする
     async signOut() {
-      // 引数を使用せず、単純にログメッセージだけ出力
       console.log(`ユーザーログアウト`);
     },
     async createUser({ user }) {
@@ -83,19 +83,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async linkAccount({ user, account }) {
       console.log(`アカウント連携: ${user.email}, ${account.provider}`);
     },
-    async session(params) {
-      // sessionオブジェクトがあることを確認してからアクセス
-      if (
-        params.session &&
-        'user' in params.session &&
-        params.session.user &&
-        'email' in params.session.user
-      ) {
-        console.log(
-          `セッション更新: ${params.session.user.email}, 有効期限: ${params.session.expires}`,
-        );
+    // tokenは使用しないので削除
+    async session({ session }) {
+      if (session && session.user && session.user.email) {
+        console.log(`セッション更新: ${session.user.email}, 有効期限: ${session.expires}`);
       } else {
-        console.log(`セッション更新: ユーザー情報なし`);
+        console.log(`セッション更新: ユーザー情報なし, 有効期限: ${session?.expires || 'unknown'}`);
       }
     },
   },

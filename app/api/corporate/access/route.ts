@@ -1,302 +1,276 @@
-// app/api/corporate/access/route.ts
-export const dynamic = 'force-dynamic';
-
-import { NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
-
-export async function GET(request: Request) {
-  try {
-    // URLからクエリパラメータを取得
-    const url = new URL(request.url);
-    const isMobile = url.searchParams.get('mobile') === '1';
-    const timestamp = url.searchParams.get('t') || Date.now().toString();
-
-    console.log(
-      `[API:corporate/access] API呼び出し開始 (t=${timestamp}, mobile=${isMobile ? 'true' : 'false'})`,
-    );
-
-    // セッション取得前のヘッダー情報をログ出力（デバッグ用）
-    console.log('[API:corporate/access] リクエストヘッダー:', {
-      cookie: request.headers.get('cookie')?.substring(0, 50) + '...',
-      authorization: request.headers.get('authorization') ? '存在する' : 'なし',
-    });
-
-    // Next-Authセッション取得
-    const session = await auth();
-
-    // セッションのデバッグ出力
-    console.log('[API:corporate/access] 認証セッション詳細:', {
-      認証状態: session ? '認証済み' : '未認証',
-      userId: session?.user?.id || 'なし',
-      expires: session?.expires || 'なし',
-    });
-
-    if (!session?.user?.id) {
-      console.log('[API:corporate/access] 認証されていません - 401返却');
-      return NextResponse.json(
-        {
-          hasAccess: false,
-          error: '認証されていません',
-          timestamp: Date.now(),
-        },
-        {
-          status: 401,
-          headers: {
-            'Cache-Control': 'no-store, no-cache, must-revalidate',
-            Pragma: 'no-cache',
-          },
-        },
-      );
-    }
-
-    console.log('[API:corporate/access] ユーザーID:', session.user.id);
-
-    try {
-      // ユーザーの詳細情報を取得
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          id: true,
-          email: true,
-          corporateRole: true,
-          adminOfTenant: {
-            select: {
-              id: true,
-              name: true,
-              accountStatus: true,
-            },
-          },
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              accountStatus: true,
-            },
-          },
-          subscription: {
-            select: {
-              id: true,
-              plan: true,
-              status: true,
-            },
-          },
-        },
-      });
-
-      // ユーザー情報の詳細ログ
-      console.log(
-        '[API:corporate/access] ユーザー詳細:',
-        JSON.stringify({
-          id: user?.id,
-          email: user?.email,
-          role: user?.corporateRole,
-          hasAdminTenant: !!user?.adminOfTenant,
-          hasMemberTenant: !!user?.tenant,
-          subscription: user?.subscription
-            ? {
-                plan: user.subscription.plan,
-                status: user.subscription.status,
-              }
-            : null,
-        }),
-      );
-
-      if (!user) {
-        console.log('[API:corporate/access] ユーザーが見つかりません - 404返却');
-        return NextResponse.json(
-          { hasAccess: false, error: 'ユーザーが見つかりません' },
-          { status: 404 },
-        );
-      }
-
-      // 法人テナント情報の取得と確認
-      const hasTenant = !!user.adminOfTenant || !!user.tenant;
-      const tenant = user.adminOfTenant || user.tenant;
-      const isSuspended = tenant?.accountStatus === 'suspended';
-
-      // サブスクリプションチェック
-      const subscriptionStatus = checkSubscriptionStatus(user.subscription);
-      const hasCorporateSubscription = subscriptionStatus.isValid;
-
-      // 詳細診断ログ
-      console.log('[API:corporate/access] 法人アクセス診断:', {
-        hasTenant,
-        tenantType: user.adminOfTenant ? 'admin' : user.tenant ? 'member' : 'none',
-        tenantId: tenant?.id || 'なし',
-        tenantStatus: tenant?.accountStatus || 'なし',
-        isSuspended,
-        subscriptionPlan: user.subscription?.plan || 'なし',
-        subscriptionStatus: user.subscription?.status || 'なし',
-        normalizedPlan: subscriptionStatus.normalizedPlan,
-        hasCorporateAccess: hasCorporateSubscription,
-      });
-
-      // デフォルトでアクセス許可 - 開発環境や特定条件では常に許可
-      const isDevOrTest =
-        process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_ALLOW_CORPORATE === 'true';
-
-      // アクセス判定 - 開発/テスト環境では常に許可
-      const hasAccess = isDevOrTest || (hasTenant && !isSuspended && hasCorporateSubscription);
-
-      console.log('[API:corporate/access] 最終アクセス判定:', {
-        isDevOrTest,
-        hasTenant,
-        notSuspended: !isSuspended,
-        hasCorporateSubscription,
-        finalDecision: hasAccess ? '許可' : '拒否',
-      });
-
-      // アクセス拒否の場合
-      if (!hasAccess) {
-        let error = '法人プランにアップグレードしてください。';
-        if (isSuspended) {
-          error = 'テナントが停止されています。管理者にお問い合わせください。';
-        } else if (hasTenant && !hasCorporateSubscription) {
-          error = '法人プランのサブスクリプションが有効ではありません。';
-        } else if (!hasTenant && hasCorporateSubscription) {
-          error = '法人テナント情報が設定されていません。';
-        }
-
-        console.log('[API:corporate/access] アクセス拒否:', error);
-        return NextResponse.json(
-          {
-            hasAccess: false,
-            error: error,
-            isAuthenticated: true,
-            debug: isDevOrTest
-              ? {
-                  env: process.env.NODE_ENV,
-                  allowCorporate: process.env.NEXT_PUBLIC_ALLOW_CORPORATE,
-                }
-              : undefined,
-          },
-          {
-            status: 403,
-            headers: {
-              'Cache-Control': 'no-store, no-cache, must-revalidate',
-              Pragma: 'no-cache',
-            },
-          },
-        );
-      }
-
-      // アクセス許可
-      return NextResponse.json(
-        {
-          hasAccess: true,
-          isAdmin: !!user.adminOfTenant,
-          userRole: user.adminOfTenant ? 'admin' : user.corporateRole || 'member',
-          tenant: {
-            id: tenant?.id,
-            name: tenant?.name,
-          },
-          tenantId: tenant?.id, // 明示的にtenantIdも返す
-          isAuthenticated: true,
-        },
-        {
-          headers: {
-            'Cache-Control': 'private, max-age=30',
-          },
-        },
-      );
-    } catch (dbError) {
-      console.error('[API:corporate/access] データベースエラー:', dbError);
-      return NextResponse.json(
-        { hasAccess: false, error: 'ユーザー情報の取得に失敗しました' },
-        { status: 500 },
-      );
-    }
-  } catch (error) {
-    console.error('[API:corporate/access] 法人アクセス確認エラー:', error);
-    return NextResponse.json(
-      {
-        hasAccess: false,
-        error: '法人アクセス権の確認中にエラーが発生しました',
-        isAuthenticated: true,
-      },
-      { status: 500 },
-    );
+// lib/corporateAccessState.ts
+import { logger } from '@/lib/utils/logger';
+declare global {
+  interface Window {
+    _corporateAccessState?: CorporateAccessState;
   }
 }
 
-/**
- * サブスクリプションのステータスを詳細にチェックする関数
- */
-function checkSubscriptionStatus(subscription: { plan?: string; status?: string } | null): {
-  isValid: boolean;
-  normalizedPlan: string;
-  reason?: string;
-} {
-  if (!subscription) {
-    return {
-      isValid: false,
-      normalizedPlan: 'none',
-      reason: 'サブスクリプションが存在しません',
-    };
+// イベント型の拡張（TypeScriptのため）
+declare global {
+  interface WindowEventMap {
+    corporateAccessChanged: CustomEvent<CorporateAccessState>;
+  }
+}
+
+export interface CorporateAccessState {
+  hasAccess: boolean | null;
+  isAdmin: boolean;
+  tenantId?: string | null;
+  lastChecked: number;
+  userRole?: string | null;
+  error?: string | null;
+}
+
+// デバッグログを記録する関数
+function logDebug(action: string, data: unknown) {
+  // 統合ロガーを使用
+  logger.corporate(action, data);
+}
+
+// アプリ全体で共有される状態
+export const corporateAccessState: CorporateAccessState = {
+  hasAccess: null,
+  isAdmin: false,
+  tenantId: null,
+  lastChecked: 0,
+  userRole: null,
+  error: null,
+};
+
+// デバッグ用にグローバル変数名を明示
+const STATE_VAR_NAME = '_corporateAccessState';
+
+// windowオブジェクトにも同じ参照を保存（クライアントサイドのみ）
+if (typeof window !== 'undefined') {
+  if (!window[STATE_VAR_NAME]) {
+    window[STATE_VAR_NAME] = corporateAccessState;
+    logDebug('初期化', { ...corporateAccessState });
+  } else {
+    // 既に存在する場合は、その値をコピー
+    Object.assign(corporateAccessState, window[STATE_VAR_NAME]);
+    logDebug('状態復元', { ...corporateAccessState });
+  }
+}
+
+// 状態を更新する関数
+export function updateCorporateAccessState(newState: Partial<CorporateAccessState>): void {
+  // 変更前後の状態をより詳細にログ出力
+  const prevState = { ...corporateAccessState };
+  logDebug('状態更新前', prevState);
+
+  Object.assign(corporateAccessState, newState);
+
+  // windowオブジェクトも更新
+  if (typeof window !== 'undefined' && window[STATE_VAR_NAME]) {
+    Object.assign(window[STATE_VAR_NAME], newState);
   }
 
-  // デバッグ情報
-  console.log('[サブスクリプション検証]:', {
-    originalPlan: subscription.plan,
-    originalStatus: subscription.status,
+  logDebug('状態更新後', { ...corporateAccessState });
+
+  // イベントをより確実にディスパッチ
+  if (typeof window !== 'undefined') {
+    try {
+      // モバイル環境を考慮したタイムアウト処理を追加
+      setTimeout(() => {
+        window.dispatchEvent(
+          new CustomEvent('corporateAccessChanged', {
+            detail: { ...corporateAccessState }, // オブジェクトをコピーして渡す
+          }),
+        );
+        logDebug('イベントディスパッチ', {
+          type: 'corporateAccessChanged',
+          detail: { ...corporateAccessState },
+        });
+      }, 0);
+    } catch (e) {
+      logDebug('イベントディスパッチエラー', e);
+    }
+  }
+}
+
+// APIチェック関数
+export const checkCorporateAccess = async (force = false) => {
+  // キャッシュ時間を調整（モバイル環境考慮）
+  const CACHE_DURATION = 30 * 1000; // 30秒
+
+  const now = Date.now();
+
+  // モバイル環境検出
+  const isMobile =
+    typeof navigator !== 'undefined' &&
+    (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+      (typeof window !== 'undefined' && window.innerWidth < 768));
+
+  // キャッシュを使用するかチェック
+  if (
+    !force &&
+    corporateAccessState.lastChecked > 0 &&
+    corporateAccessState.hasAccess !== null &&
+    corporateAccessState.tenantId &&
+    now - corporateAccessState.lastChecked < CACHE_DURATION
+  ) {
+    logDebug('キャッシュ使用', {
+      age: now - corporateAccessState.lastChecked,
+      state: { ...corporateAccessState },
+    });
+    return corporateAccessState;
+  }
+
+  try {
+    logDebug('APIリクエスト開始', { timestamp: now, isMobile });
+
+    // リクエスト発行時刻とランダム値を含めてキャッシュを回避
+    const cacheBuster = `${now}-${Math.random().toString(36).substring(2, 10)}`;
+
+    // リクエスト
+    const response = await fetch(
+      `/api/corporate/access?t=${cacheBuster}&mobile=${isMobile ? 1 : 0}`,
+      {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+        credentials: 'include', // 認証情報を含める
+      },
+    );
+
+    // レスポンス詳細ログ
+    logDebug('APIレスポンス詳細', {
+      status: response.status,
+      ok: response.ok,
+      statusText: response.statusText,
+      headers: {
+        contentType: response.headers.get('content-type'),
+        cacheControl: response.headers.get('cache-control'),
+      },
+    });
+
+    // レスポンス処理
+    try {
+      const data = await response.json();
+
+      logDebug('APIレスポンスボディ', data);
+
+      if (response.status === 401) {
+        // 認証エラー - 未ログイン
+        updateCorporateAccessState({
+          hasAccess: false,
+          isAdmin: false,
+          tenantId: null,
+          lastChecked: now,
+          error: '認証されていません。ログインしてください。',
+        });
+
+        // 認証ページにリダイレクト（オプション）
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/')) {
+          logDebug('未認証を検出 - ログインページへリダイレクト', {
+            path: window.location.pathname,
+          });
+          window.location.href = '/auth/signin';
+        }
+      } else if (response.status === 403) {
+        // アクセス拒否 - 権限なし
+        updateCorporateAccessState({
+          hasAccess: false,
+          isAdmin: false,
+          tenantId: null,
+          lastChecked: now,
+          error: data.error || '法人プランにアップグレードしてください。',
+        });
+      } else if (response.ok) {
+        // 成功 - アクセス権あり
+        const possibleTenantId = data.tenantId || (data.tenant && data.tenant.id) || null;
+
+        updateCorporateAccessState({
+          hasAccess: data.hasAccess === true,
+          isAdmin: data.isAdmin || false,
+          tenantId: possibleTenantId || 'fallback-tenant-id',
+          userRole: data.userRole || data.role || null,
+          lastChecked: now,
+          error: null,
+        });
+      } else {
+        // その他のエラー
+        updateCorporateAccessState({
+          hasAccess: false,
+          lastChecked: now,
+          error: `APIエラー: ${response.status} ${response.statusText}`,
+        });
+      }
+    } catch (parseError) {
+      logDebug('APIレスポンスのパースエラー', parseError);
+
+      // JSONパースエラー
+      updateCorporateAccessState({
+        hasAccess: false,
+        lastChecked: now,
+        error: 'APIレスポンスの解析に失敗しました',
+      });
+    }
+
+    // クッキーの更新
+    if (typeof document !== 'undefined') {
+      setCorporateAccessCookies(
+        corporateAccessState.hasAccess === true,
+        corporateAccessState.userRole || null,
+      );
+    }
+
+    return corporateAccessState;
+  } catch (error) {
+    logDebug('APIリクエスト例外', error);
+
+    // エラー発生時の状態更新
+    updateCorporateAccessState({
+      hasAccess: false,
+      error: error instanceof Error ? error.message : 'APIリクエスト中にエラーが発生しました',
+      lastChecked: now,
+    });
+
+    return corporateAccessState;
+  }
+};
+
+// ユーザーが法人管理者かどうかを確認
+export function isUserCorporateAdmin(): boolean {
+  const result = corporateAccessState.isAdmin === true && corporateAccessState.userRole === 'admin';
+  logDebug('管理者チェック', { result, state: { ...corporateAccessState } });
+  return result;
+}
+
+// 状態をリセットする関数
+export function resetCorporateAccessState(): void {
+  logDebug('状態リセット前', { ...corporateAccessState });
+
+  updateCorporateAccessState({
+    hasAccess: null,
+    isAdmin: false,
+    tenantId: null,
+    userRole: null,
+    lastChecked: 0,
+    error: null,
   });
 
-  // プラン名の正規化（空白削除、小文字化）
-  const normalizedPlan = (subscription.plan || '').toLowerCase().trim();
+  logDebug('状態リセット後', { ...corporateAccessState });
+}
 
-  // 有効なプラン名パターン
-  const validPlans = [
-    'business',
-    'business_plus',
-    'business-plus',
-    'businessplus',
-    'enterprise',
-    'corp',
-    'corporate',
-    'pro', // 追加のプラン名
-  ];
+// クッキーを保存する際のオプション
+export function setCorporateAccessCookies(hasAccess: boolean, role: string | null): void {
+  // 環境判定
+  const isProduction = process.env.NODE_ENV === 'production';
 
-  // ステータスチェック - null/undefinedや'active'以外は無効
-  const isStatusActive = subscription.status === 'active';
-
-  // プラン名の検証 - 部分一致を含む柔軟な検証
-  const isPlanValid = validPlans.some(
-    (plan) =>
-      normalizedPlan === plan ||
-      normalizedPlan.replace(/[-_]/g, '') === plan.replace(/[-_]/g, '') ||
-      normalizedPlan.includes('business') ||
-      normalizedPlan.includes('corp') ||
-      normalizedPlan.includes('pro'),
-  );
-
-  // 結果ログ
-  console.log('[サブスクリプション判定]:', {
-    normalizedPlan,
-    isStatusActive,
-    isPlanValid,
-    result: isStatusActive && isPlanValid,
-  });
-
-  // 理由を含むステータス判定を返す
-  if (!isStatusActive) {
-    return {
-      isValid: false,
-      normalizedPlan,
-      reason: 'サブスクリプションのステータスが有効ではありません',
-    };
+  // 開発環境では簡易な設定で
+  if (!isProduction) {
+    document.cookie = `corporateAccess=${hasAccess}; path=/;`;
+    document.cookie = `corporateRole=${role || ''}; path=/;`;
+  } else {
+    // 本番環境ではセキュリティ強化
+    document.cookie = `corporateAccess=${hasAccess}; path=/; secure; max-age=${24 * 60 * 60}; samesite=strict`;
+    document.cookie = `corporateRole=${role || ''}; path=/; secure; max-age=${24 * 60 * 60}; samesite=strict`;
   }
 
-  if (!isPlanValid) {
-    return {
-      isValid: false,
-      normalizedPlan,
-      reason: '法人プランではありません',
-    };
-  }
-
-  return {
-    isValid: true,
-    normalizedPlan,
-  };
+  logDebug('クッキー設定', { hasAccess, role, isProduction });
 }

@@ -163,7 +163,9 @@ export const checkCorporateAccess = async (force = false) => {
         
         // 認証ページにリダイレクト（オプション）
         if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/')) {
-          logDebug('未認証を検出 - ログインページへリダイレクト', { location: '/auth/signin' });
+          logDebug('未認証を検出 - ログインページへリダイレクト', {
+            path: window.location.pathname,
+          });
           window.location.href = '/auth/signin';
         }
       } else if (response.status === 403) {
