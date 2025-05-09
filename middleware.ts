@@ -6,40 +6,47 @@ import { getToken } from 'next-auth/jwt';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // auth関連のURLとAPIは処理しない（認証処理の高速化）
+  // auth関連のURLは処理しない
   if (pathname.startsWith('/auth') || pathname.startsWith('/api/auth')) {
     return NextResponse.next();
   }
 
   // ダッシュボードへのアクセスを制御
   if (pathname.startsWith('/dashboard')) {
-    try {
-      // secretパラメータを明示的に設定
-      const token = await getToken({
-        req: request,
-        secret: process.env.NEXTAUTH_SECRET,
-        secureCookie: process.env.NODE_ENV === 'production',
-      });
+    // secretパラメータを追加
+    const token = await getToken({
+      req: request,
+      secret: process.env.NEXTAUTH_SECRET,
+      secureCookie: process.env.NODE_ENV === 'production',
+      cookieName: 'next-auth.session-token', // クッキー名を明示的に指定
+    });
 
-      // 未認証ユーザーはログインページへリダイレクト
-      if (!token) {
-        console.log('未認証ユーザー: ログインページにリダイレクト');
-        return NextResponse.redirect(new URL('/auth/signin', request.url));
-      }
+    // デバッグ出力
+    console.log(`Middleware詳細ログ: ${pathname}`, {
+      hasToken: !!token,
+      cookieHeader: request.headers.get('cookie'),
+      tokenData: token
+        ? JSON.stringify({
+            name: token.name,
+            email: token.email,
+            sub: token.sub,
+          })
+        : 'トークンなし',
+    });
 
-      // 認証OK
-      return NextResponse.next();
-    } catch (error) {
-      console.error('ミドルウェアエラー:', error);
-      // エラー時も通過させる - クライアント側で再検証
-      return NextResponse.next();
+    // 未認証ユーザーはログインページへリダイレクト
+    if (!token) {
+      console.log('未認証ユーザー: ログインページにリダイレクト');
+      return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
+
+    console.log('認証済みユーザー: アクセス許可');
   }
 
   return NextResponse.next();
 }
 
-// ミドルウェアを適用するパスを設定 - APIパスを除外
+// ミドルウェアを適用するパスを設定
 export const config = {
   matcher: ['/dashboard/:path*', '/auth/:path*'],
 };
