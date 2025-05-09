@@ -633,6 +633,7 @@ export default function CorporateSettingsPage() {
                     value={companyName}
                     onChange={(e) => setCompanyName(e.target.value)}
                     required
+                    placeholder="例: 株式会社 共有商事"
                     disabled={!isAdmin}
                   />
                 </div>

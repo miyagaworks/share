@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
+import { toast } from 'react-hot-toast';
+import { Input } from '@/components/ui/Input';
 import {
   HiCheck,
   HiOfficeBuilding,
@@ -74,39 +76,39 @@ export default function CorporateOnboardingPage() {
 
   // テナント情報を取得
   useEffect(() => {
-  const fetchTenantData = async () => {
-    if (!session?.user?.id) return;
+    const fetchTenantData = async () => {
+      if (!session?.user?.id) return;
 
-    try {
-    setIsLoading(true);
+      try {
+        setIsLoading(true);
 
-    // テナント情報取得API
-    const response = await fetch('/api/corporate/tenant');
+        // テナント情報取得API
+        const response = await fetch('/api/corporate/tenant');
 
-    if (!response.ok) {
-        throw new Error('テナント情報の取得に失敗しました');
-    }
+        if (!response.ok) {
+          throw new Error('テナント情報の取得に失敗しました');
+        }
 
-    const data = await response.json();
-    setTenantData(data.tenant);
+        const data = await response.json();
+        setTenantData(data.tenant);
 
-    // 会社名の初期値設定を条件付きに
-    if (data.tenant?.name && !data.tenant.name.includes('の会社')) {
-        setCompanyName(data.tenant.name);
-        setOnboardingState((prev) => ({
-        ...prev,
-        companyName: data.tenant.name,
-        }));
-    }
-    // デフォルト名の場合は空欄に
-    } catch (err) {
-    console.error('テナント情報取得エラー:', err);
-    } finally {
-    setIsLoading(false);
-    }
-  };
+        // 会社名の初期値設定を条件付きに
+        if (data.tenant?.name && !data.tenant.name.includes('の会社')) {
+          setCompanyName(data.tenant.name);
+          setOnboardingState((prev) => ({
+            ...prev,
+            companyName: data.tenant.name,
+          }));
+        }
+        // デフォルト名の場合は空欄に
+      } catch (err) {
+        console.error('テナント情報取得エラー:', err);
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-  fetchTenantData();
+    fetchTenantData();
   }, [session]);
 
   // ステップを完了としてマーク
@@ -147,22 +149,37 @@ export default function CorporateOnboardingPage() {
     }
   };
 
-  // 会社情報を保存
+  // saveCompanyInfo関数の修正
   const saveCompanyInfo = async () => {
+    if (!companyName.trim()) {
+      return; // 空の会社名は送信しない
+    }
+
     setIsSaving(true);
     try {
-      // 実際のAPIはここで実装する
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      // 実際のAPI呼び出し
+      const response = await fetch('/api/corporate/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: companyName,
+          type: 'general', // 既存のAPIと互換性を持たせる
+        }),
+      });
 
-      // 会社名を更新
-      setOnboardingState((prev) => ({
-        ...prev,
-        companyName,
-      }));
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '設定の保存に失敗しました');
+      }
 
+      // 成功メッセージとステップ進行
+      toast.success('会社情報を保存しました');
       goToNextStep();
     } catch (error) {
       console.error('会社情報保存エラー:', error);
+      toast.error('会社情報の保存に失敗しました');
     } finally {
       setIsSaving(false);
     }
@@ -296,8 +313,7 @@ export default function CorporateOnboardingPage() {
           <div>
             <h2 className="text-xl font-semibold mb-4">法人プランへようこそ</h2>
             <p className="text-gray-600 mb-6 text-justify">
-              法人プランへのご登録ありがとうございます。
-              数分で簡単に初期設定を完了し、チームメンバーとの連携を始めましょう。
+              法人プランへのご登録ありがとうございます。この初期設定ウィザードでは、以下のステップを通じてチーム全体で効率的に利用を開始するための準備を行います。
             </p>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
@@ -306,7 +322,9 @@ export default function CorporateOnboardingPage() {
                   <HiOfficeBuilding className="h-6 w-6 text-blue-600" />
                 </div>
                 <h3 className="font-medium">会社情報の設定</h3>
-                <p className="text-sm text-gray-500 mt-1">基本情報を登録します</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  貴社の基本情報を登録し、社内共有の基盤を作ります
+                </p>
               </div>
 
               <div className="border border-gray-200 rounded-lg p-4 text-center">
@@ -314,7 +332,9 @@ export default function CorporateOnboardingPage() {
                   <HiUsers className="h-6 w-6 text-green-600" />
                 </div>
                 <h3 className="font-medium">メンバー招待</h3>
-                <p className="text-sm text-gray-500 mt-1">チームメンバーを招待します</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  チームメンバーを招待し、情報共有を始めましょう
+                </p>
               </div>
 
               <div className="border border-gray-200 rounded-lg p-4 text-center">
@@ -322,13 +342,22 @@ export default function CorporateOnboardingPage() {
                   <HiColorSwatch className="h-6 w-6 text-purple-600" />
                 </div>
                 <h3 className="font-medium">ブランディング設定</h3>
-                <p className="text-sm text-gray-500 mt-1">企業カラーやロゴを設定します</p>
+                <p className="text-sm text-gray-500 mt-1">
+                  企業カラーやロゴを設定して統一感のある見た目にします
+                </p>
               </div>
+            </div>
+
+            <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
+              <p className="text-sm text-blue-700">
+                <strong>このウィザードの目的:</strong>{' '}
+                法人アカウントの基本設定を行い、チームメンバーが統一されたブランディングのもとでSNS情報を共有できる環境を整えます。各ステップは後からでも変更可能です。
+              </p>
             </div>
 
             <div className="flex justify-between">
               <Button variant="outline" onClick={skipToFinish}>
-                スキップ
+                スキップして後で設定
               </Button>
               <Button onClick={goToNextStep}>
                 始める <HiArrowRight className="ml-2 h-4 w-4" />
@@ -353,13 +382,13 @@ export default function CorporateOnboardingPage() {
                 >
                   会社名 <span className="text-red-500">*</span>
                 </label>
-                <input
+                <Input
                   id="companyName"
                   type="text"
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                  placeholder="例: 株式会社サンプル"
+                  className="w-full"
+                  placeholder="例: 株式会社 共有商事"
                   required
                 />
               </div>

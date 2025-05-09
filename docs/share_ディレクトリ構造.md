@@ -30,6 +30,8 @@ share/
 │   │   │   │       └── route.ts
 │   │   │   ├── change-password
 │   │   │   │   └── route.ts
+│   │   │   ├── debug
+│   │   │   │   └── route.ts
 │   │   │   ├── error
 │   │   │   │   └── route.ts
 │   │   │   ├── forgot-password
@@ -113,6 +115,8 @@ share/
 │   │   │   ├── route.ts
 │   │   │   └── update
 │   │   │       └── route.ts
+│   │   ├── debug-auth
+│   │   │   └── route.ts
 │   │   ├── jikogene
 │   │   │   └── route.ts
 │   │   ├── links
@@ -138,6 +142,9 @@ share/
 │   │   │   └── route.ts
 │   │   ├── support
 │   │   │   └── contact
+│   │   │       └── route.ts
+│   │   ├── system
+│   │   │   └── connection-status
 │   │   │       └── route.ts
 │   │   ├── test-db
 │   │   │   └── route.ts
@@ -383,6 +390,7 @@ share/
 │   └── useCorporateAccess.ts
 ├── lib
 │   ├── corporateAccessState.ts
+│   ├── db-manager.ts
 │   ├── email.ts
 │   ├── jikogene
 │   │   ├── ai-service.ts
@@ -402,12 +410,12 @@ share/
 │   │   └── validation.ts
 │   └── utils.ts
 ├── middleware
-│   └── checkTenantStatus.ts
+│   ├── checkTenantStatus.ts
+│   └── prisma-connection-handler.ts
 ├── middleware.ts
 ├── next-env.d.ts
 ├── next.config.mjs
 ├── package-lock.json
-├── package.json
 ├── pnpm-lock.yaml
 ├── postcss.config.mjs
 ├── prisma
@@ -527,8 +535,12 @@ share/
 ├── schemas
 │   └── auth.ts
 ├── scripts
+│   ├── check-user-relations.ts
 │   ├── clean-corporate-sns-username.ts
 │   ├── create-missing-subscriptions.ts
+│   ├── delete-user.ts
+│   ├── fix-corporate-access.ts
+│   ├── fix-tenant-relations.ts
 │   ├── generate-prisma-migration.js
 │   └── setup-guide-images.mjs
 ├── share_db_backup.sql
@@ -540,4 +552,3 @@ share/
     ├── sns-guide.ts
     ├── sns.ts
     └── tinycolor2.d.ts
-
