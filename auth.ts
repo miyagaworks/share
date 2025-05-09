@@ -30,6 +30,9 @@ declare module 'next-auth/jwt' {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
+  debug: process.env.NODE_ENV === 'development',
+
+  // セッション設定
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
@@ -38,10 +41,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: undefined, // ドメイン設定を削除して問題解決
+        domain: undefined, // ドメイン設定不要
       },
     },
-    // 他のCookieも明示的に設定
     callbackUrl: {
       name: 'next-auth.callback-url',
       options: {
@@ -63,8 +65,42 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     },
   },
-  
-  // authConfigからイベントハンドラーとページ設定を取得
+
+  // イベントロギング
+  events: {
+    async signIn({ user, account, isNewUser }) {
+      console.log(
+        `ユーザーログイン: ${user.id}, ${account?.provider || 'credentials'}, 新規: ${isNewUser ? 'はい' : 'いいえ'}`,
+      );
+    },
+    async signOut() {
+      // 引数を使用せず、単純にログメッセージだけ出力
+      console.log(`ユーザーログアウト`);
+    },
+    async createUser({ user }) {
+      console.log(`ユーザー作成: ${user.id}, ${user.email}`);
+    },
+    async linkAccount({ user, account }) {
+      console.log(`アカウント連携: ${user.email}, ${account.provider}`);
+    },
+    async session(params) {
+      // sessionオブジェクトがあることを確認してからアクセス
+      if (
+        params.session &&
+        'user' in params.session &&
+        params.session.user &&
+        'email' in params.session.user
+      ) {
+        console.log(
+          `セッション更新: ${params.session.user.email}, 有効期限: ${params.session.expires}`,
+        );
+      } else {
+        console.log(`セッション更新: ユーザー情報なし`);
+      }
+    },
+  },
+
+  // 他の設定はauth.configから取得
   ...authConfig,
 });
 

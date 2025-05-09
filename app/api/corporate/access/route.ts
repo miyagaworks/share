@@ -16,182 +16,197 @@ export async function GET(request: Request) {
       `[API:corporate/access] API呼び出し開始 (t=${timestamp}, mobile=${isMobile ? 'true' : 'false'})`,
     );
 
+    // セッション取得前のヘッダー情報をログ出力（デバッグ用）
+    console.log('[API:corporate/access] リクエストヘッダー:', {
+      cookie: request.headers.get('cookie')?.substring(0, 50) + '...',
+      authorization: request.headers.get('authorization') ? '存在する' : 'なし',
+    });
+
+    // Next-Authセッション取得
     const session = await auth();
-    console.log('[API:corporate/access] 認証セッション:', session ? '取得済み' : 'なし');
+
+    // セッションのデバッグ出力
+    console.log('[API:corporate/access] 認証セッション詳細:', {
+      認証状態: session ? '認証済み' : '未認証',
+      userId: session?.user?.id || 'なし',
+      expires: session?.expires || 'なし',
+    });
 
     if (!session?.user?.id) {
-      console.log('[API:corporate/access] 認証されていません');
-      return NextResponse.json({ hasAccess: false, error: '認証されていません' }, { status: 401 });
+      console.log('[API:corporate/access] 認証されていません - 401返却');
+      return NextResponse.json(
+        {
+          hasAccess: false,
+          error: '認証されていません',
+          timestamp: Date.now(),
+        },
+        {
+          status: 401,
+          headers: {
+            'Cache-Control': 'no-store, no-cache, must-revalidate',
+            Pragma: 'no-cache',
+          },
+        },
+      );
     }
 
     console.log('[API:corporate/access] ユーザーID:', session.user.id);
 
-    // ユーザーの法人テナント情報を取得
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: {
-        id: true,
-        email: true,
-        corporateRole: true,
-        adminOfTenant: {
-          select: {
-            id: true,
-            name: true,
-            accountStatus: true,
+    try {
+      // ユーザーの詳細情報を取得
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          id: true,
+          email: true,
+          corporateRole: true,
+          adminOfTenant: {
+            select: {
+              id: true,
+              name: true,
+              accountStatus: true,
+            },
+          },
+          tenant: {
+            select: {
+              id: true,
+              name: true,
+              accountStatus: true,
+            },
+          },
+          subscription: {
+            select: {
+              id: true,
+              plan: true,
+              status: true,
+            },
           },
         },
-        tenant: {
-          select: {
-            id: true,
-            name: true,
-            accountStatus: true,
-          },
-        },
-        subscription: {
-          select: {
-            id: true,
-            plan: true,
-            status: true,
-          },
-        },
-      },
-    });
+      });
 
-    // ユーザーデータの詳細ログ
-    console.log(
-      '[API:corporate/access] ユーザー詳細データ:',
-      JSON.stringify({
-        id: user?.id,
-        email: user?.email,
-        role: user?.corporateRole,
-        adminTenant: user?.adminOfTenant
-          ? {
-              id: user.adminOfTenant.id,
-              status: user.adminOfTenant.accountStatus,
-            }
-          : null,
-        memberTenant: user?.tenant
-          ? {
-              id: user.tenant.id,
-              status: user.tenant.accountStatus,
-            }
-          : null,
-        subscription: user?.subscription
-          ? {
-              plan: user.subscription.plan,
-              status: user.subscription.status,
-            }
-          : null,
-      }),
-    );
-
-    console.log('[API:corporate/access] ユーザー情報取得:', user ? '成功' : '失敗');
-
-    if (!user) {
-      console.log('[API:corporate/access] ユーザーが見つかりません');
-      return NextResponse.json(
-        { hasAccess: false, error: 'ユーザーが見つかりません' },
-        { status: 404 },
+      // ユーザー情報の詳細ログ
+      console.log(
+        '[API:corporate/access] ユーザー詳細:',
+        JSON.stringify({
+          id: user?.id,
+          email: user?.email,
+          role: user?.corporateRole,
+          hasAdminTenant: !!user?.adminOfTenant,
+          hasMemberTenant: !!user?.tenant,
+          subscription: user?.subscription
+            ? {
+                plan: user.subscription.plan,
+                status: user.subscription.status,
+              }
+            : null,
+        }),
       );
-    }
 
-    // 法人テナントが存在するかチェック
-    const hasTenant = !!user.adminOfTenant || !!user.tenant;
-    const tenant = user.adminOfTenant || user.tenant;
-
-    console.log(
-      '[API:corporate/access] テナント情報:',
-      '管理者テナント:',
-      !!user.adminOfTenant,
-      '管理者テナントID:',
-      user.adminOfTenant?.id,
-      'メンバーテナント:',
-      !!user.tenant,
-      'メンバーテナントID:',
-      user.tenant?.id,
-    );
-
-    // テナントのステータスをチェック - accountStatusを確認
-    const isSuspended = tenant?.accountStatus === 'suspended';
-
-    // 法人サブスクリプションが有効かチェック - 専用関数を使用
-    const hasCorporateSubscription = checkCorporateSubscription(user.subscription);
-
-    console.log(
-      '[API:corporate/access] サブスクリプション情報:',
-      'サブスクリプションあり:',
-      !!user.subscription,
-      'プラン:',
-      user.subscription?.plan,
-      'ステータス:',
-      user.subscription?.status,
-      'テナント停止:',
-      isSuspended,
-    );
-
-    // 全ての条件を満たす場合のみアクセス権あり
-    const hasAccess = hasTenant && !isSuspended && hasCorporateSubscription;
-
-    // 問題診断用の詳細ログ
-    console.log('[API:corporate/access] 詳細診断:', {
-      session: session?.user?.id ? '有効' : '無効',
-      user: user?.id ? '取得済み' : '取得失敗',
-      hasTenant,
-      tenantId: tenant?.id || 'なし',
-      isSuspended,
-      subscriptionPlan: user?.subscription?.plan || 'なし',
-      subscriptionStatus: user?.subscription?.status || 'なし',
-      hasCorporateSubscription,
-      hasAccess,
-      normalizedPlan: user?.subscription?.plan?.toLowerCase().trim() || 'なし',
-    });
-
-    console.log(
-      '[API:corporate/access] 法人アクセス権判定:',
-      'テナントあり:',
-      hasTenant,
-      'テナントが有効:',
-      !isSuspended,
-      '法人サブスクリプションあり:',
-      hasCorporateSubscription,
-      '→ アクセス権:',
-      hasAccess,
-    );
-
-    if (!hasAccess) {
-      let error = '法人プランにアップグレードしてください。';
-      if (isSuspended) {
-        error = 'テナントが停止されています。管理者にお問い合わせください。';
-      } else if (hasTenant && !hasCorporateSubscription) {
-        error = '法人プランのサブスクリプションが有効ではありません。';
-      } else if (!hasTenant && hasCorporateSubscription) {
-        error = '法人テナント情報が設定されていません。';
+      if (!user) {
+        console.log('[API:corporate/access] ユーザーが見つかりません - 404返却');
+        return NextResponse.json(
+          { hasAccess: false, error: 'ユーザーが見つかりません' },
+          { status: 404 },
+        );
       }
 
-      console.log('[API:corporate/access] アクセス拒否理由:', error);
+      // 法人テナント情報の取得と確認
+      const hasTenant = !!user.adminOfTenant || !!user.tenant;
+      const tenant = user.adminOfTenant || user.tenant;
+      const isSuspended = tenant?.accountStatus === 'suspended';
+
+      // サブスクリプションチェック
+      const subscriptionStatus = checkSubscriptionStatus(user.subscription);
+      const hasCorporateSubscription = subscriptionStatus.isValid;
+
+      // 詳細診断ログ
+      console.log('[API:corporate/access] 法人アクセス診断:', {
+        hasTenant,
+        tenantType: user.adminOfTenant ? 'admin' : user.tenant ? 'member' : 'none',
+        tenantId: tenant?.id || 'なし',
+        tenantStatus: tenant?.accountStatus || 'なし',
+        isSuspended,
+        subscriptionPlan: user.subscription?.plan || 'なし',
+        subscriptionStatus: user.subscription?.status || 'なし',
+        normalizedPlan: subscriptionStatus.normalizedPlan,
+        hasCorporateAccess: hasCorporateSubscription,
+      });
+
+      // デフォルトでアクセス許可 - 開発環境や特定条件では常に許可
+      const isDevOrTest =
+        process.env.NODE_ENV !== 'production' || process.env.NEXT_PUBLIC_ALLOW_CORPORATE === 'true';
+
+      // アクセス判定 - 開発/テスト環境では常に許可
+      const hasAccess = isDevOrTest || (hasTenant && !isSuspended && hasCorporateSubscription);
+
+      console.log('[API:corporate/access] 最終アクセス判定:', {
+        isDevOrTest,
+        hasTenant,
+        notSuspended: !isSuspended,
+        hasCorporateSubscription,
+        finalDecision: hasAccess ? '許可' : '拒否',
+      });
+
+      // アクセス拒否の場合
+      if (!hasAccess) {
+        let error = '法人プランにアップグレードしてください。';
+        if (isSuspended) {
+          error = 'テナントが停止されています。管理者にお問い合わせください。';
+        } else if (hasTenant && !hasCorporateSubscription) {
+          error = '法人プランのサブスクリプションが有効ではありません。';
+        } else if (!hasTenant && hasCorporateSubscription) {
+          error = '法人テナント情報が設定されていません。';
+        }
+
+        console.log('[API:corporate/access] アクセス拒否:', error);
+        return NextResponse.json(
+          {
+            hasAccess: false,
+            error: error,
+            isAuthenticated: true,
+            debug: isDevOrTest
+              ? {
+                  env: process.env.NODE_ENV,
+                  allowCorporate: process.env.NEXT_PUBLIC_ALLOW_CORPORATE,
+                }
+              : undefined,
+          },
+          {
+            status: 403,
+            headers: {
+              'Cache-Control': 'no-store, no-cache, must-revalidate',
+              Pragma: 'no-cache',
+            },
+          },
+        );
+      }
+
+      // アクセス許可
       return NextResponse.json(
         {
-          hasAccess: false,
-          error: error,
+          hasAccess: true,
+          isAdmin: !!user.adminOfTenant,
+          userRole: user.adminOfTenant ? 'admin' : user.corporateRole || 'member',
+          tenant: {
+            id: tenant?.id,
+            name: tenant?.name,
+          },
+          tenantId: tenant?.id, // 明示的にtenantIdも返す
           isAuthenticated: true,
         },
-        { status: 403 },
+        {
+          headers: {
+            'Cache-Control': 'private, max-age=30',
+          },
+        },
+      );
+    } catch (dbError) {
+      console.error('[API:corporate/access] データベースエラー:', dbError);
+      return NextResponse.json(
+        { hasAccess: false, error: 'ユーザー情報の取得に失敗しました' },
+        { status: 500 },
       );
     }
-
-    console.log('[API:corporate/access] アクセス許可、詳細テナント情報:', JSON.stringify(tenant));
-
-    return NextResponse.json({
-      hasAccess: true,
-      isAdmin: !!user.adminOfTenant,
-      userRole: user.adminOfTenant ? 'admin' : user.corporateRole || 'member',
-      tenant: {
-        id: tenant?.id,
-        name: tenant?.name,
-      },
-      tenantId: tenant?.id, // 明示的にtenantIdも返す
-      isAuthenticated: true,
-    });
   } catch (error) {
     console.error('[API:corporate/access] 法人アクセス確認エラー:', error);
     return NextResponse.json(
@@ -206,52 +221,82 @@ export async function GET(request: Request) {
 }
 
 /**
- * 法人サブスクリプションが有効かどうかを判定する関数
+ * サブスクリプションのステータスを詳細にチェックする関数
  */
-function checkCorporateSubscription(
-  subscription: { plan?: string; status?: string } | null,
-): boolean {
-  if (!subscription) return false;
+function checkSubscriptionStatus(subscription: { plan?: string; status?: string } | null): {
+  isValid: boolean;
+  normalizedPlan: string;
+  reason?: string;
+} {
+  if (!subscription) {
+    return {
+      isValid: false,
+      normalizedPlan: 'none',
+      reason: 'サブスクリプションが存在しません',
+    };
+  }
 
-  // 詳細ログ出力
-  console.log('[API:corporate/access] サブスクリプションチェック:', {
+  // デバッグ情報
+  console.log('[サブスクリプション検証]:', {
     originalPlan: subscription.plan,
-    status: subscription.status,
+    originalStatus: subscription.status,
   });
 
-  // 有効なプラン名を配列で定義（大文字小文字や記号の違いを吸収）
+  // プラン名の正規化（空白削除、小文字化）
+  const normalizedPlan = (subscription.plan || '').toLowerCase().trim();
+
+  // 有効なプラン名パターン
   const validPlans = [
     'business',
     'business_plus',
     'business-plus',
     'businessplus',
     'enterprise',
-    'corp', // 追加の可能性のある名前
-    'corporate', // 追加の可能性のある名前
+    'corp',
+    'corporate',
+    'pro', // 追加のプラン名
   ];
 
-  // プラン名の正規化（空白削除、小文字化）
-  const normalizedPlan = (subscription.plan || '').toLowerCase().trim();
+  // ステータスチェック - null/undefinedや'active'以外は無効
+  const isStatusActive = subscription.status === 'active';
 
-  // ステータスが有効かチェック - ステータスが未設定の場合も有効と見なす（データ移行時などのケース）
-  const isStatusActive = !subscription.status || subscription.status === 'active';
-
-  // 有効なプランに含まれているかチェック - 部分一致も許可
+  // プラン名の検証 - 部分一致を含む柔軟な検証
   const isPlanValid = validPlans.some(
     (plan) =>
       normalizedPlan === plan ||
       normalizedPlan.replace(/[-_]/g, '') === plan.replace(/[-_]/g, '') ||
       normalizedPlan.includes('business') ||
-      normalizedPlan.includes('corp'),
+      normalizedPlan.includes('corp') ||
+      normalizedPlan.includes('pro'),
   );
 
-  // 詳細ログ
-  console.log('[API:corporate/access] サブスクリプション判定:', {
+  // 結果ログ
+  console.log('[サブスクリプション判定]:', {
     normalizedPlan,
     isStatusActive,
     isPlanValid,
     result: isStatusActive && isPlanValid,
   });
 
-  return isStatusActive && isPlanValid;
+  // 理由を含むステータス判定を返す
+  if (!isStatusActive) {
+    return {
+      isValid: false,
+      normalizedPlan,
+      reason: 'サブスクリプションのステータスが有効ではありません',
+    };
+  }
+
+  if (!isPlanValid) {
+    return {
+      isValid: false,
+      normalizedPlan,
+      reason: '法人プランではありません',
+    };
+  }
+
+  return {
+    isValid: true,
+    normalizedPlan,
+  };
 }

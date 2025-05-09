@@ -95,29 +95,19 @@ export const checkCorporateAccess = async (force = false) => {
   const CACHE_DURATION = 30 * 1000; // 30秒
 
   const now = Date.now();
-  // モバイル環境検出を強化
+  
+  // モバイル環境検出
   const isMobile =
     typeof navigator !== 'undefined' &&
     (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
-      (typeof window !== 'undefined' && window.innerWidth < 768)); // 画面サイズでも判定
+      (typeof window !== 'undefined' && window.innerWidth < 768));
 
-  // すぐにログ出力
-  if (isMobile) {
-    logDebug('モバイル環境検出', {
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'unknown',
-      innerWidth: typeof window !== 'undefined' ? window.innerWidth : 'unknown',
-    });
-
-    // モバイルなら常に強制更新
-    force = true;
-  }
-
-  // キャッシュの使用条件を改善
+  // キャッシュを使用するかチェック
   if (
     !force &&
-    corporateAccessState.lastChecked > 0 && // 少なくとも1回はチェック済み
-    corporateAccessState.hasAccess !== null && // 明示的な値が設定されている
-    corporateAccessState.tenantId && // テナントIDが設定されていて空文字列やnullではない
+    corporateAccessState.lastChecked > 0 &&
+    corporateAccessState.hasAccess !== null &&
+    corporateAccessState.tenantId &&
     now - corporateAccessState.lastChecked < CACHE_DURATION
   ) {
     logDebug('キャッシュ使用', {
@@ -129,128 +119,112 @@ export const checkCorporateAccess = async (force = false) => {
 
   try {
     logDebug('APIリクエスト開始', { timestamp: now, isMobile });
-    // キャッシュバスティングのためのタイムスタンプとモバイルフラグを追加
-    const response = await fetch(`/api/corporate/access?t=${now}&mobile=${isMobile ? 1 : 0}`, {
+    
+    // リクエスト発行時刻とランダム値を含めてキャッシュを回避
+    const cacheBuster = `${now}-${Math.random().toString(36).substring(2, 10)}`;
+    
+    // リクエスト
+    const response = await fetch(`/api/corporate/access?t=${cacheBuster}&mobile=${isMobile ? 1 : 0}`, {
+      method: 'GET',
       headers: {
         'Cache-Control': 'no-cache, no-store, must-revalidate',
-        Pragma: 'no-cache',
-        Expires: '0',
+        'Pragma': 'no-cache',
+        'Expires': '0',
       },
-      // 明示的にcredentialsを指定
-      credentials: 'include',
+      credentials: 'include', // 認証情報を含める
     });
 
-    // APIレスポンスのログ出力を詳細化
-    logDebug('APIレスポンス受信', {
+    // レスポンス詳細ログ
+    logDebug('APIレスポンス詳細', {
       status: response.status,
       ok: response.ok,
       statusText: response.statusText,
+      headers: {
+        contentType: response.headers.get('content-type'),
+        cacheControl: response.headers.get('cache-control'),
+      }
     });
 
-    if (response.status === 403) {
-      // より詳細なエラー情報を取得
-      const errorData = await response.json();
-
-      logDebug('個人プランユーザー検出', {
-        status: 403,
-        errorData,
-      });
-
-      // エラーメッセージを保持
-      updateCorporateAccessState({
-        hasAccess: false,
-        isAdmin: false,
-        tenantId: null,
-        lastChecked: now,
-        error: errorData.error || null,
-      });
-    } else if (response.ok) {
+    // レスポンス処理
+    try {
       const data = await response.json();
-      logDebug('法人プランユーザー検出', data);
-
-      // レスポンスからテナントID候補を取得する処理を強化
-      const possibleTenantId = data.tenantId || (data.tenant && data.tenant.id) || null;
-
-      logDebug('テナントID検証', {
-        responseData: data,
-        possibleTenantId,
-        tenantId: data.tenantId,
-        tenantObjId: data.tenant?.id,
-        isNull: possibleTenantId === null,
-        isDefined: typeof possibleTenantId !== 'undefined',
-      });
-
-      // テナントIDが取得できない場合でも、アクセス権があればモバイル環境用の対応を追加
-      if (data.hasAccess === true && !possibleTenantId && isMobile) {
-        // モバイル環境専用の対応：常にフォールバック
-        logDebug('モバイル環境でテナントID取得不可、強制フォールバック', { responseData: data });
+      
+      logDebug('APIレスポンスボディ', data);
+      
+      if (response.status === 401) {
+        // 認証エラー - 未ログイン
         updateCorporateAccessState({
-          hasAccess: true,
-          isAdmin: data.isAdmin || false,
-          tenantId: 'mobile-fallback-tenant-id', // モバイル用フォールバック
-          userRole: data.userRole || data.role || 'member',
+          hasAccess: false,
+          isAdmin: false,
+          tenantId: null,
           lastChecked: now,
-          error: null,
+          error: '認証されていません。ログインしてください。',
         });
-
-        // 成功として返す
-        return corporateAccessState;
-      }
-
-      // テナントIDが取得できない場合でも、アクセス権があれば代替IDを設定
-      if (data.hasAccess === true && !possibleTenantId) {
-        logDebug('テナントID取得できずフォールバック使用', { originalData: data });
-
-        // 開発環境・本番環境どちらでも使用できるフォールバック処理
+        
+        // 認証ページにリダイレクト（オプション）
+        if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/auth/')) {
+          logDebug('未認証を検出 - ログインページへリダイレクト', { location: '/auth/signin' });
+          window.location.href = '/auth/signin';
+        }
+      } else if (response.status === 403) {
+        // アクセス拒否 - 権限なし
         updateCorporateAccessState({
-          hasAccess: true,
+          hasAccess: false,
+          isAdmin: false,
+          tenantId: null,
+          lastChecked: now,
+          error: data.error || '法人プランにアップグレードしてください。',
+        });
+      } else if (response.ok) {
+        // 成功 - アクセス権あり
+        const possibleTenantId = data.tenantId || (data.tenant && data.tenant.id) || null;
+        
+        updateCorporateAccessState({
+          hasAccess: data.hasAccess === true,
           isAdmin: data.isAdmin || false,
-          tenantId: 'fallback-tenant-id', // フォールバックID
+          tenantId: possibleTenantId || 'fallback-tenant-id',
           userRole: data.userRole || data.role || null,
           lastChecked: now,
           error: null,
         });
       } else {
-        // 通常の状態更新
+        // その他のエラー
         updateCorporateAccessState({
-          hasAccess: data.hasAccess === true,
-          isAdmin: data.isAdmin || false,
-          tenantId: possibleTenantId,
-          userRole: data.userRole || data.role || null,
+          hasAccess: false,
           lastChecked: now,
-          error: null,
+          error: `APIエラー: ${response.status} ${response.statusText}`,
         });
       }
-    } else {
-      // その他のエラー（例: 500内部サーバーエラーなど）
-      logDebug('予期しないAPIエラー', {
-        status: response.status,
-        statusText: response.statusText,
-      });
-
-      // エラー時はアクセス権を明示的に拒否する
+    } catch (parseError) {
+      logDebug('APIレスポンスのパースエラー', parseError);
+      
+      // JSONパースエラー
       updateCorporateAccessState({
         hasAccess: false,
         lastChecked: now,
-        error: `APIエラー: ${response.status} ${response.statusText}`,
+        error: 'APIレスポンスの解析に失敗しました',
       });
+    }
+
+    // クッキーの更新
+    if (typeof document !== 'undefined') {
+      setCorporateAccessCookies(
+        corporateAccessState.hasAccess === true,
+        corporateAccessState.userRole || null,
+      );
     }
 
     return corporateAccessState;
   } catch (error) {
-    // ネットワークエラーなどの例外処理
     logDebug('APIリクエスト例外', error);
-
-    // エラーが発生した場合もアクセス権を明示的に拒否する
+    
+    // エラー発生時の状態更新
     updateCorporateAccessState({
       hasAccess: false,
       error: error instanceof Error ? error.message : 'APIリクエスト中にエラーが発生しました',
       lastChecked: now,
     });
-
-    // エラー情報をコンソールに出力
-    console.error('法人アクセス権確認エラー:', error);
-
+    
     return corporateAccessState;
   }
 };
