@@ -1,14 +1,10 @@
-export const dynamic = "force-dynamic";
 // app/api/corporate/access/route.ts
+export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-/**
- * ユーザーの法人アクセス権を確認するためのAPI
- * クライアントサイドで使用することを想定
- */
 export async function GET(request: Request) {
   try {
     // URLからクエリパラメータを取得
@@ -33,10 +29,31 @@ export async function GET(request: Request) {
     // ユーザーの法人テナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
-        adminOfTenant: true,
-        tenant: true,
-        subscription: true,
+      select: {
+        id: true,
+        email: true,
+        corporateRole: true,
+        adminOfTenant: {
+          select: {
+            id: true,
+            name: true,
+            accountStatus: true,
+          },
+        },
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            accountStatus: true,
+          },
+        },
+        subscription: {
+          select: {
+            id: true,
+            plan: true,
+            status: true,
+          },
+        },
       },
     });
 
@@ -52,22 +69,25 @@ export async function GET(request: Request) {
 
     // 法人テナントが存在するかチェック
     const hasTenant = !!user.adminOfTenant || !!user.tenant;
+    const tenant = user.adminOfTenant || user.tenant;
+
     console.log(
       '[API:corporate/access] テナント情報:',
       '管理者テナント:',
       !!user.adminOfTenant,
+      '管理者テナントID:',
+      user.adminOfTenant?.id,
       'メンバーテナント:',
       !!user.tenant,
+      'メンバーテナントID:',
+      user.tenant?.id,
     );
 
-    // 法人サブスクリプションが有効かチェック
-    const hasCorporateSubscription =
-      user.subscription &&
-      (user.subscription.plan === 'business' ||
-        user.subscription.plan === 'business_plus' || // アンダースコア形式も対応
-        user.subscription.plan === 'business-plus' || // ハイフン形式も対応
-        user.subscription.plan === 'enterprise') &&
-      user.subscription.status === 'active';
+    // テナントのステータスをチェック
+    const isTenantActive = tenant ? tenant.accountStatus !== 'suspended' : false;
+
+    // 法人サブスクリプションが有効かチェック - より柔軟なチェック
+    const hasCorporateSubscription = checkCorporateSubscription(user.subscription);
 
     console.log(
       '[API:corporate/access] サブスクリプション情報:',
@@ -77,23 +97,31 @@ export async function GET(request: Request) {
       user.subscription?.plan,
       'ステータス:',
       user.subscription?.status,
+      '→ 法人サブスクリプション:',
+      hasCorporateSubscription,
     );
 
-    // 両方の条件を満たす場合のみアクセス権あり
-    const hasAccess = hasTenant && hasCorporateSubscription;
+    // 条件を満たす場合のみアクセス権あり
+    const hasAccess = hasTenant && isTenantActive && hasCorporateSubscription;
+
     console.log(
       '[API:corporate/access] 法人アクセス権判定:',
       'テナントあり:',
       hasTenant,
+      'テナント有効:',
+      isTenantActive,
       '法人サブスクリプションあり:',
       hasCorporateSubscription,
-      '→ アクセス権:',
+      '→ 最終アクセス権:',
       hasAccess,
     );
 
     if (!hasAccess) {
       let error = '法人プランにアップグレードしてください。';
-      if (hasTenant && !hasCorporateSubscription) {
+
+      if (hasTenant && !isTenantActive) {
+        error = 'テナントが一時停止されています。管理者にお問い合わせください。';
+      } else if (hasTenant && !hasCorporateSubscription) {
         error = '法人プランのサブスクリプションが有効ではありません。';
       } else if (!hasTenant && hasCorporateSubscription) {
         error = '法人テナント情報が設定されていません。';
@@ -110,8 +138,6 @@ export async function GET(request: Request) {
       );
     }
 
-    // テナント情報を取得（管理者または一般メンバーのいずれか）
-    const tenant = user.adminOfTenant || user.tenant;
     console.log('[API:corporate/access] アクセス許可、詳細テナント情報:', JSON.stringify(tenant));
 
     return NextResponse.json({
@@ -136,4 +162,30 @@ export async function GET(request: Request) {
       { status: 500 },
     );
   }
+}
+
+/**
+ * 法人サブスクリプションが有効かどうかを判定する関数
+ */
+function checkCorporateSubscription(
+  subscription: { plan?: string; status?: string } | null,
+): boolean {
+  if (!subscription) return false;
+
+  // 有効なプラン名を配列で定義（大文字小文字や記号の違いを吸収）
+  const validPlans = ['business', 'business_plus', 'business-plus', 'businessplus', 'enterprise'];
+
+  // プラン名の正規化（空白削除、小文字化）
+  const normalizedPlan = (subscription.plan || '').toLowerCase().trim();
+
+  // ステータスが有効かチェック
+  const isStatusActive = subscription.status === 'active';
+
+  // 有効なプランに含まれているかチェック
+  const isPlanValid = validPlans.some(
+    (plan) =>
+      normalizedPlan === plan || normalizedPlan.replace(/[-_]/g, '') === plan.replace(/[-_]/g, ''),
+  );
+
+  return isStatusActive && isPlanValid;
 }

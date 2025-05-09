@@ -95,7 +95,7 @@ export const checkCorporateAccess = async (force = false) => {
   const CACHE_DURATION = 30 * 1000; // 30秒
 
   const now = Date.now();
-  // ここを追加：モバイル環境検出を強化
+  // モバイル環境検出を強化
   const isMobile =
     typeof navigator !== 'undefined' &&
     (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
@@ -136,6 +136,8 @@ export const checkCorporateAccess = async (force = false) => {
         Pragma: 'no-cache',
         Expires: '0',
       },
+      // 明示的にcredentialsを指定
+      credentials: 'include',
     });
 
     // APIレスポンスのログ出力を詳細化
@@ -145,7 +147,6 @@ export const checkCorporateAccess = async (force = false) => {
       statusText: response.statusText,
     });
 
-    // 403は個人プランユーザーとして正常に処理
     if (response.status === 403) {
       logDebug('個人プランユーザー検出', { status: 403 });
       // 個人プランユーザーと判定
@@ -173,7 +174,7 @@ export const checkCorporateAccess = async (force = false) => {
       });
 
       // テナントIDが取得できない場合でも、アクセス権があればモバイル環境用の対応を追加
-      if (data.hasCorporateAccess === true && !possibleTenantId && isMobile) {
+      if (data.hasAccess === true && !possibleTenantId && isMobile) {
         // モバイル環境専用の対応：常にフォールバック
         logDebug('モバイル環境でテナントID取得不可、強制フォールバック', { responseData: data });
         updateCorporateAccessState({
@@ -190,7 +191,7 @@ export const checkCorporateAccess = async (force = false) => {
       }
 
       // テナントIDが取得できない場合でも、アクセス権があれば代替IDを設定
-      if (data.hasCorporateAccess === true && !possibleTenantId) {
+      if (data.hasAccess === true && !possibleTenantId) {
         logDebug('テナントID取得できずフォールバック使用', { originalData: data });
 
         // 開発環境・本番環境どちらでも使用できるフォールバック処理
@@ -205,7 +206,7 @@ export const checkCorporateAccess = async (force = false) => {
       } else {
         // 通常の状態更新
         updateCorporateAccessState({
-          hasAccess: true,
+          hasAccess: data.hasAccess === true,
           isAdmin: data.isAdmin || false,
           tenantId: possibleTenantId,
           userRole: data.userRole || data.role || null,
