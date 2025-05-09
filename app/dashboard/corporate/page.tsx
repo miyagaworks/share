@@ -195,155 +195,116 @@ export default function CorporateDashboardPage() {
       return;
     }
 
-    // 現在のアクセス状態とテナントIDを取得
-    const hasAccess = corporateAccessState.hasAccess;
-    const currentTenantId = corporateAccessState.tenantId;
+    // 既に読み込み中の場合は重複リクエストを防止
+    if (isLoading) {
+      console.log('既に読み込み中のため、リクエストをスキップします');
+      return;
+    }
 
     try {
       setIsLoading(true);
 
-      // アクセス権があるがテナントIDがない場合は最初に再チェック
-      if (
-        hasAccess === true &&
-        (!currentTenantId ||
-          currentTenantId === 'fallback-tenant-id' ||
-          currentTenantId === 'mobile-fallback-tenant-id')
-      ) {
-        console.log('アクセス権はあるがテナントIDが不十分です。再確認します。', {
-          hasAccess,
-          currentTenantId,
-        });
+      // 現在のアクセス状態とテナントIDを取得
+      const hasAccess = corporateAccessState.hasAccess;
+      const currentTenantId = corporateAccessState.tenantId;
 
-        try {
-          // 強制的に再チェック
-          await refreshAccess();
-        } catch (refreshError) {
-          console.error('アクセス権再チェックエラー:', refreshError);
-        }
-      }
-
-      // 再確認した後のテナントIDとアクセス状態
-      const finalTenantId = corporateAccessState.tenantId;
-      const finalAccessState = corporateAccessState.hasAccess;
-
-      // テナントIDがある場合はAPIからデータを取得
-      if (finalAccessState === true) {
-        try {
-          console.log('テナントデータを取得します。テナントID:', finalTenantId);
-
-          // タイムアウト処理を追加
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 15000); // 15秒タイムアウト
-
-          const response = await fetch('/api/corporate/tenant', {
-            headers: {
-              'Cache-Control': 'no-cache',
-              Pragma: 'no-cache',
-              Accept: 'application/json',
-            },
-            credentials: 'include',
-            signal: controller.signal,
-          }).finally(() => clearTimeout(timeoutId));
-
-          if (response.ok) {
-            const data = await response.json();
-            setTenantData(data.tenant);
-            setError(null);
-            setUsingFallback(false);
-          } else if (response.status === 404) {
-            // テナントが見つからない場合
-            setError('テナント情報が見つかりませんでした。管理者にお問い合わせください。');
-            setUsingFallback(true);
-            setTenantData({
-              ...DEFAULT_TENANT,
-              id: finalTenantId || 'unknown-tenant',
-            });
-          } else if (response.status === 403) {
-            // アクセス権限がない場合
-            setError('このテナントへのアクセス権限がありません。');
-
-            // APIからのレスポンスデータを取得
-            const errorData = await response.json().catch(() => ({}));
-
-            // 停止状態のテナント情報があれば使用
-            if (errorData && errorData.tenant) {
-              setTenantData(errorData.tenant);
-              setUsingFallback(false);
-            } else {
-              router.push('/dashboard');
-            }
-          } else {
-            // その他のエラー
-            // 最低限のエラーデータを取得
-            const errorText = await response.text().catch(() => '');
-            console.error('APIエラー詳細:', {
-              status: response.status,
-              text: errorText.slice(0, 500), // 長すぎる場合は切り詰め
-            });
-
-            throw new Error(`API接続エラー: ${response.status} ${response.statusText}`);
-          }
-        } catch (apiError) {
-          console.error('API接続エラー:', apiError);
-
-          // フォールバック処理の強化
-          const fallbackId = finalTenantId || 'error-fallback-tenant';
-
-          setTenantData({
-            ...DEFAULT_TENANT,
-            id: fallbackId,
-            name: '接続エラー - 基本情報のみ表示',
-          });
-          setUsingFallback(true);
-          setError('サーバーに接続できないため、簡易表示モードを使用しています');
-        }
-      } else {
-        // アクセス権がない場合
-        console.log('法人アクセス権がありません。ダッシュボードにリダイレクトします。', {
-          accessState: finalAccessState,
-        });
+      // アクセス権がない場合は早期リターン
+      if (hasAccess === false) {
+        console.log('法人アクセス権がありません。リダイレクトします。');
         router.push('/dashboard');
-      }
-    } catch (error) {
-      console.error('テナント情報取得エラー:', error);
-      setTenantData({
-        ...DEFAULT_TENANT,
-        id: 'error-tenant',
-        name: 'エラー時表示',
-      });
-      setUsingFallback(true);
-      setError('テナント情報を読み込めませんでした。簡易表示を使用します。');
-    } finally {
-      setIsLoading(false);
-    }
-  }, [session, isAccessLoading, router, refreshAccess]);
-
-  // コンポーネントマウント時の初期化処理
-  useEffect(() => {
-    const initializeData = async () => {
-      // セッションがない場合は処理しない
-      if (!session?.user?.id) {
         return;
       }
 
+      // テナントAPIの呼び出し（一度だけ試行、再試行は手動のみ）
+      console.log('テナントデータ取得開始:', { hasAccess, currentTenantId });
+
+      // APIリクエストにタイムアウト設定
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒でタイムアウト
+
+      try {
+        const response = await fetch('/api/corporate/tenant', {
+          headers: {
+            'Cache-Control': 'no-cache',
+            Accept: 'application/json',
+          },
+          credentials: 'include',
+          signal: controller.signal,
+        }).finally(() => clearTimeout(timeoutId));
+
+        if (response.ok) {
+          const data = await response.json();
+          setTenantData(data.tenant);
+          setError(null);
+          setUsingFallback(false);
+        } else if (response.status === 404) {
+          setError('テナント情報が見つかりません。');
+          setUsingFallback(true);
+          setTenantData({
+            ...DEFAULT_TENANT,
+            id: currentTenantId || 'unknown-tenant',
+          });
+        } else if (response.status === 403) {
+          setError('テナントへのアクセス権限がありません。');
+          try {
+            const errorData = await response.json();
+            if (errorData && errorData.tenant) {
+              setTenantData(errorData.tenant);
+            }
+          } catch (e) {
+            console.error('エラーレスポンスの解析に失敗:', e);
+          }
+        } else {
+          throw new Error(`APIエラー: ${response.status}`);
+        }
+      } catch (apiError) {
+        console.error('API接続エラー:', apiError);
+
+        // フォールバック処理
+        setTenantData({
+          ...DEFAULT_TENANT,
+          id: currentTenantId || 'error-fallback-tenant',
+          name: '接続エラー - 基本情報のみ',
+        });
+        setUsingFallback(true);
+        setError('サーバー接続エラー - 簡易表示モードを使用します');
+      }
+    } catch (error) {
+      console.error('テナント情報取得エラー:', error);
+      setUsingFallback(true);
+      setError('データ取得中にエラーが発生しました。');
+    } finally {
+      setIsLoading(false);
+    }
+  }, [session, isAccessLoading, router, isLoading]);
+
+  // 初回マウント時の実装を変更
+  useEffect(() => {
+    let isMounted = true;
+
+    const initializeData = async () => {
+      // コンポーネントがアンマウントされていたら処理しない
+      if (!isMounted) return;
+
+      // セッションがない場合は処理しない
+      if (!session?.user?.id) return;
+
       // アクセス権チェックが完了したときにデータを取得
       if (!isAccessLoading) {
-        // corporateAccessStateの状態を確認し、必要に応じて強制更新
-        if (corporateAccessState.hasAccess === null) {
-          console.log('corporateAccessStateが未初期化のため、強制更新します');
-          try {
-            await refreshAccess();
-          } catch (error) {
-            console.error('アクセス権チェックエラー:', error);
-          }
-        }
-
         await fetchTenantData();
       }
     };
 
-    initializeData();
-  }, [session, isAccessLoading, refreshAccess, fetchTenantData]);
+    // アクセス権チェックが完了してから実行
+    if (!isAccessLoading) {
+      initializeData();
+    }
+
+    // クリーンアップ関数
+    return () => {
+      isMounted = false;
+    };
+  }, [session, isAccessLoading, fetchTenantData]);
 
   // テナント情報を再取得する関数
   const reloadTenantData = async () => {

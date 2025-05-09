@@ -1,139 +1,143 @@
-export const dynamic = "force-dynamic";
 // app/api/corporate/access/route.ts
-
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma, disconnectPrisma } from '@/lib/prisma';
 
-/**
- * ユーザーの法人アクセス権を確認するためのAPI
- * クライアントサイドで使用することを想定
- */
 export async function GET(request: Request) {
+  const url = new URL(request.url);
+  const isMobile = url.searchParams.get('mobile') === '1';
+  // 'force' パラメータを使用するか削除
+  // const force = url.searchParams.get('force') === '1';
+
+  console.log(
+    `[API:corporate/access] API呼び出し開始 (t=${url.searchParams.get('t')}, mobile=${isMobile})`,
+  );
+
+  let prismaConnected = false;
+
   try {
-    // URLからクエリパラメータを取得
-    const url = new URL(request.url);
-    const isMobile = url.searchParams.get('mobile') === '1';
-    const timestamp = url.searchParams.get('t') || Date.now().toString();
-
-    console.log(
-      `[API:corporate/access] API呼び出し開始 (t=${timestamp}, mobile=${isMobile ? 'true' : 'false'})`,
-    );
-
+    // セッションチェック
     const session = await auth();
-    console.log('[API:corporate/access] 認証セッション:', session ? '取得済み' : 'なし');
 
-    if (!session?.user?.id) {
-      console.log('[API:corporate/access] 認証されていません');
-      return NextResponse.json({ hasAccess: false, error: '認証されていません' }, { status: 401 });
+    if (!session || !session.user?.id) {
+      return NextResponse.json({ hasAccess: false, error: 'Not authenticated' }, { status: 401 });
     }
 
-    console.log('[API:corporate/access] ユーザーID:', session.user.id);
+    const userId = session.user.id;
 
-    // ユーザーの法人テナント情報を取得
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      include: {
-        adminOfTenant: true,
-        tenant: true,
-        subscription: true,
-      },
-    });
+    try {
+      // 最適化されたクエリ - 必要なデータのみを取得
+      const user = await prisma.user.findUnique({
+        where: { id: userId },
+        select: {
+          id: true,
+          adminOfTenant: {
+            select: {
+              id: true,
+              accountStatus: true,
+            },
+          },
+          tenant: {
+            select: {
+              id: true,
+              accountStatus: true,
+            },
+          },
+          subscription: {
+            select: {
+              plan: true,
+              status: true,
+            },
+          },
+        },
+      });
 
-    console.log('[API:corporate/access] ユーザー情報取得:', user ? '成功' : '失敗');
+      prismaConnected = true;
 
-    if (!user) {
-      console.log('[API:corporate/access] ユーザーが見つかりません');
-      return NextResponse.json(
-        { hasAccess: false, error: 'ユーザーが見つかりません' },
-        { status: 404 },
-      );
-    }
-
-    // 法人テナントが存在するかチェック
-    const hasTenant = !!user.adminOfTenant || !!user.tenant;
-    console.log(
-      '[API:corporate/access] テナント情報:',
-      '管理者テナント:',
-      !!user.adminOfTenant,
-      'メンバーテナント:',
-      !!user.tenant,
-    );
-
-    // 法人サブスクリプションが有効かチェック
-    const hasCorporateSubscription =
-      user.subscription &&
-      (user.subscription.plan === 'business' ||
-        user.subscription.plan === 'business_plus' || // アンダースコア形式も対応
-        user.subscription.plan === 'business-plus' || // ハイフン形式も対応
-        user.subscription.plan === 'enterprise') &&
-      user.subscription.status === 'active';
-
-    console.log(
-      '[API:corporate/access] サブスクリプション情報:',
-      'サブスクリプションあり:',
-      !!user.subscription,
-      'プラン:',
-      user.subscription?.plan,
-      'ステータス:',
-      user.subscription?.status,
-    );
-
-    // 両方の条件を満たす場合のみアクセス権あり
-    const hasAccess = hasTenant && hasCorporateSubscription;
-    console.log(
-      '[API:corporate/access] 法人アクセス権判定:',
-      'テナントあり:',
-      hasTenant,
-      '法人サブスクリプションあり:',
-      hasCorporateSubscription,
-      '→ アクセス権:',
-      hasAccess,
-    );
-
-    if (!hasAccess) {
-      let error = '法人プランにアップグレードしてください。';
-      if (hasTenant && !hasCorporateSubscription) {
-        error = '法人プランのサブスクリプションが有効ではありません。';
-      } else if (!hasTenant && hasCorporateSubscription) {
-        error = '法人テナント情報が設定されていません。';
+      if (!user) {
+        return NextResponse.json(
+          {
+            hasAccess: false,
+            error: 'User not found',
+          },
+          { status: 404 },
+        );
       }
 
-      console.log('[API:corporate/access] アクセス拒否理由:', error);
+      // テナント情報の取得と検証
+      const tenant = user.adminOfTenant || user.tenant;
+      const hasTenant = !!tenant;
+
+      // テナントステータスの確認
+      const isTenantSuspended = tenant?.accountStatus === 'suspended';
+
+      // 法人サブスクリプションのチェック
+      const planLower = (user.subscription?.plan || '').toLowerCase();
+      const hasCorporateSubscription =
+        user.subscription &&
+        (planLower.includes('business') ||
+          planLower.includes('corp') ||
+          planLower.includes('pro')) &&
+        user.subscription.status === 'active';
+
+      // アクセス権の判定
+      const hasAccess = hasTenant && !isTenantSuspended && hasCorporateSubscription;
+
+      // テナントIDの取得（安全に）
+      const tenantId = hasTenant && tenant ? tenant.id : null;
+
+      // ユーザーロールの決定
+      const isAdmin = !!user.adminOfTenant;
+      const userRole = isAdmin ? 'admin' : 'member';
+
+      // メモリ使用量ログ（開発環境のみ）
+      if (process.env.NODE_ENV === 'development') {
+        const memoryUsage = process.memoryUsage();
+        console.log('[API:corporate/access] メモリ使用状況:', {
+          rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
+          heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
+        });
+      }
+
+      return NextResponse.json({
+        hasAccess,
+        isAdmin,
+        tenantId,
+        userRole,
+        error: !hasAccess
+          ? isTenantSuspended
+            ? 'テナントが停止されています'
+            : !hasTenant
+              ? 'テナントが関連付けられていません'
+              : '有効な法人契約がありません'
+          : null,
+      });
+    } catch (dbError) {
+      console.error('[API:corporate/access] データベースエラー:', dbError);
       return NextResponse.json(
         {
           hasAccess: false,
-          error: error,
-          isAuthenticated: true,
+          error: 'Database operation failed',
+          details: dbError instanceof Error ? dbError.message : String(dbError),
+          code: 'DB_ERROR',
         },
-        { status: 403 },
+        { status: 500 },
       );
     }
-
-    // テナント情報を取得（管理者または一般メンバーのいずれか）
-    const tenant = user.adminOfTenant || user.tenant;
-    console.log('[API:corporate/access] アクセス許可、詳細テナント情報:', JSON.stringify(tenant));
-
-    return NextResponse.json({
-      hasAccess: true,
-      isAdmin: !!user.adminOfTenant,
-      userRole: user.adminOfTenant ? 'admin' : user.corporateRole || 'member',
-      tenant: {
-        id: tenant?.id,
-        name: tenant?.name,
-      },
-      tenantId: tenant?.id, // 明示的にtenantIdも返す
-      isAuthenticated: true,
-    });
   } catch (error) {
-    console.error('[API:corporate/access] 法人アクセス確認エラー:', error);
+    console.error('[API:corporate/access] エラー:', error);
     return NextResponse.json(
       {
         hasAccess: false,
-        error: '法人アクセス権の確認中にエラーが発生しました',
-        isAuthenticated: true,
+        error: 'Internal server error',
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 },
     );
+  } finally {
+    // 確実に接続を閉じる
+    if (prismaConnected) {
+      await disconnectPrisma();
+    }
   }
 }

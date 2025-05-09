@@ -276,3 +276,18 @@ model CorporateActivityLog {
   @@index([tenantId, createdAt(sort: Desc)])
   @@index([userId])
 }
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL") // pgBouncer経由の接続（クエリ実行用）
+  directUrl = env("DIRECT_URL")   // 直接接続（マイグレーション用）
+  // プリコネクション設定を使用（オプション）
+  // relationMode = "prisma"
+}
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "../node_modules/.prisma/client"
+  // パフォーマンス監視を有効化（オプション）
+  // previewFeatures = ["metrics"]
+}

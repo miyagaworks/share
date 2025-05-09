@@ -1,10 +1,12 @@
-export const dynamic = "force-dynamic";
 // app/api/corporate/tenant/route.ts
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma, disconnectPrisma } from '@/lib/prisma';
 
 export async function GET() {
+  // DB接続を追跡するためのフラグ
+  let prismaConnected = false;
+
   try {
     console.log('[API] /api/corporate/tenant リクエスト受信');
 
@@ -19,15 +21,25 @@ export async function GET() {
     const userId = session.user.id;
     console.log('[API] ユーザーID:', userId);
 
-    // 例外処理の強化
     try {
-      // ユーザーの法人テナント情報を取得
+      // クエリを最適化 - 必要なフィールドだけを取得
       const user = await prisma.user.findUnique({
         where: { id: userId },
-        include: {
+        select: {
+          id: true,
           adminOfTenant: {
-            include: {
-              subscription: true,
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              logoWidth: true,
+              logoHeight: true,
+              primaryColor: true,
+              secondaryColor: true,
+              headerText: true,
+              textColor: true,
+              maxUsers: true,
+              accountStatus: true,
               users: {
                 select: {
                   id: true,
@@ -46,8 +58,18 @@ export async function GET() {
             },
           },
           tenant: {
-            include: {
-              subscription: true,
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              logoWidth: true,
+              logoHeight: true,
+              primaryColor: true,
+              secondaryColor: true,
+              headerText: true,
+              textColor: true,
+              maxUsers: true,
+              accountStatus: true,
               users: {
                 select: {
                   id: true,
@@ -65,9 +87,10 @@ export async function GET() {
               },
             },
           },
-          subscription: true,
         },
       });
+
+      prismaConnected = true;
 
       // ユーザーが見つからない場合
       if (!user) {
@@ -81,12 +104,7 @@ export async function GET() {
       // テナントが見つからない場合
       if (!tenant) {
         console.log('[API] テナントが見つかりません:', userId);
-        return NextResponse.json({ 
-          error: 'No tenant associated with this user',
-          // エラーレスポンスでも最小限の情報を提供
-          isAdmin: false,
-          hasTenant: false
-        }, { status: 404 });
+        return NextResponse.json({ error: 'No tenant associated with this user' }, { status: 404 });
       }
 
       // 管理者権限の確認
@@ -94,9 +112,7 @@ export async function GET() {
       const userRole = isAdmin ? 'admin' : 'member';
 
       console.log('[API] テナント情報取得成功:', {
-        hasAdminTenant: !!user.adminOfTenant,
-        hasTenant: !!user.tenant,
-        hasSubscription: !!user.subscription,
+        tenantId: tenant.id,
         isAdmin,
         userRole,
       });
@@ -119,8 +135,6 @@ export async function GET() {
         );
       }
 
-      console.log('[API] テナント情報返却:', tenant.id);
-
       // 正常レスポンス - ユーザーロールとisAdminフラグを追加
       return NextResponse.json({
         tenant,
@@ -128,7 +142,6 @@ export async function GET() {
         userRole,
       });
     } catch (dbError) {
-      // データベースエラーのより詳細なロギングと処理
       console.error('[API] データベースエラー:', dbError);
       return NextResponse.json(
         {
@@ -146,10 +159,14 @@ export async function GET() {
       {
         error: 'Failed to fetch tenant information',
         details: errorMessage,
-        stack: error instanceof Error ? error.stack : undefined,
         code: 'API_ERROR',
       },
       { status: 500 },
     );
+  } finally {
+    // 必ず接続を閉じる
+    if (prismaConnected) {
+      await disconnectPrisma();
+    }
   }
 }
