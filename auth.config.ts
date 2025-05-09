@@ -11,8 +11,13 @@ export default {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-      // これをfalseに変更するとアカウントのリンクが厳格になります
-      allowDangerousEmailAccountLinking: false,
+      authorization: {
+        params: {
+          prompt: 'select_account',
+          access_type: 'offline',
+          response_type: 'code',
+        },
+      },
     }),
     Credentials({
       credentials: {
@@ -80,6 +85,38 @@ export default {
   ],
 
   callbacks: {
+    async signIn({ user, account, profile }) {
+      console.log('サインインコールバック:', {
+        userId: user?.id,
+        provider: account?.provider,
+        email: user?.email,
+        profileData: !!profile,
+      });
+
+      // Googleアカウントでログインする時の特別な処理
+      if (account?.provider === 'google' && user?.email) {
+        try {
+          // すでに存在するユーザーを探す
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email.toLowerCase() },
+          });
+
+          console.log('既存ユーザーチェック:', existingUser ? `ID: ${existingUser.id}` : 'なし');
+
+          // ユーザーが見つからなければ、新規作成する
+          if (!existingUser) {
+            console.log('Google認証: 新規ユーザー作成');
+          }
+
+          return true;
+        } catch (error) {
+          console.error('Google認証エラー:', error);
+          return false;
+        }
+      }
+
+      return true;
+    },
     async session({ session, token }) {
       console.log('セッションコールバック詳細:', {
         sessionBefore: JSON.stringify(session),
@@ -108,29 +145,6 @@ export default {
       console.log('JWT callback called:', { token });
 
       return token;
-    },
-    async signIn({ user, account }) {
-      console.log('サインインコールバック:', { userId: user?.id, provider: account?.provider });
-
-      if (account?.provider === 'google') {
-        try {
-          // Googleログイン時にメールアドレスが存在するか確認
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email?.toLowerCase() || '' },
-          });
-
-          if (!existingUser) {
-            console.log('Google認証: 新規ユーザー');
-            // 新規ユーザーの場合、プロフィールなどを作成する処理を追加
-          } else {
-            console.log('Google認証: 既存ユーザー', existingUser.id);
-          }
-        } catch (error) {
-          console.error('Google認証中のエラー:', error);
-        }
-      }
-
-      return true;
     },
   },
 
