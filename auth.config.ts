@@ -1,4 +1,4 @@
-// auth.config.ts の修正
+// auth.config.ts
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
@@ -11,7 +11,8 @@ export default {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-      allowDangerousEmailAccountLinking: true,
+      // これをfalseに変更するとアカウントのリンクが厳格になります
+      allowDangerousEmailAccountLinking: false,
     }),
     Credentials({
       credentials: {
@@ -35,8 +36,11 @@ export default {
           const { email, password } = validatedFields.data;
           console.log('認証試行:', email);
 
+          // メールアドレスを小文字に正規化
+          const normalizedEmail = email.toLowerCase();
+
           const user = await prisma.user.findUnique({
-            where: { email },
+            where: { email: normalizedEmail },
             select: {
               id: true,
               name: true,
@@ -105,9 +109,27 @@ export default {
 
       return token;
     },
-    // 未使用の profile パラメータを削除
     async signIn({ user, account }) {
       console.log('サインインコールバック:', { userId: user?.id, provider: account?.provider });
+
+      if (account?.provider === 'google') {
+        try {
+          // Googleログイン時にメールアドレスが存在するか確認
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email?.toLowerCase() || '' },
+          });
+
+          if (!existingUser) {
+            console.log('Google認証: 新規ユーザー');
+            // 新規ユーザーの場合、プロフィールなどを作成する処理を追加
+          } else {
+            console.log('Google認証: 既存ユーザー', existingUser.id);
+          }
+        } catch (error) {
+          console.error('Google認証中のエラー:', error);
+        }
+      }
+
       return true;
     },
   },
@@ -120,5 +142,5 @@ export default {
     newUser: '/dashboard', // 新規ユーザー用のリダイレクト先
   },
 
-  debug: process.env.NODE_ENV === 'development',
+  debug: process.env.NODE_ENV === 'development' || !!process.env.DEBUG,
 } satisfies NextAuthConfig;

@@ -38,12 +38,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: process.env.NODE_ENV === 'production' ? '.sns-share.com' : undefined,
+        // 環境に応じたドメイン設定
+        domain:
+          process.env.NODE_ENV === 'production'
+            ? process.env.COOKIE_DOMAIN || undefined
+            : undefined,
       },
     },
   },
-  // 既存の設定...
+  // 既存の設定をここに展開
   ...authConfig,
+  debug: process.env.NODE_ENV === 'development' || process.env.DEBUG?.includes('next-auth'),
 });
 
 // セキュリティ問題発生時の強制ログアウト関数
