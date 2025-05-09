@@ -30,9 +30,6 @@ declare module 'next-auth/jwt' {
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: { strategy: 'jwt' },
-  debug: process.env.NODE_ENV === 'development',
-
-  // セッション設定
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
@@ -41,9 +38,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: undefined, // ドメイン設定不要
+        domain: undefined, // ドメイン設定を削除して問題解決
       },
     },
+    // 他のCookieも明示的に設定
     callbackUrl: {
       name: 'next-auth.callback-url',
       options: {
@@ -52,7 +50,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: undefined,
-      },
+      }
     },
     csrfToken: {
       name: 'next-auth.csrf-token',
@@ -62,38 +60,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: undefined,
-      },
-    },
-  },
-
-  // イベントロギング
-  events: {
-    async signIn({ user, account, isNewUser }) {
-      console.log(
-        `ユーザーログイン: ${user.id}, ${account?.provider || 'credentials'}, 新規: ${isNewUser ? 'はい' : 'いいえ'}`,
-      );
-    },
-    // 型安全にするためeventは引数として使わない実装にする
-    async signOut() {
-      console.log(`ユーザーログアウト`);
-    },
-    async createUser({ user }) {
-      console.log(`ユーザー作成: ${user.id}, ${user.email}`);
-    },
-    async linkAccount({ user, account }) {
-      console.log(`アカウント連携: ${user.email}, ${account.provider}`);
-    },
-    // tokenは使用しないので削除
-    async session({ session }) {
-      if (session && session.user && session.user.email) {
-        console.log(`セッション更新: ${session.user.email}, 有効期限: ${session.expires}`);
-      } else {
-        console.log(`セッション更新: ユーザー情報なし, 有効期限: ${session?.expires || 'unknown'}`);
       }
-    },
+    }
   },
-
-  // 他の設定はauth.configから取得
+  // authConfigからイベントハンドラーとページ設定を取得
   ...authConfig,
 });
 

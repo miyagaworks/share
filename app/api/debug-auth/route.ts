@@ -1,62 +1,104 @@
-// app/api/debug-auth/route.ts
+// app/api/auth/debug/route.ts
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
+import { prisma } from '@/lib/prisma';
 
-export async function GET(request: Request) {
+export async function GET() {
   try {
-    // ヘッダー情報を取得（デバッグ用）
-    const headers: Record<string, string> = {};
-    request.headers.forEach((value, key) => {
-      if (key.toLowerCase() !== 'cookie' && key.toLowerCase() !== 'authorization') {
-        headers[key] = value;
-      } else {
-        headers[key] = value.substring(0, 20) + '...';
-      }
-    });
-
-    // 認証情報を取得
     const session = await auth();
 
-    // クッキー情報（デバッグ用）
-    let cookies: string[] = [];
-    if (typeof request.headers.get('cookie') === 'string') {
-      cookies = request.headers
-        .get('cookie')!
-        .split(';')
-        .map((c) => c.trim());
+    // セッション情報がない場合
+    if (!session?.user?.id) {
+      return NextResponse.json(
+        {
+          message: '認証されていません。ログインしてください。',
+          status: 'unauthenticated',
+          session: null,
+        },
+        { status: 401 },
+      );
     }
 
-    // 基本的な認証情報のみを返す
-    return NextResponse.json({
-      authenticated: !!session,
-      user: session?.user
-        ? {
-            id: session.user.id,
-            name: session.user.name,
-            email: session.user.email,
-            role: session.user.role,
-          }
-        : null,
-      expires: session?.expires,
-      debug: {
-        timestamp: new Date().toISOString(),
-        env: process.env.NODE_ENV,
-        nextAuthUrl: process.env.NEXTAUTH_URL?.substring(0, 20) + '...',
-        headers: headers,
-        hasCookies: cookies.length > 0,
-        authCookies: cookies.filter((c) => c.includes('next-auth')).map((c) => c.split('=')[0]),
+    // ユーザー情報を取得（サブスクリプションと法人テナント情報を含む）
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        email: true,
+        corporateRole: true,
+        adminOfTenant: {
+          select: { id: true, name: true, accountStatus: true },
+        },
+        tenant: {
+          select: { id: true, name: true, accountStatus: true },
+        },
+        subscription: {
+          select: { id: true, plan: true, status: true },
+        },
       },
     });
+
+    // ユーザー情報がない場合
+    if (!user) {
+      return NextResponse.json(
+        {
+          message: 'ユーザーが見つかりません',
+          status: 'user_not_found',
+          session,
+        },
+        { status: 404 },
+      );
+    }
+
+    // 法人サブスクリプションのチェック
+    const hasCorporateSubscription = checkCorporateSubscription(user.subscription);
+
+    return NextResponse.json({
+      message: 'デバッグ情報',
+      status: 'authenticated',
+      user: {
+        id: user.id,
+        email: user.email,
+        role: user.corporateRole,
+        hasTenant: !!(user.adminOfTenant || user.tenant),
+        isAdmin: !!user.adminOfTenant,
+        tenantStatus: user.adminOfTenant?.accountStatus || user.tenant?.accountStatus,
+        subscription: {
+          plan: user.subscription?.plan,
+          status: user.subscription?.status,
+          isValid: hasCorporateSubscription,
+        },
+      },
+      session,
+    });
   } catch (error) {
-    console.error('Auth debug error:', error);
+    console.error('デバッグAPI エラー:', error);
+
     return NextResponse.json(
       {
-        error: 'Authentication debug failed',
-        errorDetails: error instanceof Error ? error.message : String(error),
+        message: 'デバッグ中にエラーが発生しました',
+        error: error instanceof Error ? error.message : String(error),
       },
       { status: 500 },
     );
   }
+}
+
+// checkCorporateSubscription関数を再利用
+function checkCorporateSubscription(
+  subscription: { plan?: string; status?: string } | null,
+): boolean {
+  if (!subscription) return false;
+
+  const validPlans = ['business', 'business_plus', 'business-plus', 'businessplus', 'enterprise'];
+  const normalizedPlan = (subscription.plan || '').toLowerCase().trim();
+  const isStatusActive = subscription.status === 'active';
+  const isPlanValid = validPlans.some(
+    (plan) =>
+      normalizedPlan === plan || normalizedPlan.replace(/[-_]/g, '') === plan.replace(/[-_]/g, ''),
+  );
+
+  return isStatusActive && isPlanValid;
 }
