@@ -10,7 +10,11 @@
         "lint": "next lint",
         "prepare": "husky install",
         "migrate-text-settings": "ts-node scripts/migrate-text-settings.ts",
-        "cleanup-sns-usernames": "ts-node scripts/clean-corporate-sns-username.ts"
+        "cleanup-sns-usernames": "ts-node scripts/clean-corporate-sns-username.ts",
+        "fix-corporate-access": "ts-node scripts/fix-corporate-access.ts",
+        "fix-tenant-relations": "ts-node scripts/fix-tenant-relations.ts",
+        "check-user": "ts-node scripts/check-user-relations.ts",
+        "delete-user": "ts-node scripts/delete-user.ts"
     },
     "dependencies": {
         "@auth/prisma-adapter": "^2.9.0",

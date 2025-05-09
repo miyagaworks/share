@@ -54,31 +54,21 @@ export default function SigninPage() {
 
     try {
       setIsPending(true);
+      console.log('Google認証開始');
 
-      // セッション関連のストレージをクリア
+      // セッション関連のクリア処理を単純化
       if (typeof window !== 'undefined') {
         // LocalStorageとSessionStorageをクリア
-        window.localStorage.clear();
-        window.sessionStorage.clear();
-
-        // セッション関連のCookieを削除
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i];
-          const eqPos = cookie.indexOf('=');
-          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
-          if (name.startsWith('next-auth') || name.includes('csrf')) {
-            document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-          }
-        }
+        window.localStorage.removeItem('nextauth.message');
+        window.sessionStorage.removeItem('nextauth.message');
       }
 
-      console.log('Google認証: 直接リダイレクト方式使用');
+      // 直接リダイレクト（より信頼性が高い）
+      const callbackUrl = encodeURIComponent(`${window.location.origin}/dashboard`);
+      const authUrl = `/api/auth/signin/google?callbackUrl=${callbackUrl}`;
 
-      // APIルートを使用せずに認証プロバイダに直接リダイレクト
-      window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent('/dashboard')}`;
-
-      // 以下は実行されません（リダイレクトのため）
+      console.log('リダイレクト先:', authUrl);
+      window.location.href = authUrl;
     } catch (error) {
       console.error('Googleログインエラー:', error);
       setError('Googleログイン処理中にエラーが発生しました。');
