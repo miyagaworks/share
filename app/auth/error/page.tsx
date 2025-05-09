@@ -1,77 +1,67 @@
-// app/auth/error/page.tsx
 'use client';
 
-import { useEffect, useState } from 'react';
+import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 
-export default function ErrorPage() {
+// SearchParamsを取得するコンポーネントを分離
+function ErrorContent() {
+  // useSearchParamsを正しくインポートして使用
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [errorDetails, setErrorDetails] = useState<string>('');
 
-  useEffect(() => {
-    // エラーログを記録（デバッグ用）
-    console.error('認証エラーページ表示:', {
-      error,
-      searchParams: Object.fromEntries(searchParams),
-    });
+  // エラータイプに基づいてメッセージを設定
+  let errorMessage = '認証中にエラーが発生しました。もう一度お試しください。';
+  let errorDetails = 'ブラウザのCookieをクリアして、再度ログインをお試しください。';
 
-    // エラータイプに基づいてメッセージを設定
-    switch (error) {
-      case 'Configuration':
-        setErrorMessage('サーバー設定エラーが発生しました。');
-        setErrorDetails('システム管理者にお問い合わせください。');
-        break;
-      case 'AccessDenied':
-        setErrorMessage('アクセスが拒否されました。');
-        setErrorDetails('このアカウントでのアクセス権限がありません。');
-        break;
-      case 'Verification':
-        setErrorMessage('認証リンクの検証エラーが発生しました。');
-        setErrorDetails('リンクの有効期限が切れているか、すでに使用されている可能性があります。');
-        break;
-      case 'OAuthSignin':
-        setErrorMessage('OAuth認証の開始中にエラーが発生しました。');
-        setErrorDetails('ブラウザのCookieが有効になっていることを確認してください。');
-        break;
-      case 'OAuthCallback':
-        setErrorMessage('OAuth認証のコールバック処理中にエラーが発生しました。');
-        setErrorDetails('認証サービスから適切な応答が得られませんでした。もう一度お試しください。');
-        break;
-      case 'OAuthCreateAccount':
-        setErrorMessage('アカウント作成中にエラーが発生しました。');
-        setErrorDetails('このメールアドレスはすでに別の方法で登録されている可能性があります。');
-        break;
-      case 'OAuthAccountNotLinked':
-        setErrorMessage('このメールアドレスは別の認証方法で登録されています。');
-        setErrorDetails('以前と同じログイン方法を使用してください。');
-        break;
-      case 'EmailCreateAccount':
-        setErrorMessage('アカウント作成中にエラーが発生しました。');
-        setErrorDetails('メールアドレスが既に使用されているか、メール送信に問題がありました。');
-        break;
-      case 'Callback':
-        setErrorMessage('認証コールバック処理中にエラーが発生しました。');
-        setErrorDetails('セッションの確立に問題があります。ブラウザのCookieを確認してください。');
-        break;
-      case 'CredentialsSignin':
-        setErrorMessage('メールアドレスまたはパスワードが正しくありません。');
-        setErrorDetails('入力情報を確認して再度お試しください。');
-        break;
-      case 'SessionRequired':
-        setErrorMessage('このページにアクセスするにはログインが必要です。');
-        setErrorDetails('ログインしてから再度アクセスしてください。');
-        break;
-      case 'Default':
-      default:
-        setErrorMessage('認証処理中に問題が発生しました。');
-        setErrorDetails('ブラウザのCookieをクリアして、もう一度ログインをお試しください。');
-    }
-  }, [error, searchParams]);
+  switch (error) {
+    case 'Configuration':
+      errorMessage = 'サーバー設定エラーが発生しました。';
+      errorDetails = 'システム管理者にお問い合わせください。';
+      break;
+    case 'AccessDenied':
+      errorMessage = 'アクセスが拒否されました。';
+      errorDetails = 'このアカウントでのアクセス権限がありません。';
+      break;
+    case 'Verification':
+      errorMessage = '認証リンクの検証エラーが発生しました。';
+      errorDetails = 'リンクの有効期限が切れているか、すでに使用されている可能性があります。';
+      break;
+    case 'OAuthSignin':
+      errorMessage = 'OAuth認証の開始中にエラーが発生しました。';
+      errorDetails = 'ブラウザのCookieが有効になっていることを確認してください。';
+      break;
+    case 'OAuthCallback':
+      errorMessage = 'OAuth認証のコールバック処理中にエラーが発生しました。';
+      errorDetails = '認証サービスから適切な応答が得られませんでした。もう一度お試しください。';
+      break;
+    case 'OAuthCreateAccount':
+      errorMessage = 'アカウント作成中にエラーが発生しました。';
+      errorDetails = 'このメールアドレスはすでに別の方法で登録されている可能性があります。';
+      break;
+    case 'OAuthAccountNotLinked':
+      errorMessage = 'このメールアドレスは別の認証方法で登録されています。';
+      errorDetails = '以前と同じログイン方法を使用してください。';
+      break;
+    case 'EmailCreateAccount':
+      errorMessage = 'アカウント作成中にエラーが発生しました。';
+      errorDetails = 'メールアドレスが既に使用されているか、メール送信に問題がありました。';
+      break;
+    case 'Callback':
+      errorMessage = '認証コールバック処理中にエラーが発生しました。';
+      errorDetails = 'セッションの確立に問題があります。ブラウザのCookieを確認してください。';
+      break;
+    case 'CredentialsSignin':
+      errorMessage = 'メールアドレスまたはパスワードが正しくありません。';
+      errorDetails = '入力情報を確認して再度お試しください。';
+      break;
+    case 'SessionRequired':
+      errorMessage = 'このページにアクセスするにはログインが必要です。';
+      errorDetails = 'ログインしてから再度アクセスしてください。';
+      break;
+  }
 
   const handleClearSessionAndRedirect = () => {
     // セッション関連のデータをクリア
@@ -171,5 +161,22 @@ export default function ErrorPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+// ローディング表示コンポーネント
+function LoadingFallback() {
+  return (
+    <div className="flex min-h-screen justify-center items-center">
+      <div className="animate-spin h-10 w-10 border-4 border-blue-600 rounded-full border-t-transparent"></div>
+    </div>
+  );
+}
+
+export default function ErrorPage() {
+  return (
+    <Suspense fallback={<LoadingFallback />}>
+      <ErrorContent />
+    </Suspense>
   );
 }
