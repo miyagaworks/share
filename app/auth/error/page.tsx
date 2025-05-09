@@ -1,34 +1,98 @@
 // app/auth/error/page.tsx
 'use client';
 
-import { useEffect, useState, Suspense } from 'react';
+import { useEffect, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 
-// SearchParamsを取得するコンポーネント
-function ErrorContent() {
+export default function ErrorPage() {
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
   const [errorMessage, setErrorMessage] = useState<string>('');
+  const [errorDetails, setErrorDetails] = useState<string>('');
 
   useEffect(() => {
+    // エラーログを記録（デバッグ用）
+    console.error('認証エラーページ表示:', {
+      error,
+      searchParams: Object.fromEntries(searchParams),
+    });
+
     // エラータイプに基づいてメッセージを設定
     switch (error) {
-      case 'MissingCSRF':
-        setErrorMessage('セッションの有効期限が切れました。再度ログインしてください。');
+      case 'Configuration':
+        setErrorMessage('サーバー設定エラーが発生しました。');
+        setErrorDetails('システム管理者にお問い合わせください。');
         break;
       case 'AccessDenied':
         setErrorMessage('アクセスが拒否されました。');
+        setErrorDetails('このアカウントでのアクセス権限がありません。');
+        break;
+      case 'Verification':
+        setErrorMessage('認証リンクの検証エラーが発生しました。');
+        setErrorDetails('リンクの有効期限が切れているか、すでに使用されている可能性があります。');
+        break;
+      case 'OAuthSignin':
+        setErrorMessage('OAuth認証の開始中にエラーが発生しました。');
+        setErrorDetails('ブラウザのCookieが有効になっていることを確認してください。');
+        break;
+      case 'OAuthCallback':
+        setErrorMessage('OAuth認証のコールバック処理中にエラーが発生しました。');
+        setErrorDetails('認証サービスから適切な応答が得られませんでした。もう一度お試しください。');
+        break;
+      case 'OAuthCreateAccount':
+        setErrorMessage('アカウント作成中にエラーが発生しました。');
+        setErrorDetails('このメールアドレスはすでに別の方法で登録されている可能性があります。');
+        break;
+      case 'OAuthAccountNotLinked':
+        setErrorMessage('このメールアドレスは別の認証方法で登録されています。');
+        setErrorDetails('以前と同じログイン方法を使用してください。');
+        break;
+      case 'EmailCreateAccount':
+        setErrorMessage('アカウント作成中にエラーが発生しました。');
+        setErrorDetails('メールアドレスが既に使用されているか、メール送信に問題がありました。');
         break;
       case 'Callback':
-        setErrorMessage('ログイン処理中にエラーが発生しました。');
+        setErrorMessage('認証コールバック処理中にエラーが発生しました。');
+        setErrorDetails('セッションの確立に問題があります。ブラウザのCookieを確認してください。');
         break;
+      case 'CredentialsSignin':
+        setErrorMessage('メールアドレスまたはパスワードが正しくありません。');
+        setErrorDetails('入力情報を確認して再度お試しください。');
+        break;
+      case 'SessionRequired':
+        setErrorMessage('このページにアクセスするにはログインが必要です。');
+        setErrorDetails('ログインしてから再度アクセスしてください。');
+        break;
+      case 'Default':
       default:
-        setErrorMessage('認証中にエラーが発生しました。もう一度お試しください。');
+        setErrorMessage('認証処理中に問題が発生しました。');
+        setErrorDetails('ブラウザのCookieをクリアして、もう一度ログインをお試しください。');
     }
-  }, [error]);
+  }, [error, searchParams]);
+
+  const handleClearSessionAndRedirect = () => {
+    // セッション関連のデータをクリア
+    if (typeof window !== 'undefined') {
+      // LocalStorageとSessionStorageをクリア
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+
+      // 認証関連のCookieを削除
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf('=');
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      }
+    }
+
+    // ログインページにリダイレクト
+    window.location.href = '/auth/signin';
+  };
 
   return (
     <div className="flex min-h-screen">
@@ -65,9 +129,9 @@ function ErrorContent() {
           </div>
 
           <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200 shadow-sm mb-6">
-            <div className="flex items-center">
+            <div className="flex items-center mb-2">
               <svg
-                className="h-5 w-5 mr-2 text-red-500"
+                className="h-5 w-5 mr-2 text-red-500 flex-shrink-0"
                 xmlns="http://www.w3.org/2000/svg"
                 viewBox="0 0 20 20"
                 fill="currentColor"
@@ -78,16 +142,18 @@ function ErrorContent() {
                   clipRule="evenodd"
                 />
               </svg>
-              {errorMessage}
+              <span className="font-medium">{errorMessage}</span>
             </div>
+            <p className="ml-7 text-red-500">{errorDetails}</p>
+            {error && <div className="mt-3 text-xs text-gray-500">エラーコード: {error}</div>}
           </div>
 
           <div className="flex flex-col space-y-4">
             <Button
               className="w-full bg-blue-600 text-white hover:bg-blue-800 transform hover:-translate-y-0.5 transition shadow-md"
-              onClick={() => (window.location.href = '/auth/signin')}
+              onClick={handleClearSessionAndRedirect}
             >
-              ログインページに戻る
+              セッションをクリアしてログインページに戻る
             </Button>
 
             <Link
@@ -97,25 +163,13 @@ function ErrorContent() {
               トップページに戻る
             </Link>
           </div>
+
+          <div className="mt-8 text-xs text-gray-500 text-center">
+            <p>問題が解決しない場合は、別のブラウザを試すか、</p>
+            <p>システム管理者にお問い合わせください。</p>
+          </div>
         </div>
       </div>
     </div>
-  );
-}
-
-// ローディング表示コンポーネント
-function LoadingFallback() {
-  return (
-    <div className="flex min-h-screen justify-center items-center">
-      <div className="animate-spin h-10 w-10 border-4 border-blue-600 rounded-full border-t-transparent"></div>
-    </div>
-  );
-}
-
-export default function ErrorPage() {
-  return (
-    <Suspense fallback={<LoadingFallback />}>
-      <ErrorContent />
-    </Suspense>
   );
 }

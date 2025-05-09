@@ -57,6 +57,34 @@ export async function GET(request: Request) {
       },
     });
 
+    // ユーザーデータの詳細ログ
+    console.log(
+      '[API:corporate/access] ユーザー詳細データ:',
+      JSON.stringify({
+        id: user?.id,
+        email: user?.email,
+        role: user?.corporateRole,
+        adminTenant: user?.adminOfTenant
+          ? {
+              id: user.adminOfTenant.id,
+              status: user.adminOfTenant.accountStatus,
+            }
+          : null,
+        memberTenant: user?.tenant
+          ? {
+              id: user.tenant.id,
+              status: user.tenant.accountStatus,
+            }
+          : null,
+        subscription: user?.subscription
+          ? {
+              plan: user.subscription.plan,
+              status: user.subscription.status,
+            }
+          : null,
+      }),
+    );
+
     console.log('[API:corporate/access] ユーザー情報取得:', user ? '成功' : '失敗');
 
     if (!user) {
@@ -103,6 +131,20 @@ export async function GET(request: Request) {
 
     // 全ての条件を満たす場合のみアクセス権あり
     const hasAccess = hasTenant && !isSuspended && hasCorporateSubscription;
+
+    // 問題診断用の詳細ログ
+    console.log('[API:corporate/access] 詳細診断:', {
+      session: session?.user?.id ? '有効' : '無効',
+      user: user?.id ? '取得済み' : '取得失敗',
+      hasTenant,
+      tenantId: tenant?.id || 'なし',
+      isSuspended,
+      subscriptionPlan: user?.subscription?.plan || 'なし',
+      subscriptionStatus: user?.subscription?.status || 'なし',
+      hasCorporateSubscription,
+      hasAccess,
+      normalizedPlan: user?.subscription?.plan?.toLowerCase().trim() || 'なし',
+    });
 
     console.log(
       '[API:corporate/access] 法人アクセス権判定:',
@@ -171,23 +213,40 @@ function checkCorporateSubscription(
 ): boolean {
   if (!subscription) return false;
 
+  // 詳細ログ出力
+  console.log('[API:corporate/access] サブスクリプションチェック:', {
+    originalPlan: subscription.plan,
+    status: subscription.status,
+  });
+
   // 有効なプラン名を配列で定義（大文字小文字や記号の違いを吸収）
-  const validPlans = ['business', 'business_plus', 'business-plus', 'businessplus', 'enterprise'];
+  const validPlans = [
+    'business',
+    'business_plus',
+    'business-plus',
+    'businessplus',
+    'enterprise',
+    'corp', // 追加の可能性のある名前
+    'corporate', // 追加の可能性のある名前
+  ];
 
   // プラン名の正規化（空白削除、小文字化）
   const normalizedPlan = (subscription.plan || '').toLowerCase().trim();
 
-  // ステータスが有効かチェック
-  const isStatusActive = subscription.status === 'active';
+  // ステータスが有効かチェック - ステータスが未設定の場合も有効と見なす（データ移行時などのケース）
+  const isStatusActive = !subscription.status || subscription.status === 'active';
 
-  // 有効なプランに含まれているかチェック（より柔軟なマッチング）
+  // 有効なプランに含まれているかチェック - 部分一致も許可
   const isPlanValid = validPlans.some(
     (plan) =>
-      normalizedPlan === plan || normalizedPlan.replace(/[-_]/g, '') === plan.replace(/[-_]/g, ''),
+      normalizedPlan === plan ||
+      normalizedPlan.replace(/[-_]/g, '') === plan.replace(/[-_]/g, '') ||
+      normalizedPlan.includes('business') ||
+      normalizedPlan.includes('corp'),
   );
 
-  // デバッグログ
-  console.log('[checkCorporateSubscription]', {
+  // 詳細ログ
+  console.log('[API:corporate/access] サブスクリプション判定:', {
     normalizedPlan,
     isStatusActive,
     isPlanValid,

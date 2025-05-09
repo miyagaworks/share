@@ -46,7 +46,7 @@ export default function SigninPage() {
   }, []);
 
   // Google認証を開始する関数の修正
-  const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = () => {
     if (!termsAccepted) {
       setError('Googleでログインする場合も利用規約に同意していただく必要があります');
       return;
@@ -56,23 +56,15 @@ export default function SigninPage() {
       setIsPending(true);
       console.log('Google認証開始');
 
-      // セッション関連のクリア処理を単純化
-      if (typeof window !== 'undefined') {
-        // LocalStorageとSessionStorageをクリア
-        window.localStorage.removeItem('nextauth.message');
-        window.sessionStorage.removeItem('nextauth.message');
-      }
+      // クエリパラメータにタイムスタンプを追加してキャッシュを防止
+      const redirectUrl = `/api/auth/signin/google?callbackUrl=${encodeURIComponent('/dashboard')}&t=${Date.now()}`;
 
-      // 直接リダイレクト（より信頼性が高い）
-      const callbackUrl = encodeURIComponent(`${window.location.origin}/dashboard`);
-      const authUrl = `/api/auth/signin/google?callbackUrl=${callbackUrl}`;
-
-      console.log('リダイレクト先:', authUrl);
-      window.location.href = authUrl;
+      // 完全なページリダイレクトを実行
+      window.location.href = redirectUrl;
     } catch (error) {
-      console.error('Googleログインエラー:', error);
-      setError('Googleログイン処理中にエラーが発生しました。');
+      console.error('Googleログイン準備エラー:', error);
       setIsPending(false);
+      setError('Googleログイン処理中にエラーが発生しました。');
     }
   };
 

@@ -38,7 +38,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: undefined, // 現在のドメインのみに制限
+        domain: undefined, // ドメイン設定を削除して問題解決
       },
     },
     // 他のCookieも明示的に設定
@@ -63,6 +63,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     },
   },
+  
   // authConfigからイベントハンドラーとページ設定を取得
   ...authConfig,
 });

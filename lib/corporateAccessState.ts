@@ -148,14 +148,21 @@ export const checkCorporateAccess = async (force = false) => {
     });
 
     if (response.status === 403) {
-      logDebug('個人プランユーザー検出', { status: 403 });
-      // 個人プランユーザーと判定
+      // より詳細なエラー情報を取得
+      const errorData = await response.json();
+
+      logDebug('個人プランユーザー検出', {
+        status: 403,
+        errorData,
+      });
+
+      // エラーメッセージを保持
       updateCorporateAccessState({
         hasAccess: false,
         isAdmin: false,
         tenantId: null,
         lastChecked: now,
-        error: null,
+        error: errorData.error || null,
       });
     } else if (response.ok) {
       const data = await response.json();

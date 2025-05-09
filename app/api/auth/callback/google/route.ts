@@ -1,7 +1,5 @@
 // app/api/auth/callback/google/route.ts
 export const dynamic = 'force-dynamic';
+import { handlers } from '@/auth';
 
-import { auth } from '@/auth';
-
-export const GET = auth;
-export const POST = auth;
+export const GET = handlers.GET;
