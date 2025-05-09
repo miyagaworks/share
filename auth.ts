@@ -38,17 +38,33 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        // 環境に応じたドメイン設定
-        domain:
-          process.env.NODE_ENV === 'production'
-            ? process.env.COOKIE_DOMAIN || undefined
-            : undefined,
+        domain: undefined, // 現在のドメインのみに制限
+      },
+    },
+    // 他のCookieも明示的に設定
+    callbackUrl: {
+      name: 'next-auth.callback-url',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: undefined,
+      },
+    },
+    csrfToken: {
+      name: 'next-auth.csrf-token',
+      options: {
+        httpOnly: true,
+        sameSite: 'lax',
+        path: '/',
+        secure: process.env.NODE_ENV === 'production',
+        domain: undefined,
       },
     },
   },
-  // 既存の設定をここに展開
+  // authConfigからイベントハンドラーとページ設定を取得
   ...authConfig,
-  debug: process.env.NODE_ENV === 'development' || process.env.DEBUG?.includes('next-auth'),
 });
 
 // セキュリティ問題発生時の強制ログアウト関数

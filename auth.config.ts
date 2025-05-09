@@ -11,6 +11,7 @@ export default {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
+      allowDangerousEmailAccountLinking: false,
       authorization: {
         params: {
           prompt: 'select_account',
@@ -85,66 +86,83 @@ export default {
   ],
 
   callbacks: {
-    async signIn({ user, account, profile }) {
-      console.log('サインインコールバック:', {
+    async signIn({ user, account: authAccount, profile }) {
+      console.log('サインインコールバック詳細:', {
         userId: user?.id,
-        provider: account?.provider,
-        email: user?.email,
+        userEmail: user?.email,
+        provider: authAccount?.provider,
         profileData: !!profile,
+        timestamp: Date.now(),
       });
 
-      // Googleアカウントでログインする時の特別な処理
-      if (account?.provider === 'google' && user?.email) {
+      // Googleログイン時の追加処理
+      if (authAccount?.provider === 'google' && user?.email) {
+        const normalizedEmail = user.email.toLowerCase();
+
         try {
-          // すでに存在するユーザーを探す
+          // メールアドレスでユーザーを検索
           const existingUser = await prisma.user.findUnique({
-            where: { email: user.email.toLowerCase() },
+            where: { email: normalizedEmail },
           });
 
-          console.log('既存ユーザーチェック:', existingUser ? `ID: ${existingUser.id}` : 'なし');
-
-          // ユーザーが見つからなければ、新規作成する
           if (!existingUser) {
-            console.log('Google認証: 新規ユーザー作成');
+            console.log('Google認証: 新規ユーザー', { email: normalizedEmail });
+            // 新規ユーザーの場合の処理はadapterが行う
+          } else {
+            console.log('Google認証: 既存ユーザー', {
+              userId: existingUser.id,
+              email: existingUser.email,
+            });
           }
 
-          return true;
+          return true; // サインイン成功
         } catch (error) {
-          console.error('Google認証エラー:', error);
-          return false;
+          console.error('Google認証処理エラー:', error);
+          return false; // サインイン失敗
         }
       }
 
-      return true;
+      return true; // その他のプロバイダーはそのまま処理
     },
-    async session({ session, token }) {
-      console.log('セッションコールバック詳細:', {
-        sessionBefore: JSON.stringify(session),
-        tokenData: JSON.stringify(token),
+
+    async jwt({ token, user, trigger }) {
+      // トリガーとタイムスタンプをログに出力
+      console.log('JWT生成:', {
+        trigger,
+        userId: user?.id || token.sub,
+        timestamp: Date.now(),
       });
 
+      // ユーザー情報がある場合はトークンに追加
+      if (user) {
+        token.role = user.role;
+        // 明示的にユーザー情報を更新
+        token.name = user.name;
+        token.email = user.email;
+      }
+
+      return token;
+    },
+
+    async session({ session, token }) {
+      // セッション更新時にユーザーIDを必ず設定
       if (token.sub && session.user) {
         session.user.id = token.sub;
       }
 
+      // ロール情報も設定
       if (token.role && session.user) {
         session.user.role = token.role;
       }
 
-      console.log('セッションコールバック完了:', {
-        sessionAfter: JSON.stringify(session),
+      console.log('セッション更新:', {
+        userId: session.user?.id,
+        userEmail: session.user?.email,
+        timestamp: Date.now(),
+        expires: session.expires,
       });
 
       return session;
-    },
-    async jwt({ token, user }) {
-      if (user) {
-        token.role = user.role;
-      }
-
-      console.log('JWT callback called:', { token });
-
-      return token;
     },
   },
 
@@ -153,8 +171,6 @@ export default {
     signOut: '/auth/signin',
     error: '/auth/error',
     verifyRequest: '/auth/verify-request',
-    newUser: '/dashboard', // 新規ユーザー用のリダイレクト先
+    newUser: '/dashboard',
   },
-
-  debug: process.env.NODE_ENV === 'development' || !!process.env.DEBUG,
 } satisfies NextAuthConfig;
