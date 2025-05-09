@@ -6,8 +6,6 @@ import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { useCorporateAccess } from '@/hooks/useCorporateAccess';
-import { corporateAccessState } from '@/lib/corporateAccessState';
 import { Spinner } from '@/components/ui/Spinner';
 import { ActivityFeed } from '@/components/corporate/ActivityFeed';
 
@@ -22,20 +20,6 @@ import {
   HiExclamation,
 } from 'react-icons/hi';
 
-// フォールバック用のデフォルトテナント情報
-const DEFAULT_TENANT = {
-  id: 'default',
-  name: '未登録',
-  logoUrl: null,
-  primaryColor: null,
-  secondaryColor: null,
-  maxUsers: 10,
-  createdAt: new Date().toISOString(),
-  updatedAt: new Date().toISOString(),
-  users: [],
-  departments: [],
-};
-
 // 企業テナント情報の型定義
 interface CorporateTenant {
   id: string;
@@ -44,8 +28,10 @@ interface CorporateTenant {
   primaryColor: string | null;
   secondaryColor: string | null;
   maxUsers: number;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
+  userCount?: number;
+  departmentCount?: number;
   users: {
     id: string;
     name: string;
@@ -58,6 +44,20 @@ interface CorporateTenant {
     description: string | null;
   }[];
 }
+
+// フォールバック用のデフォルトテナント情報
+const DEFAULT_TENANT: CorporateTenant = {
+  id: 'default',
+  name: '未登録',
+  logoUrl: null,
+  primaryColor: null,
+  secondaryColor: null,
+  maxUsers: 10,
+  users: [],
+  departments: [],
+  userCount: 0,
+  departmentCount: 0,
+};
 
 // リトライボタン付きの警告バナー
 const RetryableWarningBanner = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
@@ -119,7 +119,7 @@ const MenuCard = ({
 }: {
   icon: React.ReactNode;
   title: string;
-  content: string;
+  content: string | number | React.ReactNode;
   onClick: () => void;
   color?: CardColor;
 }) => {
@@ -131,8 +131,6 @@ const MenuCard = ({
       <div
         className={`border-b border-gray-200 px-2 sm:px-4 py-2 sm:py-3 ${colorMap[color].bg} bg-opacity-30`}
       >
-        {' '}
-        {/* ヘッダー背景色を追加 */}
         <div className="flex items-center">
           <div className={`${colorMap[color].text}`}>{icon}</div>
           <h2 className="ml-2 text-sm sm:text-base font-semibold truncate">{title}</h2>
@@ -159,76 +157,34 @@ const MenuCard = ({
 export default function CorporateDashboardPage() {
   const { data: session } = useSession();
   const router = useRouter();
-
-  // 改善: 法人アクセス権チェックオプションを変更
-  const {
-    isLoading: isAccessLoading,
-    error: accessError,
-    refreshAccess,
-  } = useCorporateAccess({
-    redirectIfNoAccess: true,
-    redirectPath: '/dashboard',
-    checkOnMount: true,
-    forceCheck: false,
-  });
-
-  const [isLoading, setIsLoading] = useState(true);
   const [tenantData, setTenantData] = useState<CorporateTenant | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(false);
 
-  // アクセス権エラーを統合
-  useEffect(() => {
-    if (accessError) {
-      setError(accessError);
-    }
-  }, [accessError]);
+  // 段階的読み込みの状態
+  const [loadingStage, setLoadingStage] = useState<'initial' | 'tenant' | 'complete'>('initial');
 
-  // テナント情報を取得
+  // テナント情報取得
   const fetchTenantData = useCallback(async () => {
     if (!session?.user?.id) {
       return;
     }
 
-    // アクセス権チェックが完了していない場合はまだ待機
-    if (isAccessLoading) {
-      return;
-    }
-
-    // 既に読み込み中の場合は重複リクエストを防止
-    if (isLoading) {
-      console.log('既に読み込み中のため、リクエストをスキップします');
-      return;
-    }
-
     try {
-      setIsLoading(true);
+      setLoadingStage('tenant');
 
-      // 現在のアクセス状態とテナントIDを取得
-      const hasAccess = corporateAccessState.hasAccess;
-      const currentTenantId = corporateAccessState.tenantId;
-
-      // アクセス権がない場合は早期リターン
-      if (hasAccess === false) {
-        console.log('法人アクセス権がありません。リダイレクトします。');
-        router.push('/dashboard');
-        return;
-      }
-
-      // テナントAPIの呼び出し（一度だけ試行、再試行は手動のみ）
-      console.log('テナントデータ取得開始:', { hasAccess, currentTenantId });
-
-      // APIリクエストにタイムアウト設定
+      // タイムアウト処理
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000); // 8秒でタイムアウト
+      const timeoutId = setTimeout(() => controller.abort(), 8000);
 
       try {
+        console.log('テナントデータ取得開始');
+
         const response = await fetch('/api/corporate/tenant', {
           headers: {
-            'Cache-Control': 'no-cache',
-            Accept: 'application/json',
+            'Cache-Control': 'no-cache, no-store, must-revalidate',
+            Pragma: 'no-cache',
           },
-          credentials: 'include',
           signal: controller.signal,
         }).finally(() => clearTimeout(timeoutId));
 
@@ -242,14 +198,16 @@ export default function CorporateDashboardPage() {
           setUsingFallback(true);
           setTenantData({
             ...DEFAULT_TENANT,
-            id: currentTenantId || 'unknown-tenant',
+            id: 'unknown-tenant',
           });
         } else if (response.status === 403) {
           setError('テナントへのアクセス権限がありません。');
+
           try {
             const errorData = await response.json();
             if (errorData && errorData.tenant) {
               setTenantData(errorData.tenant);
+              setUsingFallback(false);
             }
           } catch (e) {
             console.error('エラーレスポンスの解析に失敗:', e);
@@ -260,10 +218,9 @@ export default function CorporateDashboardPage() {
       } catch (apiError) {
         console.error('API接続エラー:', apiError);
 
-        // フォールバック処理
         setTenantData({
           ...DEFAULT_TENANT,
-          id: currentTenantId || 'error-fallback-tenant',
+          id: 'error-fallback-tenant',
           name: '接続エラー - 基本情報のみ',
         });
         setUsingFallback(true);
@@ -271,88 +228,83 @@ export default function CorporateDashboardPage() {
       }
     } catch (error) {
       console.error('テナント情報取得エラー:', error);
-      setUsingFallback(true);
+      setTenantData({
+        ...DEFAULT_TENANT,
+        id: 'error-tenant',
+      });
       setError('データ取得中にエラーが発生しました。');
+      setUsingFallback(true);
     } finally {
-      setIsLoading(false);
+      // isLoadingDataの代わりにloadingStageを使用
+      setLoadingStage('complete');
     }
-  }, [session, isAccessLoading, router, isLoading]);
-
-  // 初回マウント時の実装を変更
-  useEffect(() => {
-    let isMounted = true;
-
-    const initializeData = async () => {
-      // コンポーネントがアンマウントされていたら処理しない
-      if (!isMounted) return;
-
-      // セッションがない場合は処理しない
-      if (!session?.user?.id) return;
-
-      // アクセス権チェックが完了したときにデータを取得
-      if (!isAccessLoading) {
-        await fetchTenantData();
-      }
-    };
-
-    // アクセス権チェックが完了してから実行
-    if (!isAccessLoading) {
-      initializeData();
-    }
-
-    // クリーンアップ関数
-    return () => {
-      isMounted = false;
-    };
-  }, [session, isAccessLoading, fetchTenantData]);
+  }, [session]);
 
   // テナント情報を再取得する関数
-  const reloadTenantData = async () => {
-    try {
-      await refreshAccess();
+  const reloadTenantData = useCallback(() => {
+    // 読み込み状態をリセット
+    setLoadingStage('initial');
+    // 少し遅延させてからデータ取得を開始
+    setTimeout(() => {
       fetchTenantData();
-    } catch (error) {
-      console.error('テナント情報更新エラー:', error);
-    }
-  };
+    }, 100);
+  }, [fetchTenantData]);
 
-  // コンポーネントマウント時の初期化を改善
+  // 初回マウント時の実装
   useEffect(() => {
-    const initializeData = async () => {
-      // セッションがない場合は処理しない
-      if (!session?.user?.id) {
-        return;
-      }
+    if (session?.user?.id) {
+      fetchTenantData();
+    }
+  }, [session, fetchTenantData]);
 
-      // アクセス権チェックが完了したときにデータを取得
-      if (!isAccessLoading) {
-        // corporateAccessStateの状態を確認し、必要に応じて強制更新
-        if (corporateAccessState.hasAccess === null) {
-          console.log('corporateAccessStateが未初期化のため、強制更新します');
-          try {
-            await refreshAccess();
-          } catch (error) {
-            console.error('アクセス権チェックエラー:', error);
-          }
-        }
-
-        await fetchTenantData();
-      }
-    };
-
-    initializeData();
-  }, [session, isAccessLoading, fetchTenantData, refreshAccess]);
-
-  // 読み込み中
-  if (isAccessLoading || isLoading) {
+  // 段階的な読み込み表示
+  if (loadingStage === 'initial') {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
-        <Spinner size="lg" />
+        <div className="text-center">
+          <Spinner size="lg" />
+          <p className="mt-2 text-gray-500">基本情報を読み込み中...</p>
+        </div>
       </div>
     );
   }
 
-  // テナントデータがない場合はフォールバック用のテナントデータを使用
+  // テナント情報読み込み中（スケルトンUI表示）
+  if (loadingStage === 'tenant' && !tenantData) {
+    return (
+      <div className="max-w-full px-1 sm:px-0">
+        {/* テナント情報のスケルトンUI */}
+        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mb-4 sm:mb-5 mx-1 sm:mx-2 animate-pulse">
+          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+          <div className="flex items-center space-x-4">
+            <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+            <div>
+              <div className="h-4 bg-gray-200 rounded w-32"></div>
+              <div className="h-3 bg-gray-200 rounded w-24 mt-2"></div>
+            </div>
+          </div>
+        </div>
+
+        {/* メニューグリッドのスケルトンUI */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mx-1 sm:mx-2 mb-4 sm:mb-5">
+          {[1, 2, 3, 4].map((i) => (
+            <div
+              key={i}
+              className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 animate-pulse"
+            >
+              <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+              <div className="flex justify-center mb-3">
+                <div className="h-16 w-16 bg-gray-200 rounded-full"></div>
+              </div>
+              <div className="h-4 bg-gray-200 rounded w-2/3 mx-auto"></div>
+            </div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // 読み込み完了 - 通常表示
   const displayTenant = tenantData || DEFAULT_TENANT;
 
   return (
@@ -381,8 +333,6 @@ export default function CorporateDashboardPage() {
             <div className="flex items-center mb-2 sm:mb-0">
               {displayTenant.logoUrl ? (
                 <div className="rounded-full p-2 bg-gray-50 mr-3">
-                  {' '}
-                  {/* パディングと背景色を追加 */}
                   <Image
                     src={displayTenant.logoUrl}
                     alt={`${displayTenant.name}のロゴ`}
@@ -393,14 +343,10 @@ export default function CorporateDashboardPage() {
                 </div>
               ) : (
                 <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 flex items-center justify-center mr-3 p-2">
-                  {' '}
-                  {/* パディングを追加 */}
                   <HiOfficeBuilding className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                 </div>
               )}
               <div>
-                {' '}
-                {/* マージンを調整 */}
                 <h1 className="text-lg sm:text-xl font-bold break-words">{displayTenant.name}</h1>
                 <p className="text-xs sm:text-sm text-gray-500">
                   法人プラン: 最大{displayTenant.maxUsers}ユーザー
@@ -417,7 +363,7 @@ export default function CorporateDashboardPage() {
         <MenuCard
           icon={<HiUsers className="h-5 w-5" />}
           title="ユーザー管理"
-          content={`${displayTenant.users.length}/${displayTenant.maxUsers} ユーザー`}
+          content={`${displayTenant.userCount ?? displayTenant.users?.length ?? 0}/${displayTenant.maxUsers} ユーザー`}
           onClick={() => router.push('/dashboard/corporate/users')}
           color="blue"
         />
@@ -426,7 +372,7 @@ export default function CorporateDashboardPage() {
         <MenuCard
           icon={<HiTemplate className="h-5 w-5" />}
           title="部署管理"
-          content={`${displayTenant.departments.length} 部署`}
+          content={`${displayTenant.departmentCount ?? displayTenant.departments?.length ?? 0} 部署`}
           onClick={() => router.push('/dashboard/corporate/departments')}
           color="green"
         />
