@@ -39,9 +39,14 @@ export async function middleware(request: NextRequest) {
       cookieName: 'next-auth.session-token', // クッキー名を明示的に指定
     });
 
+    // セッションが期限切れでないか確認
+    const isTokenExpired = token?.exp ? Date.now() / 1000 > token.exp : true;
+
     // デバッグ出力
     console.log(`Middleware詳細ログ: ${pathname}`, {
       hasToken: !!token,
+      isTokenExpired: isTokenExpired,
+      tokenExp: token?.exp ? new Date(token.exp * 1000).toISOString() : 'なし',
       cookieHeader: request.headers.has('cookie'),
       tokenData: token
         ? JSON.stringify({
@@ -53,8 +58,8 @@ export async function middleware(request: NextRequest) {
     });
 
     // 未認証ユーザーはログインページへリダイレクト
-    if (!token) {
-      console.log('未認証ユーザー: ログインページにリダイレクト');
+    if (!token || isTokenExpired) {
+      console.log('未認証または期限切れセッション: ログインページにリダイレクト');
       return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
 

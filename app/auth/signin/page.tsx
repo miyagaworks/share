@@ -24,6 +24,27 @@ export default function SigninPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
 
+  // ページロード時にセッションをクリア
+  useEffect(() => {
+    // 古いセッション情報をクリア
+    if (typeof window !== 'undefined') {
+      console.log('SignInページロード: セッションクリア実行');
+
+      // LocalStorageとSessionStorageをクリア
+      window.localStorage.clear();
+      window.sessionStorage.clear();
+
+      // 関連するCookieを削除
+      const cookies = document.cookie.split(';');
+      for (let i = 0; i < cookies.length; i++) {
+        const cookie = cookies[i];
+        const eqPos = cookie.indexOf('=');
+        const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+      }
+    }
+  }, []);
+
   // Google認証を開始する関数の修正
   const handleGoogleSignIn = async () => {
     if (!termsAccepted) {
@@ -33,29 +54,34 @@ export default function SigninPage() {
 
     try {
       setIsPending(true);
-      // next-auth/reactのsignIn関数を直接使用
-      const result = await signIn('google', {
-        callbackUrl: '/dashboard',
-        redirect: false,
-      });
 
-      console.log('Google認証結果:', result);
+      // 古いセッション情報をクリア
+      if (typeof window !== 'undefined') {
+        console.log('Google認証開始: セッションクリア実行');
 
-      if (result?.error) {
-        if (result.error === 'OAuthAccountNotLinked') {
-          setError(
-            'このGoogleアカウントは既に別のアカウントに関連付けられています。メールアドレスとパスワードでログインしてください。',
-          );
-        } else {
-          setError('Googleログイン中にエラーが発生しました。もう一度お試しください。');
+        // LocalStorageとSessionStorageをクリア
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+
+        // 関連するCookieを削除
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i];
+          const eqPos = cookie.indexOf('=');
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
         }
-      } else if (result?.url) {
-        router.push(result.url);
       }
+
+      console.log('Google認証開始: 完全リダイレクト実行');
+
+      // 完全にリダイレクトする方式を使用
+      window.location.href = `/api/auth/signin/google?callbackUrl=${encodeURIComponent('/dashboard')}`;
+
+      // 以下のコードは実行されません（リダイレクトのため）
     } catch (error) {
       console.error('Googleログインエラー:', error);
       setError('Googleログイン処理中にエラーが発生しました。');
-    } finally {
       setIsPending(false);
     }
   };
@@ -106,6 +132,24 @@ export default function SigninPage() {
       setIsPending(true);
 
       console.log('API認証試行:', data.email);
+
+      // 古いセッション情報をクリア
+      if (typeof window !== 'undefined') {
+        console.log('認証試行前: セッションクリア実行');
+
+        // LocalStorageとSessionStorageをクリア
+        window.localStorage.clear();
+        window.sessionStorage.clear();
+
+        // 関連するCookieを削除
+        const cookies = document.cookie.split(';');
+        for (let i = 0; i < cookies.length; i++) {
+          const cookie = cookies[i];
+          const eqPos = cookie.indexOf('=');
+          const name = eqPos > -1 ? cookie.substr(0, eqPos).trim() : cookie.trim();
+          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
+        }
+      }
 
       // より詳細なデバッグ情報のためのオプション
       const result = await signIn('credentials', {
