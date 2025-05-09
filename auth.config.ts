@@ -86,17 +86,17 @@ export default {
   ],
 
   callbacks: {
-    async signIn({ user, account: authAccount, profile }) {
+    async signIn({ user, account, profile }) {
       console.log('サインインコールバック詳細:', {
         userId: user?.id,
         userEmail: user?.email,
-        provider: authAccount?.provider,
+        provider: account?.provider,
         profileData: !!profile,
         timestamp: Date.now(),
       });
 
       // Googleログイン時の追加処理
-      if (authAccount?.provider === 'google' && user?.email) {
+      if (account?.provider === 'google' && user?.email) {
         const normalizedEmail = user.email.toLowerCase();
 
         try {
@@ -173,4 +173,7 @@ export default {
     verifyRequest: '/auth/verify-request',
     newUser: '/dashboard',
   },
+
+  // デバッグモードは開発環境でのみ有効
+  debug: process.env.NODE_ENV === 'development',
 } satisfies NextAuthConfig;
