@@ -3,7 +3,8 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 
 // 環境変数からAPIキーを取得
 const apiKey = process.env.GEMINI_API_KEY;
-const modelId = process.env.GEMINI_MODEL_ID || 'gemini-1.5-pro';
+// モデルIDを最新バージョンに更新
+const modelId = process.env.GEMINI_MODEL_ID || 'gemini-2.0-flash'; // 更新：gemini-1.5-proから変更
 
 if (!apiKey) {
   throw new Error('Missing GEMINI_API_KEY environment variable');
@@ -51,8 +52,14 @@ export async function generateIntroduction(prompt: string): Promise<string> {
         },
       });
 
-      // 設定が異なるからチャットよりもテキスト生成を使用
-      const result = await model.generateContent(prompt);
+      // デバッグ情報
+      console.log(`使用モデル: ${modelId}, プロンプト長: ${prompt.length}文字`);
+
+      // Gemini 2.0 API形式に合わせた呼び出し
+      const result = await model.generateContent({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      });
+
       const response = result.response;
       const text = response.text();
 
@@ -65,6 +72,15 @@ export async function generateIntroduction(prompt: string): Promise<string> {
     } catch (error) {
       lastError = error;
       console.error(`Gemini API呼び出しエラー (試行 ${attempt + 1}/${maxRetries + 1}):`, error);
+
+      // エラーの詳細情報を出力
+      if (typeof error === 'object' && error !== null) {
+        try {
+          console.error('エラー詳細:', JSON.stringify(error, null, 2));
+        } catch (e) {
+          console.error('エラーの詳細JSONシリアライズに失敗:', e);
+        }
+      }
 
       // 最後のリトライでなければ少し待機
       if (attempt < maxRetries) {
@@ -95,10 +111,10 @@ function handleGeminiError(error: unknown): never {
       case 400:
         throw new Error('AI生成エラー: リクエストの内容を簡略化してお試しください。');
       case 401:
-        throw new Error('AI生成エラー: 認証に失敗しました。システム管理者にお問い合わせください。');
+        throw new Error('AI生成エラー: 認証に失敗しました。APIキーを確認してください。');
       case 403:
         throw new Error(
-          'AI生成エラー: アクセス権限の問題が発生しました。システム管理者にお問い合わせください。',
+          'AI生成エラー: アクセス権限の問題が発生しました。APIキーの権限を確認してください。',
         );
       case 429:
         throw new Error(
