@@ -9,16 +9,26 @@ export const LoginSchema = z.object({
 
 // 新規登録フォーム用スキーマ
 export const RegisterSchema = z.object({
-    name: z.string().min(1, { message: "名前を入力してください" }),
-    email: z.string().email({ message: "有効なメールアドレスを入力してください" }),
-    password: z.string().min(8, { message: "パスワードは8文字以上である必要があります" }),
+  // 名前を姓と名で分離
+  lastName: z.string().min(1, { message: '姓を入力してください' }),
+  firstName: z.string().min(1, { message: '名を入力してください' }),
+  // フリガナも姓と名で分離
+  lastNameKana: z.string().min(1, { message: '姓（フリガナ）を入力してください' }),
+  firstNameKana: z.string().min(1, { message: '名（フリガナ）を入力してください' }),
+  email: z.string().email({ message: '有効なメールアドレスを入力してください' }),
+  password: z.string().min(8, { message: 'パスワードは8文字以上である必要があります' }),
 });
-
 // プロフィール用スキーマ - カラーコード検証を緩和
 export const ProfileSchema = z.object({
-  name: z.string().min(1, '名前は必須です').optional(),
+  lastName: z.string().min(1, '姓は必須です').optional(),
+  firstName: z.string().min(1, '名は必須です').optional(),
+  lastNameKana: z.string().optional().nullable(),
+  firstNameKana: z.string().optional().nullable(),
+  // 互換性のため古いフィールドも残す
+  name: z.string().optional().nullable(),
   nameEn: z.string().optional().nullable(),
-  nameKana: z.string().optional().nullable(), // フリガナフィールドを追加
+  nameKana: z.string().optional().nullable(),
+  // 以下は変更なし
   bio: z.string().max(300, '自己紹介は300文字以内で入力してください').optional().nullable(),
   image: z.string().optional().nullable(),
   mainColor: z

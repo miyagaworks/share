@@ -17,7 +17,10 @@ export default function SignupPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-  const [isNameFilled, setIsNameFilled] = useState(false);
+  const [isLastNameFilled, setIsLastNameFilled] = useState(false);
+  const [isFirstNameFilled, setIsFirstNameFilled] = useState(false);
+  const [isLastNameKanaFilled, setIsLastNameKanaFilled] = useState(false);
+  const [isFirstNameKanaFilled, setIsFirstNameKanaFilled] = useState(false);
   const [isEmailFilled, setIsEmailFilled] = useState(false);
   const [isEmailValid, setIsEmailValid] = useState(false);
   const [isPasswordFilled, setIsPasswordFilled] = useState(false);
@@ -46,25 +49,37 @@ export default function SignupPage() {
   } = useForm({
     resolver: zodResolver(RegisterSchema),
     defaultValues: {
-      name: '',
+      lastName: '',
+      firstName: '',
+      lastNameKana: '',
+      firstNameKana: '',
       email: '',
       password: '',
     },
     mode: 'onChange', // リアルタイムバリデーション
   });
 
-  const watchName = watch('name');
+  const watchLastName = watch('lastName');
+  const watchFirstName = watch('firstName');
+  const watchLastNameKana = watch('lastNameKana');
+  const watchFirstNameKana = watch('firstNameKana');
   const watchEmail = watch('email');
   const watchPassword = watch('password');
 
   // 入力フィールドの状態を監視
   useEffect(() => {
     // 空白を除去した後の各フィールドの値が空でないかを確認
-    const nameValue = watchName?.trim() || '';
+    const lastNameValue = watchLastName?.trim() || '';
+    const firstNameValue = watchFirstName?.trim() || '';
+    const lastNameKanaValue = watchLastNameKana?.trim() || '';
+    const firstNameKanaValue = watchFirstNameKana?.trim() || '';
     const emailValue = watchEmail?.trim() || '';
     const passwordValue = watchPassword || '';
 
-    setIsNameFilled(nameValue.length > 0);
+    setIsLastNameFilled(lastNameValue.length > 0);
+    setIsFirstNameFilled(firstNameValue.length > 0);
+    setIsLastNameKanaFilled(lastNameKanaValue.length > 0);
+    setIsFirstNameKanaFilled(firstNameKanaValue.length > 0);
     setIsEmailFilled(emailValue.length > 0);
     setIsPasswordFilled(passwordValue.length > 0);
 
@@ -77,22 +92,42 @@ export default function SignupPage() {
 
     // すべての条件が満たされていればフォームは有効
     const formIsValid =
-      nameValue.length > 0 &&
+      lastNameValue.length > 0 &&
+      firstNameValue.length > 0 &&
+      lastNameKanaValue.length > 0 &&
+      firstNameKanaValue.length > 0 &&
       emailValue.length > 0 &&
       emailRegex.test(emailValue) &&
       passwordValue.length >= 8 &&
       !Object.keys(errors).length &&
-      termsAccepted; // 利用規約同意も条件に追加
+      termsAccepted;
 
     setIsFormValid(formIsValid);
-  }, [watchName, watchEmail, watchPassword, errors, isValid, termsAccepted]); // termsAccepted を依存配列に追加
+  }, [
+    watchLastName,
+    watchFirstName,
+    watchLastNameKana,
+    watchFirstNameKana,
+    watchEmail,
+    watchPassword,
+    errors,
+    isValid,
+    termsAccepted,
+  ]);
 
   // パスワードの表示/非表示を切り替える関数
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
 
-  const onSubmit = async (data: { name: string; email: string; password: string }) => {
+  const onSubmit = async (data: {
+    lastName: string;
+    firstName: string;
+    lastNameKana: string;
+    firstNameKana: string;
+    email: string;
+    password: string;
+  }) => {
     // 利用規約の同意確認
     if (!termsAccepted) {
       setError('利用規約に同意していただく必要があります');
@@ -103,16 +138,27 @@ export default function SignupPage() {
       setError(null);
       setIsPending(true);
 
-      console.log('サインアップ開始:', { name: data.name, email: data.email });
+      // 姓名を結合して完全な名前を作成
+      const name = `${data.lastName} ${data.firstName}`;
 
-      // サインアップ処理（既存のコード）
+      console.log('サインアップ開始:', {
+        lastName: data.lastName,
+        firstName: data.firstName,
+        name,
+        email: data.email,
+      });
+
+      // サインアップ処理
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: data.name,
+          lastName: data.lastName,
+          firstName: data.firstName,
+          lastNameKana: data.lastNameKana,
+          firstNameKana: data.firstNameKana,
           email: data.email,
           password: data.password,
         }),
@@ -250,16 +296,52 @@ export default function SignupPage() {
             )}
 
             <div className="space-y-4">
-              <div>
-                <Input
-                  label="お名前"
-                  type="text"
-                  placeholder="山田 太郎"
-                  {...register('name')}
-                  error={errors.name?.message}
-                  disabled={isPending}
-                  className={`bg-white shadow-sm transition-colors ${isNameFilled ? 'border-blue-500 focus:border-blue-500' : ''}`}
-                />
+              {/* 単一の名前入力フィールドを4つに分割 */}
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Input
+                    label="姓"
+                    type="text"
+                    placeholder="小田"
+                    {...register('lastName')}
+                    error={errors.lastName?.message}
+                    disabled={isPending}
+                    className={`bg-white shadow-sm transition-colors ${isLastNameFilled ? 'border-blue-500 focus:border-blue-500' : ''}`}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="名"
+                    type="text"
+                    placeholder="和正"
+                    {...register('firstName')}
+                    error={errors.firstName?.message}
+                    disabled={isPending}
+                    className={`bg-white shadow-sm transition-colors ${isFirstNameFilled ? 'border-blue-500 focus:border-blue-500' : ''}`}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="姓（フリガナ）"
+                    type="text"
+                    placeholder="オダ"
+                    {...register('lastNameKana')}
+                    error={errors.lastNameKana?.message}
+                    disabled={isPending}
+                    className={`bg-white shadow-sm transition-colors ${isLastNameKanaFilled ? 'border-blue-500 focus:border-blue-500' : ''}`}
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="名（フリガナ）"
+                    type="text"
+                    placeholder="カズマサ"
+                    {...register('firstNameKana')}
+                    error={errors.firstNameKana?.message}
+                    disabled={isPending}
+                    className={`bg-white shadow-sm transition-colors ${isFirstNameKanaFilled ? 'border-blue-500 focus:border-blue-500' : ''}`}
+                  />
+                </div>
               </div>
 
               <div>

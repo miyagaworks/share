@@ -69,10 +69,27 @@ export function ProfileForm({ user }: ProfileFormProps) {
         processedCompanyUrl = `https://${processedCompanyUrl}`;
       }
 
+      // 姓と名を結合して既存のAPIと互換性のある形式に変換
+      const name =
+        data.lastName && data.firstName
+          ? `${data.lastName} ${data.firstName}`
+          : data.lastName || data.firstName || undefined;
+
+      // 姓と名のフリガナを結合
+      const nameKana =
+        data.lastNameKana && data.firstNameKana
+          ? `${data.lastNameKana} ${data.firstNameKana}`
+          : data.lastNameKana || data.firstNameKana || undefined;
+
       // 画像が変更されていたら、imageも送信
       const profileData = {
-        ...data,
-        companyUrl: processedCompanyUrl, // 処理したURLを使用
+        name, // 結合した名前
+        nameKana, // 結合したフリガナ
+        bio: data.bio?.trim() || undefined,
+        companyUrl: processedCompanyUrl,
+        phone: data.phone?.trim() || undefined,
+        company: data.company?.trim() || undefined,
+        companyLabel: data.companyLabel?.trim() || undefined,
         image: image !== user.image ? image : undefined,
       };
 

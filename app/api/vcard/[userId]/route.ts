@@ -27,7 +27,12 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
         id: true,
         name: true,
         nameEn: true,
-        nameKana: true, // 明示的に選択
+        nameKana: true,
+        // 新しいフィールドを追加
+        lastName: true,
+        firstName: true,
+        lastNameKana: true,
+        firstNameKana: true,
         email: true,
         phone: true,
         company: true,
@@ -66,32 +71,27 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
     const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
     // 名前を適切に処理
-    let lastName = '',
-      firstName = '',
-      lastNameKana = '',
-      firstNameKana = '';
+    let lastName = user.lastName || '',
+      firstName = user.firstName || '',
+      lastNameKana = user.lastNameKana || '',
+      firstNameKana = user.firstNameKana || '';
 
-    // 英語表記がある場合はそれを優先
-    if (user.nameEn) {
-      const nameParts = user.nameEn.split(' ');
+    // 直接のフィールドがない場合は従来の分割ロジックを使用
+    if (!lastName && !firstName && user.name) {
+      const nameParts = user.name.split(' ');
       if (nameParts.length > 1) {
-        lastName = nameParts.pop() || '';
-        firstName = nameParts.join(' ');
+        lastName = nameParts[0] || '';
+        firstName = nameParts.slice(1).join(' ');
       } else {
-        firstName = user.nameEn;
+        firstName = user.name;
       }
-    } else if (user.name) {
-      // nameEnがない場合はnameを使用
-      firstName = user.name;
     }
 
-    // フリガナ（カナ）があれば設定
-    if (user.nameKana) {
-      // スペースで区切られている場合を想定
-      const nameParts = user.nameKana.split(' ');
-      if (nameParts.length > 1) {
-        lastNameKana = nameParts.pop() || '';
-        firstNameKana = nameParts.join(' ');
+    if (!lastNameKana && !firstNameKana && user.nameKana) {
+      const kanaParts = user.nameKana.split(' ');
+      if (kanaParts.length > 1) {
+        lastNameKana = kanaParts[0] || '';
+        firstNameKana = kanaParts.slice(1).join(' ');
       } else {
         firstNameKana = user.nameKana;
       }

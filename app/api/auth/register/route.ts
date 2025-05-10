@@ -1,10 +1,10 @@
-export const dynamic = "force-dynamic";
 // app/api/auth/register/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { RegisterSchema } from '@/schemas/auth';
 import bcrypt from 'bcryptjs';
-import { generateSlug } from '@/lib/utils';
 import { logger } from '@/lib/utils/logger';
 
 export async function POST(req: NextRequest) {
@@ -13,7 +13,10 @@ export async function POST(req: NextRequest) {
 
     // 統合ロガーを使用
     logger.debug('ユーザー登録リクエスト受信', {
-      name: body.name ? 'provided' : 'missing',
+      lastName: body.lastName ? 'provided' : 'missing',
+      firstName: body.firstName ? 'provided' : 'missing',
+      lastNameKana: body.lastNameKana ? 'provided' : 'missing',
+      firstNameKana: body.firstNameKana ? 'provided' : 'missing',
       email: body.email ? 'provided' : 'missing',
       password: body.password ? 'provided' : 'missing',
     });
@@ -24,7 +27,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: '入力内容に問題があります。' }, { status: 400 });
     }
 
-    const { name, email, password } = validatedFields.data;
+    const { lastName, firstName, lastNameKana, firstNameKana, email, password } =
+      validatedFields.data;
+
+    // 姓名を結合して完全な名前を作成
+    const name = `${lastName} ${firstName}`;
+
+    // フリガナも同様に結合
+    const nameKana = `${lastNameKana} ${firstNameKana}`;
+
+    // 英語名は仮で姓名を逆にする（実際にはもっと良い変換方法が必要かもしれません）
+    const nameEn = `${firstName} ${lastName}`;
 
     // メールアドレスを小文字に正規化
     const normalizedEmail = email.toLowerCase();
@@ -58,56 +71,21 @@ export async function POST(req: NextRequest) {
       period: '7日間',
     });
 
-    // ユーザーの作成 - 正規化されたメールアドレスを使用
+    // ユーザーの作成 - 姓名とフリガナを個別に保存
     const user = await prisma.user.create({
       data: {
-        name,
+        name, // 結合した漢字名
+        nameEn, // 結合した英語名
+        nameKana, // 結合したフリガナ
+        lastName, // 姓（追加）
+        firstName, // 名（追加）
+        lastNameKana, // 姓のフリガナ（追加）
+        firstNameKana, // 名のフリガナ（追加）
         email: normalizedEmail, // 正規化したメールアドレスを保存
         password: hashedPassword,
         mainColor: '#3B82F6',
         trialEndsAt,
         subscriptionStatus: 'trialing',
-      },
-    });
-
-    // プロフィールの作成
-    let slug = generateSlug();
-    let slugExists = true;
-
-    // スラグがすでに存在する場合は新しいスラグを生成
-    while (slugExists) {
-      const existingSlug = await prisma.profile.findUnique({
-        where: { slug },
-      });
-
-      if (!existingSlug) {
-        slugExists = false;
-      } else {
-        slug = generateSlug();
-      }
-    }
-
-    await prisma.profile.create({
-      data: {
-        userId: user.id,
-        slug,
-        isPublic: true,
-      },
-    });
-
-    // Subscriptionテーブルに初期レコードを作成
-    await prisma.subscription.create({
-      data: {
-        userId: user.id,
-        status: 'trialing',
-        plan: 'trial',
-        subscriptionId: null, // Stripe連携後に設定
-        priceId: null, // Stripe連携後に設定
-        currentPeriodStart: now,
-        currentPeriodEnd: trialEndsAt, // トライアル終了日
-        trialStart: now, // トライアル開始日を明示的に設定
-        trialEnd: trialEndsAt, // トライアル終了日を明示的に設定
-        cancelAtPeriodEnd: false,
       },
     });
 

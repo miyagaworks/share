@@ -21,6 +21,10 @@ model User {
   name                String?
   nameEn              String?
   nameKana            String?
+  lastName            String?                // 姓
+  firstName           String?                // 名
+  lastNameKana        String?                // 姓（フリガナ）
+  firstNameKana       String?                // 名（フリガナ）
   password            String? // ハッシュ化されたパスワード、OAuthの場合はnull
   passwordResetTokens PasswordResetToken[]
   image               String? // プロフィール画像URL
