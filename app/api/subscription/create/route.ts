@@ -141,7 +141,7 @@ export async function POST(req: NextRequest) {
           // 法人テナントを作成
           const newTenant = await prisma.corporateTenant.create({
             data: {
-              name: companyName || '株式会社 共有商事',
+              name: companyName || '', // 空の文字列を設定し、後でユーザーに入力させる
               maxUsers: plan === 'business-plus' ? 50 : 10,
               adminId: session.user.id,
               users: { connect: [{ id: session.user.id }] },
