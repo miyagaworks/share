@@ -125,7 +125,7 @@ export default function ForgotPasswordPage() {
                 <div className="rounded-lg bg-green-50 p-4 text-sm text-green-600 border border-green-200 shadow-sm">
                   <div className="flex items-center">
                     <svg
-                      className="h-5 w-5 mr-2 text-green-500"
+                      className="h-8 w-8 mr-2 text-green-500"
                       xmlns="http://www.w3.org/2000/svg"
                       viewBox="0 0 20 20"
                       fill="currentColor"

@@ -46,11 +46,18 @@ export async function sendEmail(options: EmailOptions) {
 
   try {
     const mailOptions = {
-      from: options.from || defaultFrom,
+      from: `"Share サポートチーム" <${options.from || defaultFrom}>`, // 名前付きの差出人
       to: options.to,
       subject: options.subject,
       text: options.text,
       html: options.html,
+      headers: {
+        'X-Priority': '1', // メールの優先度を高く設定
+        'X-MSMail-Priority': 'High',
+        Importance: 'High',
+        'X-Mailer': 'Share Application Mailer', // メーラー名を追加
+        'Reply-To': options.from || defaultFrom, // 返信先アドレス
+      },
     };
 
     console.log('メール送信を試みます:', {
