@@ -4,6 +4,40 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
+// 画像データの型を定義
+interface ImageData {
+  base64: string;
+  mimeType: string;
+}
+
+// 画像をfetchしてBase64にエンコードする関数
+async function fetchImageAsBase64(imageUrl: string): Promise<ImageData | null> {
+  try {
+    // 外部URLからの画像を取得
+    const response = await fetch(imageUrl);
+    if (!response.ok) {
+      console.error(`Failed to fetch image: ${response.status}`);
+      return null;
+    }
+    
+    // ArrayBufferとしてバイナリを取得
+    const arrayBuffer = await response.arrayBuffer();
+    // Base64に変換
+    const base64String = Buffer.from(arrayBuffer).toString('base64');
+    
+    // MIMEタイプの検出（簡易版）
+    let mimeType = 'image/jpeg'; // デフォルト値
+    if (imageUrl.endsWith('.png')) mimeType = 'image/png';
+    if (imageUrl.endsWith('.gif')) mimeType = 'image/gif';
+    if (imageUrl.endsWith('.webp')) mimeType = 'image/webp';
+    
+    return { base64: base64String, mimeType };
+  } catch (error) {
+    console.error('Error fetching image:', error);
+    return null;
+  }
+}
+
 // vCardフィールド値のエスケープ処理
 function escapeVCardValue(value: string): string {
   if (!value) return '';
@@ -137,8 +171,22 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
     }
 
     if (user.image) {
-      // 画像URLを含める
-      vcard.push(`PHOTO;VALUE=URI:${user.image}`);
+      try {
+        // 画像をBase64で取得
+        const imageData = await fetchImageAsBase64(user.image);
+
+        if (imageData && imageData.base64) {
+          // 画像データをvCardに埋め込む（iPhone対応形式）
+          vcard.push(`PHOTO;ENCODING=b;TYPE=${imageData.mimeType}:${imageData.base64}`);
+        } else {
+          // 取得に失敗した場合はURIで参照（フォールバック）
+          vcard.push(`PHOTO;VALUE=URI:${user.image}`);
+        }
+      } catch (error) {
+        console.error('Error processing image:', error);
+        // エラーが発生した場合もURIで参照を試みる
+        vcard.push(`PHOTO;VALUE=URI:${user.image}`);
+      }
     }
 
     // 役職があれば追加
