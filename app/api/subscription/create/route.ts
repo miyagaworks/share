@@ -1,5 +1,5 @@
-export const dynamic = "force-dynamic";
 // app/api/subscription/create/route.ts
+export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';

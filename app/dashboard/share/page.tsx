@@ -63,7 +63,7 @@ async function SharePageContent() {
         );
     }
 
-    const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"}/${user.profile.slug}`;
+    const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.sns-share.com'}/${user.profile.slug}`;
 
     return (
         <div className="grid gap-6 md:grid-cols-2">

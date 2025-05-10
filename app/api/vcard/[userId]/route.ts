@@ -162,7 +162,11 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
     });
 
     if (profile?.slug) {
-      const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || 'http://localhost:3000';
+      const baseUrl =
+        process.env.NEXT_PUBLIC_APP_URL ||
+        process.env.NEXT_PUBLIC_BASE_URL ||
+        process.env.NEXTAUTH_URL ||
+        'https://app.sns-share.com';
       const profileUrl = `${baseUrl}/${profile.slug}`;
       vcard.push(`URL;TYPE=PROFILE:${profileUrl}`);
     }

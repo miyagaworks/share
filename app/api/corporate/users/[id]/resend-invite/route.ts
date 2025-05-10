@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
 // app/api/corporate/users/[id]/resend-invite/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -51,7 +52,12 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // 環境変数からベースURLを取得
     const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      process.env.NEXTAUTH_URL ||
+      'https://app.sns-share.com';
+
+    // URLの正規化（末尾のスラッシュを削除）
     const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 
     // 招待リンクの生成

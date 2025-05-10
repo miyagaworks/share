@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
 // app/api/corporate/users/[id]/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -7,10 +8,7 @@ import { sendEmail } from '@/lib/email';
 import { logUserActivity } from '@/lib/utils/activity-logger';
 
 // ユーザー情報を更新するAPI（役割と部署の変更）
-export async function PATCH(
-  request: Request,
-  { params }: { params: { id: string } }
-) {
+export async function PATCH(request: Request, { params }: { params: { id: string } }) {
   try {
     console.log(`[API] /api/corporate/users/${params.id} PATCHリクエスト受信`);
 
@@ -22,7 +20,7 @@ export async function PATCH(
 
     const userId = session.user.id;
     console.log(`[API] リクエスト送信ユーザーID: ${userId}`);
-    
+
     // テナント情報を取得
     const corporateTenant = await prisma.corporateTenant.findFirst({
       where: { adminId: userId },
@@ -52,7 +50,7 @@ export async function PATCH(
     // 管理者の役割を変更する場合のチェック
     if (targetUser.corporateRole === 'admin' && role !== 'admin') {
       console.log('[API] 管理者から他の役割への変更を検証します');
-      
+
       // 他の管理者をカウント
       const otherAdminCount = await prisma.user.count({
         where: {
@@ -61,7 +59,7 @@ export async function PATCH(
           id: { not: params.id },
         },
       });
-      
+
       console.log(`[API] 他の管理者数: ${otherAdminCount}`);
 
       // 他の管理者がいない場合、エラー
@@ -74,7 +72,7 @@ export async function PATCH(
           { status: 400 },
         );
       }
-      
+
       console.log('[API] 他の管理者が存在するため、役割変更を許可します');
     }
 
@@ -101,7 +99,9 @@ export async function PATCH(
       },
     });
 
-    console.log(`[API] ユーザー情報を更新しました: ${updatedUser.id}, 役割: ${updatedUser.corporateRole}`);
+    console.log(
+      `[API] ユーザー情報を更新しました: ${updatedUser.id}, 役割: ${updatedUser.corporateRole}`,
+    );
 
     await logUserActivity(
       corporateTenant.id,
@@ -134,7 +134,7 @@ export async function PATCH(
         error: 'ユーザー情報の更新に失敗しました',
         details: error instanceof Error ? error.message : String(error),
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -288,7 +288,11 @@ export async function POST(request: Request, { params }: { params: { id: string 
 
     // 環境変数からベースURLを取得
     const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000';
+      process.env.NEXT_PUBLIC_APP_URL ||
+      process.env.NEXT_PUBLIC_BASE_URL ||
+      process.env.NEXTAUTH_URL ||
+      'https://app.sns-share.com';
+
     const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 
     // 招待リンクの生成
