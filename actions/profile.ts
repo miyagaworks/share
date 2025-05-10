@@ -128,7 +128,8 @@ export async function updateProfile(data: ProfileUpdateData) {
           typeof validatedData.companyUrl === 'string' ? validatedData.companyUrl : undefined,
         companyLabel:
           typeof validatedData.companyLabel === 'string' ? validatedData.companyLabel : undefined,
-        bioTextColor: typeof validatedData.textColor === 'string' ? validatedData.textColor : undefined,
+        bioTextColor:
+          typeof validatedData.bioTextColor === 'string' ? validatedData.bioTextColor : undefined,
       },
     });
 

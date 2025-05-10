@@ -45,9 +45,12 @@ export function MemberProfileForm({
   const [isSaving, setIsSaving] = useState(false);
   const [image, setImage] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    name: '',
+    // 姓名とフリガナを分割して管理
+    lastName: '',
+    firstName: '',
+    lastNameKana: '',
+    firstNameKana: '',
     nameEn: '',
-    nameKana: '',
     bio: '',
     phone: '',
     position: '',
@@ -69,13 +72,44 @@ export function MemberProfileForm({
     transition: 'background-color 0.2s',
   };
 
+  // 姓名とフリガナを分割する関数
+  const splitNameAndKana = (user: UserData) => {
+    // 姓名の分割
+    let lastName = user.lastName || '';
+    let firstName = user.firstName || '';
+
+    // 分割されたフィールドがない場合は結合されたフィールドから分割
+    if (!lastName && !firstName && user.name) {
+      const nameParts = user.name.split(' ');
+      lastName = nameParts[0] || '';
+      firstName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
+    }
+
+    // フリガナの分割
+    let lastNameKana = user.lastNameKana || '';
+    let firstNameKana = user.firstNameKana || '';
+
+    // 分割されたフィールドがない場合は結合されたフィールドから分割
+    if (!lastNameKana && !firstNameKana && user.nameKana) {
+      const kanaParts = user.nameKana.split(' ');
+      lastNameKana = kanaParts[0] || '';
+      firstNameKana = kanaParts.length > 1 ? kanaParts.slice(1).join(' ') : '';
+    }
+
+    return { lastName, firstName, lastNameKana, firstNameKana };
+  };
+
   // 初期データの設定
   useEffect(() => {
     if (userData) {
+      const { lastName, firstName, lastNameKana, firstNameKana } = splitNameAndKana(userData);
+
       setFormData({
-        name: userData.name || '',
+        lastName,
+        firstName,
+        lastNameKana,
+        firstNameKana,
         nameEn: userData.nameEn || '',
-        nameKana: userData.nameKana || '',
         bio: userData.bio || '',
         phone: userData.phone || '',
         position: userData.position || '',
@@ -98,18 +132,22 @@ export function MemberProfileForm({
       setIsSaving(true);
 
       // 各フィールドの処理
-      const processedName = formData.name.trim() || undefined;
+      const processedLastName = formData.lastName.trim() || undefined;
+      const processedFirstName = formData.firstName.trim() || undefined;
+      const processedLastNameKana = formData.lastNameKana.trim() || undefined;
+      const processedFirstNameKana = formData.firstNameKana.trim() || undefined;
       const processedNameEn = formData.nameEn.trim() || undefined;
-      const processedNameKana = formData.nameKana.trim() || undefined;
       const processedBio = formData.bio.trim() || undefined;
       const processedPhone = formData.phone.trim() || undefined;
       const processedPosition = formData.position.trim() || undefined;
 
       // データを準備
       const updateData: ProfileUpdateData = {
-        name: processedName,
+        lastName: processedLastName,
+        firstName: processedFirstName,
+        lastNameKana: processedLastNameKana,
+        firstNameKana: processedFirstNameKana,
         nameEn: processedNameEn,
-        nameKana: processedNameKana,
         bio: processedBio,
         phone: processedPhone,
         position: processedPosition,
@@ -119,11 +157,9 @@ export function MemberProfileForm({
       // 親コンポーネントの保存関数を呼び出し
       await onSave(updateData);
 
-      // ここでトーストメッセージを表示する代わりに、親コンポーネントに任せる
-      // toast.success('プロフィールを更新しました'); // <-- この行をコメントアウトまたは削除
+      toast.success('プロフィールを更新しました');
     } catch (error) {
       console.error('更新エラー:', error);
-      // エラーメッセージは表示する（親コンポーネントでも表示される可能性あり）
       toast.error('プロフィールの更新に失敗しました');
     } finally {
       setIsSaving(false);
@@ -205,51 +241,80 @@ export function MemberProfileForm({
             </p>
           </div>
 
+          {/* 姓名分割フィールド */}
+          <div className="grid gap-6 grid-cols-1 sm:grid-cols-2">
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                <HiUser className="mr-2 h-4 w-4 text-gray-500" />姓
+              </label>
+              <Input
+                name="lastName"
+                placeholder="山田"
+                value={formData.lastName}
+                onChange={handleChange}
+                disabled={isSaving}
+              />
+            </div>
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                <HiUser className="mr-2 h-4 w-4 text-gray-500" />名
+              </label>
+              <Input
+                name="firstName"
+                placeholder="太郎"
+                value={formData.firstName}
+                onChange={handleChange}
+                disabled={isSaving}
+              />
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <label className="flex items-center text-sm font-medium text-gray-700">
+              <HiUser className="mr-2 h-4 w-4 text-gray-500" />
+              名前（英語/ローマ字）
+            </label>
+            <Input
+              name="nameEn"
+              placeholder="Taro Yamada"
+              value={formData.nameEn}
+              onChange={handleChange}
+              disabled={isSaving}
+            />
+          </div>
+
+          {/* フリガナ分割フィールド */}
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2">
             <div className="space-y-2">
               <label className="flex items-center text-sm font-medium text-gray-700">
                 <HiUser className="mr-2 h-4 w-4 text-gray-500" />
-                名前（日本語）
+                姓（フリガナ）
               </label>
               <Input
-                name="name"
-                placeholder="山田 太郎"
-                value={formData.name}
+                name="lastNameKana"
+                placeholder="ヤマダ"
+                value={formData.lastNameKana}
                 onChange={handleChange}
                 disabled={isSaving}
               />
             </div>
-
             <div className="space-y-2">
               <label className="flex items-center text-sm font-medium text-gray-700">
                 <HiUser className="mr-2 h-4 w-4 text-gray-500" />
-                名前（英語/ローマ字）
+                名（フリガナ）
               </label>
               <Input
-                name="nameEn"
-                placeholder="Taro Yamada"
-                value={formData.nameEn}
+                name="firstNameKana"
+                placeholder="タロウ"
+                value={formData.firstNameKana}
                 onChange={handleChange}
                 disabled={isSaving}
-              />
-            </div>
-
-            {/* フリガナ入力欄を追加 */}
-            <div className="space-y-2">
-              <label className="flex items-center text-sm font-medium text-gray-700">
-                <HiUser className="mr-2 h-4 w-4 text-gray-500" />
-                名前（フリガナ）
-              </label>
-              <Input
-                name="nameKana"
-                placeholder="ヤマダ タロウ"
-                value={formData.nameKana}
-                onChange={handleChange}
-                disabled={isSaving}
-                helperText="スマートフォンの連絡先に登録する際のフリガナです。姓と名の間にスペースを入れてください。"
               />
             </div>
           </div>
+          <p className="text-xs text-gray-500 mt-1">
+            スマートフォンの連絡先に登録する際のフリガナです。
+          </p>
 
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">

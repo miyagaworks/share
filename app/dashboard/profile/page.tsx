@@ -29,10 +29,8 @@ interface UserWithProfile extends User {
 }
 
 interface ExtendedUserData extends UserWithProfile {
-  // ?を使わず、明示的にstring | nullとして定義する
   companyUrl: string | null;
   companyLabel: string | null;
-  // 必要に応じて他のプロパティも定義
 }
 
 export default function ProfilePage() {
@@ -41,7 +39,12 @@ export default function ProfilePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [formData, setFormData] = useState({
-    name: '',
+    // 姓名分割
+    lastName: '',
+    firstName: '',
+    lastNameKana: '',
+    firstNameKana: '',
+
     nameEn: '',
     bio: '',
     email: '',
@@ -84,9 +87,23 @@ export default function ProfilePage() {
         setIsLoading(true);
         const userData = await fetchUserData();
 
-        // ユーザーデータを直接フォームデータに反映
+        // 分割された姓名とフリガナを設定
         setFormData({
-          name: userData.name || '',
+          // 分割されたフィールドがある場合はそれを使用、なければ従来のフィールドから分割
+          lastName: userData.lastName || (userData.name ? userData.name.split(' ')[0] : ''),
+          firstName:
+            userData.firstName ||
+            (userData.name && userData.name.split(' ').length > 1
+              ? userData.name.split(' ').slice(1).join(' ')
+              : ''),
+          lastNameKana:
+            userData.lastNameKana || (userData.nameKana ? userData.nameKana.split(' ')[0] : ''),
+          firstNameKana:
+            userData.firstNameKana ||
+            (userData.nameKana && userData.nameKana.split(' ').length > 1
+              ? userData.nameKana.split(' ').slice(1).join(' ')
+              : ''),
+
           nameEn: userData.nameEn || '',
           bio: userData.bio || '',
           email: userData.email || '',
@@ -115,8 +132,11 @@ export default function ProfilePage() {
       setIsSaving(true);
 
       // 各フィールドの処理
-      // 文字列フィールドは空文字列をundefinedに変換（nullではなく）
-      const processedName = formData.name.trim() || undefined;
+      const processedLastName = formData.lastName.trim() || undefined;
+      const processedFirstName = formData.firstName.trim() || undefined;
+      const processedLastNameKana = formData.lastNameKana.trim() || undefined;
+      const processedFirstNameKana = formData.firstNameKana.trim() || undefined;
+
       const processedNameEn = formData.nameEn.trim() || undefined;
       const processedBio = formData.bio.trim() || undefined;
       const processedPhone = formData.phone.trim() || undefined;
@@ -131,12 +151,15 @@ export default function ProfilePage() {
           processedCompanyUrl = `https://${processedCompanyUrl}`;
         }
       } else {
-        // 空の場合はundefinedに設定（nullではなく）
         processedCompanyUrl = undefined;
       }
 
       const response = await updateProfile({
-        name: processedName,
+        lastName: processedLastName,
+        firstName: processedFirstName,
+        lastNameKana: processedLastNameKana,
+        firstNameKana: processedFirstNameKana,
+
         nameEn: processedNameEn,
         bio: processedBio,
         phone: processedPhone,
@@ -150,15 +173,31 @@ export default function ProfilePage() {
         throw new Error(response.error);
       }
 
-      // 以下は既存のコードと同じ
       toast.success('プロフィールを更新しました');
       router.refresh();
 
       // 最新データを再取得
       const updatedUserData = await fetchUserData();
 
+      // 更新されたデータでフォームを更新
       setFormData({
-        name: updatedUserData.name || '',
+        lastName:
+          updatedUserData.lastName ||
+          (updatedUserData.name ? updatedUserData.name.split(' ')[0] : ''),
+        firstName:
+          updatedUserData.firstName ||
+          (updatedUserData.name && updatedUserData.name.split(' ').length > 1
+            ? updatedUserData.name.split(' ').slice(1).join(' ')
+            : ''),
+        lastNameKana:
+          updatedUserData.lastNameKana ||
+          (updatedUserData.nameKana ? updatedUserData.nameKana.split(' ')[0] : ''),
+        firstNameKana:
+          updatedUserData.firstNameKana ||
+          (updatedUserData.nameKana && updatedUserData.nameKana.split(' ').length > 1
+            ? updatedUserData.nameKana.split(' ').slice(1).join(' ')
+            : ''),
+
         nameEn: updatedUserData.nameEn || '',
         bio: updatedUserData.bio || '',
         email: updatedUserData.email || '',
@@ -227,34 +266,79 @@ export default function ProfilePage() {
               </p>
             </div>
 
+            {/* 姓名分割フィールド */}
+            <div className="grid gap-6 md:grid-cols-2">
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  <HiUser className="mr-2 h-4 w-4 text-gray-500" />姓
+                </label>
+                <Input
+                  name="lastName"
+                  placeholder="山田"
+                  value={formData.lastName}
+                  onChange={handleChange}
+                  disabled={isSaving}
+                />
+              </div>
+              <div className="space-y-2">
+                <label className="flex items-center text-sm font-medium text-gray-700">
+                  <HiUser className="mr-2 h-4 w-4 text-gray-500" />名
+                </label>
+                <Input
+                  name="firstName"
+                  placeholder="太郎"
+                  value={formData.firstName}
+                  onChange={handleChange}
+                  disabled={isSaving}
+                />
+              </div>
+            </div>
+
+            {/* フリガナ分割フィールド */}
             <div className="grid gap-6 md:grid-cols-2">
               <div className="space-y-2">
                 <label className="flex items-center text-sm font-medium text-gray-700">
                   <HiUser className="mr-2 h-4 w-4 text-gray-500" />
-                  名前（日本語）
+                  姓（フリガナ）
                 </label>
                 <Input
-                  name="name"
-                  placeholder="山田 太郎"
-                  value={formData.name}
+                  name="lastNameKana"
+                  placeholder="ヤマダ"
+                  value={formData.lastNameKana}
                   onChange={handleChange}
                   disabled={isSaving}
                 />
               </div>
-
               <div className="space-y-2">
                 <label className="flex items-center text-sm font-medium text-gray-700">
                   <HiUser className="mr-2 h-4 w-4 text-gray-500" />
-                  名前（英語/ローマ字）
+                  名（フリガナ）
                 </label>
                 <Input
-                  name="nameEn"
-                  placeholder="Taro Yamada"
-                  value={formData.nameEn}
+                  name="firstNameKana"
+                  placeholder="タロウ"
+                  value={formData.firstNameKana}
                   onChange={handleChange}
                   disabled={isSaving}
                 />
               </div>
+            </div>
+            <p className="text-xs text-muted-foreground mt-1">
+              スマートフォンの連絡先に登録する際のフリガナです。
+            </p>
+
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                <HiUser className="mr-2 h-4 w-4 text-gray-500" />
+                名前（英語/ローマ字）
+              </label>
+              <Input
+                name="nameEn"
+                placeholder="Taro Yamada"
+                value={formData.nameEn}
+                onChange={handleChange}
+                disabled={isSaving}
+              />
             </div>
 
             <div className="space-y-2">
@@ -272,10 +356,10 @@ export default function ProfilePage() {
                 className="text-justify"
               />
 
-              {/* かんたん自己紹介ボタンを追加 */}
+              {/* かんたん自己紹介ボタン */}
               <div className="mt-6 mb-4 border border-blue-200 rounded-lg bg-blue-50 p-4">
                 <div className="flex items-center mb-2">
-                  <HiSparkles className="text-blue-600 h-5 w-5 mr-2" /> {/* アイコンを変更 */}
+                  <HiSparkles className="text-blue-600 h-5 w-5 mr-2" />
                   <h3 className="text-blue-800 font-medium">自己紹介文を簡単に作成</h3>
                 </div>
                 <p className="text-sm text-blue-700 mb-4">
