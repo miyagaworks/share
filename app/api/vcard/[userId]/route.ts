@@ -19,28 +19,48 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
   try {
     const userId = params.userId;
 
-    // ユーザー情報の取得 - 全フィールドを取得するためにincludeを使用する代わりに
-    // 必要なすべてのフィールドを明示的に取得
+    // ユーザー情報と関連データを一度に取得
+    // selectを使って必要なフィールドを明示的に指定
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        nameEn: true,
+        nameKana: true, // 明示的に選択
+        email: true,
+        phone: true,
+        company: true,
+        bio: true,
+        image: true,
+        position: true,
+        departmentId: true,
+        snsLinks: {
+          select: {
+            id: true,
+            platform: true,
+            username: true,
+            url: true,
+            displayOrder: true,
+          },
+          orderBy: { displayOrder: 'asc' },
+        },
+        customLinks: {
+          select: {
+            id: true,
+            name: true,
+            url: true,
+            displayOrder: true,
+          },
+          orderBy: { displayOrder: 'asc' },
+        },
+      },
     });
 
     if (!user) {
       console.error('User not found:', userId);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
-    // SNSリンクを別途取得
-    const snsLinks = await prisma.snsLink.findMany({
-      where: { userId },
-      orderBy: { displayOrder: 'asc' },
-    });
-
-    // カスタムリンクを別途取得
-    const customLinks = await prisma.customLink.findMany({
-      where: { userId },
-      orderBy: { displayOrder: 'asc' },
-    });
 
     // vCardフォーマットの生成
     const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
@@ -121,6 +141,21 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
       vcard.push(`PHOTO;VALUE=URI:${user.image}`);
     }
 
+    // 役職があれば追加
+    if (user.position) {
+      vcard.push(`TITLE:${escapeVCardValue(user.position)}`);
+    }
+
+    // 部署情報を追加
+    if (user.departmentId) {
+      const department = await prisma.department.findUnique({
+        where: { id: user.departmentId },
+      });
+      if (department) {
+        vcard.push(`ORG-UNIT:${escapeVCardValue(department.name)}`);
+      }
+    }
+
     // プロフィールURLを追加
     const profile = await prisma.profile.findUnique({
       where: { userId },
@@ -133,8 +168,8 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
     }
 
     // SNSリンクの追加
-    if (snsLinks.length > 0) {
-      snsLinks.forEach((link) => {
+    if (user.snsLinks && user.snsLinks.length > 0) {
+      user.snsLinks.forEach((link) => {
         vcard.push(
           `URL;TYPE=${escapeVCardValue(link.platform.toUpperCase())}:${escapeVCardValue(link.url)}`,
         );
@@ -142,26 +177,11 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
     }
 
     // カスタムリンクの追加
-    if (customLinks.length > 0) {
-      customLinks.forEach((link) => {
+    if (user.customLinks && user.customLinks.length > 0) {
+      user.customLinks.forEach((link) => {
         const linkLabel = escapeVCardValue(link.name || 'WORK');
         vcard.push(`URL;TYPE=${linkLabel}:${escapeVCardValue(link.url)}`);
       });
-    }
-
-    // 所属部署情報を追加（もし必要であれば）
-    if (user.departmentId) {
-      const department = await prisma.department.findUnique({
-        where: { id: user.departmentId },
-      });
-      if (department) {
-        vcard.push(`ORG-UNIT:${escapeVCardValue(department.name)}`);
-      }
-    }
-
-    // 役職情報を追加
-    if (user.position) {
-      vcard.push(`TITLE:${escapeVCardValue(user.position)}`);
     }
 
     // vCardの終了

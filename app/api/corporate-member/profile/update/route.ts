@@ -9,12 +9,11 @@ import { z } from 'zod';
 const ProfileUpdateSchema = z.object({
   name: z.string().min(1, '名前は必須です').optional(),
   nameEn: z.string().optional().nullable(),
-  nameKana: z.string().optional().nullable(), // 追加: 読み仮名フィールド
+  nameKana: z.string().optional().nullable(), // フリガナフィールド
   bio: z.string().max(300, '自己紹介は300文字以内で入力してください').optional().nullable(),
   image: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
-  position: z.string().max(50, '役職は50文字以内で入力してください').optional().nullable(), // 役職フィールド追加
-  // 外観設定関連のフィールドを残す（他の場所で使用されている可能性があるため）
+  position: z.string().max(50, '役職は50文字以内で入力してください').optional().nullable(),
   headerText: z
     .string()
     .max(50, 'ヘッダーテキストは50文字以内で入力してください')
@@ -69,7 +68,7 @@ export async function POST(req: NextRequest) {
     const updateData: Record<string, unknown> = {
       name: data.name,
       nameEn: data.nameEn,
-      nameKana: data.nameKana, // 追加
+      nameKana: data.nameKana, // フリガナフィールド
       bio: data.bio,
       phone: data.phone,
       position: data.position,

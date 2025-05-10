@@ -32,6 +32,7 @@ interface UserData {
   id: string;
   name: string | null;
   nameEn: string | null;
+  nameKana: string | null; // フリガナフィールドを追加
   bio: string | null;
   email: string;
   phone: string | null;
@@ -51,9 +52,10 @@ interface UserData {
 interface ProfileUpdateData {
   name?: string;
   nameEn?: string | null;
+  nameKana?: string | null; // フリガナフィールドを追加
   bio?: string | null;
   phone?: string | null;
-  position?: string | null; // 役職追加
+  position?: string | null;
   image?: string | null;
 }
 
@@ -78,12 +80,11 @@ export function MemberProfileForm({
     nameKana: '',
     bio: '',
     phone: '',
-    position: '', // 役職のフィールド追加
+    position: '',
   });
 
   // テナントのカラー設定
   const corporatePrimary = tenantData?.corporatePrimary || 'var(--color-corporate-primary)';
-  // const corporateSecondary = tenantData?.corporateSecondary || 'var(--color-corporate-secondary)';
 
   // Reactの状態でホバーを管理
   const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
@@ -104,7 +105,7 @@ export function MemberProfileForm({
       setFormData({
         name: userData.name || '',
         nameEn: userData.nameEn || '',
-        nameKana: userData.nameKana || '', // 追加
+        nameKana: userData.nameKana || '',
         bio: userData.bio || '',
         phone: userData.phone || '',
         position: userData.position || '',
@@ -129,7 +130,7 @@ export function MemberProfileForm({
       // 各フィールドの処理
       const processedName = formData.name.trim() || undefined;
       const processedNameEn = formData.nameEn.trim() || undefined;
-      const processedNameKana = formData.nameKana.trim() || undefined; // 追加
+      const processedNameKana = formData.nameKana.trim() || undefined;
       const processedBio = formData.bio.trim() || undefined;
       const processedPhone = formData.phone.trim() || undefined;
       const processedPosition = formData.position.trim() || undefined;
@@ -138,7 +139,7 @@ export function MemberProfileForm({
       const updateData: ProfileUpdateData = {
         name: processedName,
         nameEn: processedNameEn,
-        nameKana: processedNameKana, // 追加
+        nameKana: processedNameKana,
         bio: processedBio,
         phone: processedPhone,
         position: processedPosition,
