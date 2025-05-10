@@ -109,6 +109,7 @@ export function MemberProfileForm({
         firstName,
         lastNameKana,
         firstNameKana,
+        // 英語名はそのまま使用 - 自動生成しない
         nameEn: userData.nameEn || '',
         bio: userData.bio || '',
         phone: userData.phone || '',
@@ -136,7 +137,7 @@ export function MemberProfileForm({
       const processedFirstName = formData.firstName.trim() || undefined;
       const processedLastNameKana = formData.lastNameKana.trim() || undefined;
       const processedFirstNameKana = formData.firstNameKana.trim() || undefined;
-      const processedNameEn = formData.nameEn.trim() || undefined;
+      const processedNameEn = formData.nameEn.trim() || undefined; // 英語名はそのまま使用
       const processedBio = formData.bio.trim() || undefined;
       const processedPhone = formData.phone.trim() || undefined;
       const processedPosition = formData.position.trim() || undefined;
@@ -147,7 +148,7 @@ export function MemberProfileForm({
         firstName: processedFirstName,
         lastNameKana: processedLastNameKana,
         firstNameKana: processedFirstNameKana,
-        nameEn: processedNameEn,
+        nameEn: processedNameEn, // 英語名はユーザー入力をそのまま使用
         bio: processedBio,
         phone: processedPhone,
         position: processedPosition,

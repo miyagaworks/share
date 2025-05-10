@@ -104,6 +104,7 @@ export default function ProfilePage() {
               ? userData.nameKana.split(' ').slice(1).join(' ')
               : ''),
 
+          // 英語名はそのまま使用 - 自動生成しない
           nameEn: userData.nameEn || '',
           bio: userData.bio || '',
           email: userData.email || '',
@@ -137,6 +138,7 @@ export default function ProfilePage() {
       const processedLastNameKana = formData.lastNameKana.trim() || undefined;
       const processedFirstNameKana = formData.firstNameKana.trim() || undefined;
 
+      // 英語名はユーザー入力をそのまま使用（自動生成しない）
       const processedNameEn = formData.nameEn.trim() || undefined;
       const processedBio = formData.bio.trim() || undefined;
       const processedPhone = formData.phone.trim() || undefined;
@@ -160,7 +162,7 @@ export default function ProfilePage() {
         lastNameKana: processedLastNameKana,
         firstNameKana: processedFirstNameKana,
 
-        nameEn: processedNameEn,
+        nameEn: processedNameEn, // 英語名はそのまま使用
         bio: processedBio,
         phone: processedPhone,
         company: processedCompany,

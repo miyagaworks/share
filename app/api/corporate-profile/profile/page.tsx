@@ -105,17 +105,17 @@ export default function CorporateProfileEditPage() {
         setTenantData(tenant);
         setIsAdmin(user.corporateRole === 'admin');
 
-        // 姓名とフリガナを分割して設定
-        const lastName = user.lastName || (user.name ? user.name.split(' ')[0] : '');
-        const firstName =
+        // 更新後の姓名とフリガナを分割して取得
+        const updatedLastName = user.lastName || (user.name ? user.name.split(' ')[0] : '');
+        const updatedFirstName =
           user.firstName ||
           (user.name && user.name.split(' ').length > 1
             ? user.name.split(' ').slice(1).join(' ')
             : '');
 
-        const lastNameKana =
+        const updatedLastNameKana =
           user.lastNameKana || (user.nameKana ? user.nameKana.split(' ')[0] : '');
-        const firstNameKana =
+        const updatedFirstNameKana =
           user.firstNameKana ||
           (user.nameKana && user.nameKana.split(' ').length > 1
             ? user.nameKana.split(' ').slice(1).join(' ')
@@ -123,10 +123,11 @@ export default function CorporateProfileEditPage() {
 
         // フォームデータを設定
         setFormData({
-          lastName,
-          firstName,
-          lastNameKana,
-          firstNameKana,
+          lastName: updatedLastName,
+          firstName: updatedFirstName,
+          lastNameKana: updatedLastNameKana,
+          firstNameKana: updatedFirstNameKana,
+          // 英語名はそのまま使用（自動生成しない）
           nameEn: user.nameEn || '',
           bio: user.bio || '',
           phone: user.phone || '',
@@ -166,7 +167,7 @@ export default function CorporateProfileEditPage() {
       const processedFirstName = formData.firstName.trim() || undefined;
       const processedLastNameKana = formData.lastNameKana.trim() || undefined;
       const processedFirstNameKana = formData.firstNameKana.trim() || undefined;
-      const processedNameEn = formData.nameEn.trim() || undefined;
+      const processedNameEn = formData.nameEn.trim() || undefined; // 英語名はそのまま使用
       const processedBio = formData.bio.trim() || undefined;
       const processedPhone = formData.phone.trim() || undefined;
 
@@ -200,7 +201,7 @@ export default function CorporateProfileEditPage() {
           firstName: processedFirstName,
           lastNameKana: processedLastNameKana,
           firstNameKana: processedFirstNameKana,
-          nameEn: processedNameEn,
+          nameEn: processedNameEn, // 英語名はユーザー入力をそのまま使用
           bio: processedBio,
           phone: processedPhone,
           company: processedCompany,

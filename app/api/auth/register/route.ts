@@ -36,8 +36,8 @@ export async function POST(req: NextRequest) {
     // フリガナも同様に結合
     const nameKana = `${lastNameKana} ${firstNameKana}`;
 
-    // 英語名は仮で姓名を逆にする（実際にはもっと良い変換方法が必要かもしれません）
-    const nameEn = `${firstName} ${lastName}`;
+    // 英語名は自動生成しない - ユーザーが後で明示的に設定できるようにする
+    const nameEn = ''; // 空の文字列を設定
 
     // メールアドレスを小文字に正規化
     const normalizedEmail = email.toLowerCase();
@@ -75,7 +75,7 @@ export async function POST(req: NextRequest) {
     const user = await prisma.user.create({
       data: {
         name, // 結合した漢字名
-        nameEn, // 結合した英語名
+        nameEn, // 英語名（空の文字列）
         nameKana, // 結合したフリガナ
         lastName, // 姓（追加）
         firstName, // 名（追加）
