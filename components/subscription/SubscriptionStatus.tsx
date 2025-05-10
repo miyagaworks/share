@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { getPlanNameInJapanese } from '@/lib/utils';
 import { HiCheck, HiRefresh, HiXCircle, HiExclamation, HiClock } from 'react-icons/hi';
 
 interface SubscriptionData {
@@ -291,13 +290,6 @@ export default function SubscriptionStatus({ onReloadSubscription }: Subscriptio
             </div>
 
             <div className="mt-4 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">プラン</span>
-                <span className="text-sm font-medium">
-                  {getPlanNameInJapanese(subscription.plan)}
-                </span>
-              </div>
-
               <div className="flex justify-between items-center">
                 <span className="text-sm text-gray-500">次回更新日</span>
                 <span className="text-sm font-medium">

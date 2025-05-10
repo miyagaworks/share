@@ -722,8 +722,8 @@ export default async function ProfilePage({ params }: { params: { slug: string }
         <style
           dangerouslySetInnerHTML={{
             __html: `
-              .text-enlarged {
-                font-size: 120% !important; /* 通常より20%大きく */
+              ..text-enlarged {
+                font-size: 110% !important; /* 通常より10%大きく */
                 line-height: 1.5 !important;
               }
               
