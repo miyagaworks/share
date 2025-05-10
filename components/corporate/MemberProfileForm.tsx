@@ -75,6 +75,7 @@ export function MemberProfileForm({
   const [formData, setFormData] = useState({
     name: '',
     nameEn: '',
+    nameKana: '',
     bio: '',
     phone: '',
     position: '', // 役職のフィールド追加
@@ -103,6 +104,7 @@ export function MemberProfileForm({
       setFormData({
         name: userData.name || '',
         nameEn: userData.nameEn || '',
+        nameKana: userData.nameKana || '', // 追加
         bio: userData.bio || '',
         phone: userData.phone || '',
         position: userData.position || '',
@@ -127,17 +129,19 @@ export function MemberProfileForm({
       // 各フィールドの処理
       const processedName = formData.name.trim() || undefined;
       const processedNameEn = formData.nameEn.trim() || undefined;
+      const processedNameKana = formData.nameKana.trim() || undefined; // 追加
       const processedBio = formData.bio.trim() || undefined;
       const processedPhone = formData.phone.trim() || undefined;
-      const processedPosition = formData.position.trim() || undefined; // 役職の処理追加
+      const processedPosition = formData.position.trim() || undefined;
 
       // データを準備
       const updateData: ProfileUpdateData = {
         name: processedName,
         nameEn: processedNameEn,
+        nameKana: processedNameKana, // 追加
         bio: processedBio,
         phone: processedPhone,
-        position: processedPosition, // 役職をUpdateDataに追加
+        position: processedPosition,
         image: image !== userData?.image ? image : undefined,
       };
 
@@ -254,6 +258,22 @@ export function MemberProfileForm({
                 value={formData.nameEn}
                 onChange={handleChange}
                 disabled={isSaving}
+              />
+            </div>
+
+            {/* フリガナ入力欄を追加 */}
+            <div className="space-y-2">
+              <label className="flex items-center text-sm font-medium text-gray-700">
+                <HiUser className="mr-2 h-4 w-4 text-gray-500" />
+                名前（フリガナ）
+              </label>
+              <Input
+                name="nameKana"
+                placeholder="ヤマダ タロウ"
+                value={formData.nameKana}
+                onChange={handleChange}
+                disabled={isSaving}
+                helperText="スマートフォンの連絡先に登録する際のフリガナです。姓と名の間にスペースを入れてください。"
               />
             </div>
           </div>

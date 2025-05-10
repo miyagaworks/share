@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
 // app/api/corporate-member/profile/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -13,9 +14,38 @@ export async function GET() {
     }
 
     // ユーザー情報とプロフィール情報を取得
+    // includeの代わりにselectを使い、必要なフィールドを明示的に指定
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
+      select: {
+        id: true,
+        email: true,
+        name: true,
+        nameEn: true,
+        nameKana: true, // 明示的に選択
+        password: true, // 後で除外するため
+        image: true,
+        bio: true,
+        mainColor: true,
+        snsIconColor: true,
+        bioBackgroundColor: true,
+        bioTextColor: true,
+        phone: true,
+        company: true,
+        companyUrl: true,
+        companyLabel: true,
+        emailVerified: true,
+        stripeCustomerId: true,
+        subscriptionStatus: true,
+        trialEndsAt: true,
+        corporateRole: true,
+        position: true,
+        departmentId: true,
+        tenantId: true,
+        createdAt: true,
+        updatedAt: true,
+
+        // 関連データ
         profile: true,
         department: true,
         tenant: {

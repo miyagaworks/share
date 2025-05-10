@@ -20,6 +20,7 @@ model User {
   email               String                 @unique
   name                String?
   nameEn              String?
+  nameKana            String?
   password            String? // ハッシュ化されたパスワード、OAuthの場合はnull
   passwordResetTokens PasswordResetToken[]
   image               String? // プロフィール画像URL

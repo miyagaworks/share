@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
 // app/api/vcard/[userId]/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 
@@ -18,17 +19,10 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
   try {
     const userId = params.userId;
 
-    // ユーザー情報と関連データを一度に取得
+    // ユーザー情報の取得 - 全フィールドを取得するためにincludeを使用する代わりに
+    // 必要なすべてのフィールドを明示的に取得
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      include: {
-        snsLinks: {
-          orderBy: { displayOrder: 'asc' },
-        },
-        customLinks: {
-          orderBy: { displayOrder: 'asc' },
-        },
-      },
     });
 
     if (!user) {
@@ -36,12 +30,28 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // SNSリンクを別途取得
+    const snsLinks = await prisma.snsLink.findMany({
+      where: { userId },
+      orderBy: { displayOrder: 'asc' },
+    });
+
+    // カスタムリンクを別途取得
+    const customLinks = await prisma.customLink.findMany({
+      where: { userId },
+      orderBy: { displayOrder: 'asc' },
+    });
+
     // vCardフォーマットの生成
     const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
 
     // 名前を適切に処理
     let lastName = '',
-      firstName = '';
+      firstName = '',
+      lastNameKana = '',
+      firstNameKana = '';
+
+    // 英語表記がある場合はそれを優先
     if (user.nameEn) {
       const nameParts = user.nameEn.split(' ');
       if (nameParts.length > 1) {
@@ -55,15 +65,41 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
       firstName = user.name;
     }
 
+    // フリガナ（カナ）があれば設定
+    if (user.nameKana) {
+      // スペースで区切られている場合を想定
+      const nameParts = user.nameKana.split(' ');
+      if (nameParts.length > 1) {
+        lastNameKana = nameParts.pop() || '';
+        firstNameKana = nameParts.join(' ');
+      } else {
+        firstNameKana = user.nameKana;
+      }
+    }
+
     const vcard = [
       'BEGIN:VCARD',
       'VERSION:3.0',
       `FN:${escapeVCardValue(user.name || '')}`,
       `N:${escapeVCardValue(lastName)};${escapeVCardValue(firstName)};;;`,
-      `REV:${now}`,
     ];
 
-    // オプション情報の追加
+    // フリガナ情報があれば追加
+    if (firstNameKana || lastNameKana) {
+      // iPhoneのフリガナ対応
+      vcard.push(`X-PHONETIC-FIRST-NAME:${escapeVCardValue(firstNameKana)}`);
+      vcard.push(`X-PHONETIC-LAST-NAME:${escapeVCardValue(lastNameKana)}`);
+
+      // Androidも含めた幅広い対応のために追加
+      vcard.push(`X-KANA:${escapeVCardValue(firstNameKana + ' ' + lastNameKana)}`);
+
+      // 日本の携帯電話向け
+      vcard.push(
+        `SOUND;X-IRMC-N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:;${escapeVCardValue(firstNameKana)};${escapeVCardValue(lastNameKana)};;`,
+      );
+    }
+
+    vcard.push(`REV:${now}`);
     if (user.phone) {
       vcard.push(`TEL;TYPE=CELL:${escapeVCardValue(user.phone)}`);
     }
@@ -97,8 +133,8 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
     }
 
     // SNSリンクの追加
-    if (user.snsLinks && user.snsLinks.length > 0) {
-      user.snsLinks.forEach((link) => {
+    if (snsLinks.length > 0) {
+      snsLinks.forEach((link) => {
         vcard.push(
           `URL;TYPE=${escapeVCardValue(link.platform.toUpperCase())}:${escapeVCardValue(link.url)}`,
         );
@@ -106,11 +142,26 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
     }
 
     // カスタムリンクの追加
-    if (user.customLinks && user.customLinks.length > 0) {
-      user.customLinks.forEach((link) => {
+    if (customLinks.length > 0) {
+      customLinks.forEach((link) => {
         const linkLabel = escapeVCardValue(link.name || 'WORK');
         vcard.push(`URL;TYPE=${linkLabel}:${escapeVCardValue(link.url)}`);
       });
+    }
+
+    // 所属部署情報を追加（もし必要であれば）
+    if (user.departmentId) {
+      const department = await prisma.department.findUnique({
+        where: { id: user.departmentId },
+      });
+      if (department) {
+        vcard.push(`ORG-UNIT:${escapeVCardValue(department.name)}`);
+      }
+    }
+
+    // 役職情報を追加
+    if (user.position) {
+      vcard.push(`TITLE:${escapeVCardValue(user.position)}`);
     }
 
     // vCardの終了

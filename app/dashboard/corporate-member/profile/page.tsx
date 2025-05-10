@@ -52,6 +52,7 @@ interface UserData {
 interface ProfileUpdateData {
   name?: string;
   nameEn?: string | null;
+  nameKana?: string | null; // 追加
   bio?: string | null;
   phone?: string | null;
   image?: string | null;

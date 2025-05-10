@@ -9,6 +9,7 @@ import { z } from 'zod';
 const ProfileUpdateSchema = z.object({
   name: z.string().min(1, '名前は必須です').optional(),
   nameEn: z.string().optional().nullable(),
+  nameKana: z.string().optional().nullable(), // 追加: 読み仮名フィールド
   bio: z.string().max(300, '自己紹介は300文字以内で入力してください').optional().nullable(),
   image: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
@@ -68,9 +69,10 @@ export async function POST(req: NextRequest) {
     const updateData: Record<string, unknown> = {
       name: data.name,
       nameEn: data.nameEn,
+      nameKana: data.nameKana, // 追加
       bio: data.bio,
       phone: data.phone,
-      position: data.position, // 役職フィールド追加
+      position: data.position,
       image: data.image,
       headerText: data.headerText,
       textColor: data.textColor,
