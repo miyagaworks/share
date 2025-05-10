@@ -3,44 +3,49 @@
 
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { z } from 'zod';
+import { ProfileSchema } from '@/schemas/auth';
 import { createProfile } from '@/actions/user';
 import { revalidatePath } from 'next/cache';
+import { ProfileUpdateData } from '@/types/profiles';
 
-// カラーコードのバリデーションを緩和した検証スキーマ
-const ProfileSchema = z.object({
-  name: z.string().min(1, '名前は必須です').optional(),
-  nameEn: z.string().optional().nullable(),
-  nameKana: z.string().optional().nullable(), // フリガナフィールドを追加
-  bio: z.string().max(300, '自己紹介は300文字以内で入力してください').optional().nullable(),
-  image: z.string().optional().nullable(),
-  mainColor: z
-    .string()
-    .regex(
-      /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/,
-      '有効なカラーコード(#RGB または #RRGGBB)を入力してください',
-    )
-    .optional()
-    .nullable(),
-  snsIconColor: z.string().optional().nullable(),
-  headerText: z.string().max(38, 'ヘッダーテキストは最大38文字までです').optional().nullable(),
-  textColor: z
-    .string()
-    .regex(
-      /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/,
-      '有効なカラーコード(#RGB または #RRGGBB)を入力してください',
-    )
-    .optional()
-    .nullable(),
-  phone: z.string().optional().nullable(),
-  company: z.string().optional().nullable(),
-  companyUrl: z.string().url({ message: '有効なURLを入力してください' }).optional().nullable(),
-  companyLabel: z.string().optional().nullable(),
-});
+// 検証結果の型定義
+interface ValidationSuccess {
+  success: true;
+  data: Record<string, unknown>;
+}
 
-export type ProfileData = z.infer<typeof ProfileSchema>;
+interface ValidationError {
+  success: false;
+  error: Record<string, unknown>;
+}
 
-export async function updateProfile(data: ProfileData) {
+type ValidationResult = ValidationSuccess | ValidationError;
+
+// 新しい検証ロジックの実装
+const validateProfileData = (data: ProfileUpdateData): ValidationResult => {
+  // nullをundefinedに変換して、ProfileSchemaとの互換性を確保
+  const sanitizedData: Record<string, unknown> = {};
+
+  Object.entries(data).forEach(([key, value]) => {
+    // nullをundefined（または期待される値）に変換
+    if (value === null && key === 'name') {
+      sanitizedData[key] = undefined;
+    } else {
+      sanitizedData[key] = value;
+    }
+  });
+
+  // バリデーション実行
+  const result = ProfileSchema.safeParse(sanitizedData);
+
+  if (!result.success) {
+    return { success: false, error: result.error.format() };
+  }
+
+  return { success: true, data: result.data };
+};
+
+export async function updateProfile(data: ProfileUpdateData) {
   try {
     const session = await auth();
 
@@ -49,50 +54,81 @@ export async function updateProfile(data: ProfileData) {
     }
 
     // データの検証
-    const validatedFields = ProfileSchema.safeParse(data);
+    const validationResult = validateProfileData(data);
 
-    if (!validatedFields.success) {
-      // エラーの詳細情報を取得
-      const errorDetails = validatedFields.error.format();
-      console.error('バリデーションエラー:', errorDetails);
-
-      // フィールド別のエラーメッセージがあればそれを返す
-      const mainColorError = errorDetails.mainColor?._errors[0];
-      const nameError = errorDetails.name?._errors[0];
-      const companyUrlError = errorDetails.companyUrl?._errors[0];
-      const headerTextError = errorDetails.headerText?._errors[0];
-      const textColorError = errorDetails.textColor?._errors[0];
-
-      if (mainColorError) {
-        return { error: `メインカラー: ${mainColorError}` };
-      } else if (nameError) {
-        return { error: `名前: ${nameError}` };
-      } else if (companyUrlError) {
-        return { error: `会社URL: ${companyUrlError}` };
-      } else if (headerTextError) {
-        return { error: `ヘッダーテキスト: ${headerTextError}` };
-      } else if (textColorError) {
-        return { error: `テキストカラー: ${textColorError}` };
-      }
-
+    if (!validationResult.success) {
+      console.error('バリデーションエラー:', validationResult.error);
       return { error: '入力データが無効です' };
+    }
+
+    // 検証済みデータを使用
+    const validatedData = validationResult.data;
+
+    // 姓名とフリガナの処理
+    // nullや空文字を適切に処理
+    let name: string | undefined = undefined;
+    let nameKana: string | undefined | null = undefined;
+
+    // 姓名の結合処理
+    if (typeof validatedData.lastName === 'string' || typeof validatedData.firstName === 'string') {
+      const lastNameStr = typeof validatedData.lastName === 'string' ? validatedData.lastName : '';
+      const firstNameStr =
+        typeof validatedData.firstName === 'string' ? validatedData.firstName : '';
+      if (lastNameStr || firstNameStr) {
+        name = [lastNameStr, firstNameStr].filter(Boolean).join(' ');
+      }
+    } else if (typeof validatedData.name === 'string') {
+      name = validatedData.name;
+    }
+
+    // フリガナの結合処理
+    if (
+      typeof validatedData.lastNameKana === 'string' ||
+      typeof validatedData.firstNameKana === 'string'
+    ) {
+      const lastNameKanaStr =
+        typeof validatedData.lastNameKana === 'string' ? validatedData.lastNameKana : '';
+      const firstNameKanaStr =
+        typeof validatedData.firstNameKana === 'string' ? validatedData.firstNameKana : '';
+      if (lastNameKanaStr || firstNameKanaStr) {
+        nameKana = [lastNameKanaStr, firstNameKanaStr].filter(Boolean).join(' ');
+      }
+    } else if (typeof validatedData.nameKana === 'string') {
+      nameKana = validatedData.nameKana;
     }
 
     // ユーザー情報を更新 - データベースに直接フィールド名を指定
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        name: data.name ?? undefined,
-        nameEn: data.nameEn ?? undefined,
-        nameKana: data.nameKana ?? undefined, // フリガナフィールドを追加
-        bio: data.bio ?? undefined,
-        image: data.image ?? undefined,
-        mainColor: data.mainColor ?? undefined,
-        snsIconColor: data.snsIconColor ?? undefined,
-        phone: data.phone ?? undefined,
-        company: data.company ?? undefined,
-        companyUrl: data.companyUrl ?? undefined,
-        companyLabel: data.companyLabel ?? undefined,
+        // 結合したフィールド（従来形式）
+        name,
+        nameKana,
+
+        // 分割したフィールド（新形式）
+        lastName: typeof validatedData.lastName === 'string' ? validatedData.lastName : undefined,
+        firstName:
+          typeof validatedData.firstName === 'string' ? validatedData.firstName : undefined,
+        lastNameKana:
+          typeof validatedData.lastNameKana === 'string' ? validatedData.lastNameKana : undefined,
+        firstNameKana:
+          typeof validatedData.firstNameKana === 'string' ? validatedData.firstNameKana : undefined,
+
+        // 他の共通フィールド
+        nameEn: typeof validatedData.nameEn === 'string' ? validatedData.nameEn : undefined,
+        bio: typeof validatedData.bio === 'string' ? validatedData.bio : undefined,
+        image: typeof validatedData.image === 'string' ? validatedData.image : undefined,
+        mainColor:
+          typeof validatedData.mainColor === 'string' ? validatedData.mainColor : undefined,
+        snsIconColor:
+          typeof validatedData.snsIconColor === 'string' ? validatedData.snsIconColor : undefined,
+        phone: typeof validatedData.phone === 'string' ? validatedData.phone : undefined,
+        company: typeof validatedData.company === 'string' ? validatedData.company : undefined,
+        companyUrl:
+          typeof validatedData.companyUrl === 'string' ? validatedData.companyUrl : undefined,
+        companyLabel:
+          typeof validatedData.companyLabel === 'string' ? validatedData.companyLabel : undefined,
+        bioTextColor: typeof validatedData.textColor === 'string' ? validatedData.textColor : undefined,
       },
     });
 

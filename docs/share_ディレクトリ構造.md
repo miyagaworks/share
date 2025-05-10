@@ -392,6 +392,7 @@ share/
 │   ├── corporateAccessState.ts
 │   ├── db-manager.ts
 │   ├── email.ts
+│   ├── errorHandler.ts
 │   ├── jikogene
 │   │   ├── ai-service.ts
 │   │   ├── env.ts
@@ -416,6 +417,7 @@ share/
 ├── next-env.d.ts
 ├── next.config.mjs
 ├── package-lock.json
+├── package.json
 ├── pnpm-lock.yaml
 ├── postcss.config.mjs
 ├── prisma
@@ -542,6 +544,7 @@ share/
 │   ├── fix-corporate-access.ts
 │   ├── fix-tenant-relations.ts
 │   ├── generate-prisma-migration.js
+│   ├── migrate-text-settings.ts
 │   └── setup-guide-images.mjs
 ├── share_db_backup.sql
 ├── tailwind.config.js
@@ -549,6 +552,8 @@ share/
 └── types
     ├── next-auth.d.ts
     ├── prisma-extensions.ts
+    ├── profiles.ts
     ├── sns-guide.ts
     ├── sns.ts
-    └── tinycolor2.d.ts
+    ├── tinycolor2.d.ts
+    └── user.ts

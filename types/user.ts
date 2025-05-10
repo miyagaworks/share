@@ -1,26 +1,4 @@
-// types/profiles.ts
-import { Department } from '@prisma/client';
-
-export interface UserData {
-  id: string;
-  email: string;
-  name: string | null;
-  nameEn: string | null;
-  nameKana: string | null;
-  lastName: string | null;
-  firstName: string | null;
-  lastNameKana: string | null;
-  firstNameKana: string | null;
-  image: string | null;
-  bio: string | null;
-  phone: string | null;
-  position: string | null;
-  department?: Department | null;
-  company?: string | null;
-  companyUrl?: string | null;
-  companyLabel?: string | null;
-}
-
+// types/user.ts
 export interface ProfileUpdateData {
   // 分割されたフィールド（新形式）
   lastName?: string | null;
@@ -41,7 +19,5 @@ export interface ProfileUpdateData {
   companyUrl?: string | null;
   companyLabel?: string | null;
   mainColor?: string | null;
-  snsIconColor?: string | null;
   textColor?: string | null;
-  position?: string | null;
 }

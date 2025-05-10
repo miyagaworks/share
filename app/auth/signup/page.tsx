@@ -302,7 +302,7 @@ export default function SignupPage() {
                   <Input
                     label="姓"
                     type="text"
-                    placeholder="小田"
+                    placeholder="山田"
                     {...register('lastName')}
                     error={errors.lastName?.message}
                     disabled={isPending}
@@ -313,7 +313,7 @@ export default function SignupPage() {
                   <Input
                     label="名"
                     type="text"
-                    placeholder="和正"
+                    placeholder="太郎"
                     {...register('firstName')}
                     error={errors.firstName?.message}
                     disabled={isPending}
@@ -324,7 +324,7 @@ export default function SignupPage() {
                   <Input
                     label="姓（フリガナ）"
                     type="text"
-                    placeholder="オダ"
+                    placeholder="ヤマダ"
                     {...register('lastNameKana')}
                     error={errors.lastNameKana?.message}
                     disabled={isPending}
@@ -335,7 +335,7 @@ export default function SignupPage() {
                   <Input
                     label="名（フリガナ）"
                     type="text"
-                    placeholder="カズマサ"
+                    placeholder="タロウ"
                     {...register('firstNameKana')}
                     error={errors.firstNameKana?.message}
                     disabled={isPending}

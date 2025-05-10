@@ -12,16 +12,24 @@ import { useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import type { User, Profile } from '@prisma/client';
 import { updateProfile } from '@/actions/profile';
+import { ProfileUpdateData } from '@/types/user';
 import { z } from 'zod';
 
 // 拡張されたProfileSchemaを定義
 const ExtendedProfileSchema = ProfileSchema.extend({
-  // ふりがな（nameKana）を追加
+  // 姓名とフリガナを分離
+  lastName: z.string().optional().nullable(),
+  firstName: z.string().optional().nullable(),
+  lastNameKana: z.string().optional().nullable(),
+  firstNameKana: z.string().optional().nullable(),
+  // 互換性のために元のフィールドも残す
+  name: z.string().optional().nullable(),
+  nameEn: z.string().optional().nullable(),
   nameKana: z.string().optional().nullable(),
-  // 空文字列の場合はnullに変換し、値がある場合はURLバリデーション
+  // 他のフィールド
   companyUrl: z
     .string()
-    .transform((val) => (val === '' ? null : val)) // 空文字列をnullに変換
+    .transform((val) => (val === '' ? null : val))
     .refine((val) => val === null || /^https?:\/\//i.test(val), {
       message: '有効なURLを入力してください',
     })
@@ -41,6 +49,57 @@ export function ProfileForm({ user }: ProfileFormProps) {
   const [isPending, setIsPending] = useState(false);
   const [image, setImage] = useState<string | null>(user.image || null);
 
+  // 名前とフリガナを分割して初期値を設定
+  const splitName = () => {
+    if (user.lastName && user.firstName) {
+      // 既に分割されている場合はそれを使用
+      return {
+        lastName: user.lastName,
+        firstName: user.firstName,
+      };
+    } else if (user.name) {
+      // 結合されている場合は分割する
+      const parts = user.name.split(' ');
+      if (parts.length > 1) {
+        return {
+          lastName: parts[0],
+          firstName: parts.slice(1).join(' '),
+        };
+      }
+      return {
+        lastName: user.name,
+        firstName: '',
+      };
+    }
+    return { lastName: '', firstName: '' };
+  };
+
+  // フリガナも同様に分割
+  const splitNameKana = () => {
+    if (user.lastNameKana && user.firstNameKana) {
+      return {
+        lastNameKana: user.lastNameKana,
+        firstNameKana: user.firstNameKana,
+      };
+    } else if (user.nameKana) {
+      const parts = user.nameKana.split(' ');
+      if (parts.length > 1) {
+        return {
+          lastNameKana: parts[0],
+          firstNameKana: parts.slice(1).join(' '),
+        };
+      }
+      return {
+        lastNameKana: user.nameKana,
+        firstNameKana: '',
+      };
+    }
+    return { lastNameKana: '', firstNameKana: '' };
+  };
+
+  const { lastName, firstName } = splitName();
+  const { lastNameKana, firstNameKana } = splitNameKana();
+
   const {
     register,
     handleSubmit,
@@ -48,9 +107,11 @@ export function ProfileForm({ user }: ProfileFormProps) {
   } = useForm<FormData>({
     resolver: zodResolver(ExtendedProfileSchema),
     defaultValues: {
-      name: user.name || '',
+      lastName: lastName,
+      firstName: firstName,
+      lastNameKana: lastNameKana,
+      firstNameKana: firstNameKana,
       nameEn: user.nameEn || '',
-      nameKana: (user as unknown as { nameKana?: string | null }).nameKana || '', // ふりがなのデフォルト値
       bio: user.bio || '',
       phone: user.phone || '',
       company: user.company || '',
@@ -69,40 +130,43 @@ export function ProfileForm({ user }: ProfileFormProps) {
         processedCompanyUrl = `https://${processedCompanyUrl}`;
       }
 
-      // 姓と名を結合して既存のAPIと互換性のある形式に変換
+      // 姓名とフリガナを結合して互換性のある形式にする
       const name =
         data.lastName && data.firstName
           ? `${data.lastName} ${data.firstName}`
           : data.lastName || data.firstName || undefined;
 
-      // 姓と名のフリガナを結合
       const nameKana =
         data.lastNameKana && data.firstNameKana
           ? `${data.lastNameKana} ${data.firstNameKana}`
           : data.lastNameKana || data.firstNameKana || undefined;
 
       // 画像が変更されていたら、imageも送信
-      const profileData = {
-        name, // 結合した名前
-        nameKana, // 結合したフリガナ
-        bio: data.bio?.trim() || undefined,
+      const profileData: ProfileUpdateData = {
+        // 分割されたフィールド
+        lastName: data.lastName,
+        firstName: data.firstName,
+        lastNameKana: data.lastNameKana,
+        firstNameKana: data.firstNameKana,
+        // 互換性のある形式
+        name,
+        nameKana,
+        nameEn: data.nameEn,
+        bio: data.bio,
         companyUrl: processedCompanyUrl,
-        phone: data.phone?.trim() || undefined,
-        company: data.company?.trim() || undefined,
-        companyLabel: data.companyLabel?.trim() || undefined,
+        phone: data.phone,
+        company: data.company,
+        companyLabel: data.companyLabel,
         image: image !== user.image ? image : undefined,
       };
 
-      const response = await updateProfile(profileData);
+      const response = await updateProfile(profileData); // 適切な型でanyを使用しない
 
       if (response.error) {
         throw new Error(response.error);
       }
 
-      // トースト通知は一度だけ表示。この行をコメントアウトすると
-      // サーバーアクション側のみでメッセージが表示される
-      // toast.success("プロフィールを更新しました");
-
+      toast.success('プロフィールを更新しました');
       router.refresh();
     } catch (error) {
       toast.error('プロフィールの更新に失敗しました');
@@ -126,14 +190,26 @@ export function ProfileForm({ user }: ProfileFormProps) {
           </p>
         </div>
 
-        <div>
-          <Input
-            label="名前（日本語）"
-            placeholder="山田 太郎"
-            {...register('name')}
-            error={errors.name?.message}
-            disabled={isPending}
-          />
+        {/* 姓名を分割したフィールド */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Input
+              label="姓"
+              placeholder="山田"
+              {...register('lastName')}
+              error={errors.lastName?.message}
+              disabled={isPending}
+            />
+          </div>
+          <div>
+            <Input
+              label="名"
+              placeholder="太郎"
+              {...register('firstName')}
+              error={errors.firstName?.message}
+              disabled={isPending}
+            />
+          </div>
         </div>
 
         <div>
@@ -146,18 +222,32 @@ export function ProfileForm({ user }: ProfileFormProps) {
           />
         </div>
 
-        {/* ふりがな入力欄を追加 */}
-        <div>
-          <Input
-            label="名前（フリガナ）"
-            placeholder="ヤマダ タロウ"
-            {...register('nameKana')}
-            error={errors.nameKana?.message}
-            disabled={isPending}
-            helperText="スマートフォンの連絡先に登録する際のフリガナです。姓と名の間にスペースを入れてください。"
-          />
+        {/* フリガナ入力欄も姓名分離 */}
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <Input
+              label="姓（フリガナ）"
+              placeholder="ヤマダ"
+              {...register('lastNameKana')}
+              error={errors.lastNameKana?.message}
+              disabled={isPending}
+            />
+          </div>
+          <div>
+            <Input
+              label="名（フリガナ）"
+              placeholder="タロウ"
+              {...register('firstNameKana')}
+              error={errors.firstNameKana?.message}
+              disabled={isPending}
+            />
+          </div>
         </div>
+        <p className="text-xs text-muted-foreground mt-1">
+          スマートフォンの連絡先に登録する際のフリガナです。
+        </p>
 
+        {/* 残りのフィールドは変更なし */}
         <div>
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             自己紹介
