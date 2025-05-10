@@ -722,7 +722,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
         <style
           dangerouslySetInnerHTML={{
             __html: `
-              ..text-enlarged {
+              .text-enlarged {
                 font-size: 110% !important; /* 通常より10%大きく */
                 line-height: 1.5 !important;
               }
@@ -793,6 +793,18 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                         element.classList.add('text-enlarged');
                       } else {
                         element.classList.remove('text-enlarged');
+                      }
+                    });
+                    
+                    // "trial"という表示を非表示にする（拡大モード時のみ）
+                    const planElements = document.querySelectorAll('.text-base.font-medium');
+                    planElements.forEach(function(element) {
+                      if (element.textContent.trim() === 'trial') {
+                        if (isTextEnlarged) {
+                          element.style.display = 'none';
+                        } else {
+                          element.style.display = '';
+                        }
                       }
                     });
                     
