@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
 // app/api/auth/forgot-password/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
@@ -24,7 +25,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // セキュリティ上の理由から、ユーザーが見つからなくても同じレスポンスを返す
+    // ユーザーが見つからない場合
     if (!user) {
       console.log(`ユーザーが見つかりません: ${email}`);
       return NextResponse.json(
@@ -51,22 +52,37 @@ export async function POST(request: Request) {
       },
     });
 
-    // リセットリンクをメールで送信
-    const resetLink = `${process.env.NEXT_PUBLIC_APP_URL}/auth/reset-password?token=${resetToken}`;
+    console.log(`リセットトークンを生成しました: ${resetToken}`);
 
+    // メールの送信処理を明示的にエラーハンドリング
     try {
-      // メール送信ヘルパー関数を呼び出す
-      await sendPasswordResetEmail(user.email, resetLink);
-      console.log(`パスワードリセットメールを送信しました: ${user.email}`);
-    } catch (emailError) {
-      console.error('メール送信エラー:', emailError);
-      // メール送信エラーでも成功レスポンスを返す（セキュリティ上の理由）
-    }
+      // 環境変数からベースURLを取得
+      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
+      // 単純なリセットリンクを生成
+      const resetLink = `${baseUrl}/auth/reset-password?token=${resetToken}`;
+      console.log(`リセットリンク: ${resetLink}`);
 
-    return NextResponse.json(
-      { message: 'パスワードリセット用のリンクをメールで送信しました' },
-      { status: 200 },
-    );
+      // 明示的にメール送信を試行
+      await sendPasswordResetEmail(user.email, resetToken);
+      console.log(`パスワードリセットメールを送信しました: ${user.email}`);
+
+      return NextResponse.json(
+        { message: 'パスワードリセット用のリンクをメールで送信しました' },
+        { status: 200 },
+      );
+    } catch (emailError) {
+      // エラーの詳細なログ
+      console.error('メール送信に失敗しました:', emailError);
+
+      // 本番環境でも開発者が問題を特定できるようエラー詳細を返す（一時的）
+      return NextResponse.json(
+        {
+          message: 'メール送信に失敗しました',
+          error: emailError instanceof Error ? emailError.message : String(emailError),
+        },
+        { status: 500 },
+      );
+    }
   } catch (error) {
     console.error('パスワードリセットエラー:', error);
     return NextResponse.json({ message: '処理中にエラーが発生しました' }, { status: 500 });

@@ -90,7 +90,7 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
  * パスワードリセットメールを送信する関数
  */
 export async function sendPasswordResetEmail(email: string, resetToken: string) {
-  // 環境変数から適切なベースURLを取得
+  // 単純化したコード：トークンをそのまま使用
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
     process.env.NEXT_PUBLIC_BASE_URL ||
@@ -100,51 +100,22 @@ export async function sendPasswordResetEmail(email: string, resetToken: string) 
   // URLの正規化（末尾のスラッシュを削除）
   const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 
-  // トークンからURL部分を除去して純粋なトークン値を取得
-  let cleanToken = resetToken;
-
-  // URLパターンをチェック（複数のレベルの入れ子に対応）
-  while (cleanToken.includes('http') && cleanToken.includes('?token=')) {
-    try {
-      // 最後のtoken=以降の部分を抽出
-      const tokenIndex = cleanToken.lastIndexOf('?token=');
-      if (tokenIndex !== -1) {
-        cleanToken = cleanToken.substring(tokenIndex + 7); // '?token='.length = 7
-      } else {
-        // tokenパラメータがない場合、URLからトークンを抽出試行
-        const url = new URL(cleanToken);
-        const tokenParam = url.searchParams.get('token');
-        if (tokenParam) {
-          cleanToken = tokenParam;
-        }
-        break;
-      }
-    } catch (e) {
-      console.error('トークン解析エラー:', e);
-      break;
-    }
-  }
-
-  // 正しいリセットURLを生成
-  const resetUrl = `${normalizedBaseUrl}/auth/reset-password?token=${cleanToken}`;
+  // シンプルにリセットURLを生成
+  const resetUrl = `${normalizedBaseUrl}/auth/reset-password?token=${resetToken}`;
 
   // デバッグログ
-  console.log('パスワードリセットURL生成:', {
-    原トークン: resetToken,
-    クリーン化トークン: cleanToken,
-    最終URL: resetUrl,
-  });
+  console.log('パスワードリセットURL:', resetUrl);
 
   return sendEmail({
     to: email,
     subject: 'パスワードリセットのご案内',
-    text: `パスワードをリセットするには、以下のリンクをクリックしてください。\n\n${resetUrl}\n\nこのリンクは24時間有効です。心当たりがない場合は、このメールを無視してください。`,
+    text: `パスワードをリセットするには、以下のリンクをクリックしてください。\n\n${resetUrl}\n\nこのリンクは1時間有効です。心当たりがない場合は、このメールを無視してください。`,
     html: `
       <div>
         <h1>パスワードリセットのご案内</h1>
         <p>パスワードをリセットするには、以下のリンクをクリックしてください。</p>
         <p><a href="${resetUrl}">パスワードをリセットする</a></p>
-        <p>このリンクは24時間有効です。心当たりがない場合は、このメールを無視してください。</p>
+        <p>このリンクは1時間有効です。心当たりがない場合は、このメールを無視してください。</p>
       </div>
     `,
   });

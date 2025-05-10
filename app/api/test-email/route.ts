@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
 // app/api/test-email/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import nodemailer from 'nodemailer';
 import { sendEmail } from '@/lib/email';
