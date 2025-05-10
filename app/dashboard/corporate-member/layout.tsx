@@ -191,13 +191,13 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
             className="p-2 rounded-md text-[#1E3A8A]" // 紺色のコーポレートカラーに固定
-            aria-label="メニューを開く"
+            aria-label={mobileMenuOpen ? 'メニューを閉じる' : 'メニューを開く'}
           >
             <HiMenu className="h-6 w-6" />
           </button>
         </div>
 
-        {/* モバイルメニュードロップダウン */}
+        {/* モバイルメニュードロップダウン - 修正部分 */}
         {mobileMenuOpen && (
           <div className="fixed inset-0 z-50 md:hidden">
             {/* オーバーレイ */}
@@ -208,25 +208,27 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
 
             {/* メニューパネル */}
             <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-xl flex flex-col">
-              <div className="fixed inset-y-0 right-0 max-w-xs w-full bg-white shadow-xl flex flex-col">
-                <div className="flex items-center justify-between p-4 border-b border-[#1E3A8A]/20">
-                  <h2 className="text-base font-medium text-[#1E3A8A]">メニュー</h2>
-                  <button
-                    onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                    className="p-2 rounded-md text-[#1E3A8A]"
-                    aria-label="メニューを開く"
-                  >
-                    <HiMenu className="h-6 w-6" />
-                  </button>
-                </div>
-
-                {/* メニュー項目 */}
+              <div className="flex items-center justify-between p-4 border-b border-[#1E3A8A]/20">
+                <h2 className="text-base font-medium text-[#1E3A8A]">メニュー</h2>
+                <button
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="p-2 rounded-md text-[#1E3A8A]"
+                  aria-label="メニューを閉じる"
+                >
+                  <HiMenu className="h-6 w-6" />
+                </button>
               </div>
 
+              {/* メニュー項目 */}
               <div className="flex-1 overflow-y-auto py-4 px-2">
                 <nav className="flex flex-col space-y-1">
                   {filteredNavItems.map((item) => (
-                    <Link key={item.href} href={item.href} onClick={() => setMobileMenuOpen(false)}>
+                    <Link
+                      key={item.href}
+                      href={item.href}
+                      className="block" // ブロック要素に
+                      onClick={() => setMobileMenuOpen(false)}
+                    >
                       <Button
                         variant={pathname === item.href ? 'corporate' : 'ghost'}
                         className="w-full justify-start text-left py-3"
