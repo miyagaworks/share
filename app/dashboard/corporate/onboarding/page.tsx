@@ -230,7 +230,7 @@ export default function CorporateOnboardingPage() {
   }
 
   return (
-    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6">
+    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 box-border overflow-x-hidden">
       {/* ヘッダー */}
       <div className="mb-8 text-center">
         <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
@@ -242,79 +242,104 @@ export default function CorporateOnboardingPage() {
         </p>
       </div>
 
-      {/* 進行状況 - スマホでは簡素化 */}
-      <div className="mb-8 overflow-x-auto pb-2">
-        <div className="flex justify-between items-center w-full min-w-[500px] mb-2">
-          <div className="flex items-center">
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                onboardingState.steps.welcome
-                  ? 'bg-green-500'
-                  : activeStep === 'welcome'
-                    ? 'bg-blue-500'
-                    : 'bg-gray-200'
-              }`}
-            >
-              {onboardingState.steps.welcome ? (
-                <HiCheck className="h-5 w-5 text-white" />
-              ) : (
-                <span className="text-white text-sm">1</span>
-              )}
+      {/* 進行状況 - モバイルでは完全に最適化 */}
+      <div className="mb-8 -mx-4 px-4 overflow-x-auto pb-2">
+        <div className="flex justify-between items-center min-w-[280px] w-full max-w-full mb-2">
+          <div className="flex items-center justify-between w-full">
+            {/* ステップ1 */}
+            <div className="flex flex-col items-center">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  onboardingState.steps.welcome
+                    ? 'bg-green-500'
+                    : activeStep === 'welcome'
+                      ? 'bg-blue-500'
+                      : 'bg-gray-200'
+                }`}
+              >
+                {onboardingState.steps.welcome ? (
+                  <HiCheck className="h-5 w-5 text-white" />
+                ) : (
+                  <span className="text-white text-sm">1</span>
+                )}
+              </div>
+              <span className="text-xs mt-1 hidden sm:inline">概要</span>
             </div>
-            <div className="mx-2 h-1 w-16 bg-gray-200"></div>
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                onboardingState.steps.companyInfo
-                  ? 'bg-green-500'
-                  : activeStep === 'companyInfo'
-                    ? 'bg-blue-500'
-                    : 'bg-gray-200'
-              }`}
-            >
-              {onboardingState.steps.companyInfo ? (
-                <HiCheck className="h-5 w-5 text-white" />
-              ) : (
-                <span className="text-white text-sm">2</span>
-              )}
+
+            {/* ライン1 */}
+            <div className="h-1 w-12 sm:w-16 bg-gray-200 mx-1 sm:mx-2"></div>
+
+            {/* ステップ2 */}
+            <div className="flex flex-col items-center">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  onboardingState.steps.companyInfo
+                    ? 'bg-green-500'
+                    : activeStep === 'companyInfo'
+                      ? 'bg-blue-500'
+                      : 'bg-gray-200'
+                }`}
+              >
+                {onboardingState.steps.companyInfo ? (
+                  <HiCheck className="h-5 w-5 text-white" />
+                ) : (
+                  <span className="text-white text-sm">2</span>
+                )}
+              </div>
+              <span className="text-xs mt-1 hidden sm:inline">会社情報</span>
             </div>
-            <div className="mx-2 h-1 w-16 bg-gray-200"></div>
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                onboardingState.steps.inviteUsers
-                  ? 'bg-green-500'
-                  : activeStep === 'inviteUsers'
-                    ? 'bg-blue-500'
-                    : 'bg-gray-200'
-              }`}
-            >
-              {onboardingState.steps.inviteUsers ? (
-                <HiCheck className="h-5 w-5 text-white" />
-              ) : (
-                <span className="text-white text-sm">3</span>
-              )}
+
+            {/* ライン2 */}
+            <div className="h-1 w-12 sm:w-16 bg-gray-200 mx-1 sm:mx-2"></div>
+
+            {/* ステップ3 */}
+            <div className="flex flex-col items-center">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  onboardingState.steps.inviteUsers
+                    ? 'bg-green-500'
+                    : activeStep === 'inviteUsers'
+                      ? 'bg-blue-500'
+                      : 'bg-gray-200'
+                }`}
+              >
+                {onboardingState.steps.inviteUsers ? (
+                  <HiCheck className="h-5 w-5 text-white" />
+                ) : (
+                  <span className="text-white text-sm">3</span>
+                )}
+              </div>
+              <span className="text-xs mt-1 hidden sm:inline">招待</span>
             </div>
-            <div className="mx-2 h-1 w-16 bg-gray-200"></div>
-            <div
-              className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                onboardingState.steps.branding
-                  ? 'bg-green-500'
-                  : activeStep === 'branding'
-                    ? 'bg-blue-500'
-                    : 'bg-gray-200'
-              }`}
-            >
-              {onboardingState.steps.branding ? (
-                <HiCheck className="h-5 w-5 text-white" />
-              ) : (
-                <span className="text-white text-sm">4</span>
-              )}
+
+            {/* ライン3 */}
+            <div className="h-1 w-12 sm:w-16 bg-gray-200 mx-1 sm:mx-2"></div>
+
+            {/* ステップ4 */}
+            <div className="flex flex-col items-center">
+              <div
+                className={`w-8 h-8 rounded-full flex items-center justify-center ${
+                  onboardingState.steps.branding
+                    ? 'bg-green-500'
+                    : activeStep === 'branding'
+                      ? 'bg-blue-500'
+                      : 'bg-gray-200'
+                }`}
+              >
+                {onboardingState.steps.branding ? (
+                  <HiCheck className="h-5 w-5 text-white" />
+                ) : (
+                  <span className="text-white text-sm">4</span>
+                )}
+              </div>
+              <span className="text-xs mt-1 hidden sm:inline">完了</span>
             </div>
           </div>
         </div>
       </div>
 
       {/* ステップコンテンツ */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-8 mb-6">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-8 mb-6 w-full box-border">
         {/* ステップ1: ようこそ */}
         {activeStep === 'welcome' && (
           <div>
@@ -323,7 +348,7 @@ export default function CorporateOnboardingPage() {
               法人プランへのご登録ありがとうございます。この初期設定ウィザードでは、以下のステップを通じてチーム全体で効率的に利用を開始するための準備を行います。
             </p>
 
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
               <div className="border border-gray-200 rounded-lg p-4 text-center">
                 <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
                   <HiOfficeBuilding className="h-6 w-6 text-blue-600" />

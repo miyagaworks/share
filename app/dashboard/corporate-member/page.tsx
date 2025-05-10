@@ -256,9 +256,11 @@ export default function CorporateMemberPage() {
               <div className="mt-1 flex items-center">
                 <span className="text-sm text-gray-600 mr-2">権限:</span>
                 <span
-                  className={`text-sm px-2 py-0.5 rounded-full ${isAdmin ? 'bg-corporate-primary/10' : 'bg-gray-100'}`}
+                  className={`text-sm px-2 py-0.5 rounded-full ${
+                    isAdmin ? 'bg-blue-100' : 'bg-gray-100'
+                  }`}
                   style={{
-                    color: isAdmin ? 'var(--color-corporate-primary)' : 'rgb(75, 85, 99)',
+                    color: isAdmin ? '#1e3a8a' : '#4b5563', // 固定の青色と灰色を使用
                   }}
                 >
                   {isAdmin ? '管理者' : 'メンバー'}
