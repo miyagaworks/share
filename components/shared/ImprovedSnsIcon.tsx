@@ -88,30 +88,58 @@ export function ImprovedSnsIcon({
   );
 
   // プラットフォーム別のアイコン表示
-  switch (platform) {
+  switch (
+    platform.toLowerCase() // 小文字に変換して比較
+  ) {
     case 'line':
+    case 'Line':
+    case 'LINE':
       return renderCustomSvg(LINE_SVG_PATH);
     case 'official-line':
+    case 'officialline':
+    case '公式line':
+    case '公式LINE':
       return renderCustomSvg(LINE_SVG_PATH);
     case 'youtube':
+    case 'YouTube':
+    case 'YOUTUBE':
       return <FaYoutube style={style} className={className} />;
     case 'x':
+    case 'X':
+    case 'twitter':
+    case 'Twitter':
+    case 'TWITTER':
       return <RiTwitterXFill style={style} className={className} />;
     case 'instagram':
+    case 'Instagram':
+    case 'INSTAGRAM':
       return <FaInstagram style={style} className={className} />;
     case 'tiktok':
+    case 'TikTok':
+    case 'TIKTOK':
       return <FaTiktok style={style} className={className} />;
     case 'facebook':
+    case 'Facebook':
+    case 'FACEBOOK':
       return <FaFacebook style={style} className={className} />;
     case 'pinterest':
+    case 'Pinterest':
+    case 'PINTEREST':
       return <FaPinterest style={style} className={className} />;
     case 'threads':
+    case 'Threads':
+    case 'THREADS':
       return <SiThreads style={style} className={className} />;
     case 'note':
+    case 'Note':
+    case 'NOTE':
       return renderCustomSvg(NOTE_SVG_PATH);
     case 'bereal':
+    case 'BeReal':
+    case 'BEREAL':
       return renderCustomSvg(BEREAL_SVG_PATH);
     default:
+      console.log(`未知のプラットフォーム: ${platform}`);
       return null;
   }
 }

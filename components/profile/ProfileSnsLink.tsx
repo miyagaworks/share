@@ -8,17 +8,41 @@ import { SNS_METADATA } from "@/types/sns";
 
 interface ProfileSnsLinkProps {
     link: SnsLink;
-    snsIconColor?: string; // mainColorを削除し、snsIconColorのみに
+    snsIconColor?: string;
 }
 
 export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
-    const platform = link.platform as SnsPlatform;
-    const name = SNS_METADATA[platform]?.name || platform;
+    // プラットフォーム名の標準化（大文字小文字の違いを吸収）
+    const normalizeSnsPlatform = (platform: string): SnsPlatform => {
+        const platformLower = platform.toLowerCase();
+
+        if (platformLower === 'line') return 'line';
+        if (platformLower === '公式line') return 'official-line';
+        if (platformLower === 'youtube') return 'youtube';
+        if (platformLower === 'x') return 'x';
+        if (platformLower === 'instagram') return 'instagram';
+        if (platformLower === 'tiktok') return 'tiktok';
+        if (platformLower === 'facebook') return 'facebook';
+        if (platformLower === 'pinterest') return 'pinterest';
+        if (platformLower === 'threads') return 'threads';
+        if (platformLower === 'note') return 'note';
+        if (platformLower === 'bereal') return 'bereal';
+
+        // デフォルト値
+        return 'line' as SnsPlatform;
+    };
+
+    // プラットフォーム名を標準化
+    const normalizedPlatform = normalizeSnsPlatform(link.platform);
+    const name = SNS_METADATA[normalizedPlatform]?.name || link.platform;
 
     // ネイティブアプリ起動のために最適な形式でURLを生成
     const getOptimizedUrl = () => {
+        // 元のURL（これがなければ表示しない）
+        if (!link.url) return '#';
+        
         // プラットフォーム固有の処理
-        switch (platform) {
+        switch (normalizedPlatform) {
             case "line":
                 // LINEアプリの起動を試みる
                 if (link.username) {
@@ -69,6 +93,7 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
         return link.url;
     };
 
+    // クリックイベントハンドラを追加（ネイティブアプリ起動用）
     const handleClick = (e: React.MouseEvent) => {
         const optimizedUrl = getOptimizedUrl();
 
@@ -91,20 +116,17 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
     };
 
     // snsIconColorに基づいてアイコンの色を設定
-    const iconColor =
-      snsIconColor === 'original'
-        ? 'original'
-        : snsIconColor === 'corporate-primary' ||
-            document.documentElement.classList.contains('corporate-theme')
-          ? 'var(--color-corporate-primary)'
-          : snsIconColor || '#333333';
+    const iconColor = snsIconColor === 'original' 
+        ? 'original' 
+        : (snsIconColor || '#333333');
 
+    // URLが存在する場合は常にアイコンを表示する
     return (
         <a
-            href={link.url}
+            href={link.url || "#"}
             target="_blank"
             rel="noopener noreferrer"
-            onClick={handleClick}
+            onClick={handleClick} // ここでhandleClickを使用
             className="flex flex-col items-center"
         >
             <div
@@ -112,7 +134,7 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
                 style={{ backgroundColor: "white" }}
             >
                 <ImprovedSnsIcon
-                    platform={platform}
+                    platform={normalizedPlatform}
                     size={38}
                     color={iconColor}
                 />
