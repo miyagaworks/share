@@ -8,6 +8,8 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { QuickIntroButton } from '@/components/ui/QuickIntroButton';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from 'react-hot-toast';
+import { UserData, ProfileUpdateData } from '@/types/profiles';
+
 import {
   HiUser,
   HiMail,
@@ -25,38 +27,6 @@ interface TenantData {
   logoUrl: string | null;
   corporatePrimary: string | null;
   corporateSecondary: string | null;
-}
-
-// ユーザーデータの型定義
-interface UserData {
-  id: string;
-  name: string | null;
-  nameEn: string | null;
-  nameKana: string | null; // フリガナフィールドを追加
-  bio: string | null;
-  email: string;
-  phone: string | null;
-  image: string | null;
-  headerText: string | null;
-  textColor: string | null;
-  corporateRole: string | null;
-  position: string | null;
-  departmentId: string | null;
-  department?: {
-    id: string;
-    name: string;
-  } | null;
-}
-
-// プロフィール更新データの型定義
-interface ProfileUpdateData {
-  name?: string;
-  nameEn?: string | null;
-  nameKana?: string | null; // フリガナフィールドを追加
-  bio?: string | null;
-  phone?: string | null;
-  position?: string | null;
-  image?: string | null;
 }
 
 interface MemberProfileFormProps {
@@ -149,9 +119,11 @@ export function MemberProfileForm({
       // 親コンポーネントの保存関数を呼び出し
       await onSave(updateData);
 
-      toast.success('プロフィールを更新しました');
+      // ここでトーストメッセージを表示する代わりに、親コンポーネントに任せる
+      // toast.success('プロフィールを更新しました'); // <-- この行をコメントアウトまたは削除
     } catch (error) {
       console.error('更新エラー:', error);
+      // エラーメッセージは表示する（親コンポーネントでも表示される可能性あり）
       toast.error('プロフィールの更新に失敗しました');
     } finally {
       setIsSaving(false);

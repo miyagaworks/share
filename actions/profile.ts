@@ -11,6 +11,7 @@ import { revalidatePath } from 'next/cache';
 const ProfileSchema = z.object({
   name: z.string().min(1, '名前は必須です').optional(),
   nameEn: z.string().optional().nullable(),
+  nameKana: z.string().optional().nullable(), // フリガナフィールドを追加
   bio: z.string().max(300, '自己紹介は300文字以内で入力してください').optional().nullable(),
   image: z.string().optional().nullable(),
   mainColor: z
@@ -83,6 +84,7 @@ export async function updateProfile(data: ProfileData) {
       data: {
         name: data.name ?? undefined,
         nameEn: data.nameEn ?? undefined,
+        nameKana: data.nameKana ?? undefined, // フリガナフィールドを追加
         bio: data.bio ?? undefined,
         image: data.image ?? undefined,
         mainColor: data.mainColor ?? undefined,

@@ -10,6 +10,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
 import { MemberProfileForm } from '@/components/corporate/MemberProfileForm';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
+import { UserData, ProfileUpdateData } from '@/types/profiles';
 
 // テナント情報の型定義
 interface TenantData {
@@ -27,37 +28,6 @@ interface ComponentTenantData {
   logoUrl: string | null;
   corporatePrimary: string | null;
   corporateSecondary: string | null;
-}
-
-// ユーザーデータの型定義
-interface UserData {
-  id: string;
-  name: string | null;
-  nameEn: string | null;
-  bio: string | null;
-  email: string;
-  phone: string | null;
-  image: string | null;
-  headerText: string | null;
-  textColor: string | null;
-  corporateRole: string | null;
-  position: string | null;
-  departmentId: string | null;
-  department?: {
-    id: string;
-    name: string;
-  } | null;
-}
-
-interface ProfileUpdateData {
-  name?: string;
-  nameEn?: string | null;
-  nameKana?: string | null; // 追加
-  bio?: string | null;
-  phone?: string | null;
-  image?: string | null;
-  headerText?: string | null;
-  textColor?: string | null;
 }
 
 export default function CorporateMemberProfilePage() {
@@ -111,7 +81,14 @@ export default function CorporateMemberProfilePage() {
       }
 
       const data = await response.json();
-      setUserData(data.user);
+
+      // APIのレスポンスに必要なプロパティが含まれていることを確認
+      const userWithRequiredFields = {
+        ...data.user,
+        nameKana: data.user.nameKana || null, // nullの場合に備えて
+      };
+
+      setUserData(userWithRequiredFields);
       setTenantData(data.tenant);
       setError(null);
     } catch (err) {
@@ -141,7 +118,9 @@ export default function CorporateMemberProfilePage() {
       // 更新成功
       const updatedData = await response.json();
       setUserData(updatedData.user);
-      toast.success('プロフィールを更新しました');
+
+      // トースト通知は1回だけ表示（MemberProfileForm内の通知を削除または無効化）
+      // toast.success('プロフィールを更新しました'); // <-- この行をコメントアウトまたは削除
     } catch (error) {
       console.error('更新エラー:', error);
       toast.error(error instanceof Error ? error.message : 'プロフィールの更新に失敗しました');

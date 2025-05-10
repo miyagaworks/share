@@ -16,18 +16,23 @@ export const RegisterSchema = z.object({
 
 // プロフィール用スキーマ - カラーコード検証を緩和
 export const ProfileSchema = z.object({
-    name: z.string().min(1, "名前は必須です").optional(),
-    nameEn: z.string().optional().nullable(),
-    bio: z.string().max(300, "自己紹介は300文字以内で入力してください").optional().nullable(),
-    image: z.string().optional().nullable(),
-    mainColor: z.string()
-        .regex(/^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/, "有効なカラーコード(#RGB または #RRGGBB)を入力してください")
-        .optional()
-        .nullable(),
-    phone: z.string().optional().nullable(),
-    company: z.string().optional().nullable(),
-    companyUrl: z.string().url({ message: "有効なURLを入力してください" }).optional().nullable(),
-    companyLabel: z.string().optional().nullable(),
+  name: z.string().min(1, '名前は必須です').optional(),
+  nameEn: z.string().optional().nullable(),
+  nameKana: z.string().optional().nullable(), // フリガナフィールドを追加
+  bio: z.string().max(300, '自己紹介は300文字以内で入力してください').optional().nullable(),
+  image: z.string().optional().nullable(),
+  mainColor: z
+    .string()
+    .regex(
+      /^#([A-Fa-f0-9]{3}|[A-Fa-f0-9]{6})$/,
+      '有効なカラーコード(#RGB または #RRGGBB)を入力してください',
+    )
+    .optional()
+    .nullable(),
+  phone: z.string().optional().nullable(),
+  company: z.string().optional().nullable(),
+  companyUrl: z.string().url({ message: '有効なURLを入力してください' }).optional().nullable(),
+  companyLabel: z.string().optional().nullable(),
 });
 
 // SNSリンク用スキーマ
