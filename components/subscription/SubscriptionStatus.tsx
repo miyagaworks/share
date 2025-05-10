@@ -295,7 +295,6 @@ export default function SubscriptionStatus({ onReloadSubscription }: Subscriptio
                 <span className="text-sm text-gray-500">プラン</span>
                 <span className="text-sm font-medium">
                   {getPlanNameInJapanese(subscription.plan)}
-                  {subscription.status === 'trialing' && ' （トライアル中）'}
                 </span>
               </div>
 
