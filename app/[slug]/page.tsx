@@ -727,6 +727,11 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 line-height: 1.5 !important;
               }
               
+              /* SNSアイコンのサイズも拡大する */
+              .text-enlarged-icon {
+                transform: scale(1.1);
+              }
+              
               /* 文字拡大ボタンのホバーエフェクト */
               #zoom-toggle-btn:hover {
                 background-color: rgb(29, 78, 216, 0.9);
@@ -796,15 +801,23 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                       }
                     });
                     
-                    // "trial"という表示を非表示にする（拡大モード時のみ）
-                    const planElements = document.querySelectorAll('.text-base.font-medium');
-                    planElements.forEach(function(element) {
-                      if (element.textContent.trim() === 'trial') {
-                        if (isTextEnlarged) {
-                          element.style.display = 'none';
-                        } else {
-                          element.style.display = '';
-                        }
+                    // SNSアイコン周りのテキスト要素も拡大対象に
+                    const snsTextElements = document.querySelectorAll('.text-xs');
+                    snsTextElements.forEach(function(element) {
+                      if (isTextEnlarged) {
+                        element.classList.add('text-enlarged');
+                      } else {
+                        element.classList.remove('text-enlarged');
+                      }
+                    });
+                    
+                    // SNSアイコンのサイズも調整
+                    const snsIcons = document.querySelectorAll('.w-16.h-16');
+                    snsIcons.forEach(function(element) {
+                      if (isTextEnlarged) {
+                        element.classList.add('text-enlarged-icon');
+                      } else {
+                        element.classList.remove('text-enlarged-icon');
                       }
                     });
                     
