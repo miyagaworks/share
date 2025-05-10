@@ -68,7 +68,26 @@ export function CorporateSnsIntegration({
   // SNSを直接追加する関数
   const handleAddSns = async (link: CorporateSnsLink) => {
     try {
-      console.log('SNSリンクを直接追加します:', link.platform);
+      // ユーザー名を抽出するための処理
+      let username = link.username;
+
+      // 各プラットフォーム用のユーザー名がない場合はURLから抽出を試みる
+      if (!username && link.url) {
+        try {
+          // URLからユーザー名部分を抽出する簡単な例
+          const url = new URL(link.url);
+          const pathParts = url.pathname.split('/').filter(Boolean);
+
+          // プラットフォームごとに異なるロジック
+          if (link.platform === 'YouTube' && pathParts[0]?.startsWith('@')) {
+            username = pathParts[0].substring(1); // '@' を削除
+          } else if (pathParts.length > 0) {
+            username = pathParts[pathParts.length - 1]; // 最後のパス部分を使用
+          }
+        } catch (e) {
+          console.error('URL解析エラー:', e);
+        }
+      }
 
       // APIを呼び出してSNSリンクを追加
       const response = await fetch('/api/corporate-member/links/sns', {
@@ -78,9 +97,8 @@ export function CorporateSnsIntegration({
         },
         body: JSON.stringify({
           platform: link.platform,
-          username: null, // 常にnullを送信して、usernameが表示されないようにする
+          username: username, // 抽出したユーザー名または元の値を使用
           url: link.url,
-          // isRequiredフィールドの送信は必要ない（受信側でのみ使用）
         }),
       });
 

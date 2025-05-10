@@ -116,17 +116,8 @@ export default function CorporateMemberLinksPage() {
         const corporateSnsData = await corporateSnsResponse.json();
         console.log('法人SNSデータ:', JSON.stringify(corporateSnsData, null, 2));
         
-        // ユーザー名フィールドをすべてクリアする処理を追加
-        const cleanedCorporateSnsLinks =
-          linksData.corporateSnsLinks?.map((link: CorporateSnsLink) => ({
-            ...link,
-            username: null, // ユーザー名を強制的にnullに設定
-            // description がないことを許容
-            description: link.description || null,
-          })) || [];
-        
         setTenantData(profileData.tenant);
-        setCorporateSnsLinks(cleanedCorporateSnsLinks); // クリーニングしたデータを使用
+        setCorporateSnsLinks(linksData.corporateSnsLinks || []);
         setPersonalSnsLinks(linksData.personalSnsLinks);
         setCustomLinks(linksData.customLinks);
 
@@ -134,7 +125,7 @@ export default function CorporateMemberLinksPage() {
         const urlMap: CorporatePlatformUrls = {};
         (corporateSnsData.snsLinks as CorporateSnsLink[]).forEach((link) => {
           urlMap[link.platform] = {
-            username: null, // ユーザー名にnullを設定
+            username: link.username, // 元のユーザー名をそのまま使用
             url: link.url,
           };
         });
