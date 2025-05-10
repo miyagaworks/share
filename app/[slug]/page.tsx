@@ -574,7 +574,12 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           <div className="absolute inset-0 flex items-center justify-center px-4">
             <div
               className="relative w-full max-w-md bg-white rounded-lg shadow-xl"
-              style={{ maxWidth: '360px' }}
+              style={{
+                maxWidth: '360px',
+                maxHeight: '90vh', // 画面の90%の高さを最大値に設定
+                display: 'flex',
+                flexDirection: 'column', // フレックスボックスを使って要素を縦に配置
+              }}
             >
               {/* モーダルを閉じるボタン */}
               <button className="absolute top-4 right-4 z-10 text-gray-500" id="close-modal">
@@ -594,124 +599,127 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 </svg>
               </button>
 
-              {/* ユーザー情報 */}
-              <div className="flex flex-col items-center py-8">
-                {/* プロフィール画像 */}
+              {/* スクロール可能なコンテンツエリア */}
+              <div style={{ overflowY: 'auto', maxHeight: 'calc(90vh - 2rem)' }}>
+                {/* ユーザー情報 */}
+                <div className="flex flex-col items-center py-8">
+                  {/* プロフィール画像 */}
+                  <div
+                    className="w-24 h-24 rounded-full overflow-hidden mb-4 flex items-center justify-center"
+                    style={{ backgroundColor: secondaryColor || '#1E40AF' }}
+                  >
+                    {profile.user.image ? (
+                      <Image
+                        src={profile.user.image}
+                        alt={profile.user.name || 'プロフィール画像'}
+                        width={96}
+                        height={96}
+                        className="w-full h-full object-cover"
+                      />
+                    ) : (
+                      <svg
+                        xmlns="http://www.w3.org/2000/svg"
+                        width="40"
+                        height="40"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="white"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      >
+                        <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                        <circle cx="12" cy="7" r="4" />
+                      </svg>
+                    )}
+                  </div>
+
+                  {/* ユーザー名 */}
+                  <h2 className="text-2xl font-bold text-center mb-1">{profile.user.name}</h2>
+                  {profile.user.nameEn && (
+                    <p className="text-sm text-gray-500 mb-4 profile-text">{profile.user.nameEn}</p>
+                  )}
+
+                  {/* 自己紹介文 */}
+                  <div className="px-8 w-full mb-6">
+                    <p className="text-base text-justify whitespace-pre-wrap profile-text">
+                      {profile.user.bio || '自己紹介がここに入ります。'}
+                    </p>
+                  </div>
+                </div>
+
+                {/* 区切り線 */}
+                <div className="border-t border-gray-200 w-full"></div>
+
+                {/* 会社情報と連絡先 */}
                 <div
-                  className="w-24 h-24 rounded-full overflow-hidden mb-4 flex items-center justify-center"
-                  style={{ backgroundColor: secondaryColor || '#1E40AF' }}
+                  className="p-6 text-base rounded-b-lg"
+                  style={{
+                    backgroundColor: user.bioBackgroundColor || '#FFFFFF',
+                    color: user.bioTextColor || '#333333',
+                  }}
                 >
-                  {profile.user.image ? (
-                    <Image
-                      src={profile.user.image}
-                      alt={profile.user.name || 'プロフィール画像'}
-                      width={96}
-                      height={96}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <svg
-                      xmlns="http://www.w3.org/2000/svg"
-                      width="40"
-                      height="40"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="white"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
-                      <circle cx="12" cy="7" r="4" />
-                    </svg>
-                  )}
-                </div>
+                  <div className="space-y-4">
+                    {companyName && (
+                      <div>
+                        <p
+                          className="font-semibold profile-text"
+                          style={{ color: mainColor || '#1E3A8A' }}
+                        >
+                          会社 / 組織：
+                        </p>
+                        <p className="profile-text">{companyName}</p>
+                      </div>
+                    )}
 
-                {/* ユーザー名 */}
-                <h2 className="text-2xl font-bold text-center mb-1">{profile.user.name}</h2>
-                {profile.user.nameEn && (
-                  <p className="text-sm text-gray-500 mb-4 profile-text">{profile.user.nameEn}</p>
-                )}
+                    {user.department?.name && (
+                      <div>
+                        <p
+                          className="font-semibold profile-text"
+                          style={{ color: mainColor || '#1E3A8A' }}
+                        >
+                          部署：
+                        </p>
+                        <p className="profile-text">{user.department.name}</p>
+                      </div>
+                    )}
 
-                {/* 自己紹介文 */}
-                <div className="px-8 w-full mb-6">
-                  <p className="text-base text-center whitespace-pre-wrap profile-text">
-                    {profile.user.bio || '自己紹介がここに入ります。'}
-                  </p>
-                </div>
-              </div>
+                    {user.position && (
+                      <div>
+                        <p
+                          className="font-semibold profile-text"
+                          style={{ color: mainColor || '#1E3A8A' }}
+                        >
+                          役職：
+                        </p>
+                        <p className="profile-text">{user.position}</p>
+                      </div>
+                    )}
 
-              {/* 区切り線 */}
-              <div className="border-t border-gray-200 w-full"></div>
+                    {profile.user.phone && (
+                      <div>
+                        <p
+                          className="font-semibold profile-text"
+                          style={{ color: mainColor || '#1E3A8A' }}
+                        >
+                          TEL：
+                        </p>
+                        <p className="profile-text">{profile.user.phone}</p>
+                      </div>
+                    )}
 
-              {/* 会社情報と連絡先 */}
-              <div
-                className="p-6 text-base rounded-b-lg"
-                style={{
-                  backgroundColor: user.bioBackgroundColor || '#FFFFFF',
-                  color: user.bioTextColor || '#333333',
-                }}
-              >
-                <div className="space-y-4">
-                  {companyName && (
-                    <div>
-                      <p
-                        className="font-semibold profile-text"
-                        style={{ color: mainColor || '#1E3A8A' }}
-                      >
-                        会社 / 組織：
-                      </p>
-                      <p className="profile-text">{companyName}</p>
-                    </div>
-                  )}
-
-                  {user.department?.name && (
-                    <div>
-                      <p
-                        className="font-semibold profile-text"
-                        style={{ color: mainColor || '#1E3A8A' }}
-                      >
-                        部署：
-                      </p>
-                      <p className="profile-text">{user.department.name}</p>
-                    </div>
-                  )}
-
-                  {user.position && (
-                    <div>
-                      <p
-                        className="font-semibold profile-text"
-                        style={{ color: mainColor || '#1E3A8A' }}
-                      >
-                        役職：
-                      </p>
-                      <p className="profile-text">{user.position}</p>
-                    </div>
-                  )}
-
-                  {profile.user.phone && (
-                    <div>
-                      <p
-                        className="font-semibold profile-text"
-                        style={{ color: mainColor || '#1E3A8A' }}
-                      >
-                        TEL：
-                      </p>
-                      <p className="profile-text">{profile.user.phone}</p>
-                    </div>
-                  )}
-
-                  {profile.user.email && (
-                    <div>
-                      <p
-                        className="font-semibold profile-text"
-                        style={{ color: mainColor || '#1E3A8A' }}
-                      >
-                        メール：
-                      </p>
-                      <p className="profile-text">{profile.user.email}</p>
-                    </div>
-                  )}
+                    {profile.user.email && (
+                      <div>
+                        <p
+                          className="font-semibold profile-text"
+                          style={{ color: mainColor || '#1E3A8A' }}
+                        >
+                          メール：
+                        </p>
+                        <p className="profile-text">{profile.user.email}</p>
+                      </div>
+                    )}
+                  </div>
                 </div>
               </div>
             </div>
