@@ -66,12 +66,12 @@ function formatRelativeTime(dateString: string): string {
 export function ActivityFeed({
   limit = 5,
   className = '',
-  autoRefresh = false,
+  autoRefresh = false, // デフォルトでfalseに
 }: ActivityFeedProps) {
   const { activities, isLoading, error, refresh } = useActivityFeed({
     limit,
     autoRefresh,
-    refreshInterval: 60000, // 1分ごとに更新
+    refreshInterval: 300000, // 5分ごとに更新（60秒→300秒に変更）
   });
 
   // 更新ボタンをクリックしたときの処理

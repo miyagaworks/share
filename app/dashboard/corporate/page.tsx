@@ -32,6 +32,8 @@ interface CorporateTenant {
   updatedAt?: string;
   userCount?: number;
   departmentCount?: number;
+  headerText?: string | null; // 追加
+  textColor?: string | null; // 追加
   users: {
     id: string;
     name: string;
@@ -52,6 +54,8 @@ const DEFAULT_TENANT: CorporateTenant = {
   logoUrl: null,
   primaryColor: null,
   secondaryColor: null,
+  headerText: null, // 追加
+  textColor: '#FFFFFF', // 追加 - デフォルト値は白色に
   maxUsers: 10,
   users: [],
   departments: [],
@@ -325,9 +329,10 @@ export default function CorporateDashboardPage() {
           logoUrl={displayTenant.logoUrl}
           tenantName={displayTenant.name}
           headerText={`${displayTenant.name} ダッシュボード`}
+          textColor={displayTenant.textColor || '#FFFFFF'} // オプションのプロパティとして扱う
           shadow={false}
           border={false}
-          showLogo={false} // ヘッダーロゴを非表示に
+          showLogo={false}
         >
           <div className="flex flex-col sm:flex-row sm:items-center">
             <div className="flex items-center mb-2 sm:mb-0">

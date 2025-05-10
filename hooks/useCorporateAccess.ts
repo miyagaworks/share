@@ -18,6 +18,9 @@ const isMobileDevice = () => {
   return /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 };
 
+// APIリクエストを行っている途中かどうかを追跡
+let isApiRequestInProgress = false;
+
 export function useCorporateAccess({
   redirectIfNoAccess = true,
   redirectPath = '/dashboard',
@@ -46,6 +49,12 @@ export function useCorporateAccess({
 
   // アクセスチェックを行う関数（useCallbackでメモ化）
   const checkAccess = useCallback(async () => {
+    // APIリクエストが進行中の場合は中止
+    if (isApiRequestInProgress) {
+      console.log('[useCorporateAccess] APIリクエストが既に進行中なのでスキップ');
+      return corporateAccessState; // 現在の状態を返す
+    }
+
     console.log('[useCorporateAccess] アクセスチェック開始:', {
       sessionStatus: status,
       checkOnMount,
@@ -56,7 +65,7 @@ export function useCorporateAccess({
 
     // セッションがロード中の場合は終了
     if (status === 'loading') {
-      return;
+      return corporateAccessState;
     }
 
     // ユーザーがログインしていない場合
@@ -64,97 +73,52 @@ export function useCorporateAccess({
       console.log('[useCorporateAccess] セッションなし');
       setHasCorporateAccess(false);
       setIsLoading(false);
-      return;
+      return corporateAccessState;
     }
 
     setIsLoading(true);
+    isApiRequestInProgress = true; // APIリクエストの開始をマーク
 
-    // モバイル環境では常に強制更新する
-    const shouldForceCheck = forceCheck || isMobile;
+    // キャッシュの有効期限を拡大（特にモバイル環境）
+    const CACHE_DURATION = isMobile ? 30 * 1000 : 60 * 1000; // モバイルは30秒、デスクトップは60秒
 
     try {
-      console.log('[useCorporateAccess] corporateAccessState APIを呼び出し中...', {
-        currentState: corporateAccessState,
-        forceCheck: shouldForceCheck,
-      });
-
-      // キャッシュされた状態があり、force=falseの場合はそれを使用
-      // モバイル環境ではより頻繁に更新（キャッシュ時間短縮）
+      // より厳格なキャッシュ判定
       if (
-        !shouldForceCheck &&
+        !forceCheck &&
         corporateAccessState.hasAccess !== null &&
         corporateAccessState.lastChecked > 0 &&
-        corporateAccessState.tenantId && // テナントIDが存在する場合のみキャッシュを使用
-        Date.now() - corporateAccessState.lastChecked < (isMobile ? 10000 : 30000) // モバイルは10秒、デスクトップは30秒
+        corporateAccessState.tenantId &&
+        corporateAccessState.tenantId.length > 0 &&
+        Date.now() - corporateAccessState.lastChecked < CACHE_DURATION
       ) {
         console.log('[useCorporateAccess] キャッシュ状態を使用:', corporateAccessState);
         setHasCorporateAccess(corporateAccessState.hasAccess === true);
-      } else {
-        // APIを呼び出して状態を更新
-        const result = await checkCorporateAccess(shouldForceCheck);
-        console.log('[useCorporateAccess] API結果:', result);
-
-        // テナントIDが取得できない場合にフォールバック
-        if (result.hasAccess === true && !result.tenantId) {
-          console.log('[useCorporateAccess] テナントIDが取得できませんでした。フォールバック使用');
-
-          // フォールバックテナントIDを設定
-          corporateAccessState.tenantId = 'fallback-tenant-id';
-
-          // イベントをディスパッチ
-          if (typeof window !== 'undefined') {
-            window.dispatchEvent(
-              new CustomEvent('corporateAccessChanged', {
-                detail: { ...corporateAccessState },
-              }),
-            );
-          }
-        }
-
-        setHasCorporateAccess(result.hasAccess === true);
-        setError(result.error || null);
-
-        // モバイル環境で問題が解決しない場合は再試行
-        if (isMobile && !result.tenantId && result.hasAccess === true) {
-          console.log('[useCorporateAccess] モバイルでテナントID取得できず、再試行準備');
-
-          // 少し時間を置いて再試行
-          setTimeout(async () => {
-            try {
-              console.log('[useCorporateAccess] モバイル環境で再試行');
-              const retryResult = await checkCorporateAccess(true);
-              console.log('[useCorporateAccess] 再試行結果:', retryResult);
-
-              // 再試行後もテナントIDがない場合はフォールバック
-              if (retryResult.hasAccess === true && !retryResult.tenantId) {
-                console.log('[useCorporateAccess] 再試行後もテナントIDなし、フォールバック使用');
-                corporateAccessState.tenantId = 'fallback-tenant-id';
-
-                // イベントをディスパッチ
-                if (typeof window !== 'undefined') {
-                  window.dispatchEvent(
-                    new CustomEvent('corporateAccessChanged', {
-                      detail: { ...corporateAccessState },
-                    }),
-                  );
-                }
-              }
-
-              forceRender(); // 強制的に再レンダリング
-            } catch (err) {
-              console.error('[useCorporateAccess] 再試行エラー:', err);
-            }
-          }, 1000);
-        }
+        setIsLoading(false);
+        isApiRequestInProgress = false; // APIリクエスト終了をマーク
+        return { ...corporateAccessState };
       }
+
+      // APIを呼び出して状態を更新
+      const result = await checkCorporateAccess(forceCheck); // forceCheckを使用
+      console.log('[useCorporateAccess] API結果:', result);
+
+      // 結果を適用
+      setHasCorporateAccess(result.hasAccess === true);
+      setError(result.error || null);
+
+      setIsLoading(false);
+      isApiRequestInProgress = false; // APIリクエスト終了をマーク
+      return result;
     } catch (err) {
       console.error('[useCorporateAccess] エラー:', err);
       setError(err instanceof Error ? err.message : String(err));
       setHasCorporateAccess(false);
-    } finally {
       setIsLoading(false);
+      isApiRequestInProgress = false; // APIリクエスト終了をマーク
+      return corporateAccessState;
     }
-  }, [session, status, forceCheck, checkOnMount, isMobile, forceRender]);
+  }, [session, status, forceCheck, checkOnMount, isMobile]);
 
   // 強制的にアクセスチェックを実行する関数
   const refreshAccess = useCallback(async () => {

@@ -90,7 +90,14 @@ export default function CorporateOnboardingPage() {
         }
 
         const data = await response.json();
-        setTenantData(data.tenant);
+
+        // テナントデータを設定する際に型に合わせて処理
+        // textColorとheaderTextがAPIから返ってこない場合に対応
+        setTenantData({
+          ...data.tenant,
+          textColor: data.tenant.textColor || null, // 追加
+          headerText: data.tenant.headerText || null, // 追加
+        });
 
         // 会社名の初期値設定を条件付きに
         if (data.tenant?.name && !data.tenant.name.includes('の会社')) {
@@ -152,7 +159,8 @@ export default function CorporateOnboardingPage() {
   // saveCompanyInfo関数の修正
   const saveCompanyInfo = async () => {
     if (!companyName.trim()) {
-      return; // 空の会社名は送信しない
+      toast.error('会社名を入力してください');
+      return;
     }
 
     setIsSaving(true);
@@ -165,7 +173,7 @@ export default function CorporateOnboardingPage() {
         },
         body: JSON.stringify({
           name: companyName,
-          type: 'general', // 既存のAPIと互換性を持たせる
+          type: 'general',
         }),
       });
 
@@ -174,7 +182,6 @@ export default function CorporateOnboardingPage() {
         throw new Error(errorData.error || '設定の保存に失敗しました');
       }
 
-      // 成功メッセージとステップ進行
       toast.success('会社情報を保存しました');
       goToNextStep();
     } catch (error) {
@@ -223,21 +230,21 @@ export default function CorporateOnboardingPage() {
   }
 
   return (
-    <div className="max-w-3xl mx-auto">
+    <div className="w-full max-w-3xl mx-auto px-4 sm:px-6">
       {/* ヘッダー */}
       <div className="mb-8 text-center">
         <div className="bg-blue-100 rounded-full w-16 h-16 flex items-center justify-center mx-auto mb-4">
           <HiOfficeBuilding className="h-8 w-8 text-blue-600" />
         </div>
         <h1 className="text-3xl font-bold">法人プランへようこそ</h1>
-        <p className="text-gray-500 mt-2">
+        <p className="text-gray-500 mt-2 px-2">
           簡単なセットアップで、チームメンバーと共に効率的に利用を開始しましょう
         </p>
       </div>
 
-      {/* 進行状況 */}
-      <div className="mb-8">
-        <div className="flex justify-between items-center w-full mb-2">
+      {/* 進行状況 - スマホでは簡素化 */}
+      <div className="mb-8 overflow-x-auto pb-2">
+        <div className="flex justify-between items-center w-full min-w-[500px] mb-2">
           <div className="flex items-center">
             <div
               className={`w-8 h-8 rounded-full flex items-center justify-center ${
@@ -307,7 +314,7 @@ export default function CorporateOnboardingPage() {
       </div>
 
       {/* ステップコンテンツ */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 mb-6">
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 sm:p-8 mb-6">
         {/* ステップ1: ようこそ */}
         {activeStep === 'welcome' && (
           <div>

@@ -1,4 +1,6 @@
 // app/api/corporate/access/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma, disconnectPrisma } from '@/lib/prisma';
