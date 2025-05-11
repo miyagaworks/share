@@ -81,18 +81,6 @@ export async function sendPasswordResetEmail(email: string, resetToken: string) 
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   Share サポートチーム
   ビイアルファ株式会社 Share運営事務局
-
-  メール: support@sns-share.com
-  電話: 082-208-3976（平日10:00〜18:00 土日祝日休業）
-  ウェブ: https://app.sns-share.com
-
-  すべてのSNS、ワンタップでShare
-
-  〒730-0046 広島県広島市中区昭和町6-11
-  運営: ビイアルファ株式会社 (https://bialpha.com)
-
-  プライバシーポリシー: https://app.sns-share.com/legal/privacy
-  利用規約: https://app.sns-share.com/legal/terms
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `;
 
