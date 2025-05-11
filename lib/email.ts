@@ -10,6 +10,9 @@ const transporter = nodemailer.createTransport({
     user: process.env.EMAIL_SERVER_USER,
     pass: process.env.EMAIL_SERVER_PASSWORD,
   },
+  // デバッグ設定を追加（送信問題の詳細を把握するため）
+  debug: process.env.NODE_ENV === 'development',
+  logger: process.env.NODE_ENV === 'development',
 });
 
 interface EmailOptions {
@@ -24,17 +27,21 @@ interface EmailOptions {
  * メールを送信する関数
  */
 export async function sendEmail(options: EmailOptions) {
-  // デフォルトの送信元メールアドレス
-  const defaultFrom = process.env.EMAIL_FROM || 'support@sns-share.com';
+  // メール送信元設定をENV変数から取得
+  const fromAddress = process.env.EMAIL_FROM || 'noreply@sns-share.com';
 
   try {
     // テキストメールのみ送信する設定
     const mailOptions = {
-      from: defaultFrom,
+      from: `"Share" <${fromAddress}>`, // 送信元表示名を追加
       to: options.to,
       subject: options.subject,
       text: options.text,
-      // HTMLメールは送信しない
+      // デバッグ用設定
+      envelope: {
+        from: fromAddress,
+        to: options.to,
+      },
     };
 
     console.log('メール送信を試みます:', {
@@ -44,7 +51,7 @@ export async function sendEmail(options: EmailOptions) {
     });
 
     const result = await transporter.sendMail(mailOptions);
-    console.log('メール送信成功:', result.messageId);
+    console.log('メール送信成功:', result.messageId, result.envelope);
     return { success: true, messageId: result.messageId };
   } catch (error) {
     console.error('メール送信エラー:', error);
@@ -68,20 +75,22 @@ export async function sendPasswordResetEmail(email: string, resetToken: string) 
 
   // 極めてシンプルなテキストメール
   const textContent = `
-  Shareをご利用いただきありがとうございます。
+Shareをご利用いただきありがとうございます。
 
-  パスワードリセットのリクエストを受け付けました。
-  以下のリンクをクリックして、新しいパスワードを設定してください。
+パスワードリセットのリクエストを受け付けました。
+以下のリンクをクリックして、新しいパスワードを設定してください。
 
-  ${resetUrl}
+${resetUrl}
 
-  このリンクは1時間のみ有効です。
-  心当たりがない場合は、このメールを無視してください。
+このリンクは1時間のみ有効です。
+心当たりがない場合は、このメールを無視してください。
 
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  Share サポートチーム
-  ビイアルファ株式会社 Share運営事務局
-  ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+メールが届かない場合は、迷惑メールフォルダもご確認ください。
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Share サポートチーム
+${process.env.SUPPORT_EMAIL || 'support@sns-share.com'}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 `;
 
   // デバッグログ
