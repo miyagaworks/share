@@ -76,10 +76,12 @@ export function MemberShareSettings({
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
     setSlug(value);
+    // 重要: 新しい値が入力されたらエラーをクリアする
     validateSlug(value);
+    setFormChanged(true); // 入力があったことを記録
   };
 
-  // 保存処理
+  // 保存処理を修正
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -91,18 +93,22 @@ export function MemberShareSettings({
     try {
       setIsSaving(true);
 
-      // 親コンポーネントから渡されたonSave関数を呼び出す
       await onSave({
         isPublic,
         slug,
       });
 
       setFormChanged(false);
-      // トーストメッセージの表示は親コンポーネントに任せるため削除
-      // toast.success('共有設定を更新しました'); ← この行を削除
+      // トーストメッセージは親コンポーネントで表示
     } catch (error) {
       console.error('設定保存エラー:', error);
-      // エラー表示も親コンポーネントに任せる
+      // エラー発生時にフォームを再設定しない
+      // 代わりにエラーの詳細を表示して、ユーザーが修正できるようにする
+      if (error instanceof Error && error.message.includes('既に使用されています')) {
+        setSlugError('このURLスラッグは既に使用されています。別の値を入力してください。');
+      }
+      // フォームの状態は変更済みのままにする
+      setFormChanged(true);
     } finally {
       setIsSaving(false);
     }

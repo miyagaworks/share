@@ -85,6 +85,7 @@ export default function CorporateMemberSharePage() {
 
       if (!response.ok) {
         const data = await response.json();
+        // エラーをスローする代わりに、メッセージをカスタマイズして再スロー
         throw new Error(data.error || '共有設定の更新に失敗しました');
       }
 
@@ -92,9 +93,11 @@ export default function CorporateMemberSharePage() {
       setShareSettings(updatedData.shareSettings);
       setHasProfile(true);
       toast.success('共有設定を更新しました');
+      return updatedData; // 成功時はデータを返す
     } catch (error) {
       console.error('設定更新エラー:', error);
       toast.error(error instanceof Error ? error.message : '共有設定の更新に失敗しました');
+      // エラーを再スローして、子コンポーネントでもキャッチできるようにする
       throw error;
     }
   };
