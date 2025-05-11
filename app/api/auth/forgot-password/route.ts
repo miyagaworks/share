@@ -7,6 +7,12 @@ import { randomUUID } from 'crypto';
 import { sendPasswordResetEmail } from '@/lib/email';
 
 export async function POST(request: Request) {
+  const headers = {
+    'Cache-Control': 'no-store, no-cache, must-revalidate',
+    Pragma: 'no-cache',
+    Expires: '0',
+  };
+
   try {
     const body = await request.json();
     const { email } = body;
@@ -68,7 +74,7 @@ export async function POST(request: Request) {
 
       return NextResponse.json(
         { message: 'パスワードリセット用のリンクをメールで送信しました' },
-        { status: 200 },
+        { status: 200, headers },
       );
     } catch (emailError) {
       // エラーの詳細なログ
@@ -80,7 +86,7 @@ export async function POST(request: Request) {
           message: 'メール送信に失敗しました',
           error: emailError instanceof Error ? emailError.message : String(emailError),
         },
-        { status: 500 },
+        { status: 500, headers },
       );
     }
   } catch (error) {
