@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
         email: true,
         name: true,
         nameEn: true,
-        nameKana: true, // nameKanaフィールドを明示的に選択
+        nameKana: true,
         password: true,
         image: true,
         bio: true,
@@ -31,7 +31,14 @@ export async function GET(req: NextRequest) {
         companyUrl: true,
         companyLabel: true,
         profile: true,
-        // 他の必要なフィールド
+        // カラー設定フィールドを追加
+        mainColor: true,
+        snsIconColor: true,
+        bioBackgroundColor: true,
+        bioTextColor: true,
+        // 法人テナントから継承される可能性のあるフィールド
+        headerText: true,
+        textColor: true,
       },
     });
 

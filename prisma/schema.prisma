@@ -33,6 +33,8 @@ model User {
   snsIconColor        String?                @default("#333333") // デフォルトは黒に近いグレー
   bioBackgroundColor  String?                @default("#FFFFFF")
   bioTextColor        String?                @default("#333333")
+  headerText          String?
+  textColor           String?
   phone               String? // 電話番号
   company             String? // 会社/組織名
   companyUrl          String? // 会社/組織のWebサイト

@@ -130,6 +130,11 @@ export async function updateProfile(data: ProfileUpdateData) {
           typeof validatedData.companyLabel === 'string' ? validatedData.companyLabel : undefined,
         bioTextColor:
           typeof validatedData.bioTextColor === 'string' ? validatedData.bioTextColor : undefined,
+        // ヘッダーテキストとテキストカラーフィールドを追加
+        headerText:
+          typeof validatedData.headerText === 'string' ? validatedData.headerText : undefined,
+        textColor:
+          typeof validatedData.textColor === 'string' ? validatedData.textColor : undefined,
       },
     });
 
