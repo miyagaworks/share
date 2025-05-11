@@ -5,7 +5,6 @@ import React, { useState, useEffect } from 'react';
 import { HiEye, HiEyeOff, HiInformationCircle, HiClock, HiUsers } from 'react-icons/hi';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
-import { toast } from 'react-hot-toast';
 
 interface ShareSettingsProps {
   initialValues: {
@@ -92,15 +91,18 @@ export function MemberShareSettings({
     try {
       setIsSaving(true);
 
+      // 親コンポーネントから渡されたonSave関数を呼び出す
       await onSave({
         isPublic,
         slug,
       });
 
       setFormChanged(false);
-      toast.success('共有設定を更新しました');
+      // トーストメッセージの表示は親コンポーネントに任せるため削除
+      // toast.success('共有設定を更新しました'); ← この行を削除
     } catch (error) {
       console.error('設定保存エラー:', error);
+      // エラー表示も親コンポーネントに任せる
     } finally {
       setIsSaving(false);
     }
