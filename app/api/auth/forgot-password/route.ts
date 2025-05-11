@@ -25,7 +25,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // ユーザーが見つからない場合
+    // セキュリティ上の理由から、ユーザーが見つからなくても同じレスポンスを返す
     if (!user) {
       console.log(`ユーザーが見つかりません: ${email}`);
       return NextResponse.json(
@@ -52,45 +52,24 @@ export async function POST(request: Request) {
       },
     });
 
-    console.log(`リセットトークンを生成しました: ${resetToken}`);
-
-    // ダイレクトにリンクを生成して返す（メール送信を一時的にスキップ）
+    // リセットリンクをメールで送信
     const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
     const resetLink = `${baseUrl}/auth/reset-password?token=${resetToken}`;
+    console.log(`リセットリンク: ${resetLink}`);
 
     try {
-      // 例外処理を厳格に行い、メールが送信できなくてもリセットトークンは生成
+      // メール送信ヘルパー関数を呼び出す
       await sendPasswordResetEmail(user.email, resetToken);
       console.log(`パスワードリセットメールを送信しました: ${user.email}`);
-
-      return NextResponse.json(
-        {
-          message: 'パスワードリセット用のリンクをメールで送信しました',
-          // デバッグ目的で一時的にリンクも返す（本番環境では削除すること）
-          debug: process.env.NODE_ENV === 'development' ? { resetLink } : undefined,
-        },
-        { status: 200 },
-      );
     } catch (emailError) {
-      console.error('メール送信に失敗しました:', emailError);
-
-      // メール送信に失敗しても、リセットトークンは生成済みなので成功レスポンスを返す
-      // ユーザーにはデバッグモードの場合のみリンクを直接表示
-      return NextResponse.json(
-        {
-          message: 'パスワードリセット用のリンクをメールで送信しました',
-          // デバッグ目的で一時的にリンクも返す（本番環境では削除すること）
-          debug:
-            process.env.NODE_ENV === 'development'
-              ? {
-                  resetLink,
-                  error: emailError instanceof Error ? emailError.message : String(emailError),
-                }
-              : undefined,
-        },
-        { status: 200 },
-      );
+      console.error('メール送信エラー:', emailError);
+      // メール送信エラーでも成功レスポンスを返す（セキュリティ上の理由）
     }
+
+    return NextResponse.json(
+      { message: 'パスワードリセット用のリンクをメールで送信しました' },
+      { status: 200 },
+    );
   } catch (error) {
     console.error('パスワードリセットエラー:', error);
     return NextResponse.json({ message: '処理中にエラーが発生しました' }, { status: 500 });
