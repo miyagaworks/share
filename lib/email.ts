@@ -25,7 +25,7 @@ interface EmailOptions {
  */
 export async function sendEmail(options: EmailOptions) {
   // デフォルトの送信元メールアドレス
-  const defaultFrom = process.env.EMAIL_FROM || 'support@sns-share.com';
+  const defaultFrom = process.env.EMAIL_FROM || 'noreply@sns-share.com';
 
   // 開発環境でもメール送信を強制する環境変数
   const forceEmailInDev = process.env.FORCE_EMAIL_IN_DEV === 'true';
