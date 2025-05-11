@@ -1,4 +1,4 @@
-// lib/email.ts
+// lib/email.ts（シンプルなテキストメール版）
 import nodemailer from 'nodemailer';
 
 // SMTPトランスポーターの設定
@@ -27,32 +27,14 @@ export async function sendEmail(options: EmailOptions) {
   // デフォルトの送信元メールアドレス
   const defaultFrom = process.env.EMAIL_FROM || 'support@sns-share.com';
 
-  // 開発環境でもメール送信を強制する環境変数
-  const forceEmailInDev = process.env.FORCE_EMAIL_IN_DEV === 'true';
-
-  // 開発環境の場合はコンソールにログ出力のみ（FORCE_EMAIL_IN_DEV=true の場合を除く）
-  if (process.env.NODE_ENV === 'development' && !forceEmailInDev) {
-    console.log(
-      '開発環境: メール送信をスキップします（強制送信するには FORCE_EMAIL_IN_DEV=true を設定）',
-    );
-    console.log({
-      from: options.from || defaultFrom,
-      to: options.to,
-      subject: options.subject,
-      text: options.text.substring(0, 100) + '...',
-    });
-    return { success: true, messageId: 'dev-environment-skip' };
-  }
-
   try {
-    // テキストメールのみの送信設定
+    // テキストメールのみ送信する設定
     const mailOptions = {
-      from: options.from || defaultFrom,
+      from: defaultFrom,
       to: options.to,
       subject: options.subject,
       text: options.text,
-      // HTMLメールに問題がある場合はコメントアウト
-      // html: options.html,
+      // HTMLメールは送信しない
     };
 
     console.log('メール送信を試みます:', {
@@ -71,25 +53,7 @@ export async function sendEmail(options: EmailOptions) {
 }
 
 /**
- * 確認メールを送信する関数
- */
-export async function sendVerificationEmail(email: string, verificationUrl: string) {
-  return sendEmail({
-    to: email,
-    subject: 'メールアドレスの確認',
-    text: `メールアドレスを確認するには、以下のリンクをクリックしてください。\n\n${verificationUrl}\n\n`,
-    html: `
-      <div>
-        <h1>メールアドレスの確認</h1>
-        <p>メールアドレスを確認するには、以下のリンクをクリックしてください。</p>
-        <p><a href="${verificationUrl}">メールアドレスを確認する</a></p>
-      </div>
-    `,
-  });
-}
-
-/**
- * パスワードリセットメールを送信する関数（テキストメールのみ）
+ * パスワードリセットメールを送信する関数（テキストのみ）
  */
 export async function sendPasswordResetEmail(email: string, resetToken: string) {
   // ベースURL
@@ -99,18 +63,12 @@ export async function sendPasswordResetEmail(email: string, resetToken: string) 
     process.env.NEXTAUTH_URL ||
     'https://app.sns-share.com';
 
-  // URLの正規化（末尾のスラッシュを削除）
-  const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-
   // リセットURL
-  const resetUrl = `${normalizedBaseUrl}/auth/reset-password?token=${resetToken}`;
+  const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
 
-  // サイト名
-  const siteName = 'Share';
-
-  // テキストのみのシンプルなメール
+  // 極めてシンプルなテキストメール
   const textContent = `
-  ${siteName}をご利用いただきありがとうございます。
+  Shareをご利用いただきありがとうございます。
 
   パスワードリセットのリクエストを受け付けました。
   以下のリンクをクリックして、新しいパスワードを設定してください。
@@ -136,16 +94,15 @@ export async function sendPasswordResetEmail(email: string, resetToken: string) 
   プライバシーポリシー: https://app.sns-share.com/legal/privacy
   利用規約: https://app.sns-share.com/legal/terms
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-  `;
+`;
 
   // デバッグログ
   console.log('パスワードリセットURL:', resetUrl);
 
-  // メール送信（HTMLメールに問題がある場合はhtmlオプションを削除）
+  // メール送信（テキストのみ）
   return sendEmail({
     to: email,
-    subject: `【${siteName}】パスワードリセットのご案内`,
+    subject: `【Share】パスワードリセットのご案内`,
     text: textContent,
-    // html: htmlContent, // HTMLメールに問題がある場合はコメントアウト
   });
 }

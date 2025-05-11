@@ -35,33 +35,44 @@ export default function ForgotPasswordPage() {
     });
 
     const onSubmit = async (data: ForgotPasswordFormData) => {
-        try {
-            setError(null);
-            setSuccess(null);
-            setIsPending(true);
+      try {
+        setError(null);
+        setSuccess(null);
+        setIsPending(true);
 
-            const response = await fetch("/api/auth/forgot-password", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify(data),
-            });
+        const response = await fetch('/api/auth/forgot-password', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(data),
+        });
 
-            const responseData = await response.json();
+        const responseData = await response.json();
 
-            if (!response.ok) {
-                setError(responseData.message || "パスワードリセットリクエスト中にエラーが発生しました。");
-                return;
-            }
-
-            setSuccess("パスワードリセット用のリンクをメールで送信しました。メールをご確認ください。");
-        } catch (error) {
-            console.error("パスワードリセットエラー:", error);
-            setError("リクエスト処理中にエラーが発生しました。");
-        } finally {
-            setIsPending(false);
+        if (!response.ok) {
+          setError(
+            responseData.message || 'パスワードリセットリクエスト中にエラーが発生しました。',
+          );
+          return;
         }
+
+        setSuccess('パスワードリセット用のリンクをメールで送信しました。メールをご確認ください。');
+
+        // デバッグモードの場合、リンクを表示（開発環境のみ）
+        if (responseData.debug && responseData.debug.resetLink) {
+          console.log('デバッグ用リセットリンク:', responseData.debug.resetLink);
+          // 開発環境でのみ表示
+          if (process.env.NODE_ENV === 'development') {
+            setSuccess((prev) => `${prev} デバッグ用リンク: ${responseData.debug.resetLink}`);
+          }
+        }
+      } catch (error) {
+        console.error('パスワードリセットエラー:', error);
+        setError('リクエスト処理中にエラーが発生しました。');
+      } finally {
+        setIsPending(false);
+      }
     };
 
     return (
