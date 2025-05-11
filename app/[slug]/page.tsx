@@ -115,8 +115,9 @@ export default async function ProfilePage({ params }: { params: { slug: string }
     const hasCompanyUrl = tenant ? true : (user.company && user.companyUrl);
     
     // ヘッダーテキストとテキストカラー（テナントからの取得を優先）
-    const headerText = tenant?.headerText || "シンプルにつながる、スマートにシェア。";
-    const headerTextColor = tenant?.textColor || "#FFFFFF";
+    const headerText =
+      tenant?.headerText || user.headerText || 'シンプルにつながる、スマートにシェア。';
+    const textColor = tenant?.textColor || user.textColor || '#FFFFFF';
 
     return (
       <div
@@ -152,10 +153,10 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           >
             <p
               style={{
-                color: headerTextColor,
+                color: textColor, // 変数名を修正
                 textAlign: 'center',
                 fontWeight: '500',
-                whiteSpace: 'pre-wrap', // 改行を保持
+                whiteSpace: 'pre-wrap',
               }}
               className="profile-text"
             >
@@ -441,7 +442,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     padding: '0.75rem',
                     borderRadius: '0.375rem',
                     fontWeight: '500',
-                    color: headerTextColor,
+                    color: textColor,
                     backgroundColor: mainColor,
                     boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                     marginBottom: '0.75rem',
