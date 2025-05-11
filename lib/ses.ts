@@ -11,7 +11,7 @@ interface EmailOptions {
 
 // SESクライアントの初期化
 const sesClient = new SESClient({
-  region: process.env.AWS_SES_REGION || 'ap-northeast-1',
+  region: process.env.AWS_SES_REGION || 'ap-northeast-3',
   credentials: {
     accessKeyId: process.env.AWS_SES_ACCESS_KEY_ID || '',
     secretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY || '',
