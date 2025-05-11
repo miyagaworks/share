@@ -1,4 +1,4 @@
-// app/api/support/contact/route.ts
+// app/api/support/contact/route.ts の修正案
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -30,7 +30,10 @@ export async function POST(req: Request) {
   };
 
   try {
+    // 認証情報を取得するが、セッションを作成しない
     const session = await auth();
+    const userId = session?.user?.id; // ユーザーIDだけを抽出
+
     const { name, email, companyName, contactType, subject, message } = await req.json();
 
     // バリデーション
@@ -54,7 +57,7 @@ export async function POST(req: Request) {
       type: contactType,
       subject,
       message: message.substring(0, 100) + '...',
-      userId: session?.user?.id || null,
+      userId: userId || null, // 変数から取得
     });
 
     const contactTypeJapanese = getContactTypeJapanese(contactType);
@@ -87,11 +90,11 @@ export async function POST(req: Request) {
       <td style="padding: 8px; border: 1px solid #e2e8f0;">${subject}</td>
     </tr>
     ${
-      session?.user?.id
+      userId
         ? `
     <tr>
       <th style="text-align: left; padding: 8px; background-color: #f8fafc; border: 1px solid #e2e8f0;">ユーザーID</th>
-      <td style="padding: 8px; border: 1px solid #e2e8f0;">${session.user.id}</td>
+      <td style="padding: 8px; border: 1px solid #e2e8f0;">${userId}</td>
     </tr>
     `
         : ''
@@ -272,11 +275,11 @@ export async function POST(req: Request) {
       <td style="padding: 8px; border: 1px solid #e2e8f0;">${subject}</td>
     </tr>
     ${
-      session?.user?.id
+      userId
         ? `
     <tr>
       <th style="text-align: left; padding: 8px; background-color: #f8fafc; border: 1px solid #e2e8f0;">ユーザーID</th>
-      <td style="padding: 8px; border: 1px solid #e2e8f0;">${session.user.id}</td>
+      <td style="padding: 8px; border: 1px solid #e2e8f0;">${userId}</td>
     </tr>
     `
         : ''
