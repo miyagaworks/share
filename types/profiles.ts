@@ -19,6 +19,12 @@ export interface UserData {
   company?: string | null;
   companyUrl?: string | null;
   companyLabel?: string | null;
+  mainColor: string | null;
+  snsIconColor: string | null;
+  bioBackgroundColor: string | null;
+  bioTextColor: string | null;
+  headerText: string | null;
+  textColor: string | null;
 }
 
 export interface ProfileUpdateData {
@@ -40,8 +46,15 @@ export interface ProfileUpdateData {
   company?: string | null;
   companyUrl?: string | null;
   companyLabel?: string | null;
+
+  // カラー関連フィールド
   mainColor?: string | null;
   snsIconColor?: string | null;
+  bioBackgroundColor?: string | null;
+  bioTextColor?: string | null;
+  headerText?: string | null;
   textColor?: string | null;
+
+  // その他のフィールド
   position?: string | null;
 }

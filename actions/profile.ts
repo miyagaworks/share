@@ -131,10 +131,10 @@ export async function updateProfile(data: ProfileUpdateData) {
         bioTextColor:
           typeof validatedData.bioTextColor === 'string' ? validatedData.bioTextColor : undefined,
         // ヘッダーテキストとテキストカラーフィールドを追加
-        // headerText:
-        //   typeof validatedData.headerText === 'string' ? validatedData.headerText : undefined,
-        // textColor:
-        //   typeof validatedData.textColor === 'string' ? validatedData.textColor : undefined,
+        headerText:
+          typeof validatedData.headerText === 'string' ? validatedData.headerText : undefined,
+        textColor:
+          typeof validatedData.textColor === 'string' ? validatedData.textColor : undefined,
       },
     });
 
