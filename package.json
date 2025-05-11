@@ -18,7 +18,7 @@
     },
     "dependencies": {
         "@auth/prisma-adapter": "^2.9.0",
-        "@aws-sdk/client-ses": "^3.782.0",
+        "@aws-sdk/client-ses": "^3.806.0",
         "@google/generative-ai": "^0.24.0",
         "@headlessui/react": "^2.2.0",
         "@hello-pangea/dnd": "^16.6.0",

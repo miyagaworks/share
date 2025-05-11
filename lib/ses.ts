@@ -1,16 +1,5 @@
-// lib/email.ts
-import nodemailer from 'nodemailer';
-
-// SMTPトランスポーターの設定
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_SERVER_HOST,
-  port: Number(process.env.EMAIL_SERVER_PORT) || 587,
-  secure: process.env.EMAIL_SERVER_PORT === '465',
-  auth: {
-    user: process.env.EMAIL_SERVER_USER,
-    pass: process.env.EMAIL_SERVER_PASSWORD,
-  },
-});
+// lib/ses.ts
+import { SESClient, SendEmailCommand } from '@aws-sdk/client-ses';
 
 interface EmailOptions {
   to: string;
@@ -20,23 +9,29 @@ interface EmailOptions {
   from?: string;
 }
 
-/**
- * メールを送信する関数
- */
-export async function sendEmail(options: EmailOptions) {
-  // デフォルトの送信元メールアドレス
-  const defaultFrom = process.env.EMAIL_FROM || 'support@sns-share.com';
+// SESクライアントの初期化
+const sesClient = new SESClient({
+  region: process.env.AWS_SES_REGION || 'ap-northeast-1',
+  credentials: {
+    accessKeyId: process.env.AWS_SES_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SES_SECRET_ACCESS_KEY || '',
+  },
+});
 
+/**
+ * Amazon SESを使用してメールを送信する関数
+ */
+export async function sendEmailWithSES(options: EmailOptions) {
   // 開発環境でもメール送信を強制する環境変数
   const forceEmailInDev = process.env.FORCE_EMAIL_IN_DEV === 'true';
 
   // 開発環境の場合はコンソールにログ出力のみ（FORCE_EMAIL_IN_DEV=true の場合を除く）
   if (process.env.NODE_ENV === 'development' && !forceEmailInDev) {
     console.log(
-      '開発環境: メール送信をスキップします（強制送信するには FORCE_EMAIL_IN_DEV=true を設定）',
+      '開発環境: SESメール送信をスキップします（強制送信するには FORCE_EMAIL_IN_DEV=true を設定）',
     );
     console.log({
-      from: options.from || defaultFrom,
+      from: options.from || process.env.AWS_SES_SOURCE_EMAIL,
       to: options.to,
       subject: options.subject,
       text: options.text.substring(0, 100) + '...',
@@ -45,58 +40,58 @@ export async function sendEmail(options: EmailOptions) {
   }
 
   try {
-    const mailOptions = {
-      from: `"Share サポートチーム" <${options.from || defaultFrom}>`, // 名前付きの差出人
-      to: options.to,
-      subject: options.subject,
-      text: options.text,
-      html: options.html,
-      headers: {
-        'X-Priority': '1', // メールの優先度を高く設定
-        'X-MSMail-Priority': 'High',
-        Importance: 'High',
-        'X-Mailer': 'Share Application Mailer', // メーラー名を追加
-        'Reply-To': options.from || defaultFrom, // 返信先アドレス
-      },
-    };
+    // 送信元メールアドレス
+    const sourceEmail = options.from || process.env.AWS_SES_SOURCE_EMAIL || 'support@sns-share.com';
 
-    console.log('メール送信を試みます:', {
-      from: mailOptions.from,
-      to: mailOptions.to,
-      subject: mailOptions.subject,
+    // メール送信コマンドの作成
+    const command = new SendEmailCommand({
+      Source: `"Share サポートチーム" <${sourceEmail}>`,
+      Destination: {
+        ToAddresses: [options.to],
+      },
+      Message: {
+        Subject: {
+          Data: options.subject,
+          Charset: 'UTF-8',
+        },
+        Body: {
+          Text: {
+            Data: options.text,
+            Charset: 'UTF-8',
+          },
+          ...(options.html
+            ? {
+                Html: {
+                  Data: options.html,
+                  Charset: 'UTF-8',
+                },
+              }
+            : {}),
+        },
+      },
+      ReplyToAddresses: [sourceEmail],
     });
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log('メール送信成功:', result.messageId);
-    return { success: true, messageId: result.messageId };
+    console.log('SESでメール送信を試みます:', {
+      from: sourceEmail,
+      to: options.to,
+      subject: options.subject,
+    });
+
+    // メール送信の実行
+    const result = await sesClient.send(command);
+    console.log('SESメール送信成功:', result.MessageId);
+    return { success: true, messageId: result.MessageId };
   } catch (error) {
-    console.error('メール送信エラー:', error);
+    console.error('SESメール送信エラー:', error);
     throw error;
   }
 }
 
 /**
- * 確認メールを送信する関数
- */
-export async function sendVerificationEmail(email: string, verificationUrl: string) {
-  return sendEmail({
-    to: email,
-    subject: 'メールアドレスの確認',
-    text: `メールアドレスを確認するには、以下のリンクをクリックしてください。\n\n${verificationUrl}\n\n`,
-    html: `
-      <div>
-        <h1>メールアドレスの確認</h1>
-        <p>メールアドレスを確認するには、以下のリンクをクリックしてください。</p>
-        <p><a href="${verificationUrl}">メールアドレスを確認する</a></p>
-      </div>
-    `,
-  });
-}
-
-/**
  * パスワードリセットメールを送信する関数
  */
-export async function sendPasswordResetEmail(email: string, resetToken: string) {
+export async function sendPasswordResetEmailWithSES(email: string, resetToken: string) {
   // ベースURL
   const baseUrl =
     process.env.NEXT_PUBLIC_APP_URL ||
@@ -193,6 +188,7 @@ ${textSignature}
   
   <p>このリンクは<strong>1時間のみ有効</strong>です。<br>心当たりがない場合は、このメールを無視してください。</p>
   
+ 
   ${htmlSignature}
 </div>
   `;
@@ -201,7 +197,7 @@ ${textSignature}
   console.log('パスワードリセットURL:', resetUrl);
 
   // メール送信
-  return sendEmail({
+  return sendEmailWithSES({
     to: email,
     subject: `【${siteName}】パスワードリセットのご案内`,
     text: textContent,

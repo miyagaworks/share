@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
-import { sendPasswordResetEmail } from '@/lib/email';
+import { sendPasswordResetEmailWithSES } from '@/lib/ses';
 
 export async function POST(request: Request) {
   try {
@@ -56,14 +56,8 @@ export async function POST(request: Request) {
 
     // メールの送信処理を明示的にエラーハンドリング
     try {
-      // 環境変数からベースURLを取得
-      const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
-      // 単純なリセットリンクを生成
-      const resetLink = `${baseUrl}/auth/reset-password?token=${resetToken}`;
-      console.log(`リセットリンク: ${resetLink}`);
-
-      // 明示的にメール送信を試行
-      await sendPasswordResetEmail(user.email, resetToken);
+      // SESを使用してパスワードリセットメールを送信
+      await sendPasswordResetEmailWithSES(user.email, resetToken);
       console.log(`パスワードリセットメールを送信しました: ${user.email}`);
 
       return NextResponse.json(
@@ -74,7 +68,7 @@ export async function POST(request: Request) {
       // エラーの詳細なログ
       console.error('メール送信に失敗しました:', emailError);
 
-      // 本番環境でも開発者が問題を特定できるようエラー詳細を返す（一時的）
+      // エラー詳細を返す
       return NextResponse.json(
         {
           message: 'メール送信に失敗しました',
