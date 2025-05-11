@@ -37,8 +37,8 @@ export async function GET(req: NextRequest) {
         bioBackgroundColor: true,
         bioTextColor: true,
         // 法人テナントから継承される可能性のあるフィールド
-        headerText: true,
-        textColor: true,
+        // headerText: true,
+        // textColor: true,
       },
     });
 
