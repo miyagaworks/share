@@ -1,0 +1,8 @@
+{
+  "crons": [
+    {
+      "path": "/api/cron/trial-notification",
+      "schedule": "0 1 * * *"
+    }
+  ]
+}
