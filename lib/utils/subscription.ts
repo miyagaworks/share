@@ -1,8 +1,11 @@
 // /lib/utils/subscription.ts
 import { addDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
-import { sendEmail } from '@/lib/email';
 import { getTrialEndingEmailTemplate } from '../email/templates/trial-ending';
+import { Resend } from 'resend';
+
+// Resendインスタンスを初期化
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 // トライアル終了2日前のユーザーを取得
 export async function getUsersWithTrialEndingSoon() {
@@ -46,33 +49,46 @@ export async function sendTrialEndingEmails() {
     console.log(`トライアル終了間近のユーザー: ${users.length}人`);
 
     const results = [];
+    const siteName = 'Share';
 
     for (const user of users) {
       if (!user.trialEndsAt) continue;
 
       try {
         const userName = user.name || 'お客様';
-        const { subject, text, html } = getTrialEndingEmailTemplate({
+        const { subject, html, text } = getTrialEndingEmailTemplate({
           userName,
           trialEndDate: user.trialEndsAt,
         });
 
-        // メール送信
-        const result = await sendEmail({
-          to: user.email,
-          subject,
-          text,
-          html,
+        // Resendを使用してメール送信
+        const { data, error } = await resend.emails.send({
+          from: `${siteName} <noreply@sns-share.com>`, // 検証済みドメインのメールアドレス
+          to: [user.email],
+          subject: subject,
+          html: html,
+          text: text, // プレーンテキスト版も含める
         });
 
-        console.log(`ユーザー ${user.id} (${user.email}) に通知メールを送信しました。`);
-
-        results.push({
-          userId: user.id,
-          email: user.email,
-          success: true,
-          messageId: result.messageId,
-        });
+        if (error) {
+          console.error(`ユーザー ${user.id} へのメール送信エラー:`, error);
+          results.push({
+            userId: user.id,
+            email: user.email,
+            success: false,
+            error: error.message,
+          });
+        } else {
+          console.log(
+            `ユーザー ${user.id} (${user.email}) に通知メールを送信しました。ID: ${data?.id}`,
+          );
+          results.push({
+            userId: user.id,
+            email: user.email,
+            success: true,
+            messageId: data?.id,
+          });
+        }
       } catch (emailError) {
         console.error(`ユーザー ${user.id} へのメール送信エラー:`, emailError);
         results.push({

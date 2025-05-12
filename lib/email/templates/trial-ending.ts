@@ -14,44 +14,6 @@ export function getTrialEndingEmailTemplate(params: TrialEndingEmailParams) {
 
   const subject = `【重要】${siteName} 無料トライアル期間終了のお知らせ（あと2日）`;
 
-  const text = `${userName} 様
-
-いつも${siteName}をご利用いただき、誠にありがとうございます。
-こちらは、${siteName}の無料トライアル期間が2日後に終了することをお知らせするメールです。 
-
-【トライアル終了日時】
-${formattedDate}
-
-トライアル期間終了後も引き続き${siteName}の全機能をご利用いただくには、以下の手順でお支払い手続きをお願いいたします：
-
-1. ダッシュボードにログインする
-2. 「ご利用プラン」ページに移動する
-3. ご希望のプランを選択してお支払い情報を入力する
-
-※お支払いはクレジットカード決済のみとなります。
-
-【重要】トライアル期間終了後について
-・トライアル終了後、1週間の猶予期間があります。
-・猶予期間中は公開プロフィールが表示されなくなります。
-・猶予期間内にお支払いいただくと、すべての機能とプロフィール表示が復活します。
-・猶予期間終了後はユーザー情報が削除され、復元することができません。
-
-ご不明な点がございましたら、お気軽にカスタマーサポートまでお問い合わせください。
-今後とも、${siteName}をよろしくお願いいたします。
-
----------------------
-${siteName} サポートチーム
-お問い合わせ: support@sns-share.com
-ウェブサイト: https://app.sns-share.com
-
-すべてのSNS、ワンタップでShare
-
-〒730-0046 広島県広島市中区昭和町6-11
-運営: ビイアルファ株式会社 (https://bialpha.com)
-
-プライバシーポリシー: https://app.sns-share.com/legal/privacy
-利用規約: https://app.sns-share.com/legal/terms`;
-
   const html = `
     <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
       <h1 style="color: #333; font-size: 24px; margin-bottom: 20px;">無料トライアル期間終了のお知らせ（あと2日）</h1>
@@ -106,5 +68,44 @@ ${siteName} サポートチーム
     </div>
   `;
 
-  return { subject, text, html };
+  // テキスト形式のメール内容も保持しておく
+  const text = `${userName} 様
+
+いつも${siteName}をご利用いただき、誠にありがとうございます。
+こちらは、${siteName}の無料トライアル期間が2日後に終了することをお知らせするメールです。 
+
+【トライアル終了日時】
+${formattedDate}
+
+トライアル期間終了後も引き続き${siteName}の全機能をご利用いただくには、以下の手順でお支払い手続きをお願いいたします：
+
+1. ダッシュボードにログインする
+2. 「ご利用プラン」ページに移動する
+3. ご希望のプランを選択してお支払い情報を入力する
+
+※お支払いはクレジットカード決済のみとなります。
+
+【重要】トライアル期間終了後について
+・トライアル終了後、1週間の猶予期間があります。
+・猶予期間中は公開プロフィールが表示されなくなります。
+・猶予期間内にお支払いいただくと、すべての機能とプロフィール表示が復活します。
+・猶予期間終了後はユーザー情報が削除され、復元することができません。
+
+ご不明な点がございましたら、お気軽にカスタマーサポートまでお問い合わせください。
+今後とも、${siteName}をよろしくお願いいたします。
+
+---------------------
+${siteName} サポートチーム
+お問い合わせ: support@sns-share.com
+ウェブサイト: https://app.sns-share.com
+
+すべてのSNS、ワンタップでShare
+
+〒730-0046 広島県広島市中区昭和町6-11
+運営: ビイアルファ株式会社
+
+プライバシーポリシー: https://app.sns-share.com/legal/privacy
+利用規約: https://app.sns-share.com/legal/terms`;
+
+  return { subject, html, text };
 }
