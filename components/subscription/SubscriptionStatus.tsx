@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
+import { addDays } from 'date-fns';
 import { HiCheck, HiRefresh, HiXCircle, HiExclamation, HiClock } from 'react-icons/hi';
 
 interface SubscriptionData {
@@ -20,9 +21,16 @@ interface SubscriptionData {
 
 interface SubscriptionStatusProps {
   onReloadSubscription?: () => void;
+  userData?: {
+    trialEndsAt?: string | null;
+    subscriptionStatus?: string | null;
+  } | null;
 }
 
-export default function SubscriptionStatus({ onReloadSubscription }: SubscriptionStatusProps) {
+export default function SubscriptionStatus({
+  onReloadSubscription,
+  userData,
+}: SubscriptionStatusProps) {
   const [subscription, setSubscription] = useState<SubscriptionData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -190,6 +198,49 @@ export default function SubscriptionStatus({ onReloadSubscription }: Subscriptio
     }
   };
 
+  // 猶予期間の計算関数
+  const getGracePeriodInfo = () => {
+    if (!userData?.trialEndsAt) return null;
+
+    const trialEndDate = new Date(userData.trialEndsAt);
+    const now = new Date();
+    const gracePeriodEndDate = addDays(trialEndDate, 7); // 7日間の猶予期間
+
+    // トライアル終了後の判定
+    if (now > trialEndDate) {
+      // アクティブなサブスクリプションの判定
+      const hasActiveSubscription =
+        subscription && subscription.status === 'active' && !subscription.cancelAtPeriodEnd;
+
+      // アクティブなサブスクリプションがない場合
+      if (!hasActiveSubscription) {
+        // 猶予期間中
+        if (now < gracePeriodEndDate) {
+          const diffTime = gracePeriodEndDate.getTime() - now.getTime();
+          const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+
+          return {
+            isInGracePeriod: true,
+            daysRemaining: diffDays,
+            gracePeriodEndDate,
+          };
+        }
+        // 猶予期間終了
+        else {
+          return {
+            isInGracePeriod: false,
+            isGracePeriodExpired: true,
+            daysRemaining: 0,
+            gracePeriodEndDate,
+          };
+        }
+      }
+    }
+
+    return null;
+  };
+  const gracePeriodInfo = getGracePeriodInfo();
+
   // 読み込み中
   if (loading) {
     return (
@@ -223,8 +274,68 @@ export default function SubscriptionStatus({ onReloadSubscription }: Subscriptio
     );
   }
 
-  // ご利用プランなし（無料トライアル中または未登録）
-  if (!subscription) {
+  // 猶予期間中の警告表示
+  if (gracePeriodInfo?.isInGracePeriod) {
+    return (
+      <div className="bg-white rounded-lg border border-red-200 shadow-sm p-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 text-red-500 mr-3">
+            <HiExclamation className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium text-red-800">トライアル期間が終了しました</h3>
+            <div className="mt-2 text-sm text-red-700">
+              <p>
+                現在、<strong>{gracePeriodInfo.daysRemaining}日間</strong>
+                の猶予期間中です。このままお支払い手続きをされない場合、
+                <strong>{formatDate(gracePeriodInfo.gracePeriodEndDate.toISOString())}</strong>
+                にアカウントが削除され、公開プロフィールが表示されなくなります。
+              </p>
+              <div className="mt-4">
+                <Button className="bg-red-600 hover:bg-red-700 text-white mr-3">
+                  今すぐプランを選択する
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // 猶予期間終了後（未削除のアカウント）
+  if (gracePeriodInfo?.isGracePeriodExpired) {
+    return (
+      <div className="bg-white rounded-lg border border-red-200 shadow-sm p-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 text-red-500 mr-3">
+            <HiExclamation className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium text-red-800">アカウント削除予定</h3>
+            <div className="mt-2 text-sm text-red-700">
+              <p>
+                猶予期間が終了しました。アカウントは近日中に削除される予定です。引き続きサービスをご利用になりたい場合は、今すぐお支払い手続きを完了してください。
+              </p>
+              <div className="mt-4">
+                <Button className="bg-red-600 hover:bg-red-700 text-white mr-3">
+                  今すぐプランを選択して復活する
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ご利用プランなし（無料トライアル中）
+  if (!subscription || subscription.status === 'trialing') {
+    // トライアル期間が終了しているかどうかの判定を追加
+    const now = new Date();
+    const trialEndDate = userData?.trialEndsAt ? new Date(userData.trialEndsAt) : null;
+    const isTrialActive = trialEndDate && now < trialEndDate;
+
     return (
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
         <div className="flex items-start">
@@ -232,9 +343,13 @@ export default function SubscriptionStatus({ onReloadSubscription }: Subscriptio
             <HiClock className="h-6 w-6" />
           </div>
           <div>
-            <h3 className="text-lg font-medium">無料トライアル中</h3>
+            <h3 className="text-lg font-medium">
+              {isTrialActive ? '無料トライアル中' : 'プランが選択されていません'}
+            </h3>
             <p className="mt-2 text-sm text-gray-500">
-              現在、無料トライアル期間をご利用中です。有料プランにアップグレードすると、すべての機能を継続してご利用いただけます。
+              {isTrialActive
+                ? `現在、無料トライアル期間をご利用中です。有料プランにアップグレードすると、すべての機能を継続してご利用いただけます。`
+                : `現在、プランが選択されていません。プランを選択して、すべての機能をご利用ください。`}
             </p>
             <div className="mt-4">
               <Button className="mr-3">プランを選択</Button>
