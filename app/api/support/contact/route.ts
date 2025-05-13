@@ -1,4 +1,4 @@
-// app/api/support/contact/route.ts の修正案
+// app/api/support/contact/route.ts
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';

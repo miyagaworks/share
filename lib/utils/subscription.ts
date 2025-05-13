@@ -1,187 +1,203 @@
 // lib/utils/subscription.ts
-import { addDays } from 'date-fns';
 import { prisma } from '@/lib/prisma';
-import { getTrialEndingEmailTemplate } from '../email/templates/trial-ending';
-import { Resend } from 'resend';
+import { addDays } from 'date-fns';
+import { sendEmail } from '@/lib/email';
+import { getTrialEndingEmailTemplate } from '@/lib/email/templates/trial-ending';
+import { getGracePeriodExpiredEmailTemplate } from '@/lib/email/templates/grace-period-expired';
 
-// Resendインスタンスを初期化
-const resend = new Resend(process.env.RESEND_API_KEY);
+// ユーザーメール送信結果のインターフェース定義を追加
+interface EmailResult {
+  id: string;
+  email: string;
+  status: 'success' | 'failed';
+  error?: string;
+}
 
-// トライアル終了2日前のユーザーを取得
-export async function getUsersWithTrialEndingSoon() {
-  // 2日後にトライアルが終了するユーザーを検索
-  const targetDate = addDays(new Date(), 2);
-  const startOfDay = new Date(targetDate);
-  startOfDay.setHours(0, 0, 0, 0);
+// 無料トライアル終了の通知を送信する
+export async function sendTrialEndingEmails() {
+  const now = new Date();
 
-  const endOfDay = new Date(targetDate);
-  endOfDay.setHours(23, 59, 59, 999);
+  // 2日後に終了するトライアルを検索
+  const twoDaysFromNow = addDays(now, 2);
+  const startOfDay = new Date(
+    twoDaysFromNow.getFullYear(),
+    twoDaysFromNow.getMonth(),
+    twoDaysFromNow.getDate(),
+  );
+  const endOfDay = new Date(
+    twoDaysFromNow.getFullYear(),
+    twoDaysFromNow.getMonth(),
+    twoDaysFromNow.getDate(),
+    23,
+    59,
+    59,
+  );
+
+  const users = await prisma.user.findMany({
+    where: {
+      trialEndsAt: {
+        gte: startOfDay,
+        lte: endOfDay,
+      },
+      // 既に有効なサブスクリプションがないユーザーのみ
+      subscription: {
+        is: null,
+      },
+      // 永久利用権がないユーザーのみ
+      subscriptionStatus: {
+        not: 'permanent',
+      },
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      trialEndsAt: true,
+    },
+  });
+
+  console.log(`トライアル終了2日前のユーザー: ${users.length}人`);
+
+  // 結果を格納する配列 - 具体的な型を指定
+  const results = {
+    total: users.length,
+    success: 0,
+    failed: 0,
+    users: [] as EmailResult[], // EmailResult[] 型を指定
+  };
+
+  // 各ユーザーにメールを送信
+  for (const user of users) {
+    if (!user.email || !user.trialEndsAt) continue;
+
+    try {
+      const emailTemplate = getTrialEndingEmailTemplate({
+        userName: user.name || 'ユーザー',
+        trialEndDate: user.trialEndsAt,
+      });
+
+      await sendEmail({
+        to: user.email,
+        subject: emailTemplate.subject,
+        text: emailTemplate.text,
+        html: emailTemplate.html,
+      });
+
+      results.success++;
+      results.users.push({
+        id: user.id,
+        email: user.email,
+        status: 'success',
+      });
+
+      console.log(`トライアル終了メール送信成功: ${user.email}`);
+    } catch (error) {
+      console.error(`トライアル終了メール送信失敗: ${user.email}`, error);
+
+      results.failed++;
+      results.users.push({
+        id: user.id,
+        email: user.email,
+        status: 'failed',
+        error: error instanceof Error ? error.message : String(error),
+      });
+    }
+  }
+
+  return results;
+}
+
+// 猶予期間が過ぎたユーザーをチェックし、管理者に通知する
+export async function checkExpiredGracePeriods() {
+  const now = new Date();
+
+  // トライアル終了から7日以上経過したユーザーを検索
+  const users = await prisma.user.findMany({
+    where: {
+      trialEndsAt: {
+        lt: addDays(now, -7), // 7日以上前に終了
+      },
+      // 既に有効なサブスクリプションがないユーザーのみ
+      subscription: {
+        is: null,
+      },
+      // 永久利用権がないユーザーのみ
+      subscriptionStatus: {
+        not: 'permanent',
+      },
+      // まだ削除されていないユーザーのみ
+      NOT: {
+        subscriptionStatus: 'deleted',
+      },
+    },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      trialEndsAt: true,
+    },
+  });
+
+  console.log(`猶予期間が過ぎたユーザー: ${users.length}人`);
+
+  if (users.length === 0) {
+    return {
+      total: 0,
+      success: 0,
+      message: '猶予期間が過ぎたユーザーはいません',
+    };
+  }
+
+  // 管理者メールアドレス
+  const adminEmail = 'admin@sns-share.com';
+
+  // 猶予期間終了ユーザー情報を整形
+  const expiredUsers = users.map((user) => ({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+    trialEndDate: user.trialEndsAt as Date,
+    gracePeriodEndDate: addDays(user.trialEndsAt as Date, 7),
+  }));
 
   try {
-    const users = await prisma.user.findMany({
-      where: {
-        trialEndsAt: {
-          not: null,
-          // 終了日が今から2日後（その日の範囲内）のユーザー
-          gte: startOfDay,
-          lte: endOfDay,
-        },
-      },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        trialEndsAt: true,
-      },
+    // 管理者通知メールを送信
+    const emailTemplate = getGracePeriodExpiredEmailTemplate({
+      expiredUsers,
     });
 
-    return users;
-  } catch (error) {
-    console.error('トライアル終了予定ユーザー取得エラー:', error);
-    return [];
-  }
-}
+    await sendEmail({
+      to: adminEmail,
+      subject: emailTemplate.subject,
+      text: emailTemplate.text,
+      html: emailTemplate.html,
+    });
 
-// トライアル終了通知メールを送信
-export async function sendTrialEndingEmails() {
-  try {
-    const users = await getUsersWithTrialEndingSoon();
-    console.log(`トライアル終了間近のユーザー: ${users.length}人`);
+    console.log(`管理者通知メール送信成功: ${adminEmail}, ユーザー数: ${users.length}`);
 
-    const results = [];
-    const siteName = 'Share';
-
-    for (const user of users) {
-      if (!user.trialEndsAt) continue;
-
-      try {
-        const userName = user.name || 'お客様';
-        const { subject, html, text } = getTrialEndingEmailTemplate({
-          userName,
-          trialEndDate: user.trialEndsAt,
-        });
-
-        // Resendを使用してメール送信
-        const { data, error } = await resend.emails.send({
-          from: `${siteName} <noreply@sns-share.com>`, // 検証済みドメインのメールアドレス
-          to: [user.email],
-          subject: subject,
-          html: html,
-          text: text, // プレーンテキスト版も含める
-        });
-
-        if (error) {
-          console.error(`ユーザー ${user.id} へのメール送信エラー:`, error);
-          results.push({
-            userId: user.id,
-            email: user.email,
-            success: false,
-            error: error.message,
-          });
-        } else {
-          console.log(
-            `ユーザー ${user.id} (${user.email}) に通知メールを送信しました。ID: ${data?.id}`,
-          );
-          results.push({
-            userId: user.id,
-            email: user.email,
-            success: true,
-            messageId: data?.id,
-          });
-        }
-      } catch (emailError) {
-        console.error(`ユーザー ${user.id} へのメール送信エラー:`, emailError);
-        results.push({
-          userId: user.id,
-          email: user.email,
-          success: false,
-          error: emailError instanceof Error ? emailError.message : String(emailError),
-        });
-      }
-    }
+    // ユーザーステータスを更新（猶予期間終了マーク）
+    await prisma.$transaction(
+      users.map((user) =>
+        prisma.user.update({
+          where: { id: user.id },
+          data: { subscriptionStatus: 'grace_period_expired' },
+        }),
+      ),
+    );
 
     return {
-      totalUsers: users.length,
-      results,
+      total: users.length,
+      success: 1,
+      message: `${users.length}人の猶予期間終了ユーザーについて、管理者に通知しました`,
     };
   } catch (error) {
-    console.error('トライアル終了通知処理エラー:', error);
-    throw error;
+    console.error(`管理者通知メール送信失敗:`, error);
+
+    return {
+      total: users.length,
+      success: 0,
+      error: error instanceof Error ? error.message : String(error),
+      message: '管理者通知メールの送信に失敗しました',
+    };
   }
-}
-
-// 猶予期間の長さ（日数）
-export const GRACE_PERIOD_DAYS = 7;
-
-// 簡略化したサブスクリプション型
-interface SubscriptionInfo {
-  status?: string;
-}
-
-// ユーザーが猶予期間中かどうかを判定する関数
-export function isInGracePeriod(
-  trialEndsAt: Date | null, 
-  subscription: SubscriptionInfo | null
-): boolean {
-  if (!trialEndsAt) return false;
-  
-  // 現在の日時
-  const now = new Date();
-  
-  // アクティブなサブスクリプションがある場合は猶予期間ではない
-  if (subscription && 
-      (subscription.status === 'active' || 
-       subscription.status === 'trialing')) {
-    return false;
-  }
-  
-  // トライアル終了日
-  const trialEndDate = new Date(trialEndsAt);
-  
-  // 猶予期間終了日 = トライアル終了日 + 猶予期間日数
-  const graceEndDate = new Date(trialEndDate);
-  graceEndDate.setDate(graceEndDate.getDate() + GRACE_PERIOD_DAYS);
-  
-  // 現在が、トライアル終了後かつ猶予期間終了前ならtrue
-  return now > trialEndDate && now < graceEndDate;
-}
-
-// 猶予期間の残り日数を計算する関数
-export function getRemainingGraceDays(trialEndsAt: Date | null): number {
-  if (!trialEndsAt) return 0;
-  
-  const now = new Date();
-  const trialEndDate = new Date(trialEndsAt);
-  
-  // トライアルがまだ終了していない場合
-  if (now < trialEndDate) return GRACE_PERIOD_DAYS;
-  
-  // 猶予期間終了日
-  const graceEndDate = new Date(trialEndDate);
-  graceEndDate.setDate(graceEndDate.getDate() + GRACE_PERIOD_DAYS);
-  
-  // トライアルが終了し、猶予期間中の場合
-  if (now <= graceEndDate) {
-    const diffTime = graceEndDate.getTime() - now.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return Math.max(0, diffDays);
-  }
-  
-  // 猶予期間も終了している場合
-  return 0;
-}
-
-// 猶予期間が終了しているかどうかを判定する関数
-export function isGracePeriodExpired(trialEndsAt: Date | null): boolean {
-  if (!trialEndsAt) return false;
-  
-  const now = new Date();
-  const trialEndDate = new Date(trialEndsAt);
-  
-  // 猶予期間終了日
-  const graceEndDate = new Date(trialEndDate);
-  graceEndDate.setDate(graceEndDate.getDate() + GRACE_PERIOD_DAYS);
-  
-  // 現在が猶予期間終了後ならtrue
-  return now > graceEndDate;
 }

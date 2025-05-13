@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
 // app/api/auth/change-password/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -79,12 +80,12 @@ export async function POST(req: Request) {
           equals: userEmail,
         },
       },
-  select: {
-    id: true,
-    email: true,
-    password: true,
-  },
-});
+      select: {
+        id: true,
+        email: true,
+        password: true,
+      },
+    });
 
     console.log(`検索結果: ${users.length}件のユーザーが見つかりました`);
 

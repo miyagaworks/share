@@ -1,3 +1,4 @@
+// app/api/auth/error/route.ts
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';

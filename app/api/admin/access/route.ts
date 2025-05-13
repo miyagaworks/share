@@ -1,4 +1,6 @@
 // app/api/admin/access/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { isAdminUser } from '@/lib/utils/admin-access';

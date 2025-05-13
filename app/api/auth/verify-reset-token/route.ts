@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
 // app/api/auth/verify-reset-token/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';

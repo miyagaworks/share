@@ -1,5 +1,6 @@
-export const dynamic = "force-dynamic";
 // app/api/corporate-profile/links/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
