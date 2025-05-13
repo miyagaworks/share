@@ -100,8 +100,7 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
     logDebug('管理者状態の保持', { keepAdmin: true });
   }
 
-  // ここに永久利用権ユーザーの処理を追加
-  // 永久利用権ユーザーがisSuperAdminをtrueに設定しようとした場合を制限
+  // 永久利用権ユーザーはisSuperAdminをtrueに設定できないように制限
   if (newState.isSuperAdmin === true) {
     // 永久利用権ユーザーかどうかをチェック
     const isPermanentUser = (() => {
@@ -120,9 +119,9 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
     })();
 
     if (isPermanentUser) {
-      // 永久利用権ユーザーがisSuperAdminをtrueに設定しようとしている場合は制限
-      delete newState.isSuperAdmin;
-      logDebug('永久利用権ユーザーは管理者状態にできません', { userId: 'unknown' });
+      // 永久利用権ユーザーはisSuperAdminを常にfalseに設定
+      newState.isSuperAdmin = false;
+      logDebug('永久利用権ユーザーは管理者権限を持てません', { isPermanentUser: true });
     }
   }
 

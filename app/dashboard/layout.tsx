@@ -271,10 +271,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   // サイドバー項目の決定
   let sidebarItems: SidebarItem[] = [];
 
-  // 管理者かどうかを判定（isSuperAdminのみを使用）
-  const isAdmin = corporateAccessState.isSuperAdmin === true;
-
-  // 永久利用権ユーザーかどうかをチェック
+  // 永久利用権ユーザーかどうかをチェック（これを先に宣言）
   const isPermanentUser = (() => {
     try {
       const userDataStr = sessionStorage.getItem('userData');
@@ -287,6 +284,9 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     }
     return false;
   })();
+
+  // 管理者かどうかを判定（isSuperAdminのみを使用）
+  const isAdmin = corporateAccessState.isSuperAdmin === true && !isPermanentUser;
 
   // 1. 現在の場所に基づいてベースとなるメニューを決定
   if (pathname && pathname.startsWith('/dashboard/admin') && isAdmin) {
@@ -328,9 +328,9 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         icon: <></>,
         isDivider: true,
       });
-      
+
       // 管理者メニュー項目を追加
-      adminSidebarItems.forEach(item => {
+      adminSidebarItems.forEach((item) => {
         sidebarItems.push(item);
       });
     }
@@ -369,22 +369,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
       // 法人メニューを追加
       corporateItems.forEach((item) => {
-        sidebarItems.push(item);
-      });
-    }
-
-    // 3. 管理者メニューを最後に追加（管理者の場合のみ - 永久利用権ユーザーは含まない）
-    if (isAdmin && !isPermanentUser) {
-      // 管理者機能区切り線を明示的に追加
-      sidebarItems.push({
-        title: '管理者機能',
-        href: '#admin-divider',
-        icon: <></>,
-        isDivider: true,
-      });
-
-      // 管理者メニュー項目を追加
-      adminSidebarItems.forEach((item) => {
         sidebarItems.push(item);
       });
     }
