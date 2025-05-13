@@ -85,7 +85,15 @@ export default function SubscriptionStatus({
   }, []);
 
   // ご利用プランステータスに基づいた表示情報を取得
-  const getStatusDisplay = (status: string) => {
+  const getStatusDisplay = (status: string, subscriptionStatus?: string | null) => {
+    // 永久利用権ユーザーの場合
+    if (subscriptionStatus === 'permanent') {
+      return {
+        text: '永久利用',
+        className: 'bg-blue-100 text-blue-800',
+      };
+    }
+
     switch (status) {
       case 'trialing':
         return {
@@ -361,17 +369,14 @@ export default function SubscriptionStatus({
   }
 
   // ステータス表示情報を取得
-  const statusDisplay = getStatusDisplay(subscription.status);
+  const statusDisplay = getStatusDisplay(subscription.status, userData?.subscriptionStatus);
+
+  // 永久利用権ユーザーの場合の表示を修正
+  const isPermanentUser = userData?.subscriptionStatus === 'permanent';
 
   // アクティブなご利用プラン
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      {/* モックデータの警告表示 */}
-      {subscription && 'isMockData' in subscription && subscription.isMockData && (
-        <div className="mb-4 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-800">
-          開発用のデモデータが表示されています。実際のプランデータではありません。
-        </div>
-      )}
       <motion.div
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
@@ -379,7 +384,11 @@ export default function SubscriptionStatus({
       >
         <div className="flex items-start">
           <div className="flex-shrink-0 mr-3">
-            {subscription.status === 'active' ? (
+            {isPermanentUser ? (
+              <div className="bg-blue-100 p-2 rounded-full">
+                <HiCheck className="h-5 w-5 text-blue-600" />
+              </div>
+            ) : subscription.status === 'active' ? (
               <div className="bg-green-100 p-2 rounded-full">
                 <HiCheck className="h-5 w-5 text-green-600" />
               </div>
@@ -405,14 +414,26 @@ export default function SubscriptionStatus({
             </div>
 
             <div className="mt-4 space-y-3">
-              <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-500">次回更新日</span>
-                <span className="text-sm font-medium">
-                  {formatDate(subscription.currentPeriodEnd)}
-                </span>
-              </div>
+              {/* 永久利用権ユーザーでない場合のみ次回更新日を表示 */}
+              {!isPermanentUser && (
+                <div className="flex justify-between items-center">
+                  <span className="text-sm text-gray-500">次回更新日</span>
+                  <span className="text-sm font-medium">
+                    {formatDate(subscription.currentPeriodEnd)}
+                  </span>
+                </div>
+              )}
 
-              {subscription.status === 'trialing' && (
+              {/* 永久利用権ユーザーの場合の表示 */}
+              {isPermanentUser && (
+                <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
+                  <p className="text-sm text-blue-800 text-justify">
+                    特別会員ステータスです。料金を支払わずに永続的に全ての機能をご利用いただけます。
+                  </p>
+                </div>
+              )}
+
+              {subscription.status === 'trialing' && !isPermanentUser && (
                 <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
                   <p className="text-sm text-blue-800 text-justify">
                     無料トライアル期間中です。
@@ -430,7 +451,7 @@ export default function SubscriptionStatus({
                 </div>
               )}
 
-              {subscription.cancelAtPeriodEnd && (
+              {subscription.cancelAtPeriodEnd && !isPermanentUser && (
                 <div className="bg-amber-50 border border-amber-100 rounded-md p-3 mt-4">
                   <p className="text-sm text-amber-800">
                     このプランは
@@ -460,7 +481,8 @@ export default function SubscriptionStatus({
               )}
             </div>
 
-            {!subscription.cancelAtPeriodEnd &&
+            {!isPermanentUser &&
+              !subscription.cancelAtPeriodEnd &&
               (subscription.status === 'active' || subscription.status === 'trialing') && (
                 <div className="mt-6">
                   <Button

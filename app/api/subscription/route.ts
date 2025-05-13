@@ -62,33 +62,59 @@ export async function GET() {
       // エラーが発生した場合はモックデータを使用
     }
 
+    // ユーザー情報を取得
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { trialEndsAt: true, subscriptionStatus: true },
+    });
+
+    // 永久利用権ユーザーの場合
+    const isPermanentUser = user?.subscriptionStatus === 'permanent';
+
     // モックデータ部分を修正
     if (!userSubscription) {
-      // ユーザー情報を取得して正確なモックデータを生成
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: { trialEndsAt: true, subscriptionStatus: true },
-      });
-
       const now = new Date();
       const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
       const isTrialActive = trialEndsAt && now < trialEndsAt;
 
-      // モックデータを作成 - 型を明示的に指定
-      const mockSubscription: MockSubscription = {
-        id: 'mock-id-DO-NOT-USE-IN-PRODUCTION',
-        userId: session.user.id,
-        status: isTrialActive ? 'trialing' : user?.subscriptionStatus || 'incomplete',
-        plan: isTrialActive ? 'trial' : 'none',
-        priceId: 'price_mock',
-        currentPeriodStart: new Date(),
-        currentPeriodEnd: trialEndsAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        cancelAtPeriodEnd: false,
-        isMockData: true, // モックデータであることを示すフラグ
-      };
+      // 永久利用権ユーザーの場合は特別なモックデータを作成
+      if (isPermanentUser) {
+        // 永久利用権ユーザー用のモックデータ
+        const mockSubscription: MockSubscription = {
+          id: 'permanent-subscription-id',
+          userId: session.user.id,
+          status: 'active', // 常にアクティブ
+          plan: 'business', // 法人プランとして設定
+          priceId: 'price_permanent',
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: new Date(9999, 11, 31), // 非常に遠い未来
+          cancelAtPeriodEnd: false,
+        };
 
-      console.warn('WARNING: Using mock subscription data for user:', session.user.id);
-      userSubscription = mockSubscription;
+        console.warn('永久利用権ユーザーのモックデータを使用します:', session.user.id);
+        userSubscription = mockSubscription;
+      } else {
+        // 通常ユーザー用のモックデータ
+        const mockSubscription: MockSubscription = {
+          id: 'mock-id-DO-NOT-USE-IN-PRODUCTION',
+          userId: session.user.id,
+          status: isTrialActive ? 'trialing' : user?.subscriptionStatus || 'incomplete',
+          plan: isTrialActive ? 'trial' : 'none',
+          priceId: 'price_mock',
+          currentPeriodStart: new Date(),
+          currentPeriodEnd: trialEndsAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+          cancelAtPeriodEnd: false,
+          isMockData: true,
+        };
+
+        console.warn('WARNING: Using mock subscription data for user:', session.user.id);
+        userSubscription = mockSubscription;
+      }
+    }
+
+    // 永久利用権ユーザーなら、サブスクリプションデータも修正
+    if (isPermanentUser && userSubscription) {
+      userSubscription.plan = userSubscription.plan || 'business'; // 法人プラン利用可能
     }
 
     // モックデータをレスポンスとして返す
@@ -97,6 +123,7 @@ export async function GET() {
       subscription: userSubscription,
       billingHistory: userBillingHistory,
       message: 'ご利用のプラン情報を取得しました',
+      isPermanentUser: isPermanentUser, // 永久利用権ユーザーかどうかのフラグを追加
     });
   } catch (error) {
     console.error('ご利用のプラン取得エラー:', error);
