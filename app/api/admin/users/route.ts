@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { isAdminUser } from '@/lib/utils/admin-access';
+import { addDays } from 'date-fns';
 
 export const dynamic = 'force-dynamic';
 export const fetchCache = 'force-no-store';
@@ -30,6 +31,7 @@ export async function GET() {
         name: true,
         email: true,
         createdAt: true,
+        trialEndsAt: true,
         subscription: {
           select: {
             status: true,
@@ -41,27 +43,31 @@ export async function GET() {
       orderBy: { createdAt: 'desc' },
     });
 
-    // 永久利用権を持つユーザーIDのリストを取得
-    const permanentUsers = await prisma.user.findMany({
-      where: {
-        // 永久利用権を持つユーザーの条件
-        // この例では subscriptionStatus フィールドを使用
-        subscriptionStatus: 'permanent',
-      },
-      select: { id: true },
+    // 現在の日付
+    const now = new Date();
+
+    // 猶予期間終了判定とフォーマット
+    const formattedUsers = users.map((user) => {
+      // トライアル終了日が存在して、現在日時が（トライアル終了日+7日）を過ぎている場合
+      const isGracePeriodExpired = user.trialEndsAt
+        ? now > addDays(new Date(user.trialEndsAt), 7)
+        : false;
+
+      // 永久利用権を持つかどうか判定
+      const isPermanentUser = user.subscriptionStatus === 'permanent';
+
+      return {
+        id: user.id,
+        name: user.name,
+        email: user.email,
+        createdAt: user.createdAt.toISOString(),
+        trialEndsAt: user.trialEndsAt?.toISOString() || null,
+        isPermanentUser,
+        isGracePeriodExpired,
+        subscription: user.subscription,
+        subscriptionStatus: user.subscriptionStatus,
+      };
     });
-
-    const permanentUserIds = new Set(permanentUsers.map((user) => user.id));
-
-    // レスポンス用に整形
-    const formattedUsers = users.map((user) => ({
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      createdAt: user.createdAt.toISOString(),
-      isPermanentUser: permanentUserIds.has(user.id),
-      subscription: user.subscription,
-    }));
 
     return NextResponse.json({ users: formattedUsers });
   } catch (error) {

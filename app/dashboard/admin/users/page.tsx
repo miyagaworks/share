@@ -2,11 +2,19 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
-import { HiSearch, HiRefresh, HiCheck, HiX } from 'react-icons/hi';
+import { toast } from 'react-hot-toast';
+import { 
+  HiSearch, 
+  HiRefresh, 
+  HiCheck, 
+  HiX, 
+  HiExclamationCircle,
+  HiTrash
+} from 'react-icons/hi';
 
 // ユーザー情報の型定義
 interface UserData {
@@ -15,6 +23,8 @@ interface UserData {
   email: string;
   createdAt: string;
   isPermanentUser: boolean;
+  isGracePeriodExpired?: boolean;
+  trialEndsAt?: string | null;
   subscription: {
     status: string;
     plan: string;
@@ -24,10 +34,23 @@ interface UserData {
 export default function AdminUsersPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
+  const [deletingUser, setDeletingUser] = useState<string | null>(null);
+
+  // URLパラメータから削除アクションを確認
+  useEffect(() => {
+    const action = searchParams.get('action');
+    const userId = searchParams.get('userId');
+
+    if (action === 'delete' && userId) {
+      setDeleteConfirm(userId);
+    }
+  }, [searchParams]);
 
   // 管理者チェック
   useEffect(() => {
@@ -66,9 +89,11 @@ export default function AdminUsersPage() {
         setUsers(data.users);
       } else {
         console.error('ユーザー一覧取得エラー');
+        toast.error('ユーザー一覧の取得に失敗しました');
       }
     } catch (error) {
       console.error('ユーザー一覧取得エラー:', error);
+      toast.error('ユーザー情報の取得中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
@@ -89,13 +114,50 @@ export default function AdminUsersPage() {
       });
 
       if (response.ok) {
+        toast.success(isPermanent ? '永久利用権を付与しました' : '永久利用権を解除しました');
         // 成功したら一覧を再取得
         fetchUsers();
       } else {
         console.error('永久利用権の更新に失敗しました');
+        toast.error('永久利用権の更新に失敗しました');
       }
     } catch (error) {
       console.error('永久利用権の更新エラー:', error);
+      toast.error('処理中にエラーが発生しました');
+    }
+  };
+
+  // ユーザー削除の実行
+  const deleteUser = async (userId: string) => {
+    setDeletingUser(userId);
+    try {
+      const response = await fetch('/api/admin/users/delete', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId,
+        }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(data.message || 'ユーザーを削除しました');
+        // 削除確認をクリア
+        setDeleteConfirm(null);
+        // 一覧を再取得
+        fetchUsers();
+      } else {
+        const errorData = await response.json();
+        console.error('ユーザー削除エラー:', errorData);
+        toast.error(errorData.error || 'ユーザー削除に失敗しました');
+      }
+    } catch (error) {
+      console.error('ユーザー削除処理エラー:', error);
+      toast.error('ユーザー削除中にエラーが発生しました');
+    } finally {
+      setDeletingUser(null);
     }
   };
 
@@ -105,6 +167,13 @@ export default function AdminUsersPage() {
       user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
+  // 猶予期間切れユーザーを先に表示
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    if (a.isGracePeriodExpired && !b.isGracePeriodExpired) return -1;
+    if (!a.isGracePeriodExpired && b.isGracePeriodExpired) return 1;
+    return 0;
+  });
 
   if (loading) {
     return (
@@ -146,6 +215,49 @@ export default function AdminUsersPage() {
           </Button>
         </div>
 
+        {/* 削除確認モーダル */}
+        {deleteConfirm && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <div className="flex items-center mb-4 text-red-500">
+                <HiExclamationCircle className="h-6 w-6 mr-2" />
+                <h3 className="text-lg font-medium">ユーザー削除の確認</h3>
+              </div>
+              <p className="mb-4">
+                このユーザーを削除しますか？
+                <br />
+                この操作は元に戻せません。ユーザーのすべてのデータが削除されます。
+              </p>
+              <div className="flex justify-end space-x-3">
+                <Button
+                  variant="outline"
+                  onClick={() => setDeleteConfirm(null)}
+                  disabled={!!deletingUser}
+                >
+                  キャンセル
+                </Button>
+                <Button
+                  onClick={() => deleteUser(deleteConfirm)}
+                  disabled={!!deletingUser}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  {deletingUser === deleteConfirm ? (
+                    <>
+                      <Spinner size="sm" className="mr-2" />
+                      削除中...
+                    </>
+                  ) : (
+                    <>
+                      <HiTrash className="mr-2 h-4 w-4" />
+                      削除する
+                    </>
+                  )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
             <thead className="bg-gray-50">
@@ -171,8 +283,11 @@ export default function AdminUsersPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
+              {sortedUsers.map((user) => (
+                <tr
+                  key={user.id}
+                  className={`hover:bg-gray-50 ${user.isGracePeriodExpired ? 'bg-red-50' : ''}`}
+                >
                   <td className="py-4 px-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{user.name || '未設定'}</div>
                   </td>
@@ -185,15 +300,19 @@ export default function AdminUsersPage() {
                     </div>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap">
-                    <span
-                      className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${
-                        user.subscription?.status === 'active'
-                          ? 'bg-green-100 text-green-800'
-                          : 'bg-red-100 text-red-800'
-                      }`}
-                    >
-                      {user.subscription?.status || 'なし'}
-                    </span>
+                    {user.isGracePeriodExpired ? (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
+                        猶予期間終了
+                      </span>
+                    ) : user.subscription?.status === 'active' ? (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                        {user.subscription?.status || 'なし'}
+                      </span>
+                    ) : (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                        {user.subscription?.status || 'なし'}
+                      </span>
+                    )}
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap">
                     {user.isPermanentUser ? (
@@ -207,21 +326,33 @@ export default function AdminUsersPage() {
                     )}
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap text-right text-sm font-medium">
-                    {user.isPermanentUser ? (
+                    <div className="flex space-x-2">
+                      {user.isPermanentUser ? (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => togglePermanentAccess(user.id, false)}
+                        >
+                          <HiX className="mr-2 h-4 w-4 text-red-500" />
+                          永久利用権を解除
+                        </Button>
+                      ) : (
+                        <Button size="sm" onClick={() => togglePermanentAccess(user.id, true)}>
+                          <HiCheck className="mr-2 h-4 w-4" />
+                          永久利用権を付与
+                        </Button>
+                      )}
+
                       <Button
-                        variant="outline"
                         size="sm"
-                        onClick={() => togglePermanentAccess(user.id, false)}
+                        variant="outline"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                        onClick={() => setDeleteConfirm(user.id)}
                       >
-                        <HiX className="mr-2 h-4 w-4 text-red-500" />
-                        永久利用権を解除
+                        <HiTrash className="mr-2 h-4 w-4" />
+                        削除
                       </Button>
-                    ) : (
-                      <Button size="sm" onClick={() => togglePermanentAccess(user.id, true)}>
-                        <HiCheck className="mr-2 h-4 w-4" />
-                        永久利用権を付与
-                      </Button>
-                    )}
+                    </div>
                   </td>
                 </tr>
               ))}
