@@ -216,11 +216,14 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
               });
               // 強制再レンダリング
               forceUpdate((prev) => prev + 1);
+              // APIチェックを実行せずに関数を終了
+              setIsLoading(false);
+              return;
             }
           }
         }
 
-        // 法人アクセス権をチェック
+        // 永久利用権がない場合のみ法人アクセス権をチェック
         await checkCorporateAccess();
       } catch (error) {
         console.error('法人アクセスチェックエラー:', error);

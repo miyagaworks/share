@@ -44,9 +44,11 @@ export async function checkCorporateAccess(userId: string) {
 
     // 永久利用権ユーザーの場合は常に法人アクセス権あり
     if (user.subscriptionStatus === 'permanent') {
+      logger.info('永久利用権ユーザーに法人アクセス権を付与', { userId });
       return {
         hasCorporateAccess: true,
         isAdmin: true, // 管理者権限も付与
+        isSuperAdmin: true, // スーパー管理者権限も付与
         tenant: user.adminOfTenant ||
           user.tenant || {
             // 仮想テナント情報
@@ -57,6 +59,7 @@ export async function checkCorporateAccess(userId: string) {
           plan: 'business',
           status: 'active',
         },
+        userRole: 'admin', // ユーザーロールも明示的に設定
         error: null,
       };
     }

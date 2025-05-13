@@ -135,8 +135,8 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
   }
 }
 
-// 永久利用権ステータスをチェックする関数を追加
-function checkPermanentAccess() {
+// 関数を外部からも呼び出せるようにエクスポート
+export function checkPermanentAccess() {
   // ページロード時に sessionStorage から確認
   if (typeof window !== 'undefined') {
     try {

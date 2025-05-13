@@ -56,6 +56,22 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   // 追加リンク用変数
   const additionalLinks = [];
 
+  // 永久利用権ユーザーかどうかをチェック
+  const isPermanentUser = (() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const userDataStr = sessionStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          return userData.subscriptionStatus === 'permanent';
+        }
+      } catch (e) {
+        console.error('永久利用権チェックエラー:', e);
+      }
+    }
+    return false;
+  })();
+
   // 法人セクションにいる場合、個人ダッシュボードと法人メンバーダッシュボードへのリンクを追加
   if (isCorporateSection) {
     additionalLinks.push({
@@ -64,8 +80,8 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       icon: <HiHome className="h-5 w-5" />,
     });
 
-    // 法人管理者は法人メンバーダッシュボードも表示
-    if (corporateAccessState.hasAccess) {
+    // 法人管理者または永久利用権ユーザーは法人メンバーダッシュボードも表示
+    if (corporateAccessState.hasAccess || isPermanentUser) {
       additionalLinks.push({
         title: '法人メンバープロフィール',
         href: '/dashboard/corporate-member',

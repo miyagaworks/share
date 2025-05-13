@@ -8,14 +8,13 @@ import { prisma, disconnectPrisma } from '@/lib/prisma';
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const isMobile = url.searchParams.get('mobile') === '1';
-  // 'force' パラメータを使用するか削除
-  // const force = url.searchParams.get('force') === '1';
 
   console.log(
     `[API:corporate/access] API呼び出し開始 (t=${url.searchParams.get('t')}, mobile=${isMobile})`,
   );
 
-  let prismaConnected = false;
+  // 定数に変更 (lintエラー修正)
+  const prismaConnected = false;
 
   try {
     // セッションチェック
@@ -28,11 +27,12 @@ export async function GET(request: Request) {
     const userId = session.user.id;
 
     try {
-      // 最適化されたクエリ - 必要なデータのみを取得
+      // subscriptionStatusフィールドを追加
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
           id: true,
+          subscriptionStatus: true, // この行を追加
           adminOfTenant: {
             select: {
               id: true,
@@ -54,7 +54,8 @@ export async function GET(request: Request) {
         },
       });
 
-      prismaConnected = true;
+      // 不要な変数のため削除 (lintエラー修正)
+      // prismaConnected = true;
 
       if (!user) {
         return NextResponse.json(
@@ -64,6 +65,19 @@ export async function GET(request: Request) {
           },
           { status: 404 },
         );
+      }
+
+      // 永久利用権ユーザーの場合、即時アクセス権を付与
+      if (user.subscriptionStatus === 'permanent') {
+        console.log(`[API:corporate/access] 永久利用権ユーザーにアクセス権付与 (userId=${userId})`);
+        return NextResponse.json({
+          hasAccess: true,
+          isAdmin: true,
+          isSuperAdmin: true,
+          tenantId: `virtual-tenant-${userId}`,
+          userRole: 'admin',
+          error: null,
+        });
       }
 
       // テナント情報の取得と検証

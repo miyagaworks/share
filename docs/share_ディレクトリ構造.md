@@ -22,6 +22,17 @@ share/
 │   ├── [slug]
 │   │   └── page.tsx
 │   ├── api
+│   │   ├── admin
+│   │   │   ├── access
+│   │   │   │   └── route.ts
+│   │   │   ├── permissions
+│   │   │   │   └── route.ts
+│   │   │   ├── subscriptions
+│   │   │   │   └── route.ts
+│   │   │   └── users
+│   │   │       ├── delete
+│   │   │       │   └── route.ts
+│   │   │       └── route.ts
 │   │   ├── auth
 │   │   │   ├── [...nextauth]
 │   │   │   │   └── route.ts
@@ -115,6 +126,9 @@ share/
 │   │   │   ├── route.ts
 │   │   │   └── update
 │   │   │       └── route.ts
+│   │   ├── cron
+│   │   │   └── trial-notification
+│   │   │       └── route.ts
 │   │   ├── debug-auth
 │   │   │   └── route.ts
 │   │   ├── jikogene
@@ -132,8 +146,6 @@ share/
 │   │   ├── route-config.ts
 │   │   ├── subscription
 │   │   │   ├── cancel
-│   │   │   │   └── route.ts
-│   │   │   ├── change-plan
 │   │   │   │   └── route.ts
 │   │   │   ├── create
 │   │   │   │   └── route.ts
@@ -184,6 +196,14 @@ share/
 │   ├── dashboard
 │   │   ├── account
 │   │   │   └── delete
+│   │   │       └── page.tsx
+│   │   ├── admin
+│   │   │   ├── page.tsx
+│   │   │   ├── permissions
+│   │   │   │   └── page.tsx
+│   │   │   ├── subscriptions
+│   │   │   │   └── page.tsx
+│   │   │   └── users
 │   │   │       └── page.tsx
 │   │   ├── client-script.js
 │   │   ├── corporate
@@ -281,6 +301,7 @@ share/
 │   │   │   └── page.tsx
 │   │   └── transactions
 │   │       └── page.tsx
+│   ├── not-found.tsx
 │   ├── page.tsx
 │   └── support
 │       ├── contact
@@ -391,6 +412,10 @@ share/
 ├── lib
 │   ├── corporateAccessState.ts
 │   ├── db-manager.ts
+│   ├── email
+│   │   └── templates
+│   │       ├── grace-period-expired.ts
+│   │       └── trial-ending.ts
 │   ├── email.ts
 │   ├── errorHandler.ts
 │   ├── jikogene
@@ -404,10 +429,12 @@ share/
 │   ├── stripeClient.ts
 │   ├── utils
 │   │   ├── activity-logger.ts
+│   │   ├── admin-access.ts
 │   │   ├── api.ts
 │   │   ├── auth.ts
 │   │   ├── corporate-access.ts
 │   │   ├── logger.ts
+│   │   ├── subscription.ts
 │   │   └── validation.ts
 │   └── utils.ts
 ├── middleware
@@ -539,21 +566,25 @@ share/
 ├── scripts
 │   ├── check-user-relations.ts
 │   ├── clean-corporate-sns-username.ts
+│   ├── compare-schema.js
 │   ├── create-missing-subscriptions.ts
 │   ├── delete-user.ts
 │   ├── fix-corporate-access.ts
 │   ├── fix-tenant-relations.ts
 │   ├── generate-prisma-migration.js
 │   ├── migrate-text-settings.ts
-│   └── setup-guide-images.mjs
+│   ├── set-trial-end-date.mjs
+│   ├── setup-guide-images.mjs
+│   └── test-cron-fetch.mjs
 ├── share_db_backup.sql
 ├── tailwind.config.js
 ├── tsconfig.json
-└── types
-    ├── next-auth.d.ts
-    ├── prisma-extensions.ts
-    ├── profiles.ts
-    ├── sns-guide.ts
-    ├── sns.ts
-    ├── tinycolor2.d.ts
-    └── user.ts
+├── types
+│   ├── next-auth.d.ts
+│   ├── prisma-extensions.ts
+│   ├── profiles.ts
+│   ├── sns-guide.ts
+│   ├── sns.ts
+│   ├── tinycolor2.d.ts
+│   └── user.ts
+└── vercel.json
