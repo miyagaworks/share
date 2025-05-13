@@ -25,6 +25,8 @@ share/
 │   │   ├── admin
 │   │   │   ├── access
 │   │   │   │   └── route.ts
+│   │   │   ├── grant-permanent
+│   │   │   │   └── route.ts
 │   │   │   ├── permissions
 │   │   │   │   └── route.ts
 │   │   │   ├── subscriptions
@@ -314,6 +316,8 @@ share/
 ├── auth.config.ts
 ├── auth.ts
 ├── components
+│   ├── admin
+│   │   └── GrantPermanentAccess.tsx
 │   ├── corporate
 │   │   ├── ActivityFeed.tsx
 │   │   ├── BrandingPreview.tsx

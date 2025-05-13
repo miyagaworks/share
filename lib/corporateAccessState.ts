@@ -93,8 +93,7 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
   const prevState = { ...corporateAccessState };
   logDebug('状態更新前', prevState);
 
-  // isSuperAdmin を明示的に false に設定しようとしている場合、
-  // 既存の値が true の場合は上書きしないようにする
+  // 管理者状態の保持ロジックを微調整 - 新しい状態が明示的に true の場合は上書きを許可
   if (newState.isSuperAdmin === false && corporateAccessState.isSuperAdmin === true) {
     delete newState.isSuperAdmin;
     logDebug('管理者状態の保持', { keepAdmin: true });

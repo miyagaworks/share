@@ -195,6 +195,20 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       }
 
       try {
+        // 追加: 管理者権限のチェック
+        const adminResponse = await fetch('/api/admin/access');
+        if (adminResponse.ok) {
+          const adminData = await adminResponse.json();
+          if (adminData.isSuperAdmin) {
+            // 管理者である場合、状態を更新
+            updateCorporateAccessState({
+              isSuperAdmin: true,
+            });
+            // 強制再レンダリング
+            forceUpdate((prev) => prev + 1);
+          }
+        }
+
         // ユーザー情報を取得して永久利用権をチェック
         const profileResponse = await fetch('/api/profile');
         if (profileResponse.ok) {
@@ -208,7 +222,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
               updateCorporateAccessState({
                 hasAccess: true,
                 isAdmin: true, // 法人の管理者権限はtrue
-                isSuperAdmin: false, // システム管理者はfalse
+                // isSuperAdmin は変更しない（管理者チェックの結果を尊重）
                 tenantId: `virtual-tenant-${profileData.user.id}`,
                 userRole: 'admin',
                 error: null,
