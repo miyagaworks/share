@@ -9,6 +9,7 @@ import { motion } from 'framer-motion';
 import { addDays } from 'date-fns';
 import { HiCheck, HiRefresh, HiXCircle, HiExclamation, HiClock } from 'react-icons/hi';
 
+// 型定義を修正
 interface SubscriptionData {
   id: string;
   status: string;
@@ -16,7 +17,10 @@ interface SubscriptionData {
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
   trialEnd?: string | null;
-  isMockData?: boolean;
+  // 追加: 永久利用権ユーザーかどうかのフラグ
+  isPermanentUser?: boolean;
+  // 追加: 表示用のステータス
+  displayStatus?: string;
 }
 
 interface SubscriptionStatusProps {
@@ -85,9 +89,9 @@ export default function SubscriptionStatus({
   }, []);
 
   // ご利用プランステータスに基づいた表示情報を取得
-  const getStatusDisplay = (status: string, subscriptionStatus?: string | null) => {
+  const getStatusDisplay = (status: string, isPermanent: boolean) => {
     // 永久利用権ユーザーの場合
-    if (subscriptionStatus === 'permanent') {
+    if (isPermanent) {
       return {
         text: '永久利用',
         className: 'bg-blue-100 text-blue-800',
@@ -368,11 +372,12 @@ export default function SubscriptionStatus({
     );
   }
 
-  // ステータス表示情報を取得
-  const statusDisplay = getStatusDisplay(subscription.status, userData?.subscriptionStatus);
+  // 永久利用権ユーザーかどうかを判定
+  const isPermanentUser =
+    userData?.subscriptionStatus === 'permanent' || subscription?.isPermanentUser === true;
 
-  // 永久利用権ユーザーの場合の表示を修正
-  const isPermanentUser = userData?.subscriptionStatus === 'permanent';
+  // ステータス表示情報を取得
+  const statusDisplay = getStatusDisplay(subscription.status, isPermanentUser);
 
   // アクティブなご利用プラン
   return (

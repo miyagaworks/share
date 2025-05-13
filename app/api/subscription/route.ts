@@ -120,10 +120,15 @@ export async function GET() {
     // モックデータをレスポンスとして返す
     return NextResponse.json({
       success: true,
-      subscription: userSubscription,
+      subscription: {
+        ...userSubscription,
+        // 永久利用権ユーザーであれば明示的にフラグを追加
+        isPermanentUser: isPermanentUser,
+        // 永久利用権ユーザーの場合は表示用のステータスも設定
+        displayStatus: isPermanentUser ? '永久利用' : undefined,
+      },
       billingHistory: userBillingHistory,
       message: 'ご利用のプラン情報を取得しました',
-      isPermanentUser: isPermanentUser, // 永久利用権ユーザーかどうかのフラグを追加
     });
   } catch (error) {
     console.error('ご利用のプラン取得エラー:', error);
