@@ -138,12 +138,12 @@ const corporateProfileSidebarItems = [
   },
 ];
 
-// 管理者メニュー項目を追加
+// 管理者メニュー項目
 const adminSidebarItems = [
   {
     title: '管理者ダッシュボード',
     href: '/dashboard/admin',
-    icon: <HiShieldCheck className="h-5 w-5" />, // HiShieldCheckをインポートに追加
+    icon: <HiShieldCheck className="h-5 w-5" />,
   },
   {
     title: 'ユーザー管理',
@@ -153,7 +153,12 @@ const adminSidebarItems = [
   {
     title: '権限管理',
     href: '/dashboard/admin/permissions',
-    icon: <HiKey className="h-5 w-5" />, // HiKeyをインポートに追加
+    icon: <HiKey className="h-5 w-5" />,
+  },
+  {
+    title: 'サブスクリプション管理',
+    href: '/dashboard/admin/subscriptions',
+    icon: <HiCreditCard className="h-5 w-5" />,
   },
 ];
 

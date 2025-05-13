@@ -13,7 +13,9 @@ import {
   HiCheck, 
   HiX, 
   HiExclamationCircle,
-  HiTrash
+  HiTrash,
+  HiSortAscending,
+  HiSortDescending
 } from 'react-icons/hi';
 
 // ユーザー情報の型定義
@@ -31,6 +33,9 @@ interface UserData {
   } | null;
 }
 
+// 並び替えのタイプ
+type SortType = 'created_asc' | 'created_desc' | 'name_asc' | 'name_desc' | 'email_asc' | 'email_desc' | 'grace_period';
+
 export default function AdminUsersPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -41,6 +46,7 @@ export default function AdminUsersPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
+  const [sortType, setSortType] = useState<SortType>('grace_period');
 
   // URLパラメータから削除アクションを確認
   useEffect(() => {
@@ -161,6 +167,11 @@ export default function AdminUsersPage() {
     }
   };
 
+  // 並び替え関数
+  const handleSort = (type: SortType) => {
+    setSortType(type);
+  };
+
   // 検索結果のフィルタリング
   const filteredUsers = users.filter(
     (user) =>
@@ -168,10 +179,47 @@ export default function AdminUsersPage() {
       user.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
-  // 猶予期間切れユーザーを先に表示
+  // ユーザーの並び替え
   const sortedUsers = [...filteredUsers].sort((a, b) => {
-    if (a.isGracePeriodExpired && !b.isGracePeriodExpired) return -1;
-    if (!a.isGracePeriodExpired && b.isGracePeriodExpired) return 1;
+    // 猶予期間切れユーザーを優先
+    if (sortType === 'grace_period') {
+      if (a.isGracePeriodExpired && !b.isGracePeriodExpired) return -1;
+      if (!a.isGracePeriodExpired && b.isGracePeriodExpired) return 1;
+
+      // 同じステータスなら登録日の新しい順
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+
+    // 登録日の新しい順
+    if (sortType === 'created_desc') {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+
+    // 登録日の古い順
+    if (sortType === 'created_asc') {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    }
+
+    // 名前の昇順
+    if (sortType === 'name_asc') {
+      return (a.name || '').localeCompare(b.name || '');
+    }
+
+    // 名前の降順
+    if (sortType === 'name_desc') {
+      return (b.name || '').localeCompare(a.name || '');
+    }
+
+    // メールアドレスの昇順
+    if (sortType === 'email_asc') {
+      return a.email.localeCompare(b.email);
+    }
+
+    // メールアドレスの降順
+    if (sortType === 'email_desc') {
+      return b.email.localeCompare(a.email);
+    }
+
     return 0;
   });
 
@@ -209,10 +257,68 @@ export default function AdminUsersPage() {
             />
           </div>
 
-          <Button onClick={fetchUsers}>
-            <HiRefresh className="mr-2 h-4 w-4" />
-            更新
-          </Button>
+          <div className="flex space-x-2">
+            <div className="dropdown">
+              <Button variant="outline" className="flex items-center">
+                <span className="mr-1">並び替え</span>
+                {sortType.includes('asc') ? (
+                  <HiSortAscending className="h-4 w-4" />
+                ) : (
+                  <HiSortDescending className="h-4 w-4" />
+                )}
+                <div className="dropdown-content absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                  <div className="py-1">
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'grace_period' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('grace_period')}
+                    >
+                      猶予期間切れ優先
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('created_desc')}
+                    >
+                      登録日 (新→古)
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('created_asc')}
+                    >
+                      登録日 (古→新)
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'name_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('name_asc')}
+                    >
+                      ユーザー名 (A→Z)
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'name_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('name_desc')}
+                    >
+                      ユーザー名 (Z→A)
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'email_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('email_asc')}
+                    >
+                      メール (A→Z)
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'email_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('email_desc')}
+                    >
+                      メール (Z→A)
+                    </button>
+                  </div>
+                </div>
+              </Button>
+            </div>
+            <Button onClick={fetchUsers}>
+              <HiRefresh className="mr-2 h-4 w-4" />
+              更新
+            </Button>
+          </div>
         </div>
 
         {/* 削除確認モーダル */}
