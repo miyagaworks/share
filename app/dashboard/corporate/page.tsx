@@ -8,9 +8,6 @@ import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { Spinner } from '@/components/ui/Spinner';
 import { ActivityFeed } from '@/components/corporate/ActivityFeed';
-import { corporateAccessState } from '@/lib/corporateAccessState';
-
-// アイコンを代替
 import {
   HiOfficeBuilding,
   HiUsers,
@@ -169,31 +166,24 @@ export default function CorporateDashboardPage() {
   // 段階的読み込みの状態
   const [loadingStage, setLoadingStage] = useState<'initial' | 'tenant' | 'complete'>('initial');
 
-  // 永久利用権ユーザーのチェックとリダイレクト
+  // 永久利用権ユーザーチェックとリダイレクト
   useEffect(() => {
-    // 永久利用権ユーザーかどうかをチェック
-    const isPermanentUser = (() => {
+    try {
       if (typeof window !== 'undefined') {
-        try {
-          const userDataStr = sessionStorage.getItem('userData');
-          if (userDataStr) {
-            const userData = JSON.parse(userDataStr);
-            return userData.subscriptionStatus === 'permanent';
+        const userDataStr = sessionStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+
+          // 永久利用権ユーザーは自動的にonboardingページに移動
+          if (userData.subscriptionStatus === 'permanent') {
+            console.log('永久利用権ユーザーをonboardingページにリダイレクトします');
+            router.push('/dashboard/corporate/onboarding');
+            return; // 以降の処理をスキップ
           }
-        } catch (e) {
-          console.error('永久利用権チェックエラー:', e);
         }
       }
-      return false;
-    })();
-
-    // 永久利用権ユーザーまたは仮想テナントを持っているユーザーはonboardingにリダイレクト
-    if (
-      isPermanentUser ||
-      (corporateAccessState.tenantId && corporateAccessState.tenantId.startsWith('virtual-tenant'))
-    ) {
-      console.log('永久利用権ユーザーはonboardingページにリダイレクトします');
-      router.push('/dashboard/corporate/onboarding');
+    } catch (e) {
+      console.error('永久利用権チェックエラー:', e);
     }
   }, [router]);
 

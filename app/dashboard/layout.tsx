@@ -330,12 +330,15 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   else {
     // 法人ユーザーまたは永久利用権ユーザーの場合は法人メニューを追加
     if (corporateAccessState.hasAccess || isPermanentUser) {
+      // 重複を防ぐために、追加するリンクを一意にする
       const corporateLinks = [
+        // 法人メンバープロフィールは1つだけ
         {
           title: '法人メンバープロフィール',
           href: '/dashboard/corporate-member',
           icon: <HiUser className="h-5 w-5" />,
         },
+        // 法人ダッシュボードも1つだけ
         {
           title: '法人管理ダッシュボード',
           href: '/dashboard/corporate',
@@ -343,16 +346,24 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         },
       ];
 
+      // 既存のメニューに法人メニューをいったん全部加えるのではなく、重複チェックを行う
+      const existingHrefs = new Set(personalSidebarItems.map((item) => item.href));
+      const uniqueCorporateLinks = corporateLinks.filter((link) => !existingHrefs.has(link.href));
+
       sidebarItems = [
         ...personalSidebarItems,
-        // 区切り線
-        {
-          title: '法人機能',
-          href: '#',
-          icon: <></>,
-          isDivider: true,
-        },
-        ...corporateLinks,
+        // 区切り線（法人リンクがある場合のみ追加）
+        ...(uniqueCorporateLinks.length > 0
+          ? [
+              {
+                title: '法人機能',
+                href: '#',
+                icon: <></>,
+                isDivider: true,
+              },
+            ]
+          : []),
+        ...uniqueCorporateLinks,
       ];
     }
 

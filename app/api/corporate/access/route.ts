@@ -51,9 +51,6 @@ export async function GET(request: Request) {
         },
       });
 
-      // 不要な変数のため削除 (lintエラー修正)
-      // prismaConnected = true;
-
       if (!user) {
         return NextResponse.json(
           {
@@ -67,12 +64,17 @@ export async function GET(request: Request) {
       // 永久利用権ユーザーの場合、即時アクセス権を付与
       if (user.subscriptionStatus === 'permanent') {
         console.log(`[API:corporate/access] 永久利用権ユーザーにアクセス権付与 (userId=${userId})`);
+
+        // 仮想テナントIDを生成（ユーザーIDに基づく固定値）
+        const virtualTenantId = `virtual-tenant-${userId}`;
+
         return NextResponse.json({
           hasAccess: true,
           isAdmin: true,
-          isSuperAdmin: false, // 明示的にfalseに設定
-          tenantId: `virtual-tenant-${userId}`,
+          isSuperAdmin: false, // システム管理者ではない
+          tenantId: virtualTenantId,
           userRole: 'admin',
+          // エラーをnullに設定（重要）
           error: null,
         });
       }

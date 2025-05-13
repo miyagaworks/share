@@ -144,7 +144,22 @@ export function checkPermanentAccess() {
       const userDataStr = sessionStorage.getItem('userData');
       if (userDataStr) {
         const userData = JSON.parse(userDataStr);
-        return userData.subscriptionStatus === 'permanent';
+        const isPermanent = userData.subscriptionStatus === 'permanent';
+
+        // もし永久利用権ユーザーなら、その状態をcorporateAccessStateに反映
+        if (isPermanent && corporateAccessState.hasAccess !== true) {
+          updateCorporateAccessState({
+            hasAccess: true,
+            isAdmin: true,
+            isSuperAdmin: false, // システム管理者権限は付与しない
+            tenantId: `virtual-tenant-${userData.id || Date.now()}`,
+            userRole: 'admin',
+            error: null,
+            lastChecked: Date.now(),
+          });
+        }
+
+        return isPermanent;
       }
     } catch (e) {
       logDebug('永久利用権チェックエラー', e);
@@ -160,16 +175,14 @@ export const checkCorporateAccess = async (force = false) => {
   // キャッシュ利用判定で、永久利用権も考慮
   const isPermanent = checkPermanentAccess();
   if (isPermanent) {
-    // 永久利用権ユーザーは常に法人アクセス権あり
-    updateCorporateAccessState({
-      hasAccess: true,
-      isAdmin: true,
-      isSuperAdmin: false, // 明示的にfalseに設定
-      tenantId: corporateAccessState.tenantId || `virtual-tenant-${Date.now()}`,
-      userRole: 'admin',
-      error: null,
-      lastChecked: now,
-    });
+    // 永久利用権ユーザーの状態が既に設定されているはずなので、
+    // 追加の更新は不要。ただし最終チェック時間は更新
+    if (corporateAccessState.lastChecked < now - 60000) {
+      // 1分以上経過している場合のみ更新
+      updateCorporateAccessState({
+        lastChecked: now,
+      });
+    }
     return { ...corporateAccessState };
   }
 
