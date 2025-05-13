@@ -100,7 +100,8 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
     logDebug('管理者状態の保持', { keepAdmin: true });
   }
 
-  // 永久利用権ユーザーはisSuperAdminをtrueに設定できないように制限
+  // ここに永久利用権ユーザーの処理を追加
+  // 永久利用権ユーザーがisSuperAdminをtrueに設定しようとした場合を制限
   if (newState.isSuperAdmin === true) {
     // 永久利用権ユーザーかどうかをチェック
     const isPermanentUser = (() => {
@@ -119,9 +120,9 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
     })();
 
     if (isPermanentUser) {
-      // 永久利用権ユーザーはisSuperAdminを常にfalseに設定
+      // 永久利用権ユーザーがisSuperAdminをtrueに設定しようとしている場合は制限
       newState.isSuperAdmin = false;
-      logDebug('永久利用権ユーザーは管理者権限を持てません', { isPermanentUser: true });
+      logDebug('永久利用権ユーザーは管理者状態にできません', { userId: 'unknown' });
     }
   }
 
@@ -200,14 +201,40 @@ export const checkCorporateAccess = async (force = false) => {
   // キャッシュ利用判定で、永久利用権も考慮
   const isPermanent = checkPermanentAccess();
   if (isPermanent) {
-    // 永久利用権ユーザーの状態が既に設定されているはずなので、
-    // 追加の更新は不要。ただし最終チェック時間は更新
-    if (corporateAccessState.lastChecked < now - 60000) {
-      // 1分以上経過している場合のみ更新
-      updateCorporateAccessState({
-        lastChecked: now,
-      });
+    // 永久利用権ユーザーの場合
+    try {
+      // sessionStorageからユーザーデータを取得
+      const userDataStr = sessionStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        // ユーザーIDを取得
+        const userId = userData.id || Date.now().toString();
+
+        updateCorporateAccessState({
+          hasAccess: true,
+          isAdmin: true,
+          isSuperAdmin: false, // 明示的にfalseに設定
+          tenantId: `virtual-tenant-${userId}`,
+          userRole: 'admin',
+          error: null,
+          lastChecked: now,
+        });
+        return { ...corporateAccessState };
+      }
+    } catch (e) {
+      logDebug('永久利用権ユーザーデータ取得エラー', e);
     }
+
+    // ユーザーデータが取得できなかった場合のフォールバック
+    updateCorporateAccessState({
+      hasAccess: true,
+      isAdmin: true,
+      isSuperAdmin: false, // 明示的にfalseに設定
+      tenantId: `virtual-tenant-fallback-${Date.now()}`,
+      userRole: 'admin',
+      error: null,
+      lastChecked: now,
+    });
     return { ...corporateAccessState };
   }
 
@@ -309,7 +336,28 @@ export const checkCorporateAccess = async (force = false) => {
       const accessResult = data.hasAccess === false ? false : data.hasAccess === true ? true : null;
 
       // 修正: APIからスーパー管理者状態を取得するか、既存の状態を維持
-      const isSuperAdmin = data.isSuperAdmin === true || currentIsSuperAdmin === true;
+      // 永久利用権ユーザーの場合はisSuperAdminを常にfalseに
+      const isPermanentUser = (() => {
+        if (typeof window !== 'undefined') {
+          try {
+            const userDataStr = sessionStorage.getItem('userData');
+            if (userDataStr) {
+              const userData = JSON.parse(userDataStr);
+              return userData.subscriptionStatus === 'permanent';
+            }
+          } catch (e) {
+            logDebug('永久利用権チェックエラー', e);
+          }
+        }
+        return false;
+      })();
+
+      let isSuperAdmin;
+      if (isPermanentUser) {
+        isSuperAdmin = false; // 永久利用権ユーザーは常にfalse
+      } else {
+        isSuperAdmin = data.isSuperAdmin === true || currentIsSuperAdmin === true;
+      }
 
       // テナントIDがない場合のフォールバック
       if (accessResult === true && (!finalTenantId || finalTenantId.length === 0)) {
@@ -325,7 +373,7 @@ export const checkCorporateAccess = async (force = false) => {
       updateCorporateAccessState({
         hasAccess: accessResult,
         isAdmin: data.isAdmin === true,
-        isSuperAdmin: isSuperAdmin, // 修正: スーパー管理者状態を維持
+        isSuperAdmin: isSuperAdmin, // 修正: スーパー管理者状態を適切に設定
         tenantId: finalTenantId,
         userRole: data.userRole || data.role || null,
         error: null,
@@ -384,8 +432,29 @@ export function isUserCorporateAdmin(): boolean {
   return result;
 }
 
-// スーパー管理者かどうかを確認する関数
+// スーパー管理者かどうかを確認する関数 - 永久利用権ユーザーは常にfalseを返す
 export function isUserSuperAdmin(): boolean {
+  // 永久利用権ユーザーかどうかをチェック
+  const isPermanentUser = (() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const userDataStr = sessionStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          return userData.subscriptionStatus === 'permanent';
+        }
+      } catch (e) {
+        logDebug('永久利用権チェックエラー', e);
+      }
+    }
+    return false;
+  })();
+
+  // 永久利用権ユーザーの場合はfalseを返す
+  if (isPermanentUser) {
+    return false;
+  }
+
   return corporateAccessState.isSuperAdmin === true;
 }
 
