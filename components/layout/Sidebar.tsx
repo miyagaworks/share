@@ -196,7 +196,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
             // 区切り線の場合は特別な表示を行う
             if (item.isDivider) {
               return (
-                <div key={`divider-${item.title}`} className="relative my-4">
+                <div key={`divider-${item.title}`} className="relative my-6">
                   <div className="absolute inset-0 flex items-center">
                     <div
                       className={cn(
@@ -207,7 +207,9 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                   </div>
                   {!collapsed && (
                     <div className="relative flex justify-center">
-                      <span className="px-2 bg-white text-xs text-gray-500">{item.title}</span>
+                      <span className="px-2 bg-white text-xs font-semibold uppercase text-gray-500">
+                        {item.title}
+                      </span>
                     </div>
                   )}
                 </div>

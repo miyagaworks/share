@@ -19,6 +19,7 @@ interface DashboardLayoutProps {
     title: string;
     href: string;
     icon: React.ReactNode;
+    isDivider?: boolean; // isDividerプロパティを追加
   }[];
 }
 

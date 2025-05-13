@@ -373,21 +373,18 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
     // 3. 管理者メニューを最後に追加（管理者の場合のみ）
     if (isAdmin) {
-      sidebarItems = [
-        ...sidebarItems,
-        // 区切り線（既に区切り線がある場合は追加しない）
-        ...(sidebarItems.some((item) => item.isDivider)
-          ? []
-          : [
-              {
-                title: '管理者機能',
-                href: '#',
-                icon: <></>,
-                isDivider: true,
-              },
-            ]),
-        ...adminSidebarItems,
-      ];
+      // 管理者機能区切り線を追加
+      sidebarItems.push({
+        title: '管理者機能',
+        href: '#admin-divider', // keyとして使用するための一意のURL
+        icon: <></>,
+        isDivider: true,
+      });
+
+      // 管理者メニュー項目をすべて追加
+      adminSidebarItems.forEach((item) => {
+        sidebarItems.push(item);
+      });
     }
   }
 
