@@ -6,13 +6,20 @@ import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
-import { HiRefresh, HiCreditCard } from 'react-icons/hi';
+import { 
+  HiRefresh, 
+  HiCreditCard,
+  HiSearch, 
+  HiSortAscending, 
+  HiSortDescending
+} from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
 
 // サブスクリプション情報の型定義
 interface UserSubscription {
   id: string;
   name: string | null;
+  nameKana: string | null;  // フリガナ追加
   email: string;
   createdAt: string;
   trialEndsAt: string | null;
@@ -25,12 +32,17 @@ interface UserSubscription {
   subscriptionStatus: string | null;
 }
 
+// 並び替えのタイプ
+type SortType = 'created_asc' | 'created_desc' | 'nameKana_asc' | 'nameKana_desc' | 'plan_asc' | 'plan_desc' | 'status';
+
 export default function AdminSubscriptionsPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserSubscription[]>([]);
+  const [searchTerm, setSearchTerm] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
+  const [sortType, setSortType] = useState<SortType>('status');
 
   // 管理者チェック
   useEffect(() => {
@@ -79,6 +91,77 @@ export default function AdminSubscriptionsPage() {
     }
   };
 
+  // 並び替え関数
+  const handleSort = (type: SortType) => {
+    setSortType(type);
+  };
+
+  // 検索結果のフィルタリング
+  const filteredUsers = users.filter(
+    (user) =>
+      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.nameKana?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.subscription?.plan || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (user.subscription?.status || '').toLowerCase().includes(searchTerm.toLowerCase()),
+  );
+
+  // ユーザーの並び替え
+  const sortedUsers = [...filteredUsers].sort((a, b) => {
+    // サブスクリプション状態で並び替え（アクティブ > トライアル > その他）
+    if (sortType === 'status') {
+      const getStatusPriority = (status: string | null | undefined) => {
+        if (status === 'active') return 1;
+        if (status === 'trialing') return 2;
+        if (status === 'incomplete' || status === 'past_due') return 3;
+        if (status === 'canceled') return 4;
+        return 5;
+      };
+
+      const statusPriorityA = getStatusPriority(a.subscription?.status);
+      const statusPriorityB = getStatusPriority(b.subscription?.status);
+
+      if (statusPriorityA !== statusPriorityB) {
+        return statusPriorityA - statusPriorityB;
+      }
+
+      // 同じステータスならフリガナの順
+      return (a.nameKana || '').localeCompare(b.nameKana || '');
+    }
+
+    // 登録日の新しい順
+    if (sortType === 'created_desc') {
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    }
+
+    // 登録日の古い順
+    if (sortType === 'created_asc') {
+      return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
+    }
+
+    // フリガナの昇順
+    if (sortType === 'nameKana_asc') {
+      return (a.nameKana || '').localeCompare(b.nameKana || '');
+    }
+
+    // フリガナの降順
+    if (sortType === 'nameKana_desc') {
+      return (b.nameKana || '').localeCompare(a.nameKana || '');
+    }
+
+    // プランの昇順
+    if (sortType === 'plan_asc') {
+      return (a.subscription?.plan || '').localeCompare(b.subscription?.plan || '');
+    }
+
+    // プランの降順
+    if (sortType === 'plan_desc') {
+      return (b.subscription?.plan || '').localeCompare(a.subscription?.plan || '');
+    }
+
+    return 0;
+  });
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -102,11 +185,82 @@ export default function AdminSubscriptionsPage() {
           <h1 className="text-2xl font-bold">サブスクリプション管理</h1>
         </div>
 
-        <div className="flex justify-end mb-4">
-          <Button onClick={fetchUsers}>
-            <HiRefresh className="mr-2 h-4 w-4" />
-            更新
-          </Button>
+        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
+          <div className="relative w-full sm:w-64">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+              <HiSearch className="h-5 w-5 text-gray-400" />
+            </div>
+            <input
+              type="text"
+              placeholder="ユーザー/プラン検索..."
+              className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+
+          <div className="flex space-x-2">
+            <div className="dropdown">
+              <Button variant="outline" className="flex items-center">
+                <span className="mr-1">並び替え</span>
+                {sortType.includes('asc') ? (
+                  <HiSortAscending className="h-4 w-4" />
+                ) : (
+                  <HiSortDescending className="h-4 w-4" />
+                )}
+                <div className="dropdown-content absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                  <div className="py-1">
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'status' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('status')}
+                    >
+                      ステータス順
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('created_desc')}
+                    >
+                      登録日 (新→古)
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('created_asc')}
+                    >
+                      登録日 (古→新)
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('nameKana_asc')}
+                    >
+                      フリガナ (ア→ワ)
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('nameKana_desc')}
+                    >
+                      フリガナ (ワ→ア)
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'plan_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('plan_asc')}
+                    >
+                      プラン (A→Z)
+                    </button>
+                    <button
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'plan_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('plan_desc')}
+                    >
+                      プラン (Z→A)
+                    </button>
+                  </div>
+                </div>
+              </Button>
+            </div>
+            <Button onClick={fetchUsers}>
+              <HiRefresh className="mr-2 h-4 w-4" />
+              更新
+            </Button>
+          </div>
         </div>
 
         <div className="overflow-x-auto">
@@ -115,6 +269,9 @@ export default function AdminSubscriptionsPage() {
               <tr>
                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   ユーザー
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  フリガナ
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   メールアドレス
@@ -134,10 +291,22 @@ export default function AdminSubscriptionsPage() {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {users.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
+              {sortedUsers.map((user) => (
+                <tr
+                  key={user.id}
+                  className={`hover:bg-gray-50 ${
+                    user.subscriptionStatus === 'permanent'
+                      ? 'bg-blue-50'
+                      : user.subscriptionStatus === 'grace_period_expired'
+                        ? 'bg-red-50'
+                        : ''
+                  }`}
+                >
                   <td className="py-4 px-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{user.name || '未設定'}</div>
+                  </td>
+                  <td className="py-4 px-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{user.nameKana || '未設定'}</div>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">{user.email}</div>
@@ -188,9 +357,9 @@ export default function AdminSubscriptionsPage() {
           </table>
         </div>
 
-        {users.length === 0 && (
+        {filteredUsers.length === 0 && (
           <div className="text-center py-6">
-            <p className="text-gray-500">サブスクリプション情報が見つかりません</p>
+            <p className="text-gray-500">該当するユーザーが見つかりません</p>
           </div>
         )}
       </div>

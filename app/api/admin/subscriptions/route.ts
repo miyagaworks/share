@@ -28,6 +28,7 @@ export async function GET() {
       select: {
         id: true,
         name: true,
+        nameKana: true, // フリガナを追加
         email: true,
         createdAt: true,
         trialEndsAt: true,
@@ -50,6 +51,7 @@ export async function GET() {
     const formattedUsers = users.map((user) => ({
       id: user.id,
       name: user.name,
+      nameKana: user.nameKana, // フリガナを追加
       email: user.email,
       createdAt: user.createdAt.toISOString(),
       trialEndsAt: user.trialEndsAt?.toISOString() || null,

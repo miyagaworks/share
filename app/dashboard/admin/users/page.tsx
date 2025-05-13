@@ -7,21 +7,20 @@ import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
-import { 
-  HiSearch, 
-  HiRefresh, 
-  HiCheck, 
-  HiX, 
+import {
+  HiSearch,
+  HiRefresh,
   HiExclamationCircle,
   HiTrash,
   HiSortAscending,
-  HiSortDescending
+  HiSortDescending,
 } from 'react-icons/hi';
 
 // ユーザー情報の型定義
 interface UserData {
   id: string;
   name: string | null;
+  nameKana: string | null;
   email: string;
   createdAt: string;
   isPermanentUser: boolean;
@@ -34,7 +33,14 @@ interface UserData {
 }
 
 // 並び替えのタイプ
-type SortType = 'created_asc' | 'created_desc' | 'name_asc' | 'name_desc' | 'email_asc' | 'email_desc' | 'grace_period';
+type SortType =
+  | 'created_asc'
+  | 'created_desc'
+  | 'nameKana_asc'
+  | 'nameKana_desc'
+  | 'email_asc'
+  | 'email_desc'
+  | 'grace_period';
 
 export default function AdminUsersPage() {
   const { data: session } = useSession();
@@ -105,34 +111,6 @@ export default function AdminUsersPage() {
     }
   };
 
-  // 永久利用権の付与/解除
-  const togglePermanentAccess = async (userId: string, isPermanent: boolean) => {
-    try {
-      const response = await fetch('/api/admin/permissions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          isPermanent,
-        }),
-      });
-
-      if (response.ok) {
-        toast.success(isPermanent ? '永久利用権を付与しました' : '永久利用権を解除しました');
-        // 成功したら一覧を再取得
-        fetchUsers();
-      } else {
-        console.error('永久利用権の更新に失敗しました');
-        toast.error('永久利用権の更新に失敗しました');
-      }
-    } catch (error) {
-      console.error('永久利用権の更新エラー:', error);
-      toast.error('処理中にエラーが発生しました');
-    }
-  };
-
   // ユーザー削除の実行
   const deleteUser = async (userId: string) => {
     setDeletingUser(userId);
@@ -186,8 +164,8 @@ export default function AdminUsersPage() {
       if (a.isGracePeriodExpired && !b.isGracePeriodExpired) return -1;
       if (!a.isGracePeriodExpired && b.isGracePeriodExpired) return 1;
 
-      // 同じステータスなら登録日の新しい順
-      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+      // 同じステータスならフリガナの順
+      return (a.nameKana || '').localeCompare(b.nameKana || '');
     }
 
     // 登録日の新しい順
@@ -200,14 +178,14 @@ export default function AdminUsersPage() {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     }
 
-    // 名前の昇順
-    if (sortType === 'name_asc') {
-      return (a.name || '').localeCompare(b.name || '');
+    // フリガナの昇順（ア→ワ）
+    if (sortType === 'nameKana_asc') {
+      return (a.nameKana || '').localeCompare(b.nameKana || '');
     }
 
-    // 名前の降順
-    if (sortType === 'name_desc') {
-      return (b.name || '').localeCompare(a.name || '');
+    // フリガナの降順（ワ→ア）
+    if (sortType === 'nameKana_desc') {
+      return (b.nameKana || '').localeCompare(a.nameKana || '');
     }
 
     // メールアドレスの昇順
@@ -287,16 +265,16 @@ export default function AdminUsersPage() {
                       登録日 (古→新)
                     </button>
                     <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'name_asc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('name_asc')}
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('nameKana_asc')}
                     >
-                      ユーザー名 (A→Z)
+                      フリガナ (ア→ワ)
                     </button>
                     <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'name_desc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('name_desc')}
+                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                      onClick={() => handleSort('nameKana_desc')}
                     >
-                      ユーザー名 (Z→A)
+                      フリガナ (ワ→ア)
                     </button>
                     <button
                       className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'email_asc' ? 'bg-gray-100 font-medium' : ''}`}
@@ -372,6 +350,9 @@ export default function AdminUsersPage() {
                   ユーザー
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  フリガナ
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   メールアドレス
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -379,9 +360,6 @@ export default function AdminUsersPage() {
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   プラン状態
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  永久利用権
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
@@ -396,6 +374,9 @@ export default function AdminUsersPage() {
                 >
                   <td className="py-4 px-4 whitespace-nowrap">
                     <div className="text-sm font-medium text-gray-900">{user.name || '未設定'}</div>
+                  </td>
+                  <td className="py-4 px-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">{user.nameKana || '未設定'}</div>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">{user.email}</div>
@@ -420,45 +401,16 @@ export default function AdminUsersPage() {
                       </span>
                     )}
                   </td>
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    {user.isPermanentUser ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
-                        永久利用権あり
-                      </span>
-                    ) : (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        なし
-                      </span>
-                    )}
-                  </td>
                   <td className="py-4 px-4 whitespace-nowrap text-right text-sm font-medium">
-                    <div className="flex space-x-2">
-                      {user.isPermanentUser ? (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => togglePermanentAccess(user.id, false)}
-                        >
-                          <HiX className="mr-2 h-4 w-4 text-red-500" />
-                          永久利用権を解除
-                        </Button>
-                      ) : (
-                        <Button size="sm" onClick={() => togglePermanentAccess(user.id, true)}>
-                          <HiCheck className="mr-2 h-4 w-4" />
-                          永久利用権を付与
-                        </Button>
-                      )}
-
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="border-red-300 text-red-600 hover:bg-red-50"
-                        onClick={() => setDeleteConfirm(user.id)}
-                      >
-                        <HiTrash className="mr-2 h-4 w-4" />
-                        削除
-                      </Button>
-                    </div>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="border-red-300 text-red-600 hover:bg-red-50"
+                      onClick={() => setDeleteConfirm(user.id)}
+                    >
+                      <HiTrash className="mr-2 h-4 w-4" />
+                      削除
+                    </Button>
                   </td>
                 </tr>
               ))}
