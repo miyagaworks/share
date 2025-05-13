@@ -20,10 +20,17 @@ export async function GET() {
     // 管理者チェック
     const isAdmin = await isAdminUser(session.user.id);
 
+    console.log('管理者チェック結果:', {
+      userId: session.user.id,
+      email: session.user.email,
+      isAdmin,
+    });
+
     return NextResponse.json({
       isSuperAdmin: isAdmin,
       userId: session.user.id,
       email: session.user.email,
+      message: isAdmin ? '管理者権限が確認されました' : '管理者権限がありません',
     });
   } catch (error) {
     console.error('管理者アクセスチェックエラー:', error);

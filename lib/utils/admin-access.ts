@@ -13,13 +13,19 @@ export async function isAdminUser(userId: string | undefined | null): Promise<bo
   try {
     const user = await prisma.user.findUnique({
       where: { id: userId },
-      select: { email: true },
+      select: { email: true, subscriptionStatus: true },
     });
 
     if (!user) return false;
 
-    // メールアドレスが管理者リストに含まれているかチェック
-    return ADMIN_EMAILS.includes(user.email.toLowerCase());
+    // 条件1: メールアドレスが管理者リストに含まれている
+    const isAdminEmail = ADMIN_EMAILS.includes(user.email.toLowerCase());
+
+    // 条件2: subscriptionStatus が "admin" に設定されている
+    const hasAdminStatus = user.subscriptionStatus === 'admin';
+
+    // どちらかの条件を満たしていれば管理者
+    return isAdminEmail || hasAdminStatus;
   } catch (error) {
     console.error('管理者権限チェックエラー:', error);
     return false;

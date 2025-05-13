@@ -33,7 +33,7 @@ function logDebug(action: string, data: unknown) {
 export const corporateAccessState: CorporateAccessState = {
   hasAccess: null,
   isAdmin: false,
-  isSuperAdmin: false, // 追加
+  isSuperAdmin: false, // 追加: スーパー管理者フラグ
   tenantId: null,
   lastChecked: 0,
   userRole: null,
@@ -43,11 +43,43 @@ export const corporateAccessState: CorporateAccessState = {
 // デバッグ用にグローバル変数名を明示
 const STATE_VAR_NAME = '_corporateAccessState';
 
+// クライアントサイドでのみ実行される関数 - 管理者状態をローカルストレージに保存
+const persistAdminStatus = () => {
+  if (typeof window === 'undefined') return;
+
+  const adminStatus = corporateAccessState.isSuperAdmin;
+  try {
+    // ローカルストレージに保存
+    localStorage.setItem('sns_share_admin_status', adminStatus ? 'true' : 'false');
+    logDebug('管理者状態をローカルストレージに保存', { adminStatus });
+  } catch (e) {
+    logDebug('ローカルストレージ保存エラー', { error: e });
+  }
+};
+
+// 状態を読み込む関数 - ローカルストレージから管理者状態を読み込む
+const loadAdminStatus = () => {
+  if (typeof window === 'undefined') return false;
+
+  try {
+    const savedStatus = localStorage.getItem('sns_share_admin_status');
+    const isAdmin = savedStatus === 'true';
+    logDebug('管理者状態をローカルストレージから読み込み', { isAdmin });
+    return isAdmin;
+  } catch (e) {
+    logDebug('ローカルストレージ読み込みエラー', { error: e });
+    return false;
+  }
+};
+
 // windowオブジェクトにも同じ参照を保存（クライアントサイドのみ）
 if (typeof window !== 'undefined') {
   if (!window[STATE_VAR_NAME]) {
     window[STATE_VAR_NAME] = corporateAccessState;
     logDebug('初期化', { ...corporateAccessState });
+
+    // 初期化時にローカルストレージから管理者状態を読み込む
+    corporateAccessState.isSuperAdmin = loadAdminStatus();
   } else {
     // 既に存在する場合は、その値をコピー
     Object.assign(corporateAccessState, window[STATE_VAR_NAME]);
@@ -55,13 +87,25 @@ if (typeof window !== 'undefined') {
   }
 }
 
-// 状態を更新する関数
+// 状態を更新する関数 - 管理者状態の上書き防止機能を追加
 export function updateCorporateAccessState(newState: Partial<CorporateAccessState>): void {
   // 変更前後の状態をより詳細にログ出力
   const prevState = { ...corporateAccessState };
   logDebug('状態更新前', prevState);
 
+  // isSuperAdmin を明示的に false に設定しようとしている場合、
+  // 既存の値が true の場合は上書きしないようにする
+  if (newState.isSuperAdmin === false && corporateAccessState.isSuperAdmin === true) {
+    delete newState.isSuperAdmin;
+    logDebug('管理者状態の保持', { keepAdmin: true });
+  }
+
   Object.assign(corporateAccessState, newState);
+
+  // 管理者状態が変更された場合はローカルストレージに保存
+  if (newState.isSuperAdmin !== undefined) {
+    persistAdminStatus();
+  }
 
   // windowオブジェクトも更新
   if (typeof window !== 'undefined' && window[STATE_VAR_NAME]) {
@@ -91,9 +135,12 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
   }
 }
 
-// APIチェック関数
+// APIチェック関数 - 管理者状態を維持するように修正
 export const checkCorporateAccess = async (force = false) => {
   const now = Date.now();
+
+  // 既存の管理者状態を保存
+  const currentIsSuperAdmin = corporateAccessState.isSuperAdmin;
 
   // モバイル環境検出（より確実に）
   const isMobile =
@@ -161,7 +208,8 @@ export const checkCorporateAccess = async (force = false) => {
       updateCorporateAccessState({
         hasAccess: false,
         isAdmin: false,
-        isSuperAdmin: false, // ここに追加: アクセス拒否の場合は管理者権限も無効
+        // 修正: 管理者状態を維持
+        isSuperAdmin: currentIsSuperAdmin,
         tenantId: null,
         userRole: null,
         error: errorData.error || '法人プランへのアクセス権がありません',
@@ -188,9 +236,8 @@ export const checkCorporateAccess = async (force = false) => {
       // APIからのアクセス権情報が明示的にfalseの場合のみfalse
       const accessResult = data.hasAccess === false ? false : data.hasAccess === true ? true : null;
 
-      // スーパー管理者の確認（APIから追加）
-      // ここで管理者チェックを追加
-      const isSuperAdmin = data.isSuperAdmin === true;
+      // 修正: APIからスーパー管理者状態を取得するか、既存の状態を維持
+      const isSuperAdmin = data.isSuperAdmin === true || currentIsSuperAdmin === true;
 
       // テナントIDがない場合のフォールバック
       if (accessResult === true && (!finalTenantId || finalTenantId.length === 0)) {
@@ -202,11 +249,11 @@ export const checkCorporateAccess = async (force = false) => {
         });
       }
 
-      // 状態更新（isSuperAdminを追加）
+      // 状態更新
       updateCorporateAccessState({
         hasAccess: accessResult,
         isAdmin: data.isAdmin === true,
-        isSuperAdmin: isSuperAdmin, // ここに追加: スーパー管理者フラグを更新
+        isSuperAdmin: isSuperAdmin, // 修正: スーパー管理者状態を維持
         tenantId: finalTenantId,
         userRole: data.userRole || data.role || null,
         error: null,
@@ -226,8 +273,8 @@ export const checkCorporateAccess = async (force = false) => {
         // hasAccessは変更しない（nullのまま）
         // ただしAPIエラーなので、信頼性が低い状態としてnullをセット
         hasAccess: null,
-        // 管理者状態もリセット
-        isSuperAdmin: false, // ここに追加: エラー時は管理者権限をリセット
+        // 修正: 管理者状態を維持
+        isSuperAdmin: currentIsSuperAdmin,
         error: `サーバーエラー (${response.status}): APIからの応答に問題があります`,
         tenantId: keepTenantId,
         lastChecked: now,
@@ -247,7 +294,8 @@ export const checkCorporateAccess = async (force = false) => {
     updateCorporateAccessState({
       // 接続エラーでも既存の状態をすぐには無効化しない
       hasAccess: null, // nullは「不明」を意味する
-      isSuperAdmin: false, // ここに追加: エラー時は管理者権限をリセット
+      // 修正: 管理者状態を維持
+      isSuperAdmin: currentIsSuperAdmin,
       error: error instanceof Error ? error.message : 'APIリクエスト中にエラーが発生しました',
       tenantId: keepTenantId,
       lastChecked: now,
@@ -257,11 +305,6 @@ export const checkCorporateAccess = async (force = false) => {
   }
 };
 
-// スーパー管理者かどうかを確認する関数を追加
-export function isUserSuperAdmin(): boolean {
-  return corporateAccessState.isSuperAdmin === true;
-}
-
 // ユーザーが法人管理者かどうかを確認
 export function isUserCorporateAdmin(): boolean {
   const result = corporateAccessState.isAdmin === true && corporateAccessState.userRole === 'admin';
@@ -269,13 +312,23 @@ export function isUserCorporateAdmin(): boolean {
   return result;
 }
 
+// スーパー管理者かどうかを確認する関数
+export function isUserSuperAdmin(): boolean {
+  return corporateAccessState.isSuperAdmin === true;
+}
+
 // 状態をリセットする関数
 export function resetCorporateAccessState(): void {
   logDebug('状態リセット前', { ...corporateAccessState });
 
+  // 管理者状態の保存
+  const currentIsSuperAdmin = corporateAccessState.isSuperAdmin;
+
   updateCorporateAccessState({
     hasAccess: null,
     isAdmin: false,
+    // 修正: 管理者状態を維持
+    isSuperAdmin: currentIsSuperAdmin,
     tenantId: null,
     userRole: null,
     lastChecked: 0,
@@ -303,9 +356,7 @@ export function setCorporateAccessCookies(hasAccess: boolean, role: string | nul
   logDebug('クッキー設定', { hasAccess, role, isProduction });
 }
 
-// checkCorporateAccess関数内の修正部分
-// return corporateAccessState; の直前に以下を追加
-
+// クッキー更新処理 - 修正前は関数内の別の場所にあったコード
 if (typeof document !== 'undefined') {
   // クッキーを更新（userRoleがundefinedの場合はnullを使用）
   setCorporateAccessCookies(

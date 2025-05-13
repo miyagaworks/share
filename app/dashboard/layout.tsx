@@ -180,23 +180,28 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       }
 
       try {
-        // 法人アクセス権をチェック
-        await checkCorporateAccess();
-
-        // 追加: 管理者権限チェック
-        if (!isAdminChecked) {
+        // 管理者権限チェックを法人アクセスより先に実行
+        if (!isAdminChecked && session.user?.email === 'admin@sns-share.com') {
           try {
+            console.log('管理者権限チェック実行', { email: session.user.email });
             const response = await fetch('/api/admin/access');
+
             if (response.ok) {
               const data = await response.json();
+              console.log('管理者API応答:', data);
 
-              // 管理者フラグを更新
-              if (data.isSuperAdmin) {
-                // corporateAccessStateを直接更新
-                corporateAccessState.isSuperAdmin = true;
-                // 状態が更新されたため再レンダリング
-                forceUpdate((prev) => prev + 1);
-              }
+              // 管理者フラグを直接設定
+              corporateAccessState.isSuperAdmin = data.isSuperAdmin === true;
+
+              // 状態更新を通知
+              window.dispatchEvent(
+                new CustomEvent('corporateAccessChanged', {
+                  detail: { ...corporateAccessState },
+                }),
+              );
+
+              // 再レンダリングを強制
+              forceUpdate((prev) => prev + 1);
             }
           } catch (error) {
             console.error('管理者権限チェックエラー:', error);
@@ -204,11 +209,13 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
             setIsAdminChecked(true);
           }
         }
+
+        // 法人アクセス権をチェック (管理者チェック後)
+        await checkCorporateAccess();
       } catch (error) {
         console.error('法人アクセスチェックエラー:', error);
       } finally {
         setIsLoading(false);
-        // 状態が更新されたら再レンダリング
         forceUpdate((prev) => prev + 1);
       }
     };
