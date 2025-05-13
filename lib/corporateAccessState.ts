@@ -93,10 +93,37 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
   const prevState = { ...corporateAccessState };
   logDebug('状態更新前', prevState);
 
-  // 管理者状態の保持ロジックを微調整 - 新しい状態が明示的に true の場合は上書きを許可
+  // isSuperAdmin を明示的に false に設定しようとしている場合、
+  // 既存の値が true の場合は上書きしないようにする
   if (newState.isSuperAdmin === false && corporateAccessState.isSuperAdmin === true) {
     delete newState.isSuperAdmin;
     logDebug('管理者状態の保持', { keepAdmin: true });
+  }
+
+  // ここに永久利用権ユーザーの処理を追加
+  // 永久利用権ユーザーがisSuperAdminをtrueに設定しようとした場合を制限
+  if (newState.isSuperAdmin === true) {
+    // 永久利用権ユーザーかどうかをチェック
+    const isPermanentUser = (() => {
+      if (typeof window !== 'undefined') {
+        try {
+          const userDataStr = sessionStorage.getItem('userData');
+          if (userDataStr) {
+            const userData = JSON.parse(userDataStr);
+            return userData.subscriptionStatus === 'permanent';
+          }
+        } catch (e) {
+          logDebug('永久利用権チェックエラー', e);
+        }
+      }
+      return false;
+    })();
+
+    if (isPermanentUser) {
+      // 永久利用権ユーザーがisSuperAdminをtrueに設定しようとしている場合は制限
+      delete newState.isSuperAdmin;
+      logDebug('永久利用権ユーザーは管理者状態にできません', { userId: 'unknown' });
+    }
   }
 
   Object.assign(corporateAccessState, newState);
@@ -150,7 +177,7 @@ export function checkPermanentAccess() {
           updateCorporateAccessState({
             hasAccess: true,
             isAdmin: true,
-            isSuperAdmin: false, // システム管理者権限は付与しない
+            isSuperAdmin: false, // 明示的にfalseを設定
             tenantId: `virtual-tenant-${userData.id || Date.now()}`,
             userRole: 'admin',
             error: null,

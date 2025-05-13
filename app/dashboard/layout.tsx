@@ -195,7 +195,32 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       }
 
       try {
-        // 追加: 管理者権限のチェック
+        // ユーザー情報を取得して永久利用権をチェック
+        const profileResponse = await fetch('/api/profile');
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          if (profileData.user) {
+            // セッションストレージに保存
+            sessionStorage.setItem('userData', JSON.stringify(profileData.user));
+
+            // 永久利用権ユーザーは法人アクセス権を持つが、管理者権限は持たない
+            if (profileData.user.subscriptionStatus === 'permanent') {
+              updateCorporateAccessState({
+                hasAccess: true,
+                isAdmin: true, // 法人の管理者権限はtrue
+                isSuperAdmin: false, // システム管理者はfalse - 明示的にfalseに設定
+                tenantId: `virtual-tenant-${profileData.user.id}`,
+                userRole: 'admin',
+                error: null,
+                lastChecked: Date.now(),
+              });
+              // 強制再レンダリング
+              forceUpdate((prev) => prev + 1);
+            }
+          }
+        }
+
+        // 管理者権限チェックは永久利用権ユーザーのチェックとは別に行う
         const adminResponse = await fetch('/api/admin/access');
         if (adminResponse.ok) {
           const adminData = await adminResponse.json();
@@ -206,31 +231,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
             });
             // 強制再レンダリング
             forceUpdate((prev) => prev + 1);
-          }
-        }
-
-        // ユーザー情報を取得して永久利用権をチェック
-        const profileResponse = await fetch('/api/profile');
-        if (profileResponse.ok) {
-          const profileData = await profileResponse.json();
-          if (profileData.user) {
-            // セッションストレージに保存
-            sessionStorage.setItem('userData', JSON.stringify(profileData.user));
-
-            // 永久利用権ユーザーは法人アクセス権を持つ
-            if (profileData.user.subscriptionStatus === 'permanent') {
-              updateCorporateAccessState({
-                hasAccess: true,
-                isAdmin: true, // 法人の管理者権限はtrue
-                // isSuperAdmin は変更しない（管理者チェックの結果を尊重）
-                tenantId: `virtual-tenant-${profileData.user.id}`,
-                userRole: 'admin',
-                error: null,
-                lastChecked: Date.now(),
-              });
-              // 強制再レンダリング
-              forceUpdate((prev) => prev + 1);
-            }
           }
         }
 
@@ -299,19 +299,19 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   ) {
     sidebarItems = [...corporateProfileSidebarItems];
 
-    // 管理者の場合は管理者メニューも追加
-    if (isAdmin) {
-      sidebarItems = [
-        ...sidebarItems,
-        // 区切り線
-        {
-          title: '管理者機能',
-          href: '#',
-          icon: <></>,
-          isDivider: true,
-        },
-        ...adminSidebarItems,
-      ];
+    // 管理者の場合は管理者メニューも追加（永久利用権ユーザーは除外）
+    if (isAdmin && !isPermanentUser) {
+      sidebarItems.push({
+        title: '管理者機能',
+        href: '#admin-divider',
+        icon: <></>,
+        isDivider: true,
+      });
+
+      // 管理者メニュー項目を追加
+      adminSidebarItems.forEach((item) => {
+        sidebarItems.push(item);
+      });
     }
   } else if (
     pathname &&
@@ -321,18 +321,18 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     sidebarItems = [...corporateSidebarItems];
 
     // 管理者の場合は管理者メニューも追加
-    if (isAdmin) {
-      sidebarItems = [
-        ...sidebarItems,
-        // 区切り線
-        {
-          title: '管理者機能',
-          href: '#',
-          icon: <></>,
-          isDivider: true,
-        },
-        ...adminSidebarItems,
-      ];
+    if (isAdmin && !isPermanentUser) {
+      sidebarItems.push({
+        title: '管理者機能',
+        href: '#admin-divider',
+        icon: <></>,
+        isDivider: true,
+      });
+      
+      // 管理者メニュー項目を追加
+      adminSidebarItems.forEach(item => {
+        sidebarItems.push(item);
+      });
     }
   } else {
     // 個人ダッシュボードのベースメニュー
@@ -346,7 +346,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       // 区切り線を追加
       corporateItems.push({
         title: '法人機能',
-        href: '#',
+        href: '#corporate-divider',
         icon: <></>,
         isDivider: true,
       });
@@ -368,20 +368,22 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       }
 
       // 法人メニューを追加
-      sidebarItems = [...sidebarItems, ...corporateItems];
+      corporateItems.forEach((item) => {
+        sidebarItems.push(item);
+      });
     }
 
-    // 3. 管理者メニューを最後に追加（管理者の場合のみ）
-    if (isAdmin) {
-      // 管理者機能区切り線を追加
+    // 3. 管理者メニューを最後に追加（管理者の場合のみ - 永久利用権ユーザーは含まない）
+    if (isAdmin && !isPermanentUser) {
+      // 管理者機能区切り線を明示的に追加
       sidebarItems.push({
         title: '管理者機能',
-        href: '#admin-divider', // keyとして使用するための一意のURL
+        href: '#admin-divider',
         icon: <></>,
         isDivider: true,
       });
 
-      // 管理者メニュー項目をすべて追加
+      // 管理者メニュー項目を追加
       adminSidebarItems.forEach((item) => {
         sidebarItems.push(item);
       });
