@@ -14,6 +14,7 @@ interface SidebarProps {
     title: string;
     href: string;
     icon: React.ReactNode;
+    isDivider?: boolean; // オプションのプロパティを追加
   }[];
   onToggleCollapse: (collapsed: boolean) => void;
 }
@@ -148,6 +149,27 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
         {/* メインメニュー項目 */}
         <nav className="space-y-1 px-2">
           {mainMenuItems.map((item) => {
+            // 区切り線の場合は特別な表示を行う
+            if (item.isDivider) {
+              return (
+                <div key={`divider-${item.title}`} className="relative my-4">
+                  <div className="absolute inset-0 flex items-center">
+                    <div
+                      className={cn(
+                        'border-t border-gray-200',
+                        collapsed ? 'w-10 mx-auto' : 'w-full',
+                      )}
+                    ></div>
+                  </div>
+                  {!collapsed && (
+                    <div className="relative flex justify-center">
+                      <span className="px-2 bg-white text-xs text-gray-500">{item.title}</span>
+                    </div>
+                  )}
+                </div>
+              );
+            }
+
             // アクティブなリンクかどうか
             const isActive = pathname === item.href;
             // 法人関連のリンクかどうか

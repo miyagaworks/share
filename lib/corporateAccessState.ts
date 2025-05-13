@@ -135,9 +135,43 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
   }
 }
 
+// 永久利用権ステータスをチェックする関数を追加
+function checkPermanentAccess() {
+  // ページロード時に sessionStorage から確認
+  if (typeof window !== 'undefined') {
+    try {
+      // subscriptionStatus を sessionStorage から取得
+      const userDataStr = sessionStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        return userData.subscriptionStatus === 'permanent';
+      }
+    } catch (e) {
+      logDebug('永久利用権チェックエラー', e);
+    }
+  }
+  return false;
+}
+
 // APIチェック関数 - 管理者状態を維持するように修正
 export const checkCorporateAccess = async (force = false) => {
   const now = Date.now();
+
+  // キャッシュ利用判定で、永久利用権も考慮
+  const isPermanent = checkPermanentAccess();
+  if (isPermanent) {
+    // 永久利用権ユーザーは常に法人アクセス権あり
+    updateCorporateAccessState({
+      hasAccess: true,
+      isAdmin: true,
+      isSuperAdmin: true,
+      tenantId: corporateAccessState.tenantId || `virtual-tenant-${Date.now()}`,
+      userRole: 'admin',
+      error: null,
+      lastChecked: now,
+    });
+    return { ...corporateAccessState };
+  }
 
   // 既存の管理者状態を保存
   const currentIsSuperAdmin = corporateAccessState.isSuperAdmin;

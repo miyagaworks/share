@@ -17,17 +17,24 @@ import {
   HiUsers,
   HiTemplate,
   HiCog,
-  HiShieldCheck, // 管理者アイコン追加
-  HiKey, // 権限管理アイコン追加
+  HiShieldCheck,
+  HiKey,
 } from 'react-icons/hi';
-import {
-  corporateAccessState,
-  checkCorporateAccess,
-  isUserSuperAdmin,
-} from '@/lib/corporateAccessState';
+import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
+
+interface SidebarItem {
+  title: string;
+  href: string;
+  icon: React.ReactNode;
+  isDivider?: boolean; // オプションのプロパティを追加
+}
+
+interface DashboardLayoutWrapperProps {
+  children: ReactNode;
+}
 
 // 個人用サイドバー項目
-const personalSidebarItems = [
+const personalSidebarItems: SidebarItem[] = [
   {
     title: 'ダッシュボード',
     href: '/dashboard',
@@ -139,7 +146,7 @@ const corporateProfileSidebarItems = [
 ];
 
 // 管理者メニュー項目
-const adminSidebarItems = [
+const adminSidebarItems: SidebarItem[] = [
   {
     title: '管理者ダッシュボード',
     href: '/dashboard/admin',
@@ -155,11 +162,6 @@ const adminSidebarItems = [
     href: '/dashboard/admin/permissions',
     icon: <HiKey className="h-5 w-5" />,
   },
-  {
-    title: 'サブスクリプション管理',
-    href: '/dashboard/admin/subscriptions',
-    icon: <HiCreditCard className="h-5 w-5" />,
-  },
 ];
 
 interface DashboardLayoutWrapperProps {
@@ -172,7 +174,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [, forceUpdate] = useState(0); // 強制再レンダリング用
-  const [isAdminChecked, setIsAdminChecked] = useState(false); // 管理者チェック状態
 
   // 法人アカウントかどうかをチェック
   useEffect(() => {
@@ -185,42 +186,34 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       }
 
       try {
-        // 管理者権限チェックを法人アクセスより先に実行
-        if (!isAdminChecked && session.user?.email === 'admin@sns-share.com') {
-          try {
-            console.log('管理者権限チェック実行', { email: session.user.email });
-            const response = await fetch('/api/admin/access');
+        // ユーザー情報を取得して永久利用権をチェック
+        const profileResponse = await fetch('/api/profile');
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          if (profileData.user) {
+            // セッションストレージに保存
+            sessionStorage.setItem('userData', JSON.stringify(profileData.user));
 
-            if (response.ok) {
-              const data = await response.json();
-              console.log('管理者API応答:', data);
-
-              // 管理者フラグを直接設定
-              corporateAccessState.isSuperAdmin = data.isSuperAdmin === true;
-
-              // 状態更新を通知
-              window.dispatchEvent(
-                new CustomEvent('corporateAccessChanged', {
-                  detail: { ...corporateAccessState },
-                }),
-              );
-
-              // 再レンダリングを強制
+            // 永久利用権ユーザーは法人アクセス権を持つ
+            if (profileData.user.subscriptionStatus === 'permanent') {
+              corporateAccessState.hasAccess = true;
+              corporateAccessState.isAdmin = true;
+              // 強制再レンダリング
               forceUpdate((prev) => prev + 1);
             }
-          } catch (error) {
-            console.error('管理者権限チェックエラー:', error);
-          } finally {
-            setIsAdminChecked(true);
           }
         }
 
-        // 法人アクセス権をチェック (管理者チェック後)
+        // 法人アクセス権をチェック
         await checkCorporateAccess();
+
+        // この行は削除
+        // setIsAdminChecked(true);
       } catch (error) {
         console.error('法人アクセスチェックエラー:', error);
       } finally {
         setIsLoading(false);
+        // 状態が更新されたら再レンダリング
         forceUpdate((prev) => prev + 1);
       }
     };
@@ -237,7 +230,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     return () => {
       window.removeEventListener('corporateAccessChanged', handleAccessChange);
     };
-  }, [session, status, router, isAdminChecked]);
+  }, [session, status, router]);
 
   // ユーザーが認証されているが、まだ法人アカウント状態をチェック中
   if (status !== 'loading' && session && isLoading) {
@@ -249,48 +242,125 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   }
 
   // サイドバー項目の決定
-  let sidebarItems = [...personalSidebarItems];
+  let sidebarItems: SidebarItem[] = [...personalSidebarItems];
 
-  // 管理者メニューの表示条件をチェック
-  const isAdminRoute = pathname && pathname.startsWith('/dashboard/admin');
-  const isSuperAdmin = isUserSuperAdmin(); // helper関数を使用
+  // 管理者かどうかを判定（例：メールアドレスで判定）
+  const isAdmin = session?.user?.email === 'admin@sns-share.com';
 
+  // 永久利用権ユーザーかどうかをチェック
+  const isPermanentUser = (() => {
+    try {
+      const userDataStr = sessionStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        return userData.subscriptionStatus === 'permanent';
+      }
+    } catch (e) {
+      console.error('永久利用権チェックエラー:', e);
+    }
+    return false;
+  })();
+
+  // 管理者ページにいる場合
+  if (pathname && pathname.startsWith('/dashboard/admin') && isAdmin) {
+    // 管理者ページの場合は管理者メニューのみを表示
+    sidebarItems = [...adminSidebarItems]; // ここで adminSidebarItems を使用
+  }
   // 法人プロファイルページにいる場合
-  if (
+  else if (
     pathname &&
     pathname.startsWith('/dashboard/corporate-profile') &&
-    corporateAccessState.hasAccess
+    (corporateAccessState.hasAccess || isPermanentUser)
   ) {
     sidebarItems = [...corporateProfileSidebarItems];
+
+    // 管理者の場合は管理者メニューも追加
+    if (isAdmin) {
+      sidebarItems = [
+        ...sidebarItems,
+        // 区切り線
+        {
+          title: '管理者機能',
+          href: '#',
+          icon: <></>,
+          isDivider: true,
+        },
+        ...adminSidebarItems,
+      ];
+    }
   }
   // 法人ダッシュボードにいる場合
   else if (
     pathname &&
     pathname.startsWith('/dashboard/corporate') &&
-    corporateAccessState.hasAccess
+    (corporateAccessState.hasAccess || isPermanentUser)
   ) {
     sidebarItems = [...corporateSidebarItems];
-  }
-  // 管理者ページにいる場合
-  else if (isAdminRoute && isSuperAdmin) {
-    sidebarItems = [...adminSidebarItems];
+
+    // 管理者の場合は管理者メニューも追加
+    if (isAdmin) {
+      sidebarItems = [
+        ...sidebarItems,
+        // 区切り線
+        {
+          title: '管理者機能',
+          href: '#',
+          icon: <></>,
+          isDivider: true,
+        },
+        ...adminSidebarItems,
+      ];
+    }
   }
   // 個人ダッシュボードにいる場合
   else {
-    // 管理者権限がある場合は管理者メニューを追加
-    if (isSuperAdmin) {
-      // 区切り線のためのダミー項目
-      const dividerItem = {
-        title: '管理者メニュー',
-        href: '#',
-        icon: <div className="w-5 h-5"></div>,
-        isDivider: true,
-      };
+    // 法人ユーザーまたは永久利用権ユーザーの場合は法人メニューを追加
+    if (corporateAccessState.hasAccess || isPermanentUser) {
+      const corporateLinks = [
+        {
+          title: '法人メンバープロフィール',
+          href: '/dashboard/corporate-member',
+          icon: <HiUser className="h-5 w-5" />,
+        },
+        {
+          title: '法人管理ダッシュボード',
+          href: '/dashboard/corporate',
+          icon: <HiOfficeBuilding className="h-5 w-5" />,
+        },
+      ];
 
-      // 個人メニュー + 区切り線 + 管理者メニュー
-      sidebarItems = [...personalSidebarItems, dividerItem, ...adminSidebarItems];
+      sidebarItems = [
+        ...personalSidebarItems,
+        // 区切り線
+        {
+          title: '法人機能',
+          href: '#',
+          icon: <></>,
+          isDivider: true,
+        },
+        ...corporateLinks,
+      ];
+    }
+
+    // 管理者の場合は管理者メニューも追加
+    if (isAdmin) {
+      sidebarItems = [
+        ...sidebarItems,
+        // 区切り線（既に区切り線がある場合は追加しない）
+        ...(sidebarItems.some((item) => item.isDivider)
+          ? []
+          : [
+              {
+                title: '管理者機能',
+                href: '#',
+                icon: <></>,
+                isDivider: true,
+              },
+            ]),
+        ...adminSidebarItems,
+      ];
     }
   }
-
+  
   return <DashboardLayout items={sidebarItems}>{children}</DashboardLayout>;
 }

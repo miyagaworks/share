@@ -30,6 +30,7 @@ export async function checkCorporateAccess(userId: string) {
             status: true,
           },
         },
+        subscriptionStatus: true, // 永久利用権ステータス
       },
     });
 
@@ -38,6 +39,25 @@ export async function checkCorporateAccess(userId: string) {
       return {
         hasCorporateAccess: false,
         error: 'ユーザーが見つかりません',
+      };
+    }
+
+    // 永久利用権ユーザーの場合は常に法人アクセス権あり
+    if (user.subscriptionStatus === 'permanent') {
+      return {
+        hasCorporateAccess: true,
+        isAdmin: true, // 管理者権限も付与
+        tenant: user.adminOfTenant ||
+          user.tenant || {
+            // 仮想テナント情報
+            id: `virtual-tenant-${userId}`,
+            accountStatus: 'active',
+          },
+        subscription: {
+          plan: 'business',
+          status: 'active',
+        },
+        error: null,
       };
     }
 
