@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
+import GrantPermanentAccess from '@/components/admin/GrantPermanentAccess';
 import {
   HiSearch,
   HiRefresh,
@@ -221,6 +222,7 @@ export default function AdminUsersPage() {
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
         <h1 className="text-2xl font-bold mb-4">ユーザー管理</h1>
 
+        {/* 検索フィールドと操作ボタン */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <div className="relative w-full sm:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -299,6 +301,11 @@ export default function AdminUsersPage() {
           </div>
         </div>
 
+        {/* 永久利用権付与セクションを追加 */}
+        <div className="mb-6">
+          <GrantPermanentAccess />
+        </div>
+
         {/* 削除確認モーダル */}
         {deleteConfirm && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -342,6 +349,7 @@ export default function AdminUsersPage() {
           </div>
         )}
 
+        {/* ユーザーテーブル */}
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
             <thead className="bg-gray-50">

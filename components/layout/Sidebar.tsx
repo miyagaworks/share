@@ -9,13 +9,16 @@ import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { corporateAccessState } from '@/lib/corporateAccessState';
 
+// サイドバー項目の型定義
+interface SidebarItem {
+  title: string;
+  href: string;
+  icon: React.ReactNode;
+  isDivider?: boolean;
+}
+
 interface SidebarProps {
-  items: {
-    title: string;
-    href: string;
-    icon: React.ReactNode;
-    isDivider?: boolean; // オプションのプロパティを追加
-  }[];
+  items: SidebarItem[];
   onToggleCollapse: (collapsed: boolean) => void;
 }
 
@@ -50,12 +53,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     );
   }
 
-  // メインメニュー項目
-  const mainMenuItems = [...items];
-
-  // 追加リンク用変数
-  const additionalLinks = [];
-
   // 永久利用権ユーザーかどうかをチェック
   const isPermanentUser = (() => {
     if (typeof window !== 'undefined') {
@@ -72,16 +69,36 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     return false;
   })();
 
-  // 法人セクションにいる場合、個人ダッシュボードと法人メンバーダッシュボードへのリンクを追加
-  if (isCorporateSection) {
-    additionalLinks.push({
-      title: '個人ダッシュボード',
-      href: '/dashboard',
-      icon: <HiHome className="h-5 w-5" />,
-    });
+  // メインメニュー項目
+  const mainMenuItems = [...items];
 
-    // 法人管理者または永久利用権ユーザーは法人メンバーダッシュボードも表示
-    if (corporateAccessState.hasAccess || isPermanentUser) {
+  // 追加リンク用配列
+  const additionalLinks: SidebarItem[] = [];
+
+  // メニュー項目のURLを取得する関数
+  const getItemUrls = (items: SidebarItem[]): Set<string> => {
+    return new Set(items.map((item) => item.href));
+  };
+
+  // 既存のメニューURLのセット
+  const existingUrls = getItemUrls(mainMenuItems);
+
+  // 法人セクションにいる場合
+  if (isCorporateSection) {
+    // 個人ダッシュボードへのリンクを追加（存在しない場合のみ）
+    if (!existingUrls.has('/dashboard')) {
+      additionalLinks.push({
+        title: '個人ダッシュボード',
+        href: '/dashboard',
+        icon: <HiHome className="h-5 w-5" />,
+      });
+    }
+
+    // 法人管理者または永久利用権ユーザーの場合、法人メンバーダッシュボードも表示
+    if (
+      (corporateAccessState.hasAccess || isPermanentUser) &&
+      !existingUrls.has('/dashboard/corporate-member')
+    ) {
       additionalLinks.push({
         title: '法人メンバープロフィール',
         href: '/dashboard/corporate-member',
@@ -90,16 +107,22 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     }
   }
 
-  // 法人メンバーセクションにいる場合、個人ダッシュボードと法人ダッシュボードへのリンクを追加
+  // 法人メンバーセクションにいる場合
   else if (isCorporateMemberSection) {
-    additionalLinks.push({
-      title: '個人ダッシュボード',
-      href: '/dashboard',
-      icon: <HiHome className="h-5 w-5" />,
-    });
+    // 個人ダッシュボードへのリンクを追加（存在しない場合のみ）
+    if (!existingUrls.has('/dashboard')) {
+      additionalLinks.push({
+        title: '個人ダッシュボード',
+        href: '/dashboard',
+        icon: <HiHome className="h-5 w-5" />,
+      });
+    }
 
-    // 法人管理者の場合は法人管理ダッシュボードへのリンクも表示
-    if (corporateAccessState.isAdmin) {
+    // 法人管理者または永久利用権ユーザーの場合、法人管理ダッシュボードも表示
+    if (
+      (corporateAccessState.isAdmin || isPermanentUser) &&
+      !existingUrls.has('/dashboard/corporate')
+    ) {
       additionalLinks.push({
         title: '法人管理ダッシュボード',
         href: '/dashboard/corporate',
@@ -108,22 +131,27 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     }
   }
 
-  // 個人セクションにいて法人アクセス権がある場合、法人関連リンクを追加
+  // 個人セクションにいて法人アクセス権がある場合
   else if (
     !isCorporateSection &&
     !isCorporateMemberSection &&
     pathname?.startsWith('/dashboard') &&
-    corporateAccessState.hasAccess
+    (corporateAccessState.hasAccess || isPermanentUser)
   ) {
-    // 法人メンバーダッシュボードへのリンクを追加
-    additionalLinks.push({
-      title: '法人メンバープロフィール',
-      href: '/dashboard/corporate-member',
-      icon: <HiUser className="h-5 w-5" />,
-    });
+    // 法人メンバーダッシュボードへのリンクを追加（存在しない場合のみ）
+    if (!existingUrls.has('/dashboard/corporate-member')) {
+      additionalLinks.push({
+        title: '法人メンバープロフィール',
+        href: '/dashboard/corporate-member',
+        icon: <HiUser className="h-5 w-5" />,
+      });
+    }
 
-    // 法人管理者の場合は法人管理ダッシュボードへのリンクも追加
-    if (corporateAccessState.isAdmin) {
+    // 法人管理者または永久利用権ユーザーの場合、法人管理ダッシュボードも表示
+    if (
+      (corporateAccessState.isAdmin || isPermanentUser) &&
+      !existingUrls.has('/dashboard/corporate')
+    ) {
       additionalLinks.push({
         title: '法人管理ダッシュボード',
         href: '/dashboard/corporate',

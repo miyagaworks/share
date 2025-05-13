@@ -29,7 +29,7 @@ export async function GET(request: Request) {
         where: { id: userId },
         select: {
           id: true,
-          subscriptionStatus: true, // この行を追加
+          subscriptionStatus: true,
           adminOfTenant: {
             select: {
               id: true,
@@ -64,17 +64,12 @@ export async function GET(request: Request) {
       // 永久利用権ユーザーの場合、即時アクセス権を付与
       if (user.subscriptionStatus === 'permanent') {
         console.log(`[API:corporate/access] 永久利用権ユーザーにアクセス権付与 (userId=${userId})`);
-
-        // 仮想テナントIDを生成（ユーザーIDに基づく固定値）
-        const virtualTenantId = `virtual-tenant-${userId}`;
-
         return NextResponse.json({
           hasAccess: true,
           isAdmin: true,
-          isSuperAdmin: false, // システム管理者ではない
-          tenantId: virtualTenantId,
+          isSuperAdmin: false, // 明示的に非スーパー管理者
+          tenantId: `virtual-tenant-${userId}`,
           userRole: 'admin',
-          // エラーをnullに設定（重要）
           error: null,
         });
       }

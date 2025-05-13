@@ -255,9 +255,9 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   }
 
   // サイドバー項目の決定
-  let sidebarItems: SidebarItem[] = [...personalSidebarItems];
+  let sidebarItems: SidebarItem[] = [];
 
-  // 管理者かどうかを判定
+  // 管理者かどうかを判定（isSuperAdminのみを使用）
   const isAdmin = corporateAccessState.isSuperAdmin === true;
 
   // 永久利用権ユーザーかどうかをチェック
@@ -274,20 +274,18 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     return false;
   })();
 
-  // 管理者ページにいる場合
+  // 1. 現在の場所に基づいてベースとなるメニューを決定
   if (pathname && pathname.startsWith('/dashboard/admin') && isAdmin) {
     // 管理者ページの場合は管理者メニューのみを表示
     sidebarItems = [...adminSidebarItems];
-  }
-  // 法人プロファイルページにいる場合
-  else if (
+  } else if (
     pathname &&
     pathname.startsWith('/dashboard/corporate-profile') &&
     (corporateAccessState.hasAccess || isPermanentUser)
   ) {
     sidebarItems = [...corporateProfileSidebarItems];
 
-    // ★★★ここを修正：システム管理者の場合のみ管理者メニューを追加★★★
+    // 管理者の場合は管理者メニューも追加
     if (isAdmin) {
       sidebarItems = [
         ...sidebarItems,
@@ -301,20 +299,18 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         ...adminSidebarItems,
       ];
     }
-  }
-
-  // 法人ダッシュボードにいる場合
-  else if (
+  } else if (
     pathname &&
     pathname.startsWith('/dashboard/corporate') &&
     (corporateAccessState.hasAccess || isPermanentUser)
   ) {
     sidebarItems = [...corporateSidebarItems];
 
-    // ★★★ここを修正：システム管理者の場合のみ管理者メニューを追加★★★
+    // 管理者の場合は管理者メニューも追加
     if (isAdmin) {
       sidebarItems = [
         ...sidebarItems,
+        // 区切り線
         {
           title: '管理者機能',
           href: '#',
@@ -324,53 +320,48 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         ...adminSidebarItems,
       ];
     }
-  }
+  } else {
+    // 個人ダッシュボードのベースメニュー
+    sidebarItems = [...personalSidebarItems];
 
-  // 個人ダッシュボードにいる場合
-  else {
-    // 法人ユーザーまたは永久利用権ユーザーの場合は法人メニューを追加
+    // 2. 法人メニューを追加（重複を防ぐため配列を作成）
+    const corporateItems: SidebarItem[] = [];
+
+    // 法人ユーザーまたは永久利用権ユーザーの場合
     if (corporateAccessState.hasAccess || isPermanentUser) {
-      // 重複を防ぐために、追加するリンクを一意にする
-      const corporateLinks = [
-        // 法人メンバープロフィールは1つだけ
-        {
-          title: '法人メンバープロフィール',
-          href: '/dashboard/corporate-member',
-          icon: <HiUser className="h-5 w-5" />,
-        },
-        // 法人ダッシュボードも1つだけ
-        {
+      // 区切り線を追加
+      corporateItems.push({
+        title: '法人機能',
+        href: '#',
+        icon: <></>,
+        isDivider: true,
+      });
+
+      // 法人メンバープロフィールを1回だけ追加
+      corporateItems.push({
+        title: '法人メンバープロフィール',
+        href: '/dashboard/corporate-member',
+        icon: <HiUser className="h-5 w-5" />,
+      });
+
+      // 法人管理者または永久利用権ユーザーの場合は法人管理ダッシュボードも追加
+      if (corporateAccessState.isAdmin || isPermanentUser) {
+        corporateItems.push({
           title: '法人管理ダッシュボード',
           href: '/dashboard/corporate',
           icon: <HiOfficeBuilding className="h-5 w-5" />,
-        },
-      ];
+        });
+      }
 
-      // 既存のメニューに法人メニューをいったん全部加えるのではなく、重複チェックを行う
-      const existingHrefs = new Set(personalSidebarItems.map((item) => item.href));
-      const uniqueCorporateLinks = corporateLinks.filter((link) => !existingHrefs.has(link.href));
-
-      sidebarItems = [
-        ...personalSidebarItems,
-        // 区切り線（法人リンクがある場合のみ追加）
-        ...(uniqueCorporateLinks.length > 0
-          ? [
-              {
-                title: '法人機能',
-                href: '#',
-                icon: <></>,
-                isDivider: true,
-              },
-            ]
-          : []),
-        ...uniqueCorporateLinks,
-      ];
+      // 法人メニューを追加
+      sidebarItems = [...sidebarItems, ...corporateItems];
     }
 
-    // ★★★ここを修正：システム管理者の場合のみ管理者メニューを追加★★★
+    // 3. 管理者メニューを最後に追加（管理者の場合のみ）
     if (isAdmin) {
       sidebarItems = [
         ...sidebarItems,
+        // 区切り線（既に区切り線がある場合は追加しない）
         ...(sidebarItems.some((item) => item.isDivider)
           ? []
           : [
