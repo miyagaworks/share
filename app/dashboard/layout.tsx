@@ -372,6 +372,20 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         sidebarItems.push(item);
       });
     }
+
+    if (isAdmin) {
+      sidebarItems.push({
+        title: '管理者機能',
+        href: '#admin-divider',
+        icon: <></>,
+        isDivider: true,
+      });
+
+      // 管理者メニュー項目を追加
+      adminSidebarItems.forEach((item) => {
+        sidebarItems.push(item);
+      });
+    }
   }
 
   return <DashboardLayout items={sidebarItems}>{children}</DashboardLayout>;
