@@ -70,7 +70,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
           hasAccess: true,
           isAdmin: true,
-          isSuperAdmin: true,
+          isSuperAdmin: false, // 明示的にfalseに設定
           tenantId: `virtual-tenant-${userId}`,
           userRole: 'admin',
           error: null,

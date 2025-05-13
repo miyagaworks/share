@@ -8,6 +8,7 @@ import { useSession } from 'next-auth/react';
 import Image from 'next/image';
 import { Spinner } from '@/components/ui/Spinner';
 import { ActivityFeed } from '@/components/corporate/ActivityFeed';
+import { corporateAccessState } from '@/lib/corporateAccessState';
 
 // アイコンを代替
 import {
@@ -167,6 +168,34 @@ export default function CorporateDashboardPage() {
 
   // 段階的読み込みの状態
   const [loadingStage, setLoadingStage] = useState<'initial' | 'tenant' | 'complete'>('initial');
+
+  // 永久利用権ユーザーのチェックとリダイレクト
+  useEffect(() => {
+    // 永久利用権ユーザーかどうかをチェック
+    const isPermanentUser = (() => {
+      if (typeof window !== 'undefined') {
+        try {
+          const userDataStr = sessionStorage.getItem('userData');
+          if (userDataStr) {
+            const userData = JSON.parse(userDataStr);
+            return userData.subscriptionStatus === 'permanent';
+          }
+        } catch (e) {
+          console.error('永久利用権チェックエラー:', e);
+        }
+      }
+      return false;
+    })();
+
+    // 永久利用権ユーザーまたは仮想テナントを持っているユーザーはonboardingにリダイレクト
+    if (
+      isPermanentUser ||
+      (corporateAccessState.tenantId && corporateAccessState.tenantId.startsWith('virtual-tenant'))
+    ) {
+      console.log('永久利用権ユーザーはonboardingページにリダイレクトします');
+      router.push('/dashboard/corporate/onboarding');
+    }
+  }, [router]);
 
   // テナント情報取得
   const fetchTenantData = useCallback(async () => {

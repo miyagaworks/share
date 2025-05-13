@@ -164,7 +164,7 @@ export const checkCorporateAccess = async (force = false) => {
     updateCorporateAccessState({
       hasAccess: true,
       isAdmin: true,
-      isSuperAdmin: true,
+      isSuperAdmin: false, // 明示的にfalseに設定
       tenantId: corporateAccessState.tenantId || `virtual-tenant-${Date.now()}`,
       userRole: 'admin',
       error: null,

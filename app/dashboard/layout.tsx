@@ -75,7 +75,7 @@ const personalSidebarItems: SidebarItem[] = [
 const corporateSidebarItems = [
   {
     title: '法人ダッシュボード',
-    href: '/dashboard/corporate',
+    href: '/dashboard/corporate/onboarding',
     icon: <HiOfficeBuilding className="h-5 w-5" />,
   },
   {
@@ -207,8 +207,8 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
             if (profileData.user.subscriptionStatus === 'permanent') {
               updateCorporateAccessState({
                 hasAccess: true,
-                isAdmin: true,
-                isSuperAdmin: true,
+                isAdmin: true, // 法人の管理者権限はtrue
+                isSuperAdmin: false, // システム管理者はfalse
                 tenantId: `virtual-tenant-${profileData.user.id}`,
                 userRole: 'admin',
                 error: null,
@@ -216,9 +216,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
               });
               // 強制再レンダリング
               forceUpdate((prev) => prev + 1);
-              // APIチェックを実行せずに関数を終了
-              setIsLoading(false);
-              return;
             }
           }
         }
@@ -260,9 +257,8 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   // サイドバー項目の決定
   let sidebarItems: SidebarItem[] = [...personalSidebarItems];
 
-  // 管理者かどうかを判定（例：メールアドレスで判定）
-  const isAdmin =
-    session?.user?.email === 'admin@sns-share.com' || corporateAccessState.isSuperAdmin === true;
+  // 管理者かどうかを判定
+  const isAdmin = corporateAccessState.isSuperAdmin === true;
 
   // 永久利用権ユーザーかどうかをチェック
   const isPermanentUser = (() => {
@@ -291,7 +287,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   ) {
     sidebarItems = [...corporateProfileSidebarItems];
 
-    // 管理者の場合は管理者メニューも追加
+    // ★★★ここを修正：システム管理者の場合のみ管理者メニューを追加★★★
     if (isAdmin) {
       sidebarItems = [
         ...sidebarItems,
@@ -306,6 +302,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       ];
     }
   }
+
   // 法人ダッシュボードにいる場合
   else if (
     pathname &&
@@ -314,11 +311,10 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   ) {
     sidebarItems = [...corporateSidebarItems];
 
-    // 管理者の場合は管理者メニューも追加
+    // ★★★ここを修正：システム管理者の場合のみ管理者メニューを追加★★★
     if (isAdmin) {
       sidebarItems = [
         ...sidebarItems,
-        // 区切り線
         {
           title: '管理者機能',
           href: '#',
@@ -329,6 +325,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       ];
     }
   }
+
   // 個人ダッシュボードにいる場合
   else {
     // 法人ユーザーまたは永久利用権ユーザーの場合は法人メニューを追加
@@ -359,11 +356,10 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       ];
     }
 
-    // 管理者の場合は管理者メニューも追加
+    // ★★★ここを修正：システム管理者の場合のみ管理者メニューを追加★★★
     if (isAdmin) {
       sidebarItems = [
         ...sidebarItems,
-        // 区切り線（既に区切り線がある場合は追加しない）
         ...(sidebarItems.some((item) => item.isDivider)
           ? []
           : [
