@@ -13,9 +13,6 @@ export async function GET(request: Request) {
     `[API:corporate/access] API呼び出し開始 (t=${url.searchParams.get('t')}, mobile=${isMobile})`,
   );
 
-  // 定数に変更 (lintエラー修正)
-  const prismaConnected = false;
-
   try {
     // セッションチェック
     const session = await auth();
@@ -151,9 +148,11 @@ export async function GET(request: Request) {
       { status: 500 },
     );
   } finally {
-    // 確実に接続を閉じる
-    if (prismaConnected) {
+    // Prismaに接続していたらクリーンアップ
+    try {
       await disconnectPrisma();
+    } catch (cleanupError) {
+      console.error('[API:corporate/access] クリーンアップエラー:', cleanupError);
     }
   }
 }
