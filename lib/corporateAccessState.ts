@@ -16,6 +16,7 @@ declare global {
 export interface CorporateAccessState {
   hasAccess: boolean | null;
   isAdmin: boolean;
+  isSuperAdmin: boolean; // 追加: スーパー管理者フラグ
   tenantId?: string | null;
   lastChecked: number;
   userRole?: string | null;
@@ -32,6 +33,7 @@ function logDebug(action: string, data: unknown) {
 export const corporateAccessState: CorporateAccessState = {
   hasAccess: null,
   isAdmin: false,
+  isSuperAdmin: false, // 追加
   tenantId: null,
   lastChecked: 0,
   userRole: null,
@@ -92,16 +94,16 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
 // APIチェック関数
 export const checkCorporateAccess = async (force = false) => {
   const now = Date.now();
-  
+
   // モバイル環境検出（より確実に）
   const isMobile =
-    typeof navigator !== 'undefined' && 
-    (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) || 
-     (typeof window !== 'undefined' && window.innerWidth < 768));
-  
+    typeof navigator !== 'undefined' &&
+    (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent) ||
+      (typeof window !== 'undefined' && window.innerWidth < 768));
+
   // キャッシュの最適化
   const CACHE_DURATION = isMobile ? 15 * 1000 : 30 * 1000; // モバイルはより短く
-  
+
   // キャッシュ利用判定を厳格化
   if (
     !force &&
@@ -117,135 +119,148 @@ export const checkCorporateAccess = async (force = false) => {
     });
     return { ...corporateAccessState }; // 必ず新しいオブジェクトを返す
   }
-  
+
   // 一時的な状態として「チェック中」をマーク
   updateCorporateAccessState({
-    lastChecked: now
+    lastChecked: now,
   });
-  
+
   try {
     logDebug('APIリクエスト開始', { timestamp: now, isMobile, force });
-    
+
     // APIリクエストの堅牢化
-    const response = await fetch(`/api/corporate/access?t=${now}&mobile=${isMobile ? 1 : 0}&force=${force ? 1 : 0}`, {
-      headers: {
-        'Cache-Control': 'no-cache, no-store, must-revalidate',
-        Pragma: 'no-cache',
-        Expires: '0',
-        'Accept': 'application/json'
+    const response = await fetch(
+      `/api/corporate/access?t=${now}&mobile=${isMobile ? 1 : 0}&force=${force ? 1 : 0}`,
+      {
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+          Accept: 'application/json',
+        },
+        credentials: 'include',
+        // タイムアウト処理のため、自前で AbortController を使用
+        signal: AbortSignal.timeout(10000), // 10秒タイムアウト
       },
-      credentials: 'include',
-      // タイムアウト処理のため、自前で AbortController を使用
-      signal: AbortSignal.timeout(10000) // 10秒タイムアウト
-    });
-    
+    );
+
     logDebug('APIレスポンス受信', {
       status: response.status,
       ok: response.ok,
-      statusText: response.statusText
+      statusText: response.statusText,
     });
-    
+
     if (response.status === 403) {
       const errorData = await response.json().catch(() => ({}));
-      
+
       logDebug('アクセス拒否', {
         status: 403,
-        errorData
+        errorData,
       });
-      
+
       updateCorporateAccessState({
         hasAccess: false,
         isAdmin: false,
+        isSuperAdmin: false, // ここに追加: アクセス拒否の場合は管理者権限も無効
         tenantId: null,
         userRole: null,
         error: errorData.error || '法人プランへのアクセス権がありません',
-        lastChecked: now
+        lastChecked: now,
       });
-      
     } else if (response.ok) {
       const data = await response.json().catch(() => null);
-      
+
       if (!data) {
         throw new Error('APIレスポンスの解析に失敗しました');
       }
-      
+
       logDebug('APIレスポンス解析成功', data);
-      
+
       // テナントID決定ロジックの堅牢化
       let finalTenantId = null;
-      
+
       if (data.tenantId && typeof data.tenantId === 'string') {
         finalTenantId = data.tenantId;
       } else if (data.tenant && data.tenant.id) {
         finalTenantId = data.tenant.id;
       }
-      
+
       // APIからのアクセス権情報が明示的にfalseの場合のみfalse
-      const accessResult = data.hasAccess === false ? false : 
-                          (data.hasAccess === true ? true : null);
-      
+      const accessResult = data.hasAccess === false ? false : data.hasAccess === true ? true : null;
+
+      // スーパー管理者の確認（APIから追加）
+      // ここで管理者チェックを追加
+      const isSuperAdmin = data.isSuperAdmin === true;
+
       // テナントIDがない場合のフォールバック
       if (accessResult === true && (!finalTenantId || finalTenantId.length === 0)) {
         // フォールバックの強化
         finalTenantId = isMobile ? 'mobile-fallback-tenant-id' : 'fallback-tenant-id';
-        logDebug('テナントID取得不可、フォールバック使用', { 
-          originalData: data, 
-          fallbackId: finalTenantId 
+        logDebug('テナントID取得不可、フォールバック使用', {
+          originalData: data,
+          fallbackId: finalTenantId,
         });
       }
-      
-      // 状態更新
+
+      // 状態更新（isSuperAdminを追加）
       updateCorporateAccessState({
         hasAccess: accessResult,
         isAdmin: data.isAdmin === true,
+        isSuperAdmin: isSuperAdmin, // ここに追加: スーパー管理者フラグを更新
         tenantId: finalTenantId,
         userRole: data.userRole || data.role || null,
         error: null,
-        lastChecked: now
+        lastChecked: now,
       });
-      
     } else {
       // サーバーエラー
       logDebug('APIサーバーエラー', {
         status: response.status,
-        statusText: response.statusText
+        statusText: response.statusText,
       });
-      
+
       // エラー時もテナントIDをキープ（存在する場合）
       const keepTenantId = corporateAccessState.tenantId || null;
-      
+
       updateCorporateAccessState({
         // hasAccessは変更しない（nullのまま）
         // ただしAPIエラーなので、信頼性が低い状態としてnullをセット
         hasAccess: null,
+        // 管理者状態もリセット
+        isSuperAdmin: false, // ここに追加: エラー時は管理者権限をリセット
         error: `サーバーエラー (${response.status}): APIからの応答に問題があります`,
         tenantId: keepTenantId,
-        lastChecked: now
+        lastChecked: now,
       });
     }
-    
+
     return { ...corporateAccessState };
-    
   } catch (error) {
     logDebug('API例外発生', {
       error: error instanceof Error ? error.message : String(error),
-      stack: error instanceof Error ? error.stack : undefined
+      stack: error instanceof Error ? error.stack : undefined,
     });
-    
+
     // ネットワークエラーでも既存のテナントIDを保持
     const keepTenantId = corporateAccessState.tenantId || null;
-    
+
     updateCorporateAccessState({
       // 接続エラーでも既存の状態をすぐには無効化しない
-      hasAccess: null,  // nullは「不明」を意味する
+      hasAccess: null, // nullは「不明」を意味する
+      isSuperAdmin: false, // ここに追加: エラー時は管理者権限をリセット
       error: error instanceof Error ? error.message : 'APIリクエスト中にエラーが発生しました',
       tenantId: keepTenantId,
-      lastChecked: now
+      lastChecked: now,
     });
-    
+
     return { ...corporateAccessState };
   }
 };
+
+// スーパー管理者かどうかを確認する関数を追加
+export function isUserSuperAdmin(): boolean {
+  return corporateAccessState.isSuperAdmin === true;
+}
 
 // ユーザーが法人管理者かどうかを確認
 export function isUserCorporateAdmin(): boolean {

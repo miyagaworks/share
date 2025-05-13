@@ -17,8 +17,14 @@ import {
   HiUsers,
   HiTemplate,
   HiCog,
+  HiShieldCheck, // 管理者アイコン追加
+  HiKey, // 権限管理アイコン追加
 } from 'react-icons/hi';
-import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
+import {
+  corporateAccessState,
+  checkCorporateAccess,
+  isUserSuperAdmin,
+} from '@/lib/corporateAccessState';
 
 // 個人用サイドバー項目
 const personalSidebarItems = [
@@ -132,6 +138,25 @@ const corporateProfileSidebarItems = [
   },
 ];
 
+// 管理者メニュー項目を追加
+const adminSidebarItems = [
+  {
+    title: '管理者ダッシュボード',
+    href: '/dashboard/admin',
+    icon: <HiShieldCheck className="h-5 w-5" />, // HiShieldCheckをインポートに追加
+  },
+  {
+    title: 'ユーザー管理',
+    href: '/dashboard/admin/users',
+    icon: <HiUsers className="h-5 w-5" />,
+  },
+  {
+    title: '権限管理',
+    href: '/dashboard/admin/permissions',
+    icon: <HiKey className="h-5 w-5" />, // HiKeyをインポートに追加
+  },
+];
+
 interface DashboardLayoutWrapperProps {
   children: ReactNode;
 }
@@ -142,6 +167,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [, forceUpdate] = useState(0); // 強制再レンダリング用
+  const [isAdminChecked, setIsAdminChecked] = useState(false); // 管理者チェック状態
 
   // 法人アカウントかどうかをチェック
   useEffect(() => {
@@ -156,6 +182,28 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       try {
         // 法人アクセス権をチェック
         await checkCorporateAccess();
+
+        // 追加: 管理者権限チェック
+        if (!isAdminChecked) {
+          try {
+            const response = await fetch('/api/admin/access');
+            if (response.ok) {
+              const data = await response.json();
+
+              // 管理者フラグを更新
+              if (data.isSuperAdmin) {
+                // corporateAccessStateを直接更新
+                corporateAccessState.isSuperAdmin = true;
+                // 状態が更新されたため再レンダリング
+                forceUpdate((prev) => prev + 1);
+              }
+            }
+          } catch (error) {
+            console.error('管理者権限チェックエラー:', error);
+          } finally {
+            setIsAdminChecked(true);
+          }
+        }
       } catch (error) {
         console.error('法人アクセスチェックエラー:', error);
       } finally {
@@ -177,7 +225,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     return () => {
       window.removeEventListener('corporateAccessChanged', handleAccessChange);
     };
-  }, [session, status, router]);
+  }, [session, status, router, isAdminChecked]);
 
   // ユーザーが認証されているが、まだ法人アカウント状態をチェック中
   if (status !== 'loading' && session && isLoading) {
@@ -190,6 +238,10 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
   // サイドバー項目の決定
   let sidebarItems = [...personalSidebarItems];
+
+  // 管理者メニューの表示条件をチェック
+  const isAdminRoute = pathname && pathname.startsWith('/dashboard/admin');
+  const isSuperAdmin = isUserSuperAdmin(); // helper関数を使用
 
   // 法人プロファイルページにいる場合
   if (
@@ -207,8 +259,26 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   ) {
     sidebarItems = [...corporateSidebarItems];
   }
-  // 個人ダッシュボードにいる場合で法人ユーザーの場合は「法人ダッシュボード」を通常メニューには含めない
-  // 区切り線と共に別途表示するため、ここでは追加しない
+  // 管理者ページにいる場合
+  else if (isAdminRoute && isSuperAdmin) {
+    sidebarItems = [...adminSidebarItems];
+  }
+  // 個人ダッシュボードにいる場合
+  else {
+    // 管理者権限がある場合は管理者メニューを追加
+    if (isSuperAdmin) {
+      // 区切り線のためのダミー項目
+      const dividerItem = {
+        title: '管理者メニュー',
+        href: '#',
+        icon: <div className="w-5 h-5"></div>,
+        isDivider: true,
+      };
+
+      // 個人メニュー + 区切り線 + 管理者メニュー
+      sidebarItems = [...personalSidebarItems, dividerItem, ...adminSidebarItems];
+    }
+  }
 
   return <DashboardLayout items={sidebarItems}>{children}</DashboardLayout>;
 }
