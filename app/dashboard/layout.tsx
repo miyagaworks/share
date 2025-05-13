@@ -20,7 +20,11 @@ import {
   HiShieldCheck,
   HiKey,
 } from 'react-icons/hi';
-import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
+import {
+  corporateAccessState,
+  checkCorporateAccess,
+  updateCorporateAccessState,
+} from '@/lib/corporateAccessState';
 
 interface SidebarItem {
   title: string;
@@ -158,6 +162,11 @@ const adminSidebarItems: SidebarItem[] = [
     icon: <HiUsers className="h-5 w-5" />,
   },
   {
+    title: 'サブスクリプション管理',
+    href: '/dashboard/admin/subscriptions',
+    icon: <HiCreditCard className="h-5 w-5" />,
+  },
+  {
     title: '権限管理',
     href: '/dashboard/admin/permissions',
     icon: <HiKey className="h-5 w-5" />,
@@ -196,8 +205,15 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
             // 永久利用権ユーザーは法人アクセス権を持つ
             if (profileData.user.subscriptionStatus === 'permanent') {
-              corporateAccessState.hasAccess = true;
-              corporateAccessState.isAdmin = true;
+              updateCorporateAccessState({
+                hasAccess: true,
+                isAdmin: true,
+                isSuperAdmin: true,
+                tenantId: `virtual-tenant-${profileData.user.id}`,
+                userRole: 'admin',
+                error: null,
+                lastChecked: Date.now(),
+              });
               // 強制再レンダリング
               forceUpdate((prev) => prev + 1);
             }
@@ -206,9 +222,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
         // 法人アクセス権をチェック
         await checkCorporateAccess();
-
-        // この行は削除
-        // setIsAdminChecked(true);
       } catch (error) {
         console.error('法人アクセスチェックエラー:', error);
       } finally {
@@ -245,7 +258,8 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   let sidebarItems: SidebarItem[] = [...personalSidebarItems];
 
   // 管理者かどうかを判定（例：メールアドレスで判定）
-  const isAdmin = session?.user?.email === 'admin@sns-share.com';
+  const isAdmin =
+    session?.user?.email === 'admin@sns-share.com' || corporateAccessState.isSuperAdmin === true;
 
   // 永久利用権ユーザーかどうかをチェック
   const isPermanentUser = (() => {
@@ -264,7 +278,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   // 管理者ページにいる場合
   if (pathname && pathname.startsWith('/dashboard/admin') && isAdmin) {
     // 管理者ページの場合は管理者メニューのみを表示
-    sidebarItems = [...adminSidebarItems]; // ここで adminSidebarItems を使用
+    sidebarItems = [...adminSidebarItems];
   }
   // 法人プロファイルページにいる場合
   else if (
@@ -361,6 +375,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       ];
     }
   }
-  
+
   return <DashboardLayout items={sidebarItems}>{children}</DashboardLayout>;
 }
