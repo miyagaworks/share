@@ -8,9 +8,29 @@ import { z } from 'zod';
 import { SNS_PLATFORMS } from '@/types/sns';
 import type { CorporateSnsLink } from '@prisma/client';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
+import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccessState';
 
 // 法人共通SNSリンクの取得
 export async function GET() {
+  // 永久利用権ユーザーかどうかチェック
+  const isPermanent = checkPermanentAccess();
+  if (isPermanent) {
+    // 仮想テナントデータからSNSリンク情報を返す
+    const virtualData = getVirtualTenantData();
+    if (!virtualData) {
+      return NextResponse.json(
+        { error: '仮想テナントデータの取得に失敗しました' },
+        { status: 500 },
+      );
+    }
+
+    return NextResponse.json({
+      success: true,
+      snsLinks: virtualData.snsLinks,
+      isAdmin: true,
+    });
+  }
+
   try {
     const session = await auth();
 

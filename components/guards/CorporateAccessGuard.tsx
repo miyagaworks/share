@@ -7,7 +7,11 @@ import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { HiOutlineExclamation } from 'react-icons/hi';
-import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
+import {
+  corporateAccessState,
+  checkCorporateAccess,
+  checkPermanentAccess,
+} from '@/lib/corporateAccessState';
 
 interface CorporateAccessGuardProps {
   children: ReactNode;
@@ -64,7 +68,18 @@ export function CorporateAccessGuard({ children, debugMode = false }: CorporateA
       try {
         console.log('[CorporateAccessGuard] 法人アクセス権チェック開始');
 
-        // 最初のロードでは常に強制チェック
+        // 永久利用権ユーザーのチェックを最初に行う
+        const isPermanent = checkPermanentAccess();
+
+        if (isPermanent) {
+          console.log('[CorporateAccessGuard] 永久利用権ユーザーを検出');
+          setError(null);
+          setErrorDetails(null);
+          setIsLoading(false);
+          return;
+        }
+
+        // 通常の法人アクセス権チェック
         const result = await checkCorporateAccess(true);
 
         console.log('[CorporateAccessGuard] 法人アクセス権を設定:', {
@@ -129,6 +144,7 @@ export function CorporateAccessGuard({ children, debugMode = false }: CorporateA
     }
   }, [debugMode, forceEnableAccess]);
 
+  // 永久利用権ユーザーの場合はアクセスを許可する条件を追加
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -137,8 +153,21 @@ export function CorporateAccessGuard({ children, debugMode = false }: CorporateA
     );
   }
 
-  // アクセス拒否画面の条件を変更
-  if (!bypassEnabled && corporateAccessState.hasAccess !== true && !debugMode) {
+  const isPermanentUser = (() => {
+    try {
+      const userDataStr = sessionStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        return userData.subscriptionStatus === 'permanent';
+      }
+    } catch (e) {
+      console.error('永久利用権チェックエラー:', e);
+    }
+    return false;
+  })();
+
+  // アクセス拒否画面の表示条件を修正
+  if (!bypassEnabled && !isPermanentUser && corporateAccessState.hasAccess !== true && !debugMode) {
     console.log('[CorporateAccessGuard] アクセス拒否画面表示、エラー:', error);
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">

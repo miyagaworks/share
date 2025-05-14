@@ -1,5 +1,6 @@
 // lib/corporateAccessState.ts
 import { logger } from '@/lib/utils/logger';
+
 declare global {
   interface Window {
     _corporateAccessState?: CorporateAccessState;
@@ -520,4 +521,76 @@ if (typeof document !== 'undefined') {
     corporateAccessState.hasAccess === true,
     corporateAccessState.userRole !== undefined ? corporateAccessState.userRole : null,
   );
+}
+
+// 仮想テナントデータの型定義
+export interface VirtualTenantData {
+  id: string;
+  name: string;
+  users: Array<{
+    id: string;
+    role: string;
+    name?: string | null;
+  }>;
+  departments: Array<{
+    id: string;
+    name: string;
+    description: string | null;
+  }>;
+  snsLinks: Array<{
+    id: string;
+    platform: string;
+    url: string;
+    username: string | null;
+    displayOrder: number;
+    isRequired: boolean;
+  }>;
+  settings: {
+    primaryColor: string;
+    secondaryColor: string;
+    logoUrl: string | null;
+  };
+}
+
+// 永久利用権ユーザー用の仮想テナントデータを生成
+export function generateVirtualTenantData(userId: string, userName?: string | null): VirtualTenantData {
+  return {
+    id: `virtual-tenant-${userId}`,
+    name: "仮想法人環境",
+    users: [{ id: userId, role: 'admin', name: userName || '仮想ユーザー' }],
+    departments: [{ id: 'default-dept', name: '全社', description: 'デフォルト部署' }],
+    snsLinks: [
+      { id: 'vs-1', platform: 'line', url: 'https://line.me/ti/p/~', username: null, displayOrder: 1, isRequired: true },
+      { id: 'vs-2', platform: 'instagram', url: 'https://www.instagram.com/', username: null, displayOrder: 2, isRequired: true },
+      { id: 'vs-3', platform: 'youtube', url: 'https://www.youtube.com/c/', username: null, displayOrder: 3, isRequired: false }
+    ],
+    settings: {
+      primaryColor: '#3B82F6',
+      secondaryColor: '#60A5FA',
+      logoUrl: null
+    }
+  };
+}
+
+// グローバルな仮想テナントデータを保持する変数
+let virtualTenantData: VirtualTenantData | null = null;
+
+// 仮想テナントデータを取得する関数
+export function getVirtualTenantData(): VirtualTenantData | null {
+  // まだ生成されていない場合は、セッションストレージから永久利用権ユーザーの情報を取得して生成
+  if (!virtualTenantData && typeof window !== 'undefined') {
+    try {
+      const userDataStr = sessionStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        if (userData.subscriptionStatus === 'permanent') {
+          virtualTenantData = generateVirtualTenantData(userData.id, userData.name);
+        }
+      }
+    } catch (e) {
+      console.error('仮想テナント生成エラー:', e);
+    }
+  }
+  
+  return virtualTenantData;
 }
