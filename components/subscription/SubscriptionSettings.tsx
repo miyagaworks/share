@@ -120,12 +120,31 @@ export default function SubscriptionSettings() {
       });
 
       // レスポンスの処理
+      const data = await response.json();
+
       if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'プランの作成に失敗しました');
+        // エラーのハンドリングを改善
+        const errorCode = data.code || '';
+        const declineCode = data.decline_code || '';
+
+        let errorMessage = data.error || 'プランの作成に失敗しました';
+
+        // より具体的なエラーメッセージの設定
+        if (errorCode === 'card_declined') {
+          if (declineCode === 'insufficient_funds') {
+            errorMessage = 'カードの残高が不足しています。別のカードでお試しください。';
+          } else if (declineCode === 'expired_card') {
+            errorMessage = 'カードの有効期限が切れています。別のカードでお試しください。';
+          } else if (declineCode === 'incorrect_cvc') {
+            errorMessage = 'カードのセキュリティコードが正しくありません。確認してお試しください。';
+          } else {
+            errorMessage = 'カードが拒否されました。別のカードでお試しください。';
+          }
+        }
+
+        throw new Error(errorMessage);
       }
 
-      const data = await response.json();
       console.log('API response:', data);
 
       // 成功メッセージを表示

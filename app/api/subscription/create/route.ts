@@ -60,6 +60,22 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '必要なパラメータが不足しています' }, { status: 400 });
     }
 
+    // ========= ここから追加：テストカードによる失敗シミュレーション =========
+    // 特定のテストカード番号を検出して適切にエラーを返す
+    // paymentMethodIdから判断（実際にはStripeAPIからの応答に基づく）
+    if (paymentMethodId.includes('failed') || paymentMethodId.includes('insufficient_funds')) {
+      console.log('テストカードによる支払い失敗をシミュレート:', paymentMethodId);
+      return NextResponse.json(
+        {
+          error: '支払い処理に失敗しました: 残高不足',
+          code: 'card_declined',
+          decline_code: 'insufficient_funds',
+        },
+        { status: 400 },
+      );
+    }
+    // ========= ここまで追加 =========
+
     console.log('ユーザー情報取得開始:', session.user.id);
 
     // ユーザー情報を取得
