@@ -29,6 +29,7 @@ export async function GET(request: Request) {
         where: { id: userId },
         select: {
           id: true,
+          email: true, // 管理者メールアドレスチェック用に追加
           subscriptionStatus: true,
           adminOfTenant: {
             select: {
@@ -61,7 +62,26 @@ export async function GET(request: Request) {
         );
       }
 
-      // 永久利用権ユーザーの場合、即時アクセス権を付与
+      // 管理者メールアドレスリスト
+      const ADMIN_EMAILS = ['admin@sns-share.com'];
+      const isAdminEmail = ADMIN_EMAILS.includes(user.email.toLowerCase());
+
+      // 管理者メールアドレスの場合はスーパー管理者権限を付与
+      if (isAdminEmail) {
+        console.log(
+          `[API:corporate/access] 管理者メールユーザーにスーパー管理者権限を付与 (userId=${userId})`,
+        );
+        return NextResponse.json({
+          hasAccess: true,
+          isAdmin: true,
+          isSuperAdmin: true, // 明示的にスーパー管理者として設定
+          tenantId: user.adminOfTenant?.id || `admin-tenant-${userId}`,
+          userRole: 'admin',
+          error: null,
+        });
+      }
+
+      // 永久利用権ユーザーの場合、即時アクセス権を付与（管理者権限なし）
       if (user.subscriptionStatus === 'permanent') {
         console.log(`[API:corporate/access] 永久利用権ユーザーにアクセス権付与 (userId=${userId})`);
         return NextResponse.json({
@@ -100,9 +120,6 @@ export async function GET(request: Request) {
       const isAdmin = !!user.adminOfTenant;
       const userRole = isAdmin ? 'admin' : 'member';
 
-      // スーパー管理者チェック - 管理者メールアドレスのみをスーパー管理者とする
-      const isSuperAdmin = session.user.email === 'admin@sns-share.com';
-
       // メモリ使用量ログ（開発環境のみ）
       if (process.env.NODE_ENV === 'development') {
         const memoryUsage = process.memoryUsage();
@@ -115,7 +132,7 @@ export async function GET(request: Request) {
       return NextResponse.json({
         hasAccess,
         isAdmin,
-        isSuperAdmin, // スーパー管理者状態を追加
+        isSuperAdmin: isAdminEmail, // 管理者メールアドレスのみスーパー管理者
         tenantId,
         userRole,
         error: !hasAccess
