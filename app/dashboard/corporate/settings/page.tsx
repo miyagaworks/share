@@ -121,7 +121,7 @@ export default function CorporateSettingsPage() {
           // 模擬テナントデータを作成
           const defaultTenant = {
             id: 'temp-id',
-            name: settingsData.settings.name || 'デモ会社',
+            name: settingsData.settings.name || '会社社名を変更ください...',
             maxUsers: 10,
             createdAt: new Date().toISOString(),
             logoUrl: null,

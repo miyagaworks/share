@@ -4,9 +4,38 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccessState';
 
 // 部署詳細取得（GET）
 export async function GET(req: Request, { params }: { params: { id: string } }) {
+  // 永久利用権ユーザーかどうかチェック
+  const isPermanent = checkPermanentAccess();
+  if (isPermanent) {
+    // 仮想テナントデータから部署情報を返す
+    const virtualData = getVirtualTenantData();
+    if (!virtualData) {
+      return NextResponse.json(
+        { error: '仮想テナントデータの取得に失敗しました' },
+        { status: 500 },
+      );
+    }
+
+    // 部署IDに一致する部署を仮想データから検索
+    const department = virtualData.departments.find((dept) => dept.id === params.id);
+    if (!department) {
+      return NextResponse.json({ error: '部署が見つかりません' }, { status: 404 });
+    }
+
+    // 仮想部署データを返す
+    return NextResponse.json({
+      success: true,
+      department: {
+        ...department,
+        users: virtualData.users,
+      },
+    });
+  }
+
   try {
     const session = await auth();
 

@@ -39,6 +39,7 @@ export async function POST(request: Request) {
       include: {
         tenant: true,
         adminOfTenant: true,
+        subscription: true, // サブスクリプション情報も取得
       },
     });
 
@@ -69,7 +70,7 @@ export async function POST(request: Request) {
         tenant = await tx.corporateTenant.create({
           data: {
             name: `${user.name || 'ユーザー'}の法人`,
-            maxUsers: 10,
+            maxUsers: 50, // ここを10から50に変更（business_plusの上限値）
             primaryColor: '#3B82F6',
             secondaryColor: '#60A5FA',
             admin: { connect: { id: userId } },
@@ -99,6 +100,34 @@ export async function POST(request: Request) {
       if (!tenant) {
         logger.error('テナント作成失敗', { userId });
         return { user: updatedUser, tenant: null };
+      }
+
+      // サブスクリプション情報を更新（存在する場合）
+      if (user.subscription) {
+        await tx.subscription.update({
+          where: { userId },
+          data: {
+            plan: 'business_plus', // プランをbusiness_plusに変更
+          },
+        });
+      } else {
+        // サブスクリプション情報がない場合は新規作成
+        const now = new Date();
+        const endDate = new Date();
+        endDate.setFullYear(endDate.getFullYear() + 100); // 100年後（実質永久）
+
+        await tx.subscription.create({
+          data: {
+            userId,
+            status: 'active',
+            plan: 'business_plus',
+            priceId: 'price_permanent',
+            subscriptionId: `permanent_${userId}`,
+            currentPeriodStart: now,
+            currentPeriodEnd: endDate,
+            cancelAtPeriodEnd: false,
+          },
+        });
       }
 
       // 3. デフォルトのSNSリンク設定を作成（まだ存在しない場合）
@@ -158,4 +187,4 @@ export async function POST(request: Request) {
   } finally {
     await disconnectPrisma();
   }
-  }
+}

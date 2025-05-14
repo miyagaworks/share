@@ -550,41 +550,114 @@ export interface VirtualTenantData {
     secondaryColor: string;
     logoUrl: string | null;
   };
+  plan?: string; // オプショナルのplanプロパティを追加
 }
 
 // 永久利用権ユーザー用の仮想テナントデータを生成
-export function generateVirtualTenantData(userId: string, userName?: string | null): VirtualTenantData {
+export function generateVirtualTenantData(
+  userId: string,
+  userName?: string | null,
+): VirtualTenantData {
   return {
     id: `virtual-tenant-${userId}`,
-    name: "仮想法人環境",
+    name: '仮想法人環境',
     users: [{ id: userId, role: 'admin', name: userName || '仮想ユーザー' }],
     departments: [{ id: 'default-dept', name: '全社', description: 'デフォルト部署' }],
     snsLinks: [
-      { id: 'vs-1', platform: 'line', url: 'https://line.me/ti/p/~', username: null, displayOrder: 1, isRequired: true },
-      { id: 'vs-2', platform: 'instagram', url: 'https://www.instagram.com/', username: null, displayOrder: 2, isRequired: true },
-      { id: 'vs-3', platform: 'youtube', url: 'https://www.youtube.com/c/', username: null, displayOrder: 3, isRequired: false }
+      {
+        id: 'vs-1',
+        platform: 'line',
+        url: 'https://line.me/ti/p/~',
+        username: null,
+        displayOrder: 1,
+        isRequired: true,
+      },
+      {
+        id: 'vs-2',
+        platform: 'instagram',
+        url: 'https://www.instagram.com/',
+        username: null,
+        displayOrder: 2,
+        isRequired: true,
+      },
+      {
+        id: 'vs-3',
+        platform: 'youtube',
+        url: 'https://www.youtube.com/c/',
+        username: null,
+        displayOrder: 3,
+        isRequired: false,
+      },
     ],
     settings: {
       primaryColor: '#3B82F6',
       secondaryColor: '#60A5FA',
-      logoUrl: null
-    }
+      logoUrl: null,
+    },
+    // plan フィールドを追加
+    plan: 'business_plus', // ここをbusiness_plusに設定
   };
 }
 
 // グローバルな仮想テナントデータを保持する変数
 let virtualTenantData: VirtualTenantData | null = null;
 
-// 仮想テナントデータを取得する関数
+// 仮想テナントデータの更新と永続化
+export function updateVirtualTenantData(
+  updater: (data: VirtualTenantData) => VirtualTenantData
+): VirtualTenantData | null {
+  const currentData = getVirtualTenantData();
+  if (!currentData) return null;
+  
+  // 更新関数を適用して新しいデータを生成
+  const updatedData = updater(currentData);
+  
+  // グローバル変数を更新
+  virtualTenantData = updatedData;
+  
+  // LocalStorageに保存（ページリロード間で保持するため）
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('virtualTenantData', JSON.stringify(updatedData));
+    } catch (e) {
+      console.error('仮想テナントデータの保存エラー:', e);
+    }
+  }
+  
+  return updatedData;
+}
+
+// getVirtualTenantData 関数を修正し、LocalStorage からの復元ロジックを追加
 export function getVirtualTenantData(): VirtualTenantData | null {
-  // まだ生成されていない場合は、セッションストレージから永久利用権ユーザーの情報を取得して生成
-  if (!virtualTenantData && typeof window !== 'undefined') {
+  // すでにメモリ上にデータがある場合はそれを返す
+  if (virtualTenantData) {
+    return virtualTenantData;
+  }
+  
+  // LocalStorageから復元を試みる
+  if (typeof window !== 'undefined') {
+    try {
+      const savedData = localStorage.getItem('virtualTenantData');
+      if (savedData) {
+        virtualTenantData = JSON.parse(savedData);
+        return virtualTenantData;
+      }
+    } catch (e) {
+      console.error('仮想テナントデータの復元エラー:', e);
+    }
+  }
+  
+  // データがない場合は新規作成を試みる
+  if (typeof window !== 'undefined') {
     try {
       const userDataStr = sessionStorage.getItem('userData');
       if (userDataStr) {
         const userData = JSON.parse(userDataStr);
         if (userData.subscriptionStatus === 'permanent') {
           virtualTenantData = generateVirtualTenantData(userData.id, userData.name);
+          // 新しく生成したデータをLocalStorageに保存
+          localStorage.setItem('virtualTenantData', JSON.stringify(virtualTenantData));
+          return virtualTenantData;
         }
       }
     } catch (e) {
@@ -592,5 +665,5 @@ export function getVirtualTenantData(): VirtualTenantData | null {
     }
   }
   
-  return virtualTenantData;
+  return null;
 }
