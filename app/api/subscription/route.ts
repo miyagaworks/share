@@ -18,8 +18,24 @@ interface MockSubscription {
   trialEndsAt?: Date | null;
   cancelAtPeriodEnd: boolean;
   isMockData?: boolean;
+  interval?: string; // 追加: 更新間隔（month または year）
 }
 
+// prismaから取得するサブスクリプションに動的プロパティを追加する型
+interface ExtendedSubscription {
+  id: string;
+  userId: string;
+  status: string;
+  plan: string;
+  priceId: string | null;
+  subscriptionId: string | null;
+  currentPeriodStart: Date;
+  currentPeriodEnd: Date;
+  cancelAtPeriodEnd: boolean;
+  canceledAt: Date | null;
+  cancelReason: string | null;
+  [key: string]: unknown;
+}
 // 請求履歴の型定義（使用するため残します）
 interface BillingRecord {
   id: string;
@@ -71,6 +87,19 @@ export async function GET() {
     // 永久利用権ユーザーの場合
     const isPermanentUser = user?.subscriptionStatus === 'permanent';
 
+    // ご利用プラン情報が存在する場合、必要なプラン情報を追加
+    if (userSubscription) {
+      // データベースから取得したサブスクリプションを拡張した型として扱う
+      const extendedSubscription = userSubscription as ExtendedSubscription;
+
+      // プランの更新間隔を設定
+      // 変換：yearlyプランは年間更新、それ以外は月間更新
+      extendedSubscription.interval = extendedSubscription.plan === 'yearly' ? 'year' : 'month';
+
+      // userSubscriptionに代入
+      userSubscription = extendedSubscription;
+    }
+
     // モックデータ部分を修正
     if (!userSubscription) {
       const now = new Date();
@@ -84,11 +113,12 @@ export async function GET() {
           id: 'permanent-subscription-id',
           userId: session.user.id,
           status: 'active', // 常にアクティブ
-          plan: 'business', // 法人プランとして設定
+          plan: 'permanent', // 永久利用プランとして設定
           priceId: 'price_permanent',
           currentPeriodStart: new Date(),
           currentPeriodEnd: new Date(9999, 11, 31), // 非常に遠い未来
           cancelAtPeriodEnd: false,
+          interval: 'permanent', // 永久プランの場合
         };
 
         console.warn('永久利用権ユーザーのモックデータを使用します:', session.user.id);
@@ -105,6 +135,7 @@ export async function GET() {
           currentPeriodEnd: trialEndsAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
           cancelAtPeriodEnd: false,
           isMockData: true,
+          interval: isTrialActive ? 'trial' : 'month', // トライアルまたはデフォルトの更新間隔
         };
 
         console.warn('WARNING: Using mock subscription data for user:', session.user.id);
@@ -114,7 +145,20 @@ export async function GET() {
 
     // 永久利用権ユーザーなら、サブスクリプションデータも修正
     if (isPermanentUser && userSubscription) {
-      userSubscription.plan = userSubscription.plan || 'business'; // 法人プラン利用可能
+      userSubscription.plan = 'permanent'; // 永久利用プランに設定
+      userSubscription.interval = 'permanent'; // 永久利用には更新間隔なし
+    }
+
+    // トライアル期間の残り日数を計算
+    let trialDaysRemaining = 0;
+    if (user?.trialEndsAt) {
+      const trialEnd = new Date(user.trialEndsAt);
+      const now = new Date();
+      if (trialEnd > now) {
+        trialDaysRemaining = Math.ceil(
+          (trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+        );
+      }
     }
 
     // モックデータをレスポンスとして返す
@@ -125,7 +169,10 @@ export async function GET() {
         // 永久利用権ユーザーであれば明示的にフラグを追加
         isPermanentUser: isPermanentUser,
         // 永久利用権ユーザーの場合は表示用のステータスも設定
-        displayStatus: isPermanentUser ? '永久利用' : undefined,
+        displayStatus: isPermanentUser ? '永久利用可能' : undefined,
+        // トライアル残り日数を追加
+        trialDaysRemaining:
+          user?.trialEndsAt && userSubscription?.status === 'trialing' ? trialDaysRemaining : 0,
       },
       billingHistory: userBillingHistory,
       message: 'ご利用のプラン情報を取得しました',

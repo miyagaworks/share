@@ -146,6 +146,7 @@ model Subscription {
   trialEnd           DateTime?
   canceledAt         DateTime?
   cancelReason       String?
+  interval           String?          // 追加: 'month', 'year', 'permanent'
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   corporateTenant    CorporateTenant?

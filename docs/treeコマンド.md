@@ -23,3 +23,7 @@ rsync -av --progress ./ backup_$(date +%Y%m%d)/ \
   --exclude="pnpm-lock.yaml" \
   --exclude=".next" \
   --exclude=".git"
+
+
+# Prisma クライアントを再生成
+npx prisma generate

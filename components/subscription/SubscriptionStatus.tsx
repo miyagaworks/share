@@ -21,6 +21,8 @@ interface SubscriptionData {
   isPermanentUser?: boolean;
   // 追加: 表示用のステータス
   displayStatus?: string;
+  // 追加: プランの更新間隔
+  interval?: string;
 }
 
 interface SubscriptionStatusProps {
@@ -89,26 +91,52 @@ export default function SubscriptionStatus({
   }, []);
 
   // ご利用プランステータスに基づいた表示情報を取得
-  const getStatusDisplay = (status: string, isPermanent: boolean) => {
+  const getStatusDisplay = (subscription: SubscriptionData | null) => {
+    if (!subscription) return { text: '不明', className: 'bg-gray-100 text-gray-800' };
+
     // 永久利用権ユーザーの場合
-    if (isPermanent) {
+    if (subscription.isPermanentUser) {
       return {
         text: '永久利用',
         className: 'bg-blue-100 text-blue-800',
       };
     }
 
-    switch (status) {
-      case 'trialing':
-        return {
-          text: '無料トライアル中',
-          className: 'bg-blue-100 text-blue-800',
-        };
-      case 'active':
-        return {
-          text: 'アクティブ',
-          className: 'bg-green-100 text-green-800',
-        };
+    // 無料トライアル中
+    if (subscription.status === 'trialing') {
+      return {
+        text: '無料トライアル中',
+        className: 'bg-blue-100 text-blue-800',
+      };
+    }
+
+    // アクティブなプラン
+    if (subscription.status === 'active') {
+      let planType = '';
+
+      // プランの種類を判定
+      if (subscription.plan.includes('business') || subscription.plan === 'business_plus') {
+        // 法人プラン
+        planType = subscription.plan === 'business' ? 'スタータープラン' : 'ビジネスプラン';
+        planType = `法人${planType}`;
+      } else {
+        // 個人プラン
+        planType = subscription.plan === 'monthly' ? '月額プラン' : '年額プラン';
+        planType = `個人${planType}`;
+      }
+
+      // 更新間隔を追加
+      const renewalInfo =
+        subscription.interval === 'year' ? '(1年で自動更新)' : '(1ヶ月で自動更新)';
+
+      return {
+        text: `${planType} ${renewalInfo}`,
+        className: 'bg-green-100 text-green-800',
+      };
+    }
+
+    // その他のケース
+    switch (subscription.status) {
       case 'past_due':
         return {
           text: '支払い遅延中',
@@ -121,7 +149,7 @@ export default function SubscriptionStatus({
         };
       default:
         return {
-          text: '不明',
+          text: subscription.displayStatus || '不明',
           className: 'bg-gray-100 text-gray-800',
         };
     }
@@ -348,6 +376,11 @@ export default function SubscriptionStatus({
     const trialEndDate = userData?.trialEndsAt ? new Date(userData.trialEndsAt) : null;
     const isTrialActive = trialEndDate && now < trialEndDate;
 
+    // トライアル残日数計算
+    const daysRemaining = trialEndDate
+      ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
     return (
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
         <div className="flex items-start">
@@ -356,7 +389,9 @@ export default function SubscriptionStatus({
           </div>
           <div>
             <h3 className="text-lg font-medium">
-              {isTrialActive ? '無料トライアル中' : 'プランが選択されていません'}
+              {isTrialActive
+                ? `無料トライアル中 (残り${daysRemaining}日)`
+                : 'プランが選択されていません'}
             </h3>
             <p className="mt-2 text-sm text-gray-500">
               {isTrialActive
@@ -377,7 +412,7 @@ export default function SubscriptionStatus({
     userData?.subscriptionStatus === 'permanent' || subscription?.isPermanentUser === true;
 
   // ステータス表示情報を取得
-  const statusDisplay = getStatusDisplay(subscription.status, isPermanentUser);
+  const statusDisplay = getStatusDisplay(subscription);
 
   // アクティブなご利用プラン
   return (
@@ -389,7 +424,7 @@ export default function SubscriptionStatus({
       >
         <div className="flex items-start">
           <div className="flex-shrink-0 mr-3">
-            {isPermanentUser ? (
+            {subscription.isPermanentUser ? (
               <div className="bg-blue-100 p-2 rounded-full">
                 <HiCheck className="h-5 w-5 text-blue-600" />
               </div>
