@@ -373,7 +373,9 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       });
     }
 
+    // 3. 管理者メニューを最後に追加（管理者の場合のみ）
     if (isAdmin) {
+      // 管理者機能区切り線を明示的に追加
       sidebarItems.push({
         title: '管理者機能',
         href: '#admin-divider',

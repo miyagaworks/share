@@ -67,7 +67,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
           hasAccess: true,
           isAdmin: true,
-          isSuperAdmin: false, // 明示的に非スーパー管理者
+          isSuperAdmin: false, // 明示的に非スーパー管理者として設定
           tenantId: `virtual-tenant-${userId}`,
           userRole: 'admin',
           error: null,
@@ -100,6 +100,9 @@ export async function GET(request: Request) {
       const isAdmin = !!user.adminOfTenant;
       const userRole = isAdmin ? 'admin' : 'member';
 
+      // スーパー管理者チェック - 管理者メールアドレスのみをスーパー管理者とする
+      const isSuperAdmin = session.user.email === 'admin@sns-share.com';
+
       // メモリ使用量ログ（開発環境のみ）
       if (process.env.NODE_ENV === 'development') {
         const memoryUsage = process.memoryUsage();
@@ -112,6 +115,7 @@ export async function GET(request: Request) {
       return NextResponse.json({
         hasAccess,
         isAdmin,
+        isSuperAdmin, // スーパー管理者状態を追加
         tenantId,
         userRole,
         error: !hasAccess

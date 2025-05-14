@@ -21,9 +21,13 @@ export async function isAdminUser(userId: string | undefined | null): Promise<bo
     // 条件1: メールアドレスが管理者リストに含まれている
     const isAdminEmail = ADMIN_EMAILS.includes(user.email.toLowerCase());
 
-    // 条件2: subscriptionStatus が "admin" または "permanent" に設定されている
-    const hasAdminStatus =
-      user.subscriptionStatus === 'admin' || user.subscriptionStatus === 'permanent';
+    // 条件2: subscriptionStatus が "admin" に設定されている（permanentは除外）
+    const hasAdminStatus = user.subscriptionStatus === 'admin';
+
+    // 永久利用権ユーザーは管理者から除外
+    if (user.subscriptionStatus === 'permanent') {
+      return false;
+    }
 
     // どちらかの条件を満たしていれば管理者
     return isAdminEmail || hasAdminStatus;
