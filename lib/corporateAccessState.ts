@@ -80,6 +80,25 @@ if (typeof window !== 'undefined') {
 
     // 初期化時にローカルストレージから管理者状態を読み込む
     corporateAccessState.isSuperAdmin = loadAdminStatus();
+
+    // 永久利用権ユーザーの場合はisSuperAdminをfalseに上書き
+    const isPermanentUser = (() => {
+      try {
+        const userDataStr = sessionStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          return userData.subscriptionStatus === 'permanent';
+        }
+      } catch (e) {
+        logDebug('永久利用権チェックエラー', e);
+      }
+      return false;
+    })();
+
+    if (isPermanentUser) {
+      corporateAccessState.isSuperAdmin = false;
+      logDebug('永久利用権ユーザーのisSuperAdminをfalseに初期設定', { userId: 'unknown' });
+    }
   } else {
     // 既に存在する場合は、その値をコピー
     Object.assign(corporateAccessState, window[STATE_VAR_NAME]);
@@ -93,39 +112,35 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
   const prevState = { ...corporateAccessState };
   logDebug('状態更新前', prevState);
 
-  // isSuperAdmin を明示的に false に設定しようとしている場合、
-  // 既存の値が true の場合は上書きしないようにする
-  if (newState.isSuperAdmin === false && corporateAccessState.isSuperAdmin === true) {
-    delete newState.isSuperAdmin;
-    logDebug('管理者状態の保持', { keepAdmin: true });
-  }
-
-  // ここに永久利用権ユーザーの処理を追加
-  // 永久利用権ユーザーがisSuperAdminをtrueに設定しようとした場合を制限
-  if (newState.isSuperAdmin === true) {
-    // 永久利用権ユーザーかどうかをチェック
-    const isPermanentUser = (() => {
-      if (typeof window !== 'undefined') {
-        try {
-          const userDataStr = sessionStorage.getItem('userData');
-          if (userDataStr) {
-            const userData = JSON.parse(userDataStr);
-            return userData.subscriptionStatus === 'permanent';
-          }
-        } catch (e) {
-          logDebug('永久利用権チェックエラー', e);
+  // 永久利用権ユーザーかどうかを確認
+  const isPermanentUser = (() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const userDataStr = sessionStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          return userData.subscriptionStatus === 'permanent';
         }
+      } catch (e) {
+        logDebug('永久利用権チェックエラー', e);
       }
-      return false;
-    })();
+    }
+    return false;
+  })();
 
-    if (isPermanentUser) {
-      // 永久利用権ユーザーがisSuperAdminをtrueに設定しようとしている場合は制限
-      newState.isSuperAdmin = false;
-      logDebug('永久利用権ユーザーは管理者状態にできません', { userId: 'unknown' });
+  // 永久利用権ユーザーの場合は、isSuperAdmin を強制的に false に設定
+  if (isPermanentUser) {
+    newState.isSuperAdmin = false;
+    logDebug('永久利用権ユーザーのisSuperAdminをfalseに設定', { userId: 'unknown' });
+  } else {
+    // 永久利用権ユーザーでない場合のみ、管理者権限の上書き防止ロジックを適用
+    if (newState.isSuperAdmin === false && corporateAccessState.isSuperAdmin === true) {
+      delete newState.isSuperAdmin;
+      logDebug('管理者状態の保持', { keepAdmin: true });
     }
   }
 
+  // 状態を更新
   Object.assign(corporateAccessState, newState);
 
   // 管理者状態が変更された場合はローカルストレージに保存
@@ -140,14 +155,13 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
 
   logDebug('状態更新後', { ...corporateAccessState });
 
-  // イベントをより確実にディスパッチ
+  // イベントをディスパッチ
   if (typeof window !== 'undefined') {
     try {
-      // モバイル環境を考慮したタイムアウト処理を追加
       setTimeout(() => {
         window.dispatchEvent(
           new CustomEvent('corporateAccessChanged', {
-            detail: { ...corporateAccessState }, // オブジェクトをコピーして渡す
+            detail: { ...corporateAccessState },
           }),
         );
         logDebug('イベントディスパッチ', {
@@ -434,7 +448,7 @@ export function isUserCorporateAdmin(): boolean {
 
 // スーパー管理者かどうかを確認する関数 - 永久利用権ユーザーは常にfalseを返す
 export function isUserSuperAdmin(): boolean {
-  // 永久利用権ユーザーかどうかをチェック
+  // 永久利用権ユーザーはスーパー管理者になれない
   const isPermanentUser = (() => {
     if (typeof window !== 'undefined') {
       try {
@@ -445,16 +459,18 @@ export function isUserSuperAdmin(): boolean {
         }
       } catch (e) {
         logDebug('永久利用権チェックエラー', e);
+        return false;
       }
     }
     return false;
   })();
 
-  // 永久利用権ユーザーの場合はfalseを返す
   if (isPermanentUser) {
+    // 永久利用権ユーザーの場合は常にfalseを返す
     return false;
   }
 
+  // それ以外の場合は状態から判定
   return corporateAccessState.isSuperAdmin === true;
 }
 
