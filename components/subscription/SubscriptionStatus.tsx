@@ -113,26 +113,35 @@ export default function SubscriptionStatus({
     // アクティブなプラン
     if (subscription.status === 'active') {
       let planType = '';
+      let renewalInfo = '';
 
       // プランの種類を判定
       if (subscription.plan.includes('business') || subscription.plan === 'business_plus') {
         // 法人プラン
-        planType = subscription.plan === 'business' ? 'スタータープラン' : 'ビジネスプラン';
+        if (subscription.plan === 'business') {
+          planType = 'スタータープラン';
+          renewalInfo = '(1ヶ月で自動更新)';
+        } else {
+          planType = 'ビジネスプラン';
+          renewalInfo = '(1年で自動更新)';
+        }
         planType = `法人${planType}`;
+
+        return {
+          text: `${planType} ${renewalInfo}`,
+          className: 'bg-blue-100 text-blue-800', // 法人プランは青色
+        };
       } else {
         // 個人プラン
         planType = subscription.plan === 'monthly' ? '月額プラン' : '年額プラン';
         planType = `個人${planType}`;
+        renewalInfo = subscription.interval === 'year' ? '(1年で自動更新)' : '(1ヶ月で自動更新)';
+
+        return {
+          text: `${planType} ${renewalInfo}`,
+          className: 'bg-green-100 text-green-800', // 個人プランは緑色
+        };
       }
-
-      // 更新間隔を追加
-      const renewalInfo =
-        subscription.interval === 'year' ? '(1年で自動更新)' : '(1ヶ月で自動更新)';
-
-      return {
-        text: `${planType} ${renewalInfo}`,
-        className: 'bg-green-100 text-green-800',
-      };
     }
 
     // その他のケース
@@ -428,7 +437,14 @@ export default function SubscriptionStatus({
               <div className="bg-blue-100 p-2 rounded-full">
                 <HiCheck className="h-5 w-5 text-blue-600" />
               </div>
+            ) : subscription.status === 'active' &&
+              (subscription.plan.includes('business') || subscription.plan === 'business_plus') ? (
+              // 法人プランの場合は青色
+              <div className="bg-blue-100 p-2 rounded-full">
+                <HiCheck className="h-5 w-5 text-blue-600" />
+              </div>
             ) : subscription.status === 'active' ? (
+              // 個人プランの場合は緑色
               <div className="bg-green-100 p-2 rounded-full">
                 <HiCheck className="h-5 w-5 text-green-600" />
               </div>
