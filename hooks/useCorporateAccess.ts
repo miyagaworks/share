@@ -3,7 +3,11 @@
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
+import {
+  corporateAccessState,
+  checkCorporateAccess,
+  initializeClientState,
+} from '@/lib/corporateAccessState';
 
 interface UseCorporateAccessOptions {
   redirectIfNoAccess?: boolean;
@@ -41,6 +45,14 @@ export function useCorporateAccess({
 
   // 再レンダリングを強制するための関数
   const [renderTrigger, setRenderTrigger] = useState(0);
+
+  // 初期化処理
+  useEffect(() => {
+    // クライアントサイドの状態を初期化
+    if (typeof window !== 'undefined') {
+      initializeClientState().catch(console.error);
+    }
+  }, []);
 
   // forceRenderをuseCallbackでラップ
   const forceRender = useCallback(() => {

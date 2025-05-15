@@ -26,6 +26,8 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
+  // 永久利用権ユーザー状態
+  const [isPermanentUser, setIsPermanentUser] = useState(false);
 
   // 現在の URL パスをチェック
   const isCorporateSection = pathname?.startsWith('/dashboard/corporate');
@@ -34,6 +36,19 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
   useEffect(() => {
     setIsMounted(true);
+
+    // クライアントサイドでのみ永久利用権のチェック
+    if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+      try {
+        const userDataStr = sessionStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          setIsPermanentUser(userData.subscriptionStatus === 'permanent');
+        }
+      } catch (e) {
+        console.error('永久利用権チェックエラー:', e);
+      }
+    }
   }, []);
 
   const toggleCollapse = () => {
@@ -52,22 +67,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       </div>
     );
   }
-
-  // 永久利用権ユーザーかどうかをチェック
-  const isPermanentUser = (() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const userDataStr = sessionStorage.getItem('userData');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          return userData.subscriptionStatus === 'permanent';
-        }
-      } catch (e) {
-        console.error('永久利用権チェックエラー:', e);
-      }
-    }
-    return false;
-  })();
 
   // メインメニュー項目
   const mainMenuItems = [...items];

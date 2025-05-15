@@ -305,6 +305,9 @@ share/
 │   │       └── page.tsx
 │   ├── not-found.tsx
 │   ├── page.tsx
+│   ├── qrcode
+│   │   ├── layout.tsx
+│   │   └── page.tsx
 │   └── support
 │       ├── contact
 │       │   ├── ContactPageContent.tsx
@@ -362,6 +365,8 @@ share/
 │   ├── providers
 │   │   ├── SessionProvider.tsx
 │   │   └── ToastProvider.tsx
+│   ├── qrcode
+│   │   └── QrCodeGenerator.tsx
 │   ├── shared
 │   │   ├── AuthDebugger.tsx
 │   │   ├── Breadcrumb.tsx
@@ -412,7 +417,8 @@ share/
 ├── eslint.config.mjs
 ├── hooks
 │   ├── useActivityFeed.ts
-│   └── useCorporateAccess.ts
+│   ├── useCorporateAccess.ts
+│   └── useCorporateData.ts
 ├── lib
 │   ├── corporateAccessState.ts
 │   ├── db-manager.ts
@@ -443,6 +449,7 @@ share/
 │   └── utils.ts
 ├── middleware
 │   ├── checkTenantStatus.ts
+│   ├── permanentAccessHandler.ts
 │   └── prisma-connection-handler.ts
 ├── middleware.ts
 ├── next-env.d.ts
@@ -579,7 +586,8 @@ share/
 │   ├── migrate-text-settings.ts
 │   ├── set-trial-end-date.mjs
 │   ├── setup-guide-images.mjs
-│   └── test-cron-fetch.mjs
+│   ├── test-cron-fetch.mjs
+│   └── update-permanent-users-plan.ts
 ├── share_db_backup.sql
 ├── tailwind.config.js
 ├── tsconfig.json

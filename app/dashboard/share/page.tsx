@@ -7,7 +7,7 @@ import { Spinner } from "@/components/ui/Spinner";
 import Link from "next/link";
 import { ShareOptionClient } from "@/components/dashboard/ShareOptionClient";
 import { QrCodeClient } from "@/components/dashboard/QrCodeClient";
-import { HiShare, HiLink, HiQrcode, HiExclamation } from "react-icons/hi";
+import { HiShare, HiLink, HiQrcode, HiExclamation, HiExternalLink } from 'react-icons/hi';
 
 export default async function SharePage() {
     return (
@@ -66,33 +66,46 @@ async function SharePageContent() {
     const profileUrl = `${process.env.NEXT_PUBLIC_APP_URL || process.env.NEXT_PUBLIC_BASE_URL || process.env.NEXTAUTH_URL || 'https://app.sns-share.com'}/${user.profile.slug}`;
 
     return (
-        <div className="grid gap-6 md:grid-cols-2">
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                <div className="flex items-center mb-4">
-                    <HiLink className="h-5 w-5 text-gray-700 mr-2" />
-                    <h2 className="text-xl font-semibold">プロフィールURL</h2>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4 text-justify">
-                    以下のURLであなたのプロフィールを共有できます
-                </p>
-                <div className="bg-muted p-3 rounded-md mb-4 break-all">
-                    <p className="font-mono text-sm">{profileUrl}</p>
-                </div>
-                <ShareOptionClient profileUrl={profileUrl} />
-            </div>
-
-            <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-                <div className="flex items-center mb-4">
-                    <HiQrcode className="h-5 w-5 text-gray-700 mr-2" />
-                    <h2 className="text-xl font-semibold">QRコード</h2>
-                </div>
-                <p className="text-sm text-muted-foreground mb-4 text-justify">
-                    このQRコードをスキャンすると、あなたのプロフィールページにアクセスできます。
-                    読み取りやすくするために、黒または濃い色を選択してください。
-                </p>
-                <QrCodeClient profileUrl={profileUrl} />
-            </div>
+      <div className="grid gap-6 md:grid-cols-2">
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center mb-4">
+            <HiLink className="h-5 w-5 text-gray-700 mr-2" />
+            <h2 className="text-xl font-semibold">プロフィールURL</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4 text-justify">
+            以下のURLであなたのプロフィールを共有できます
+          </p>
+          <div className="bg-muted p-3 rounded-md mb-4 break-all">
+            <p className="font-mono text-sm">{profileUrl}</p>
+          </div>
+          <ShareOptionClient profileUrl={profileUrl} />
         </div>
+
+        <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
+          <div className="flex items-center mb-4">
+            <HiQrcode className="h-5 w-5 text-gray-700 mr-2" />
+            <h2 className="text-xl font-semibold">QRコード</h2>
+          </div>
+          <p className="text-sm text-muted-foreground mb-4 text-justify">
+            このQRコードをスキャンすると、あなたのプロフィールページにアクセスできます。
+            読み取りやすくするために、黒または濃い色を選択してください。
+          </p>
+
+          <QrCodeClient profileUrl={profileUrl} />
+
+          {/* ここにスタイリッシュQRコードへのリンクを明示的に追加 */}
+          <div className="mt-6 border-t border-gray-200 pt-4">
+            <Link
+              href="/qrcode"
+              className="inline-flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-md transition-colors"
+            >
+              <HiQrcode className="mr-2 h-5 w-5" />
+              スタイリッシュなQRコードデザイナーを使用する
+              <HiExternalLink className="ml-2 h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </div>
     );
 }
 

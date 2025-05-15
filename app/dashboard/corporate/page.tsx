@@ -162,24 +162,29 @@ export default function CorporateDashboardPage() {
   const [tenantData, setTenantData] = useState<CorporateTenant | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [usingFallback, setUsingFallback] = useState(false);
+  const [isPermanentUser, setIsPermanentUser] = useState(false); // 永久利用権ユーザー状態
 
   // 段階的読み込みの状態
   const [loadingStage, setLoadingStage] = useState<'initial' | 'tenant' | 'complete'>('initial');
 
   // 永久利用権ユーザーチェックとリダイレクト
   useEffect(() => {
-    try {
-      if (typeof window !== 'undefined') {
-        const userDataStr = sessionStorage.getItem('userData');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
+    if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') return;
 
-          // 永久利用権ユーザーは自動的にonboardingページに移動
-          if (userData.subscriptionStatus === 'permanent') {
-            console.log('永久利用権ユーザーをonboardingページにリダイレクトします');
-            router.push('/dashboard/corporate/onboarding');
-            return; // 以降の処理をスキップ
-          }
+    try {
+      const userDataStr = sessionStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+
+        // 状態を更新
+        const isPermanent = userData.subscriptionStatus === 'permanent';
+        setIsPermanentUser(isPermanent);
+
+        // 永久利用権ユーザーは自動的にonboardingページに移動
+        if (isPermanent) {
+          console.log('永久利用権ユーザーをonboardingページにリダイレクトします');
+          router.push('/dashboard/corporate/onboarding');
+          return; // 以降の処理をスキップ
         }
       }
     } catch (e) {
@@ -332,8 +337,8 @@ export default function CorporateDashboardPage() {
 
   return (
     <div className="max-w-full px-1 sm:px-0">
-      {/* フォールバック使用時の警告バナー（再試行ボタン付き） */}
-      {usingFallback && (
+      {/* フォールバック使用時の警告バナー（再試行ボタン付き） - 永久利用権ユーザーの場合は表示しない */}
+      {usingFallback && !isPermanentUser && (
         <RetryableWarningBanner
           message={error || 'テナント情報を取得できませんでした。基本機能のみ表示しています。'}
           onRetry={reloadTenantData}

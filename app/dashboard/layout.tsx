@@ -182,13 +182,12 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   const pathname = usePathname();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [, forceUpdate] = useState(0); // 強制再レンダリング用
+  const [isPermanentUser, setIsPermanentUser] = useState(false);
 
   // 法人アカウントかどうかをチェック
   useEffect(() => {
     const checkCorporateStatus = async () => {
       if (status === 'loading') return;
-
       if (!session) {
         router.push('/auth/signin');
         return;
@@ -200,66 +199,52 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
           if (profileData.user) {
-            // セッションストレージに保存
-            sessionStorage.setItem('userData', JSON.stringify(profileData.user));
+            // 永久利用権ユーザー判定
+            const isPermanent = profileData.user.subscriptionStatus === 'permanent';
+            setIsPermanentUser(isPermanent);
 
             // 永久利用権ユーザーは法人アクセス権を持つが、管理者権限は持たない
-            if (profileData.user.subscriptionStatus === 'permanent') {
+            if (isPermanent) {
               updateCorporateAccessState({
                 hasAccess: true,
-                isAdmin: true, // 法人の管理者権限はtrue
-                isSuperAdmin: false, // システム管理者はfalse - 明示的にfalseに設定
+                isAdmin: true,
+                isSuperAdmin: false,
                 tenantId: `virtual-tenant-${profileData.user.id}`,
                 userRole: 'admin',
-                error: null,
                 lastChecked: Date.now(),
               });
-              // 強制再レンダリング
-              forceUpdate((prev) => prev + 1);
             }
           }
         }
 
-        // 管理者権限チェックは永久利用権ユーザーのチェックとは別に行う
-        const adminResponse = await fetch('/api/admin/access');
-        if (adminResponse.ok) {
-          const adminData = await adminResponse.json();
-          if (adminData.isSuperAdmin) {
-            // 管理者である場合、状態を更新
-            updateCorporateAccessState({
-              isSuperAdmin: true,
-            });
-            // 強制再レンダリング
-            forceUpdate((prev) => prev + 1);
+        // 管理者権限チェック（永久利用権ユーザーでない場合のみ）
+        if (!isPermanentUser) {
+          const adminResponse = await fetch('/api/admin/access');
+          if (adminResponse.ok) {
+            const adminData = await adminResponse.json();
+            if (adminData.isSuperAdmin) {
+              updateCorporateAccessState({
+                isSuperAdmin: true,
+              });
+            }
           }
         }
 
         // 永久利用権がない場合のみ法人アクセス権をチェック
-        await checkCorporateAccess();
+        if (!isPermanentUser) {
+          await checkCorporateAccess();
+        }
       } catch (error) {
-        console.error('法人アクセスチェックエラー:', error);
+        console.error('アクセスチェックエラー:', error);
       } finally {
         setIsLoading(false);
-        // 状態が更新されたら再レンダリング
-        forceUpdate((prev) => prev + 1);
       }
     };
 
     checkCorporateStatus();
+  }, [session, status, router, isPermanentUser]);
 
-    // アクセス状態変更イベントのリスナー
-    const handleAccessChange = () => {
-      forceUpdate((prev) => prev + 1);
-    };
-
-    window.addEventListener('corporateAccessChanged', handleAccessChange);
-
-    return () => {
-      window.removeEventListener('corporateAccessChanged', handleAccessChange);
-    };
-  }, [session, status, router]);
-
-  // ユーザーが認証されているが、まだ法人アカウント状態をチェック中
+  // ローディング表示
   if (status !== 'loading' && session && isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -268,39 +253,46 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     );
   }
 
-  // サイドバー項目の決定
+  // サイドバー項目の決定 - シンプルに
   let sidebarItems: SidebarItem[] = [];
 
-  // 永久利用権ユーザーかどうかをチェック（これを先に宣言）
-  const isPermanentUser = (() => {
-    try {
-      const userDataStr = sessionStorage.getItem('userData');
-      if (userDataStr) {
-        const userData = JSON.parse(userDataStr);
-        return userData.subscriptionStatus === 'permanent';
-      }
-    } catch (e) {
-      console.error('永久利用権チェックエラー:', e);
-    }
-    return false;
-  })();
+  // 1. 永久利用権ユーザーは特別処理
+  if (isPermanentUser) {
+    // 永久利用権ユーザーは基本メニュー + 法人機能のみ
+    sidebarItems = [...personalSidebarItems];
 
-  // 管理者かどうかを判定（isSuperAdminのみを使用）
-  const isAdmin = corporateAccessState.isSuperAdmin === true && !isPermanentUser;
+    // 法人機能を追加
+    sidebarItems.push({
+      title: '法人機能',
+      href: '#corporate-divider',
+      icon: <></>,
+      isDivider: true,
+    });
 
-  // 1. 現在の場所に基づいてベースとなるメニューを決定
-  if (pathname && pathname.startsWith('/dashboard/admin') && isAdmin) {
-    // 管理者ページの場合は管理者メニューのみを表示
+    sidebarItems.push({
+      title: '法人メンバープロフィール',
+      href: '/dashboard/corporate-member',
+      icon: <HiUser className="h-5 w-5" />,
+    });
+
+    sidebarItems.push({
+      title: '法人管理ダッシュボード',
+      href: '/dashboard/corporate',
+      icon: <HiOfficeBuilding className="h-5 w-5" />,
+    });
+
+    // 注意: 永久利用権ユーザーには管理者メニューを追加しない
+  }
+  // 2. 管理者ページの場合
+  else if (pathname?.startsWith('/dashboard/admin') && corporateAccessState.isSuperAdmin) {
     sidebarItems = [...adminSidebarItems];
-  } else if (
-    pathname &&
-    pathname.startsWith('/dashboard/corporate-profile') &&
-    (corporateAccessState.hasAccess || isPermanentUser)
-  ) {
+  }
+  // 3. 法人プロファイルページの場合
+  else if (pathname?.startsWith('/dashboard/corporate-profile') && corporateAccessState.hasAccess) {
     sidebarItems = [...corporateProfileSidebarItems];
 
-    // 管理者の場合は管理者メニューも追加（永久利用権ユーザーは除外）
-    if (isAdmin && !isPermanentUser) {
+    // 管理者の場合は管理者メニューも追加
+    if (corporateAccessState.isSuperAdmin) {
       sidebarItems.push({
         title: '管理者機能',
         href: '#admin-divider',
@@ -308,20 +300,15 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         isDivider: true,
       });
 
-      // 管理者メニュー項目を追加
-      adminSidebarItems.forEach((item) => {
-        sidebarItems.push(item);
-      });
+      adminSidebarItems.forEach((item) => sidebarItems.push(item));
     }
-  } else if (
-    pathname &&
-    pathname.startsWith('/dashboard/corporate') &&
-    (corporateAccessState.hasAccess || isPermanentUser)
-  ) {
+  }
+  // 4. 法人ページの場合
+  else if (pathname?.startsWith('/dashboard/corporate') && corporateAccessState.hasAccess) {
     sidebarItems = [...corporateSidebarItems];
 
     // 管理者の場合は管理者メニューも追加
-    if (isAdmin && !isPermanentUser) {
+    if (corporateAccessState.isSuperAdmin) {
       sidebarItems.push({
         title: '管理者機能',
         href: '#admin-divider',
@@ -329,53 +316,39 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         isDivider: true,
       });
 
-      // 管理者メニュー項目を追加
-      adminSidebarItems.forEach((item) => {
-        sidebarItems.push(item);
-      });
+      adminSidebarItems.forEach((item) => sidebarItems.push(item));
     }
-  } else {
-    // 個人ダッシュボードのベースメニュー
+  }
+  // 5. 通常の個人ダッシュボード
+  else {
     sidebarItems = [...personalSidebarItems];
 
-    // 2. 法人メニューを追加（重複を防ぐため配列を作成）
-    const corporateItems: SidebarItem[] = [];
-
-    // 法人ユーザーまたは永久利用権ユーザーの場合
-    if (corporateAccessState.hasAccess || isPermanentUser) {
-      // 区切り線を追加
-      corporateItems.push({
+    // 法人アクセス権がある場合は法人メニューを追加
+    if (corporateAccessState.hasAccess) {
+      sidebarItems.push({
         title: '法人機能',
         href: '#corporate-divider',
         icon: <></>,
         isDivider: true,
       });
 
-      // 法人メンバープロフィールを1回だけ追加
-      corporateItems.push({
+      sidebarItems.push({
         title: '法人メンバープロフィール',
         href: '/dashboard/corporate-member',
         icon: <HiUser className="h-5 w-5" />,
       });
 
-      // 法人管理者または永久利用権ユーザーの場合は法人管理ダッシュボードも追加
-      if (corporateAccessState.isAdmin || isPermanentUser) {
-        corporateItems.push({
+      if (corporateAccessState.isAdmin) {
+        sidebarItems.push({
           title: '法人管理ダッシュボード',
           href: '/dashboard/corporate',
           icon: <HiOfficeBuilding className="h-5 w-5" />,
         });
       }
-
-      // 法人メニューを追加
-      corporateItems.forEach((item) => {
-        sidebarItems.push(item);
-      });
     }
 
-    // 3. 管理者メニューを最後に追加（管理者の場合のみ）
-    if (isAdmin) {
-      // 管理者機能区切り線を明示的に追加
+    // 管理者の場合は管理者メニューも追加
+    if (corporateAccessState.isSuperAdmin) {
       sidebarItems.push({
         title: '管理者機能',
         href: '#admin-divider',
@@ -383,10 +356,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         isDivider: true,
       });
 
-      // 管理者メニュー項目を追加
-      adminSidebarItems.forEach((item) => {
-        sidebarItems.push(item);
-      });
+      adminSidebarItems.forEach((item) => sidebarItems.push(item));
     }
   }
 

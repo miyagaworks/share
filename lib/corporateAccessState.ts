@@ -22,6 +22,12 @@ export interface CorporateAccessState {
   lastChecked: number;
   userRole?: string | null;
   error?: string | null;
+  isPermanentUser?: boolean; // 永久利用権ユーザーフラグを追加
+}
+
+// サーバー/クライアント環境を判定する関数
+function isClient(): boolean {
+  return typeof window !== 'undefined';
 }
 
 // デバッグログを記録する関数
@@ -39,6 +45,7 @@ export const corporateAccessState: CorporateAccessState = {
   lastChecked: 0,
   userRole: null,
   error: null,
+  isPermanentUser: false, // 永久利用権フラグを初期化
 };
 
 // デバッグ用にグローバル変数名を明示
@@ -63,90 +70,172 @@ const loadAdminStatus = () => {
   if (typeof window === 'undefined') return false;
 
   try {
+    // まず永久利用権ユーザーかどうかを確認
+    if (typeof sessionStorage !== 'undefined') {
+      const userDataStr = sessionStorage.getItem('userData');
+      if (userDataStr) {
+        try {
+          const userData = JSON.parse(userDataStr);
+          if (userData?.subscriptionStatus === 'permanent') {
+            // 永久利用権ユーザーは常に管理者権限なし
+            logDebug('永久利用権ユーザーのため管理者権限なし', { userData });
+            return false;
+          }
+        } catch (parseError) {
+          // JSONパースエラーをログに記録
+          logDebug('JSONパースエラー', { error: parseError });
+        }
+      }
+    }
+
+    // 通常の処理（永久利用権ユーザーでない場合）
     const savedStatus = localStorage.getItem('sns_share_admin_status');
     const isAdmin = savedStatus === 'true';
     logDebug('管理者状態をローカルストレージから読み込み', { isAdmin });
     return isAdmin;
-  } catch (e) {
-    logDebug('ローカルストレージ読み込みエラー', { error: e });
+  } catch (storageError) {
+    // エラーをログに記録
+    logDebug('ローカルストレージ読み込みエラー', { error: storageError });
     return false;
   }
 };
 
-// windowオブジェクトにも同じ参照を保存（クライアントサイドのみ）
-if (typeof window !== 'undefined') {
-  if (!window[STATE_VAR_NAME]) {
-    window[STATE_VAR_NAME] = corporateAccessState;
-    logDebug('初期化', { ...corporateAccessState });
+// 永久利用権ユーザーかどうかを判定する関数（サーバサイドに対応）
+export function isPermanentUser(): boolean {
+  // サーバーサイドではfalseを返す
+  if (typeof window === 'undefined') {
+    return false;
+  }
 
-    // 初期化時にローカルストレージから管理者状態を読み込む
-    corporateAccessState.isSuperAdmin = loadAdminStatus();
+  // 状態から判定
+  if (corporateAccessState.isPermanentUser === true) {
+    return true;
+  }
 
-    // 永久利用権ユーザーの場合はisSuperAdminをfalseに上書き
-    const isPermanentUser = (() => {
-      try {
-        const userDataStr = sessionStorage.getItem('userData');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          return userData.subscriptionStatus === 'permanent';
+  // sessionStorageから判定
+  try {
+    if (typeof sessionStorage !== 'undefined') {
+      const userDataStr = sessionStorage.getItem('userData');
+      if (userDataStr) {
+        const userData = JSON.parse(userDataStr);
+        const isPermanent = userData.subscriptionStatus === 'permanent';
+
+        // 状態を更新
+        if (isPermanent) {
+          corporateAccessState.isPermanentUser = true;
+          corporateAccessState.isSuperAdmin = false; // 強制的にfalseに設定
         }
-      } catch (e) {
-        logDebug('永久利用権チェックエラー', e);
-      }
-      return false;
-    })();
 
-    if (isPermanentUser) {
-      corporateAccessState.isSuperAdmin = false;
-      logDebug('永久利用権ユーザーのisSuperAdminをfalseに初期設定', { userId: 'unknown' });
+        return isPermanent;
+      }
     }
+  } catch (error) {
+    logger.corporate('永久利用権チェックエラー', error);
+  }
+
+  return false;
+}
+
+// 遅延初期化処理 - クライアントサイドのみ
+let initializePromise: Promise<void> | null = null;
+
+export function initializeClientState(): Promise<void> {
+  // すでに初期化中か初期化済みの場合は既存のPromiseを返す
+  if (initializePromise) return initializePromise;
+
+  // サーバーサイドでは空のPromiseを返す
+  if (typeof window === 'undefined') {
+    return Promise.resolve();
+  }
+
+  // 初期化処理を実行
+  initializePromise = new Promise<void>((resolve) => {
+    try {
+      // 既存の状態があれば復元
+      if (window[STATE_VAR_NAME]) {
+        Object.assign(corporateAccessState, window[STATE_VAR_NAME]);
+        logDebug('状態復元', { ...corporateAccessState });
+        resolve();
+        return;
+      }
+
+      // 新規初期化
+      window[STATE_VAR_NAME] = corporateAccessState;
+      logDebug('初期化', { ...corporateAccessState });
+
+      // 初期化時にローカルストレージから管理者状態を読み込む
+      corporateAccessState.isSuperAdmin = loadAdminStatus();
+
+      // 永久利用権ユーザーの確認 - 非同期操作になる可能性がある
+      // ここでは同期的に判定するがPromiseとして処理
+      const permanent = isPermanentUser();
+
+      if (permanent) {
+        corporateAccessState.isSuperAdmin = false;
+        corporateAccessState.isPermanentUser = true;
+        logDebug('永久利用権ユーザーのisSuperAdminをfalseに初期設定', { userId: 'unknown' });
+      }
+
+      resolve();
+    } catch (error) {
+      // エラーが発生しても初期化は完了させる
+      logDebug('クライアント初期化エラー', error);
+      resolve();
+    }
+  });
+
+  return initializePromise;
+}
+
+// クライアントサイドでのみ自動初期化
+if (typeof window !== 'undefined') {
+  if (typeof requestAnimationFrame !== 'undefined') {
+    requestAnimationFrame(() => {
+      initializeClientState().catch(console.error);
+    });
   } else {
-    // 既に存在する場合は、その値をコピー
-    Object.assign(corporateAccessState, window[STATE_VAR_NAME]);
-    logDebug('状態復元', { ...corporateAccessState });
+    setTimeout(() => {
+      initializeClientState().catch(console.error);
+    }, 0);
   }
 }
 
 // 状態を更新する関数 - 管理者状態の上書き防止機能を追加
 export function updateCorporateAccessState(newState: Partial<CorporateAccessState>): void {
-  // 変更前後の状態をより詳細にログ出力
   const prevState = { ...corporateAccessState };
-  logDebug('状態更新前', prevState);
+  logger.corporate('状態更新前', prevState);
 
-  // 永久利用権ユーザーかどうかを確認
-  const isPermanentUser = (() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const userDataStr = sessionStorage.getItem('userData');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          return userData.subscriptionStatus === 'permanent';
-        }
-      } catch (e) {
-        logDebug('永久利用権チェックエラー', e);
-      }
-    }
-    return false;
-  })();
+  // 永久利用権ユーザーの判定 - より確実に
+  const permanent = isPermanentUser() || newState.isPermanentUser === true;
 
-  // 永久利用権ユーザーの場合は、isSuperAdmin を強制的に false に設定
-  if (isPermanentUser) {
+  // 永久利用権ユーザーの場合
+  if (permanent) {
+    // 管理者権限を絶対に付与しない
     newState.isSuperAdmin = false;
-    logDebug('永久利用権ユーザーのisSuperAdminをfalseに設定', { userId: 'unknown' });
-  } else {
-    // 永久利用権ユーザーでない場合のみ、管理者権限の上書き防止ロジックを適用
-    if (newState.isSuperAdmin === false && corporateAccessState.isSuperAdmin === true) {
-      delete newState.isSuperAdmin;
-      logDebug('管理者状態の保持', { keepAdmin: true });
-    }
+    newState.isPermanentUser = true;
+
+    // グローバル変数も直接更新（確実に反映させるため）
+    corporateAccessState.isSuperAdmin = false;
+    corporateAccessState.isPermanentUser = true;
+
+    logger.corporate('永久利用権ユーザー: 管理者権限を強制的に無効化', { permanent });
   }
 
   // 状態を更新
   Object.assign(corporateAccessState, newState);
 
-  // 管理者状態が変更された場合はローカルストレージに保存
+  // 管理者状態がある場合はストレージに保存
   if (newState.isSuperAdmin !== undefined) {
     persistAdminStatus();
+  }
+
+  // 永久利用権ユーザーの場合は、管理者状態をfalseで強制保存
+  if (permanent && typeof window !== 'undefined') {
+    try {
+      localStorage.setItem('sns_share_admin_status', 'false');
+    } catch (error) {
+      logger.corporate('ローカルストレージ保存エラー', { error });
+    }
   }
 
   // windowオブジェクトも更新
@@ -154,102 +243,113 @@ export function updateCorporateAccessState(newState: Partial<CorporateAccessStat
     Object.assign(window[STATE_VAR_NAME], newState);
   }
 
-  logDebug('状態更新後', { ...corporateAccessState });
+  logger.corporate('状態更新後', { ...corporateAccessState });
 
   // イベントをディスパッチ
   if (typeof window !== 'undefined') {
     try {
-      setTimeout(() => {
-        window.dispatchEvent(
-          new CustomEvent('corporateAccessChanged', {
-            detail: { ...corporateAccessState },
-          }),
-        );
-        logDebug('イベントディスパッチ', {
-          type: 'corporateAccessChanged',
+      window.dispatchEvent(
+        new CustomEvent('corporateAccessChanged', {
           detail: { ...corporateAccessState },
-        });
-      }, 0);
-    } catch (e) {
-      logDebug('イベントディスパッチエラー', e);
+        }),
+      );
+    } catch (error) {
+      logger.corporate('イベントディスパッチエラー', error);
     }
   }
 }
 
 // 関数を外部からも呼び出せるようにエクスポート
-export function checkPermanentAccess() {
-  // ページロード時に sessionStorage から確認
-  if (typeof window !== 'undefined') {
+export function checkPermanentAccess(): boolean {
+  // クライアントサイドでのみ有効
+  if (typeof window === 'undefined') {
+    return false;
+  }
+
+  // 状態に永久利用権フラグが設定されていればそれを使う
+  if (corporateAccessState.isPermanentUser !== undefined) {
+    return corporateAccessState.isPermanentUser;
+  }
+
+  // 設定されていない場合は判定して状態を更新
+  const permanent = isPermanentUser();
+
+  // すでに永久利用権ユーザーとして設定済みの場合は何もせず返す
+  if (permanent === corporateAccessState.isPermanentUser) {
+    return permanent;
+  }
+
+  // もし永久利用権ユーザーなら、その状態をcorporateAccessStateに反映
+  if (permanent && corporateAccessState.hasAccess !== true) {
     try {
-      // subscriptionStatus を sessionStorage から取得
-      const userDataStr = sessionStorage.getItem('userData');
-      if (userDataStr) {
-        const userData = JSON.parse(userDataStr);
-        const isPermanent = userData.subscriptionStatus === 'permanent';
-
-        // もし永久利用権ユーザーなら、その状態をcorporateAccessStateに反映
-        if (isPermanent && corporateAccessState.hasAccess !== true) {
-          updateCorporateAccessState({
-            hasAccess: true,
-            isAdmin: true,
-            isSuperAdmin: false, // 明示的にfalseを設定
-            tenantId: `virtual-tenant-${userData.id || Date.now()}`,
-            userRole: 'admin',
-            error: null,
-            lastChecked: Date.now(),
-          });
+      let userId = 'unknown';
+      if (typeof sessionStorage !== 'undefined') {
+        const userDataStr = sessionStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          userId = userData.id || Date.now().toString();
         }
-
-        return isPermanent;
       }
+
+      updateCorporateAccessState({
+        hasAccess: true,
+        isAdmin: true,
+        isSuperAdmin: false, // 明示的にfalseを設定
+        isPermanentUser: true,
+        tenantId: `virtual-tenant-${userId}`,
+        userRole: 'admin',
+        error: null,
+        lastChecked: Date.now(),
+      });
     } catch (e) {
-      logDebug('永久利用権チェックエラー', e);
+      logDebug('永久利用権設定エラー', e);
     }
   }
-  return false;
+
+  return permanent;
 }
 
 // APIチェック関数 - 管理者状態を維持するように修正
 export const checkCorporateAccess = async (force = false) => {
   const now = Date.now();
 
+  // クライアントサイド初期化が未完了の場合は待機
+  if (typeof window !== 'undefined' && initializePromise) {
+    await initializePromise;
+  }
+
   // キャッシュ利用判定で、永久利用権も考慮
   const isPermanent = checkPermanentAccess();
   if (isPermanent) {
     // 永久利用権ユーザーの場合
+    let userId = 'unknown';
     try {
-      // sessionStorageからユーザーデータを取得
-      const userDataStr = sessionStorage.getItem('userData');
-      if (userDataStr) {
-        const userData = JSON.parse(userDataStr);
-        // ユーザーIDを取得
-        const userId = userData.id || Date.now().toString();
-
-        updateCorporateAccessState({
-          hasAccess: true,
-          isAdmin: true,
-          isSuperAdmin: false, // 明示的にfalseに設定
-          tenantId: `virtual-tenant-${userId}`,
-          userRole: 'admin',
-          error: null,
-          lastChecked: now,
-        });
-        return { ...corporateAccessState };
+      if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
+        // sessionStorageからユーザーデータを取得
+        const userDataStr = sessionStorage.getItem('userData');
+        if (userDataStr) {
+          const userData = JSON.parse(userDataStr);
+          // ユーザーIDを取得
+          userId = userData.id || Date.now().toString();
+        }
       }
     } catch (e) {
       logDebug('永久利用権ユーザーデータ取得エラー', e);
     }
 
-    // ユーザーデータが取得できなかった場合のフォールバック
-    updateCorporateAccessState({
+    // 更新されたステータス
+    const updatedState = {
       hasAccess: true,
       isAdmin: true,
       isSuperAdmin: false, // 明示的にfalseに設定
-      tenantId: `virtual-tenant-fallback-${Date.now()}`,
+      isPermanentUser: true,
+      tenantId: `virtual-tenant-${userId}`,
       userRole: 'admin',
       error: null,
       lastChecked: now,
-    });
+    };
+
+    updateCorporateAccessState(updatedState);
     return { ...corporateAccessState };
   }
 
@@ -324,6 +424,7 @@ export const checkCorporateAccess = async (force = false) => {
         isAdmin: false,
         // 修正: 管理者状態を維持
         isSuperAdmin: currentIsSuperAdmin,
+        isPermanentUser: false,
         tenantId: null,
         userRole: null,
         error: errorData.error || '法人プランへのアクセス権がありません',
@@ -352,23 +453,10 @@ export const checkCorporateAccess = async (force = false) => {
 
       // 修正: APIからスーパー管理者状態を取得するか、既存の状態を維持
       // 永久利用権ユーザーの場合はisSuperAdminを常にfalseに
-      const isPermanentUser = (() => {
-        if (typeof window !== 'undefined') {
-          try {
-            const userDataStr = sessionStorage.getItem('userData');
-            if (userDataStr) {
-              const userData = JSON.parse(userDataStr);
-              return userData.subscriptionStatus === 'permanent';
-            }
-          } catch (e) {
-            logDebug('永久利用権チェックエラー', e);
-          }
-        }
-        return false;
-      })();
+      const permanent = corporateAccessState.isPermanentUser || false;
 
       let isSuperAdmin;
-      if (isPermanentUser) {
+      if (permanent) {
         isSuperAdmin = false; // 永久利用権ユーザーは常にfalse
       } else {
         isSuperAdmin = data.isSuperAdmin === true || currentIsSuperAdmin === true;
@@ -389,6 +477,7 @@ export const checkCorporateAccess = async (force = false) => {
         hasAccess: accessResult,
         isAdmin: data.isAdmin === true,
         isSuperAdmin: isSuperAdmin, // 修正: スーパー管理者状態を適切に設定
+        isPermanentUser: permanent,
         tenantId: finalTenantId,
         userRole: data.userRole || data.role || null,
         error: null,
@@ -449,29 +538,12 @@ export function isUserCorporateAdmin(): boolean {
 
 // スーパー管理者かどうかを確認する関数 - 永久利用権ユーザーは常にfalseを返す
 export function isUserSuperAdmin(): boolean {
-  // 永久利用権ユーザーはスーパー管理者になれない
-  const isPermanentUser = (() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const userDataStr = sessionStorage.getItem('userData');
-        if (userDataStr) {
-          const userData = JSON.parse(userDataStr);
-          return userData.subscriptionStatus === 'permanent';
-        }
-      } catch (e) {
-        logDebug('永久利用権チェックエラー', e);
-        return false;
-      }
-    }
-    return false;
-  })();
-
-  if (isPermanentUser) {
-    // 永久利用権ユーザーの場合は常にfalseを返す
+  // 永久利用権ユーザーは絶対に管理者になれない
+  if (isPermanentUser() || corporateAccessState.isPermanentUser) {
     return false;
   }
 
-  // それ以外の場合は状態から判定
+  // それ以外は通常の判定
   return corporateAccessState.isSuperAdmin === true;
 }
 
@@ -481,12 +553,15 @@ export function resetCorporateAccessState(): void {
 
   // 管理者状態の保存
   const currentIsSuperAdmin = corporateAccessState.isSuperAdmin;
+  // 永久利用権状態の保存
+  const isPermanent = corporateAccessState.isPermanentUser;
 
   updateCorporateAccessState({
     hasAccess: null,
     isAdmin: false,
     // 修正: 管理者状態を維持
     isSuperAdmin: currentIsSuperAdmin,
+    isPermanentUser: isPermanent,
     tenantId: null,
     userRole: null,
     lastChecked: 0,
@@ -498,6 +573,8 @@ export function resetCorporateAccessState(): void {
 
 // クッキーを保存する際のオプション
 export function setCorporateAccessCookies(hasAccess: boolean, role: string | null): void {
+  if (typeof document === 'undefined') return;
+
   // 環境判定
   const isProduction = process.env.NODE_ENV === 'production';
 
@@ -514,13 +591,17 @@ export function setCorporateAccessCookies(hasAccess: boolean, role: string | nul
   logDebug('クッキー設定', { hasAccess, role, isProduction });
 }
 
-// クッキー更新処理 - 修正前は関数内の別の場所にあったコード
-if (typeof document !== 'undefined') {
-  // クッキーを更新（userRoleがundefinedの場合はnullを使用）
-  setCorporateAccessCookies(
-    corporateAccessState.hasAccess === true,
-    corporateAccessState.userRole !== undefined ? corporateAccessState.userRole : null,
-  );
+// クライアントサイドのみでのクッキー更新処理
+if (typeof window !== 'undefined') {
+  // 初期化後にクッキーを設定
+  initializeClientState()
+    .then(() => {
+      setCorporateAccessCookies(
+        corporateAccessState.hasAccess === true,
+        corporateAccessState.userRole !== undefined ? corporateAccessState.userRole : null,
+      );
+    })
+    .catch(console.error);
 }
 
 // 仮想テナントデータの型定義
@@ -604,26 +685,26 @@ let virtualTenantData: VirtualTenantData | null = null;
 
 // 仮想テナントデータの更新と永続化
 export function updateVirtualTenantData(
-  updater: (data: VirtualTenantData) => VirtualTenantData
+  updater: (data: VirtualTenantData) => VirtualTenantData,
 ): VirtualTenantData | null {
   const currentData = getVirtualTenantData();
   if (!currentData) return null;
-  
+
   // 更新関数を適用して新しいデータを生成
   const updatedData = updater(currentData);
-  
+
   // グローバル変数を更新
   virtualTenantData = updatedData;
-  
+
   // LocalStorageに保存（ページリロード間で保持するため）
-  if (typeof window !== 'undefined') {
+  if (isClient()) {
     try {
       localStorage.setItem('virtualTenantData', JSON.stringify(updatedData));
     } catch (e) {
       console.error('仮想テナントデータの保存エラー:', e);
     }
   }
-  
+
   return updatedData;
 }
 
@@ -633,23 +714,26 @@ export function getVirtualTenantData(): VirtualTenantData | null {
   if (virtualTenantData) {
     return virtualTenantData;
   }
-  
-  // LocalStorageから復元を試みる
-  if (typeof window !== 'undefined') {
-    try {
-      const savedData = localStorage.getItem('virtualTenantData');
-      if (savedData) {
-        virtualTenantData = JSON.parse(savedData);
-        return virtualTenantData;
-      }
-    } catch (e) {
-      console.error('仮想テナントデータの復元エラー:', e);
-    }
+
+  // サーバーサイドの場合は早期リターン
+  if (!isClient()) {
+    return null;
   }
-  
+
+  // LocalStorageから復元を試みる
+  try {
+    const savedData = localStorage.getItem('virtualTenantData');
+    if (savedData) {
+      virtualTenantData = JSON.parse(savedData);
+      return virtualTenantData;
+    }
+  } catch (e) {
+    console.error('仮想テナントデータの復元エラー:', e);
+  }
+
   // データがない場合は新規作成を試みる
-  if (typeof window !== 'undefined') {
-    try {
+  try {
+    if (typeof sessionStorage !== 'undefined') {
       const userDataStr = sessionStorage.getItem('userData');
       if (userDataStr) {
         const userData = JSON.parse(userDataStr);
@@ -660,10 +744,10 @@ export function getVirtualTenantData(): VirtualTenantData | null {
           return virtualTenantData;
         }
       }
-    } catch (e) {
-      console.error('仮想テナント生成エラー:', e);
     }
+  } catch (e) {
+    console.error('仮想テナント生成エラー:', e);
   }
-  
+
   return null;
 }

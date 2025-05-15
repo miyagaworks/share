@@ -11,6 +11,7 @@ import {
   corporateAccessState,
   checkCorporateAccess,
   checkPermanentAccess,
+  initializeClientState,
 } from '@/lib/corporateAccessState';
 
 interface CorporateAccessGuardProps {
@@ -42,16 +43,24 @@ export function CorporateAccessGuard({ children, debugMode = false }: CorporateA
     corporateAccessState.error = null;
 
     // イベントをディスパッチして他のコンポーネントに通知
-    window.dispatchEvent(
-      new CustomEvent('corporateAccessChanged', {
-        detail: { ...corporateAccessState },
-      }),
-    );
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('corporateAccessChanged', {
+          detail: { ...corporateAccessState },
+        }),
+      );
+    }
 
     setBypassEnabled(true);
     setError(null);
     setErrorDetails(null);
     setRenderKey((prev) => prev + 1);
+  }, []);
+
+  // 初期化処理
+  useEffect(() => {
+    // クライアントサイドの状態を初期化
+    initializeClientState().catch(console.error);
   }, []);
 
   // メインの useEffect - 1番目
@@ -128,10 +137,14 @@ export function CorporateAccessGuard({ children, debugMode = false }: CorporateA
       }
     };
 
-    window.addEventListener('corporateAccessChanged', handleAccessChange as EventListener);
+    if (typeof window !== 'undefined') {
+      window.addEventListener('corporateAccessChanged', handleAccessChange as EventListener);
+    }
 
     return () => {
-      window.removeEventListener('corporateAccessChanged', handleAccessChange as EventListener);
+      if (typeof window !== 'undefined') {
+        window.removeEventListener('corporateAccessChanged', handleAccessChange as EventListener);
+      }
     };
   }, [session, status, router, retryCount]);
 
@@ -153,21 +166,13 @@ export function CorporateAccessGuard({ children, debugMode = false }: CorporateA
     );
   }
 
-  const isPermanentUser = (() => {
-    try {
-      const userDataStr = sessionStorage.getItem('userData');
-      if (userDataStr) {
-        const userData = JSON.parse(userDataStr);
-        return userData.subscriptionStatus === 'permanent';
-      }
-    } catch (e) {
-      console.error('永久利用権チェックエラー:', e);
-    }
-    return false;
-  })();
-
-  // アクセス拒否画面の表示条件を修正
-  if (!bypassEnabled && !isPermanentUser && corporateAccessState.hasAccess !== true && !debugMode) {
+  // アクセス拒否画面の表示条件を修正 - corporateAccessStateから永久利用権情報を取得
+  if (
+    !bypassEnabled &&
+    !corporateAccessState.isPermanentUser &&
+    corporateAccessState.hasAccess !== true &&
+    !debugMode
+  ) {
     console.log('[CorporateAccessGuard] アクセス拒否画面表示、エラー:', error);
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
