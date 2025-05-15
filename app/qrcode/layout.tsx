@@ -1,21 +1,24 @@
 // app/qrcode/layout.tsx
-export const metadata = {
+import type { Metadata, Viewport } from 'next';
+
+export const metadata: Metadata = {
   title: 'スタイリッシュQRコード | Share',
   description: 'スタイリッシュなQRコードを作成してスマホに保存できます',
+  applicationName: 'My QR Code',
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'My QR Code',
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: '#ffffff',
+  width: 'device-width',
+  initialScale: 1,
+  viewportFit: 'cover',
 };
 
 export default function QrCodeLayout({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <head>
-        <meta name="apple-mobile-web-app-capable" content="yes" />
-        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="My QR Code" />
-        <meta name="mobile-web-app-capable" content="yes" />
-        <meta name="theme-color" content="#ffffff" />
-        <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png" />
-      </head>
-      {children}
-    </>
-  );
+  return <>{children}</>;
 }

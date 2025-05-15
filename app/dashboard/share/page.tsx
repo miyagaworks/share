@@ -100,7 +100,7 @@ async function SharePageContent() {
               className="inline-flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-md transition-colors"
             >
               <HiQrcode className="mr-2 h-5 w-5" />
-              スタイリッシュなQRコードデザイナーを使用する
+              QRコードデザイナーを使用する
               <HiExternalLink className="ml-2 h-4 w-4" />
             </Link>
           </div>

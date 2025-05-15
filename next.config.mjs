@@ -31,12 +31,12 @@ const nextConfig = {
     },
   },
 
-  // 環境変数の設定（既存）
+  // 環境変数の設定（修正）
   env: {
     DEBUG: 'next-auth:*,next-auth:core,next-auth:jwt',
-    // Prisma接続管理の環境変数を追加（新規）
-    PRISMA_CONNECTION_LIMIT: 10,
-    PRISMA_CONNECTION_TIMEOUT: 5000,
+    // Prisma接続管理の環境変数を文字列として設定（修正）
+    PRISMA_CONNECTION_LIMIT: '10',
+    PRISMA_CONNECTION_TIMEOUT: '5000',
   },
 
   // その他の設定（既存）

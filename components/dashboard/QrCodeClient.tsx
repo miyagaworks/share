@@ -6,8 +6,6 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { FaImage, FaCode } from 'react-icons/fa';
-import Link from 'next/link';
-import { HiExternalLink } from 'react-icons/hi';
 
 // QRコードの色オプション
 const QR_COLOR_OPTIONS = [
@@ -216,15 +214,6 @@ export function QrCodeClient({ profileUrl }: QrCodeClientProps) {
 
       <div className="mt-2 text-xs text-gray-500 text-center">
         <p>※SVG形式は高解像度印刷に最適です</p>
-      </div>
-      <div className="mt-6 pt-4 border-t border-gray-200">
-        <Link
-          href="/qrcode"
-          className="inline-flex items-center justify-center w-full bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-3 rounded-md transition-colors text-sm font-medium"
-        >
-          スタイリッシュなQRコードデザイナーを使用する
-          <HiExternalLink className="ml-1 h-4 w-4" />
-        </Link>
       </div>
     </div>
   );
