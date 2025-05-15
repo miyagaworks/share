@@ -300,6 +300,8 @@ model QrCodePage {
   primaryColor   String
   secondaryColor String
   accentColor    String?
+  headerText     String?
+  textColor      String?
   views          Int       @default(0)
   lastAccessed   DateTime?
   createdAt      DateTime  @default(now())

@@ -5,6 +5,7 @@ import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'next/navigation';
 import { Spinner } from '@/components/ui/Spinner';
+import Image from 'next/image';
 
 interface QrCodePage {
   id: string;
@@ -19,6 +20,7 @@ interface QrCodePage {
   accentColor: string;
   headerText?: string;
   textColor?: string;
+  profileImage?: string;
   createdAt: string;
   updatedAt: string;
 }
@@ -147,27 +149,41 @@ export default function QrCodeViewPage() {
             <div className="text-center mt-4 mb-6">
               <div
                 className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3 flex items-center justify-center"
-                style={{ backgroundColor: '#0F1D4A' }} // 濃紺色
+                style={{ backgroundColor: qrData.profileImage ? 'transparent' : '#5e6372' }}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-10 w-10 text-white"
-                  viewBox="0 0 20 20"
-                  fill="currentColor"
-                >
-                  <path
-                    fillRule="evenodd"
-                    d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z"
-                    clipRule="evenodd"
+                {qrData.profileImage ? (
+                  <Image
+                    src={qrData.profileImage}
+                    alt={qrData.userName || ''}
+                    width={80}
+                    height={80}
+                    className="w-full h-full object-cover"
+                    unoptimized // 外部ドメインの画像を使用する場合に必要
                   />
-                </svg>
+                ) : (
+                  <svg
+                    xmlns="http://www.w3.org/2000/svg"
+                    width="36"
+                    height="36"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="white"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <path d="M19 21v-2a4 4 0 0 0-4-4H9a4 4 0 0 0-4 4v2" />
+                    <circle cx="12" cy="7" r="4" />
+                  </svg>
+                )}
               </div>
 
               {/* ユーザー名 - フォントサイズ調整 */}
               <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{qrData.userName}</h1>
-              {qrData.nameEn && (
-                <p style={{ color: '#4B5563', fontSize: '1rem' }}>{qrData.nameEn}</p>
-              )}
+              {/* 英語名 - 常に表示する */}
+              <p style={{ color: '#4B5563', fontSize: '1rem' }}>
+                {qrData.nameEn || 'Toru Munemitsu'}
+              </p>
             </div>
 
             {/* QRコード - 余白を大きくして影をつける */}
@@ -196,7 +212,7 @@ export default function QrCodeViewPage() {
                 className="w-full py-3 text-white rounded-md flex items-center justify-center"
                 style={{ backgroundColor: mainColor }}
               >
-                <div style={buttonContentStyle} className="flex items-center">
+                <div style={buttonContentStyle} className="flex items-center text-xl">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-2"
