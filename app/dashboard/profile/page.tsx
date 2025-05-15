@@ -23,7 +23,7 @@ import {
   HiSparkles,
 } from 'react-icons/hi';
 
-// より安全な型定義か？
+// より安全な型定義
 interface UserWithProfile extends Partial<User> {
   profile?: Profile | null;
   companyUrl?: string | null;
