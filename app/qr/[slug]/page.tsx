@@ -48,7 +48,8 @@ export default function QrCodeViewPage() {
         }
 
         const data = await response.json();
-        console.log('QR code data:', data); // デバッグ用
+        console.log('QR code data:', data); // レスポンス全体を確認
+        console.log('QR code fields:', data.qrCode ? Object.keys(data.qrCode) : 'No QR code data');
         setQrData(data.qrCode);
       } catch (error) {
         console.error('QRコード取得エラー:', error);

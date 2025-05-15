@@ -40,6 +40,8 @@ export function QrCodeGenerator() {
   const [userProfileNameEn, setUserProfileNameEn] = useState('');
   const [headerText, setHeaderText] = useState('シンプルにつながる、スマートにシェア。');
   const [profileImage, setProfileImage] = useState<string | undefined>(undefined);
+  const [isExistingQrCode, setIsExistingQrCode] = useState(false);
+  const [existingQrCodeId, setExistingQrCodeId] = useState<string | null>(null);
 
   // ユーザーのプロフィールURLを読み込む
   useEffect(() => {
@@ -101,6 +103,7 @@ export function QrCodeGenerator() {
   const checkSlugAvailability = async (slug: string) => {
     if (!slug || slug.length < 3) {
       setIsSlugAvailable(false);
+      setIsExistingQrCode(false);
       return;
     }
 
@@ -112,9 +115,19 @@ export function QrCodeGenerator() {
       const data = await response.json();
 
       setIsSlugAvailable(data.available);
+
+      // 既存のQRコードかどうかをチェック
+      if (!data.available && data.qrCodeId && data.ownedByCurrentUser) {
+        setIsExistingQrCode(true);
+        setExistingQrCodeId(data.qrCodeId);
+      } else {
+        setIsExistingQrCode(false);
+        setExistingQrCodeId(null);
+      }
     } catch (error) {
       console.error('スラグチェックエラー:', error);
       setIsSlugAvailable(false);
+      setIsExistingQrCode(false);
     } finally {
       setIsCheckingSlug(false);
     }
@@ -130,13 +143,21 @@ export function QrCodeGenerator() {
       checkSlugAvailability(newSlug);
     } else {
       setIsSlugAvailable(false);
+      setIsExistingQrCode(false);
+      setExistingQrCodeId(null);
     }
   };
 
   // QRコードページを生成する
   const generateQrCodePage = async () => {
-    if (!isSlugAvailable || !customUrlSlug || customUrlSlug.length < 3) {
+    if (!customUrlSlug || customUrlSlug.length < 3) {
       toast.error('有効なURLスラグを入力してください');
+      return;
+    }
+
+    // 既存のQRコードでない場合は、利用可能性をチェック
+    if (!isExistingQrCode && !isSlugAvailable) {
+      toast.error('このURLは既に使用されています');
       return;
     }
 
@@ -161,10 +182,13 @@ export function QrCodeGenerator() {
         profileUrl: profileUrl,
       };
 
-      console.log('送信データ:', qrCodeData); // デバッグ用
+      // 既存QRコードの更新または新規作成
+      const endpoint =
+        isExistingQrCode && existingQrCodeId
+          ? `/api/qrcode/update/${existingQrCodeId}`
+          : '/api/qrcode/create';
 
-      // QRコードページ作成APIを呼び出し
-      const response = await fetch('/api/qrcode/create', {
+      const response = await fetch(endpoint, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -177,7 +201,9 @@ export function QrCodeGenerator() {
         const fullUrl = `${window.location.origin}/qr/${customUrlSlug}`;
         setGeneratedUrl(fullUrl);
 
-        toast.success('QRコードページを作成しました！');
+        toast.success(
+          isExistingQrCode ? 'QRコードページを更新しました！' : 'QRコードページを作成しました！',
+        );
       } else {
         const errorData = await response.json();
         console.error('エラーレスポンス:', errorData);
@@ -246,10 +272,14 @@ export function QrCodeGenerator() {
               {isCheckingSlug ? (
                 <p className="text-xs text-gray-500">チェック中...</p>
               ) : customUrlSlug.length >= 3 ? (
-                isSlugAvailable ? (
+                isExistingQrCode ? (
+                  <p className="text-xs text-amber-600">※ このURLは既に使用中です。更新されます</p>
+                ) : isSlugAvailable ? (
                   <p className="text-xs text-green-600">✓ このURLは利用可能です</p>
                 ) : (
-                  <p className="text-xs text-red-600">✗ このURLは既に使用されています</p>
+                  <p className="text-xs text-red-600">
+                    ✗ このURLは既に他のユーザーに使用されています
+                  </p>
                 )
               ) : (
                 <p className="text-xs text-gray-500">3文字以上入力してください</p>
@@ -279,17 +309,17 @@ export function QrCodeGenerator() {
             <Button
               className="w-full flex items-center gap-2 justify-center bg-blue-700 hover:bg-blue-800 text-white"
               onClick={generateQrCodePage}
-              disabled={isSaving || !isSlugAvailable}
+              disabled={isSaving || (!isSlugAvailable && !isExistingQrCode)}
             >
               {isSaving ? (
                 <>
                   <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full mr-2" />
-                  作成中...
+                  {isExistingQrCode ? '更新中...' : '作成中...'}
                 </>
               ) : (
                 <>
                   <FaLink className="h-4 w-4" />
-                  QRコードページを作成
+                  {isExistingQrCode ? 'QRコードページを更新' : 'QRコードページを作成'}
                 </>
               )}
             </Button>
