@@ -2,7 +2,7 @@
 import type { Metadata, Viewport } from 'next';
 
 export const metadata: Metadata = {
-  title: 'スタイリッシュQRコード | Share',
+  title: 'QRコードデザイナー | Share',
   description: 'スタイリッシュなQRコードを作成してスマホに保存できます',
   applicationName: 'My QR Code',
   appleWebApp: {

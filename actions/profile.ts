@@ -26,8 +26,12 @@ const validateProfileData = (data: ProfileUpdateData): ValidationResult => {
   // nullをundefinedに変換して、ProfileSchemaとの互換性を確保
   const sanitizedData: Record<string, unknown> = {};
 
+  // デバッグ用
+  console.log('プロフィール更新データ(処理前):', JSON.stringify(data, null, 2));
+
   Object.entries(data).forEach(([key, value]) => {
-    // nullをundefined（または期待される値）に変換
+    // nullはそのまま渡す（ProfileSchemaでnullableに設定されているため）
+    // ただし、name フィールドのみ例外的に処理（nullableではないため）
     if (value === null && key === 'name') {
       sanitizedData[key] = undefined;
     } else {
@@ -35,10 +39,14 @@ const validateProfileData = (data: ProfileUpdateData): ValidationResult => {
     }
   });
 
+  // デバッグ用
+  console.log('プロフィール更新データ(処理後):', JSON.stringify(sanitizedData, null, 2));
+
   // バリデーション実行
   const result = ProfileSchema.safeParse(sanitizedData);
 
   if (!result.success) {
+    console.error('バリデーションエラー詳細:', JSON.stringify(result.error.format(), null, 2));
     return { success: false, error: result.error.format() };
   }
 
@@ -97,44 +105,45 @@ export async function updateProfile(data: ProfileUpdateData) {
       nameKana = validatedData.nameKana;
     }
 
-    // ユーザー情報を更新 - データベースに直接フィールド名を指定
+    // シンプルなヘルパー関数 - nullはundefinedに変換
+    function safeStringField(value: unknown): string | undefined {
+      if (typeof value === 'string') {
+        return value;
+      }
+      // nullとundefinedはどちらもundefinedとして扱う
+      return undefined;
+    }
+
+    // updateProfile 関数内の更新ロジックを修正
+    // ユーザー情報を更新
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: {
-        // 結合したフィールド（従来形式）
+        // 結合したフィールド
         name,
         nameKana,
 
-        // 分割したフィールド（新形式）
-        lastName: typeof validatedData.lastName === 'string' ? validatedData.lastName : undefined,
-        firstName:
-          typeof validatedData.firstName === 'string' ? validatedData.firstName : undefined,
-        lastNameKana:
-          typeof validatedData.lastNameKana === 'string' ? validatedData.lastNameKana : undefined,
-        firstNameKana:
-          typeof validatedData.firstNameKana === 'string' ? validatedData.firstNameKana : undefined,
+        // 分割したフィールド - シンプルなヘルパー関数を使用
+        lastName: safeStringField(validatedData.lastName),
+        firstName: safeStringField(validatedData.firstName),
+        lastNameKana: safeStringField(validatedData.lastNameKana),
+        firstNameKana: safeStringField(validatedData.firstNameKana),
 
-        // 他の共通フィールド
-        nameEn: typeof validatedData.nameEn === 'string' ? validatedData.nameEn : undefined,
-        bio: typeof validatedData.bio === 'string' ? validatedData.bio : undefined,
-        image: typeof validatedData.image === 'string' ? validatedData.image : undefined,
-        mainColor:
-          typeof validatedData.mainColor === 'string' ? validatedData.mainColor : undefined,
-        snsIconColor:
-          typeof validatedData.snsIconColor === 'string' ? validatedData.snsIconColor : undefined,
-        phone: typeof validatedData.phone === 'string' ? validatedData.phone : undefined,
-        company: typeof validatedData.company === 'string' ? validatedData.company : undefined,
-        companyUrl:
-          typeof validatedData.companyUrl === 'string' ? validatedData.companyUrl : undefined,
-        companyLabel:
-          typeof validatedData.companyLabel === 'string' ? validatedData.companyLabel : undefined,
-        bioTextColor:
-          typeof validatedData.bioTextColor === 'string' ? validatedData.bioTextColor : undefined,
-        // ヘッダーテキストとテキストカラーフィールドを追加
-        headerText:
-          typeof validatedData.headerText === 'string' ? validatedData.headerText : undefined,
-        textColor:
-          typeof validatedData.textColor === 'string' ? validatedData.textColor : undefined,
+        // 英語名
+        nameEn: safeStringField(validatedData.nameEn),
+
+        // その他のフィールド
+        bio: safeStringField(validatedData.bio),
+        image: safeStringField(validatedData.image),
+        mainColor: safeStringField(validatedData.mainColor),
+        snsIconColor: safeStringField(validatedData.snsIconColor),
+        phone: safeStringField(validatedData.phone),
+        company: safeStringField(validatedData.company),
+        companyUrl: safeStringField(validatedData.companyUrl),
+        companyLabel: safeStringField(validatedData.companyLabel),
+        bioTextColor: safeStringField(validatedData.bioTextColor),
+        headerText: safeStringField(validatedData.headerText),
+        textColor: safeStringField(validatedData.textColor),
       },
     });
 

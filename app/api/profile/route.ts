@@ -17,7 +17,8 @@ export async function GET() {
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
-        subscription: true, // サブスクリプション情報も取得
+        subscription: true,
+        profile: true,
       },
     });
 
@@ -25,29 +26,42 @@ export async function GET() {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
 
-    // トライアル状態の判定
+    // 既存のコード
     const now = new Date();
     const trialEndsAt = user.trialEndsAt ? new Date(user.trialEndsAt) : null;
     const isTrialActive = trialEndsAt && now < trialEndsAt;
-
-    // サブスクリプション状態の判定
     const hasActiveSubscription =
       user.subscription &&
       user.subscription.status === 'active' &&
       !user.subscription.cancelAtPeriodEnd;
-
-    // 正確な状態をセット
     const currentStatus = hasActiveSubscription ? 'active' : isTrialActive ? 'trialing' : 'expired';
 
-    // 安全に返すユーザー情報を整形
+    // 安全なユーザー情報（パスワードなどの機密情報を除く）
     const safeUser = {
       id: user.id,
-      name: user.name,
       email: user.email,
+      name: user.name || '',
+      nameEn: user.nameEn || '',
+      nameKana: user.nameKana || '',
+      lastName: user.lastName || '',
+      firstName: user.firstName || '',
+      lastNameKana: user.lastNameKana || '',
+      firstNameKana: user.firstNameKana || '',
       image: user.image,
+      bio: user.bio || '',
+      phone: user.phone || '',
+      company: user.company || '',
+      companyUrl: user.companyUrl || '',
+      companyLabel: user.companyLabel || '',
+      mainColor: user.mainColor,
+      snsIconColor: user.snsIconColor || '',
+      bioBackgroundColor: user.bioBackgroundColor || '',
+      bioTextColor: user.bioTextColor || '',
+      headerText: user.headerText || '',
+      textColor: user.textColor || '',
+      profile: user.profile,
       trialEndsAt: user.trialEndsAt,
-      subscriptionStatus: currentStatus, // 正確な状態を反映
-      // 他の必要なフィールド
+      subscriptionStatus: currentStatus,
     };
 
     return NextResponse.json({

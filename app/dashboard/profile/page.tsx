@@ -1,7 +1,6 @@
 // app/dashboard/profile/page.tsx
 'use client';
 
-import { updateProfile } from '@/actions/profile';
 import { useState, useEffect } from 'react';
 import { redirect, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -24,13 +23,11 @@ import {
   HiSparkles,
 } from 'react-icons/hi';
 
-interface UserWithProfile extends User {
+// より安全な型定義か？
+interface UserWithProfile extends Partial<User> {
   profile?: Profile | null;
-}
-
-interface ExtendedUserData extends UserWithProfile {
-  companyUrl: string | null;
-  companyLabel: string | null;
+  companyUrl?: string | null;
+  companyLabel?: string | null;
 }
 
 export default function ProfilePage() {
@@ -56,15 +53,25 @@ export default function ProfilePage() {
   const [image, setImage] = useState<string | null>(null);
 
   // プロフィールデータを取得する関数
-  const fetchUserData = async () => {
+  const fetchUserData = async (): Promise<UserWithProfile> => {
     try {
-      const response = await fetch('/api/profile');
+      // キャッシュ問題を避けるためのタイムスタンプ付与
+      const timestamp = new Date().getTime();
+      const response = await fetch(`/api/profile?t=${timestamp}`, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+        },
+      });
 
       if (!response.ok) {
         throw new Error('プロフィール情報の取得に失敗しました');
       }
 
       const data = await response.json();
+      console.log('取得したユーザーデータ:', data.user); // デバッグ用ログ
       return data.user as UserWithProfile;
     } catch (error) {
       console.error('データ取得エラー:', error);
@@ -87,34 +94,23 @@ export default function ProfilePage() {
         setIsLoading(true);
         const userData = await fetchUserData();
 
-        // 分割された姓名とフリガナを設定
-        setFormData({
-          // 分割されたフィールドがある場合はそれを使用、なければ従来のフィールドから分割
-          lastName: userData.lastName || (userData.name ? userData.name.split(' ')[0] : ''),
-          firstName:
-            userData.firstName ||
-            (userData.name && userData.name.split(' ').length > 1
-              ? userData.name.split(' ').slice(1).join(' ')
-              : ''),
-          lastNameKana:
-            userData.lastNameKana || (userData.nameKana ? userData.nameKana.split(' ')[0] : ''),
-          firstNameKana:
-            userData.firstNameKana ||
-            (userData.nameKana && userData.nameKana.split(' ').length > 1
-              ? userData.nameKana.split(' ').slice(1).join(' ')
-              : ''),
+        console.log('ロードしたユーザーデータ:', userData); // デバッグ用ログ
 
-          // 英語名はそのまま使用 - 自動生成しない
-          nameEn: userData.nameEn || '',
-          bio: userData.bio || '',
-          email: userData.email || '',
-          phone: userData.phone || '',
-          company: userData.company || '',
-          companyUrl: (userData as ExtendedUserData).companyUrl || '',
-          companyLabel: (userData as ExtendedUserData).companyLabel || '会社HP',
+        setFormData({
+          lastName: userData?.lastName || '',
+          firstName: userData?.firstName || '',
+          lastNameKana: userData?.lastNameKana || '',
+          firstNameKana: userData?.firstNameKana || '',
+          nameEn: userData?.nameEn || '',
+          bio: userData?.bio || '',
+          email: userData?.email || '',
+          phone: userData?.phone || '',
+          company: userData?.company || '',
+          companyUrl: userData?.companyUrl || '',
+          companyLabel: userData?.companyLabel || '会社HP',
         });
 
-        setImage(userData.image);
+        setImage(userData?.image || null);
       } catch (error) {
         console.error('データ取得エラー:', error);
       } finally {
@@ -156,63 +152,61 @@ export default function ProfilePage() {
         processedCompanyUrl = undefined;
       }
 
-      const response = await updateProfile({
-        lastName: processedLastName,
-        firstName: processedFirstName,
-        lastNameKana: processedLastNameKana,
-        firstNameKana: processedFirstNameKana,
-
-        nameEn: processedNameEn, // 英語名はそのまま使用
-        bio: processedBio,
-        phone: processedPhone,
-        company: processedCompany,
-        companyUrl: processedCompanyUrl,
-        companyLabel: processedCompanyLabel,
-        image,
+      // 新しいエンドポイントを使用してデータを送信
+      const response = await fetch('/api/profile/update', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          lastName: processedLastName,
+          firstName: processedFirstName,
+          lastNameKana: processedLastNameKana,
+          firstNameKana: processedFirstNameKana,
+          nameEn: processedNameEn,
+          bio: processedBio,
+          phone: processedPhone,
+          company: processedCompany,
+          companyUrl: processedCompanyUrl,
+          companyLabel: processedCompanyLabel,
+          image,
+        }),
       });
 
-      if (response.error) {
-        throw new Error(response.error);
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || 'プロフィールの更新に失敗しました');
       }
 
-      toast.success('プロフィールを更新しました');
-      router.refresh();
+      const data = await response.json();
+      console.log('API更新レスポンス:', data);
 
-      // 最新データを再取得
-      const updatedUserData = await fetchUserData();
+      if (data.success) {
+        toast.success('プロフィールを更新しました');
 
-      // 更新されたデータでフォームを更新
-      setFormData({
-        lastName:
-          updatedUserData.lastName ||
-          (updatedUserData.name ? updatedUserData.name.split(' ')[0] : ''),
-        firstName:
-          updatedUserData.firstName ||
-          (updatedUserData.name && updatedUserData.name.split(' ').length > 1
-            ? updatedUserData.name.split(' ').slice(1).join(' ')
-            : ''),
-        lastNameKana:
-          updatedUserData.lastNameKana ||
-          (updatedUserData.nameKana ? updatedUserData.nameKana.split(' ')[0] : ''),
-        firstNameKana:
-          updatedUserData.firstNameKana ||
-          (updatedUserData.nameKana && updatedUserData.nameKana.split(' ').length > 1
-            ? updatedUserData.nameKana.split(' ').slice(1).join(' ')
-            : ''),
-
-        nameEn: updatedUserData.nameEn || '',
-        bio: updatedUserData.bio || '',
-        email: updatedUserData.email || '',
-        phone: updatedUserData.phone || '',
-        company: updatedUserData.company || '',
-        companyUrl: (updatedUserData as ExtendedUserData).companyUrl || '',
-        companyLabel: (updatedUserData as ExtendedUserData).companyLabel || '会社HP',
-      });
-
-      setImage(updatedUserData.image);
+        // フォームを直接更新する（サーバーアクションを使わない）
+        if (data.user) {
+          setFormData({
+            lastName: data.user.lastName || '',
+            firstName: data.user.firstName || '',
+            lastNameKana: data.user.lastNameKana || '',
+            firstNameKana: data.user.firstNameKana || '',
+            nameEn: data.user.nameEn || '',
+            bio: data.user.bio || '',
+            email: data.user.email || '',
+            phone: data.user.phone || '',
+            company: data.user.company || '',
+            companyUrl: data.user.companyUrl || '',
+            companyLabel: data.user.companyLabel || '会社HP',
+          });
+          setImage(data.user.image);
+        }
+      } else {
+        throw new Error('プロフィールの更新に失敗しました');
+      }
     } catch (error) {
       console.error('更新エラー:', error);
-      toast.error('プロフィールの更新に失敗しました');
+      toast.error(error instanceof Error ? error.message : 'プロフィールの更新に失敗しました');
     } finally {
       setIsSaving(false);
     }

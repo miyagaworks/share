@@ -145,6 +145,12 @@ share/
 │   │   │           └── route.ts
 │   │   ├── profile
 │   │   │   └── route.ts
+│   │   ├── qrcode
+│   │   │   ├── [slug]
+│   │   │   │   └── route.ts
+│   │   │   ├── create
+│   │   │   │   └── route.ts
+│   │   │   └── route.ts
 │   │   ├── route-config.ts
 │   │   ├── subscription
 │   │   │   ├── cancel
@@ -305,6 +311,9 @@ share/
 │   │       └── page.tsx
 │   ├── not-found.tsx
 │   ├── page.tsx
+│   ├── qr
+│   │   └── [slug]
+│   │       └── page.tsx
 │   ├── qrcode
 │   │   ├── layout.tsx
 │   │   └── page.tsx
@@ -366,7 +375,8 @@ share/
 │   │   ├── SessionProvider.tsx
 │   │   └── ToastProvider.tsx
 │   ├── qrcode
-│   │   └── QrCodeGenerator.tsx
+│   │   ├── QrCodeGenerator.tsx
+│   │   └── QrCodePreview.tsx
 │   ├── shared
 │   │   ├── AuthDebugger.tsx
 │   │   ├── Breadcrumb.tsx
