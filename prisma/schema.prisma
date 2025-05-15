@@ -295,6 +295,7 @@ model QrCodePage {
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userName       String
+  nameEn         String?
   profileUrl     String
   template       String
   primaryColor   String

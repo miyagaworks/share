@@ -182,7 +182,7 @@ export default function QrCodeViewPage() {
               <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{qrData.userName}</h1>
               {/* 英語名 - 常に表示する */}
               <p style={{ color: '#4B5563', fontSize: '1rem' }}>
-                {qrData.nameEn || 'Toru Munemitsu'}
+                {qrData.nameEn || 'Taro Yamada'}
               </p>
             </div>
 

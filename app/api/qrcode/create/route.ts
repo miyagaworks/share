@@ -22,8 +22,8 @@ export async function POST(request: Request) {
       secondaryColor,
       accentColor,
       userName,
-      nameEn,
       profileUrl,
+      // nameEn, headerText, textColorは使用しない
     } = body;
 
     // 必須フィールドのバリデーション
@@ -50,7 +50,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'このスラグは既に使用されています' }, { status: 409 });
     }
 
-    // 新しいQRコードページのデータを準備
+    // 新しいQRコードページのデータを準備（スキーマに合わせて必要なフィールドのみを含む）
     const createData = {
       slug,
       userId: session.user.id,
@@ -60,15 +60,8 @@ export async function POST(request: Request) {
       primaryColor,
       secondaryColor: secondaryColor || primaryColor,
       accentColor: accentColor || '#FFFFFF',
-      headerText: body.headerText || 'シンプルにつながる、スマートにシェア。',
-      textColor: body.textColor || '#FFFFFF',
+      // headerText, textColor, nameEnは含めない
     };
-
-    // nameEnが存在する場合のみ追加
-    if (nameEn) {
-      // @ts-expect-error nameEnフィールドが型定義に含まれていない可能性がある
-      createData.nameEn = nameEn;
-    }
 
     console.log('Creating QR code with data:', createData); // デバッグ用
 

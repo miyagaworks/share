@@ -159,13 +159,7 @@ export function QrCodeGenerator() {
         accentColor: '#FFFFFF',
         userName: userProfileName,
         profileUrl: profileUrl,
-        // headerTextとtextColorを削除
       };
-
-      // nameEnが存在する場合のみ追加
-      if (userProfileNameEn) {
-        qrCodeData.nameEn = userProfileNameEn;
-      }
 
       console.log('送信データ:', qrCodeData); // デバッグ用
 
