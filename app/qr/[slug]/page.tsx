@@ -31,6 +31,7 @@ export default function QrCodeViewPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [userProfileImage, setUserProfileImage] = useState<string | null>(null);
 
   useEffect(() => {
     const fetchQrCodeData = async () => {
@@ -48,9 +49,24 @@ export default function QrCodeViewPage() {
         }
 
         const data = await response.json();
-        console.log('QR code data:', data); // レスポンス全体を確認
+        console.log('QR code data:', data);
         console.log('QR code fields:', data.qrCode ? Object.keys(data.qrCode) : 'No QR code data');
         setQrData(data.qrCode);
+
+        // QRコードの所有者のプロフィール情報を取得
+        if (data.qrCode && data.qrCode.userId) {
+          try {
+            const userResponse = await fetch(`/api/user/${data.qrCode.userId}/profile`);
+            if (userResponse.ok) {
+              const userData = await userResponse.json();
+              if (userData.user && userData.user.image) {
+                setUserProfileImage(userData.user.image);
+              }
+            }
+          } catch (userError) {
+            console.error('ユーザー情報取得エラー:', userError);
+          }
+        }
       } catch (error) {
         console.error('QRコード取得エラー:', error);
         setError('QRコードの取得に失敗しました');
@@ -101,8 +117,16 @@ export default function QrCodeViewPage() {
 
   // メインカラーとテキストカラーを設定（デフォルト値を用意）
   const mainColor = qrData.primaryColor || '#3b82f6';
-  const textColor = qrData.textColor || '#FFFFFF';
-  const headerText = qrData.headerText || 'シンプルにつながる、スマートにシェア。';
+  const textColor =
+    qrData.textColor === null || qrData.textColor === undefined ? '#FFFFFF' : qrData.textColor;
+  const headerText =
+    qrData.headerText === null || qrData.headerText === undefined
+      ? 'シンプルにつながる、スマートにシェア。'
+      : qrData.headerText;
+
+  // さらに確認のためにログを追加
+  console.log('Header text value:', qrData.headerText);
+  console.log('Text color value:', qrData.textColor);
 
   const containerStyle = {
     transform: isFlipped ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -150,16 +174,16 @@ export default function QrCodeViewPage() {
             <div className="text-center mt-4 mb-6">
               <div
                 className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3 flex items-center justify-center"
-                style={{ backgroundColor: qrData.profileImage ? 'transparent' : '#5e6372' }}
+                style={{ backgroundColor: userProfileImage ? 'transparent' : '#5e6372' }}
               >
-                {qrData.profileImage ? (
+                {userProfileImage ? (
                   <Image
-                    src={qrData.profileImage}
+                    src={userProfileImage}
                     alt={qrData.userName || ''}
                     width={80}
                     height={80}
                     className="w-full h-full object-cover"
-                    unoptimized // 外部ドメインの画像を使用する場合に必要
+                    unoptimized
                   />
                 ) : (
                   <svg
@@ -182,9 +206,7 @@ export default function QrCodeViewPage() {
               {/* ユーザー名 - フォントサイズ調整 */}
               <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{qrData.userName}</h1>
               {/* 英語名 - 常に表示する */}
-              <p style={{ color: '#4B5563', fontSize: '1rem' }}>
-                {qrData.nameEn || 'Taro Yamada'}
-              </p>
+              <p style={{ color: '#4B5563', fontSize: '1rem' }}>{qrData.nameEn || 'Taro Yamada'}</p>
             </div>
 
             {/* QRコード - 余白を大きくして影をつける */}
