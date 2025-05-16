@@ -7,8 +7,8 @@ import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
-import GrantPermanentAccess from '@/components/admin/GrantPermanentAccess';
 import {
+  HiUsers,
   HiSearch,
   HiRefresh,
   HiExclamationCircle,
@@ -220,7 +220,10 @@ export default function AdminUsersPage() {
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
-        <h1 className="text-2xl font-bold mb-4">ユーザー管理</h1>
+        <div className="flex items-center mb-4">
+          <HiUsers className="h-6 w-6 text-blue-600 mr-3" />
+          <h1 className="text-2xl font-bold">ユーザー管理</h1>
+        </div>
 
         {/* 検索フィールドと操作ボタン */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
@@ -299,11 +302,6 @@ export default function AdminUsersPage() {
               更新
             </Button>
           </div>
-        </div>
-
-        {/* 永久利用権付与セクションを追加 */}
-        <div className="mb-6">
-          <GrantPermanentAccess />
         </div>
 
         {/* 削除確認モーダル */}

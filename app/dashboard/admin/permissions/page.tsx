@@ -7,10 +7,10 @@ import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import {
+  HiKey,
   HiRefresh,
   HiCheck,
   HiX,
-  HiShieldCheck,
   HiSearch,
   HiSortAscending,
   HiSortDescending,
@@ -199,8 +199,8 @@ export default function AdminPermissionsPage() {
     <div className="max-w-6xl mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
         <div className="flex items-center mb-6">
-          <HiShieldCheck className="h-6 w-6 text-blue-600 mr-3" />
-          <h1 className="text-2xl font-bold">権限管理</h1>
+          <HiKey className="h-6 w-6 text-blue-600 mr-3" />
+          <h1 className="text-2xl font-bold">永久利用権管理</h1>
         </div>
 
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">

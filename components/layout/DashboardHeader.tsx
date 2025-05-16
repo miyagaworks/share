@@ -77,7 +77,7 @@ export function DashboardHeader() {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="flex items-center space-x-2 rounded-full focus:outline-none"
             >
-              {user.hasUploadedImage && user.image ? (
+              {user.image ? (
                 // 画像がアップロードされている場合
                 <div className="overflow-hidden rounded-full border-2 border-transparent hover:border-blue-500 transition-colors">
                   <Image

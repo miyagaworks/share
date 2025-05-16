@@ -167,7 +167,7 @@ const adminSidebarItems: SidebarItem[] = [
     icon: <HiCreditCard className="h-5 w-5" />,
   },
   {
-    title: '権限管理',
+    title: '永久利用権管理',
     href: '/dashboard/admin/permissions',
     icon: <HiKey className="h-5 w-5" />,
   },
