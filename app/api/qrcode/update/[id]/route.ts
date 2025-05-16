@@ -55,7 +55,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
       primaryColor: body.primaryColor,
       secondaryColor: body.secondaryColor || body.primaryColor,
       accentColor: body.accentColor || '#FFFFFF',
-      headerText: body.headerText || 'シンプルにつながる、スマートにシェア。',
       textColor: body.textColor || '#FFFFFF',
       userName: body.userName || existingQrCode.userName,
       // nameEn フィールドはスキーマに存在しない場合は除外

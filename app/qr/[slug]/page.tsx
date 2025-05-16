@@ -27,47 +27,36 @@ interface QrCodePage {
 
 export default function QrCodeViewPage() {
   const params = useParams();
+  const slug = params.slug as string;
   const [qrData, setQrData] = useState<QrCodePage | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [userProfileImage, setUserProfileImage] = useState<string | null>(null);
+  // 欠けていた状態変数を追加
+  const [headerText, setHeaderText] = useState<string>('シンプルにつながる、スマートにシェア。');
+  const [textColor, setTextColor] = useState<string>('#FFFFFF');
 
   useEffect(() => {
     const fetchQrCodeData = async () => {
       try {
-        const slug = params.slug;
-        if (!slug) {
-          setError('QRコードが見つかりません');
-          return;
-        }
-
+        // QRコード情報を取得
         const response = await fetch(`/api/qrcode/${slug}`);
         if (!response.ok) {
-          setError('QRコードの取得に失敗しました');
-          return;
+          throw new Error('QRコードの取得に失敗しました');
         }
 
         const data = await response.json();
-        console.log('QR code data:', data);
-        console.log('QR code fields:', data.qrCode ? Object.keys(data.qrCode) : 'No QR code data');
-
-        if (data.qrCode) {
-          console.log('Header text:', data.qrCode.headerText);
-          console.log('Text color:', data.qrCode.textColor);
-          // 空文字チェック追加
-          if (data.qrCode.headerText === '') {
-            console.log('Header text is empty string');
-          }
-          if (data.qrCode.headerText === null) {
-            console.log('Header text is null');
-          }
-          if (data.qrCode.headerText === undefined) {
-            console.log('Header text is undefined');
-          }
-        }
-
         setQrData(data.qrCode);
+
+        // textColorはQRCodePageから優先的に取得
+        if (data.qrCode && data.qrCode.textColor) {
+          console.log('Setting text color from QR data:', data.qrCode.textColor);
+          setTextColor(data.qrCode.textColor);
+        } else {
+          console.log('No text color in QR data, using default #FFFFFF');
+          setTextColor('#FFFFFF');
+        }
 
         // QRコードの所有者のプロフィール情報を取得
         if (data.qrCode && data.qrCode.userId) {
@@ -75,8 +64,19 @@ export default function QrCodeViewPage() {
             const userResponse = await fetch(`/api/user/${data.qrCode.userId}/profile`);
             if (userResponse.ok) {
               const userData = await userResponse.json();
-              if (userData.user && userData.user.image) {
-                setUserProfileImage(userData.user.image);
+
+              // ユーザー情報を設定
+              if (userData.user) {
+                // プロフィール画像
+                if (userData.user.image) {
+                  setUserProfileImage(userData.user.image);
+                }
+
+                // ヘッダーテキストはユーザーモデルから取得
+                if (userData.user.headerText) {
+                  console.log('Setting header text from user data:', userData.user.headerText);
+                  setHeaderText(userData.user.headerText);
+                }
               }
             }
           } catch (userError) {
@@ -84,15 +84,15 @@ export default function QrCodeViewPage() {
           }
         }
       } catch (error) {
-        console.error('QRコード取得エラー:', error);
-        setError('QRコードの取得に失敗しました');
+        console.error('データ取得エラー:', error);
+        setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
 
     fetchQrCodeData();
-  }, [params.slug]);
+  }, [slug]);
 
   // 画面の向きが変わったときにFlipの状態をリセット
   useEffect(() => {
@@ -133,18 +133,26 @@ export default function QrCodeViewPage() {
 
   // メインカラーとテキストカラーを設定（デフォルト値を用意）
   const mainColor = qrData.primaryColor || '#3b82f6';
-  const textColor =
-    qrData.textColor === null || qrData.textColor === undefined || qrData.textColor === ''
-      ? '#FFFFFF'
-      : qrData.textColor;
-  const headerText =
-    qrData.headerText === null || qrData.headerText === undefined || qrData.headerText === ''
-      ? 'シンプルにつながる、スマートにシェア。'
-      : qrData.headerText;
+  // 状態変数のtextColorを優先して使用
+  const displayTextColor = textColor || '#FFFFFF';
+  // 状態変数のheaderTextを優先して使用
+  const displayHeaderText = headerText || 'シンプルにつながる、スマートにシェア。';
+
+  // コンポーネントの状態値を使用するためコメントアウト
+  // const textColor =
+  //  qrData.textColor === null || qrData.textColor === undefined || qrData.textColor === ''
+  //    ? '#FFFFFF'
+  //    : qrData.textColor;
+  // const headerText =
+  //  qrData.headerText === null || qrData.headerText === undefined || qrData.headerText === ''
+  //    ? 'シンプルにつながる、スマートにシェア。'
+  //    : qrData.headerText;
 
   // さらに確認のためにログを追加
-  console.log('Header text value:', qrData.headerText);
-  console.log('Text color value:', qrData.textColor);
+  console.log('Header text from state:', headerText);
+  console.log('Text color from state:', textColor);
+  console.log('QR Data header text:', qrData.headerText);
+  console.log('QR Data text color:', qrData.textColor);
 
   const containerStyle = {
     transform: isFlipped ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -176,14 +184,14 @@ export default function QrCodeViewPage() {
           >
             <p
               style={{
-                color: textColor,
+                color: displayTextColor,
                 textAlign: 'center',
                 fontWeight: '500',
                 whiteSpace: 'pre-wrap',
                 margin: 0,
               }}
             >
-              {headerText}
+              {displayHeaderText}
             </p>
           </div>
 
@@ -250,15 +258,18 @@ export default function QrCodeViewPage() {
             <div className="mt-8">
               <button
                 onClick={handleFlip}
-                className="w-full py-3 text-white rounded-md flex items-center justify-center"
-                style={{ backgroundColor: mainColor }}
+                className="w-full py-3 rounded-md flex items-center justify-center"
+                style={{
+                  backgroundColor: mainColor,
+                  color: displayTextColor, // テキストカラーを適用
+                }}
               >
                 <div style={buttonContentStyle} className="flex items-center text-xl">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-2"
                     viewBox="0 0 20 20"
-                    fill="currentColor"
+                    fill="currentColor" // currentColorはボタンのcolorプロパティを継承
                   >
                     <path
                       fillRule="evenodd"

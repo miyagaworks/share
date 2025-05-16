@@ -24,10 +24,7 @@ export async function POST(request: Request) {
       secondaryColor,
       accentColor,
       userName,
-      nameEn,
       profileUrl,
-      headerText,
-      textColor,
     } = body;
 
     // 必須フィールドのバリデーション
@@ -45,7 +42,7 @@ export async function POST(request: Request) {
       );
     }
 
-    // 既存のQRコードページを検索
+    // 既存のQRコードページを検索（slug単位のチェック）
     const existingQrCode = await prisma.qrCodePage.findUnique({
       where: { slug },
     });
@@ -55,14 +52,50 @@ export async function POST(request: Request) {
       if (existingQrCode.userId !== session.user.id) {
         return NextResponse.json({ error: 'このスラグは既に使用されています' }, { status: 409 });
       }
+
       // 自分のものなら更新
-      return NextResponse.json(
-        {
-          info: 'このスラグは既に使用されています。更新してください。',
-          qrCode: existingQrCode,
+      const updatedQrCode = await prisma.qrCodePage.update({
+        where: { id: existingQrCode.id },
+        data: {
+          primaryColor,
+          secondaryColor: secondaryColor || primaryColor,
+          accentColor: accentColor || '#FFFFFF',
+          userName: userName || '',
+          profileUrl,
         },
-        { status: 200 },
-      );
+      });
+
+      return NextResponse.json({
+        success: true,
+        qrCode: updatedQrCode,
+        url: `/qr/${slug}`,
+      });
+    }
+
+    // ユーザーの既存QRコードを検索（ユーザーIDによる検索）
+    const existingUserQrCode = await prisma.qrCodePage.findFirst({
+      where: { userId: session.user.id },
+    });
+
+    // ユーザーがすでにQRコードを持っている場合は更新
+    if (existingUserQrCode) {
+      const updatedQrCode = await prisma.qrCodePage.update({
+        where: { id: existingUserQrCode.id },
+        data: {
+          slug,
+          primaryColor,
+          secondaryColor: secondaryColor || primaryColor,
+          accentColor: accentColor || '#FFFFFF',
+          userName: userName || '',
+          profileUrl,
+        },
+      });
+
+      return NextResponse.json({
+        success: true,
+        qrCode: updatedQrCode,
+        url: `/qr/${slug}`,
+      });
     }
 
     // 新しいQRコードページのデータを準備
@@ -70,18 +103,16 @@ export async function POST(request: Request) {
       slug,
       userId: session.user.id,
       userName: userName || '',
-      nameEn: nameEn || '',
       profileUrl,
       template,
       primaryColor,
       secondaryColor: secondaryColor || primaryColor,
       accentColor: accentColor || '#FFFFFF',
-      headerText: headerText || 'シンプルにつながる、スマートにシェア。',
-      textColor: textColor || '#FFFFFF',
     };
 
     console.log('Creating QR code with data:', createData); // デバッグ用
 
+    // 新しいQRコードを作成
     const newQrCode = await prisma.qrCodePage.create({
       data: createData,
     });

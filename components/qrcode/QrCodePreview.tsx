@@ -128,15 +128,18 @@ export function QrCodePreview({
           {/* 反転ボタン */}
           <div className="mt-8">
             <button
-              className="w-full py-3 text-white rounded-md flex items-center justify-center"
-              style={{ backgroundColor: mainColor }}
+              className="w-full py-3 rounded-md flex items-center justify-center"
+              style={{
+                backgroundColor: mainColor,
+                color: textCol, // ここでテキストカラーを適用
+              }}
             >
               <div className="flex items-center text-xl">
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5 mr-2"
                   viewBox="0 0 20 20"
-                  fill="currentColor"
+                  fill="currentColor" // currentColorはボタンのcolorプロパティを継承
                 >
                   <path
                     fillRule="evenodd"
