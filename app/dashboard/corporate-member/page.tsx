@@ -8,6 +8,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
+import { Spinner } from '@/components/ui/Spinner';
+import { corporateAccessState } from '@/lib/corporateAccessState';
 import {
   HiUser,
   HiOfficeBuilding,
@@ -17,9 +19,10 @@ import {
   HiQrcode,
   HiUserGroup,
   HiBriefcase,
+  HiEye,
+  HiDeviceMobile,
+  HiPlus,
 } from 'react-icons/hi';
-import { Spinner } from '@/components/ui/Spinner';
-import { corporateAccessState } from '@/lib/corporateAccessState';
 
 // テナント情報の型定義
 interface TenantData {
@@ -456,6 +459,79 @@ export default function CorporateMemberPage() {
         </motion.div>
       </div>
 
+      {/* 公開QRコードカード */}
+      <motion.div
+        variants={cardVariants}
+        className="rounded-xl border border-[#1E3A8A]/40 bg-white shadow-sm overflow-hidden"
+        transition={{ duration: 0.3 }}
+      >
+        <div className="border-b border-[#1E3A8A]/40 px-6 py-4">
+          <div className="flex items-center">
+            <HiQrcode className="h-5 w-5 text-gray-700" />
+            <h2 className="ml-2 text-lg font-semibold">公開QRコード</h2>
+          </div>
+        </div>
+        <div className="p-6">
+          {profileUrl ? (
+            <>
+              <div className="flex justify-center mb-4">
+                <div className="bg-white p-3 rounded-lg shadow-sm">
+                  {/* QRコードを表示 - シンプルな画像として表示 */}
+                  <div className="w-32 h-32 relative">
+                    <Image
+                      src={`/api/qr-image?url=${encodeURIComponent(`${typeof window !== 'undefined' ? window.location.origin : ''}/qr/${userData.profile?.slug}`)}`}
+                      alt="QRコード"
+                      width={128}
+                      height={128}
+                      className="object-contain"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div className="flex flex-col space-y-2">
+                <Link href={`/qr/${userData.profile?.slug}`} target="_blank">
+                  <Button variant="corporate" className="w-full">
+                    <HiEye className="mr-2 h-4 w-4" />
+                    表示
+                  </Button>
+                </Link>
+                <Link href="/qrcode">
+                  <Button variant="corporateOutline" className="w-full">
+                    <HiColorSwatch className="mr-2 h-4 w-4" />
+                    デザイン変更
+                  </Button>
+                </Link>
+                <Button
+                  variant="corporateOutline"
+                  onClick={() => {
+                    router.push('/qrcode?showSaveInstructions=true');
+                  }}
+                  className="w-full"
+                >
+                  <HiDeviceMobile className="mr-2 h-4 w-4" />
+                  スマホに保存する方法
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
+              <div className="text-center py-4 mb-4">
+                <HiQrcode className="h-16 w-16 text-gray-300 mx-auto" />
+                <p className="text-gray-600 mt-2 mb-4">QRコードが作成されていません</p>
+              </div>
+              <div className="flex flex-col">
+                <Link href="/qrcode">
+                  <Button variant="corporate" className="w-full">
+                    <HiPlus className="mr-2 h-4 w-4" />
+                    QRコードを作成
+                  </Button>
+                </Link>
+              </div>
+            </>
+          )}
+        </div>
+      </motion.div>
+
       {/* クイックアクションカード */}
       <motion.div
         variants={cardVariants}
@@ -468,7 +544,7 @@ export default function CorporateMemberPage() {
           </div>
         </div>
         <div className="p-6">
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             <Link href="/dashboard/corporate-member/design">
               <Button
                 variant="corporate"

@@ -11,30 +11,57 @@ import { QrCodePreview } from './QrCodePreview';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/Input';
 
-// 不要な型定義は削除
+// 法人ブランディング設定の型定義
+interface CorporateBranding {
+  primaryColor: string;
+  textColor: string;
+  headerText: string;
+}
 
-export function QrCodeGenerator() {
-  const [primaryColor, setPrimaryColor] = useState('#3B82F6'); // デフォルトカラー
-  const [textColor, setTextColor] = useState('#FFFFFF'); // テキストカラー
+// ユーザープロフィール情報の型定義
+interface UserProfile {
+  profileUrl: string;
+  userName: string;
+  nameEn: string;
+  profileImage?: string;
+  headerText?: string;
+}
+
+// コンポーネントのprops型定義
+interface QrCodeGeneratorProps {
+  // 既存のプロパティ...
+  corporateBranding?: CorporateBranding;
+  userProfile: UserProfile;
+}
+
+export function QrCodeGenerator({ corporateBranding, userProfile }: QrCodeGeneratorProps) {
+  // 法人ブランディングが指定されていればそれを使用、なければデフォルト値
+  const initialPrimaryColor = corporateBranding?.primaryColor || '#3B82F6';
+  const initialTextColor = corporateBranding?.textColor || '#FFFFFF';
+  const initialHeaderText =
+    corporateBranding?.headerText ||
+    userProfile.headerText ||
+    'シンプルにつながる、スマートにシェア。';
+  const [primaryColor, setPrimaryColor] = useState(initialPrimaryColor);
+  const [textColor, setTextColor] = useState(initialTextColor);
+  const [headerText, setHeaderText] = useState(initialHeaderText);
   const [showSaveInstructions, setShowSaveInstructions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [profileUrl, setProfileUrl] = useState('');
-  const [userProfileName, setUserProfileName] = useState('');
-  const [userId, setUserId] = useState<string | null>(null);
   const [customUrlSlug, setCustomUrlSlug] = useState('');
   const [isSlugAvailable, setIsSlugAvailable] = useState(false);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const [generatedUrl, setGeneratedUrl] = useState('');
-  const previewRef = useRef<HTMLDivElement>(null);
-  const [userProfileNameEn, setUserProfileNameEn] = useState('');
-  const [headerText, setHeaderText] = useState('シンプルにつながる、スマートにシェア。');
-  const [profileImage, setProfileImage] = useState<string | undefined>(undefined);
+  const [userId, setUserId] = useState<string | null>(null);
   const [isExistingQrCode, setIsExistingQrCode] = useState(false);
   const [existingQrCodeId, setExistingQrCodeId] = useState<string | null>(null);
+  const previewRef = useRef<HTMLDivElement>(null);
+
+  // 法人カラーを使用するかどうかのフラグ（法人ブランディングがある場合）
+  const [useCorporateBranding, setUseCorporateBranding] = useState(!!corporateBranding);
 
   // ユーザーのプロフィールURLとQRコード情報を読み込む
   useEffect(() => {
-    const loadProfileAndQrCode = async () => {
+    const loadQrCodeData = async () => {
       try {
         // プロフィール情報の取得
         const profileResponse = await fetch('/api/profile');
@@ -43,30 +70,8 @@ export function QrCodeGenerator() {
         }
 
         const profileData = await profileResponse.json();
-        if (profileData?.user?.profile?.slug) {
-          const baseUrl = `${window.location.origin}/${profileData.user.profile.slug}`;
-          setProfileUrl(baseUrl);
+        if (profileData?.user?.id) {
           setUserId(profileData.user.id);
-
-          // ユーザー情報を設定
-          if (profileData?.user?.name) {
-            setUserProfileName(profileData.user.name);
-          }
-          if (profileData?.user?.nameEn) {
-            setUserProfileNameEn(profileData.user.nameEn);
-          }
-          if (profileData?.user?.image) {
-            setProfileImage(profileData.user.image);
-          }
-          if (profileData?.user?.mainColor) {
-            setPrimaryColor(profileData.user.mainColor);
-          }
-          if (profileData?.user?.headerText) {
-            setHeaderText(profileData.user.headerText);
-          }
-          if (profileData?.user?.textColor) {
-            setTextColor(profileData.user.textColor);
-          }
 
           // 既存のQRコードを取得
           try {
@@ -80,13 +85,22 @@ export function QrCodeGenerator() {
               // 最新のQRコードを使用
               const latestQrCode = qrCodesData.qrCodes[0];
               setCustomUrlSlug(latestQrCode.slug);
-              setPrimaryColor(latestQrCode.primaryColor);
-              setTextColor(latestQrCode.textColor || '#FFFFFF');
+
+              // 法人ブランディングが指定されていない場合のみ、QRコードの色設定を適用
+              if (!corporateBranding) {
+                setPrimaryColor(latestQrCode.primaryColor);
+                setTextColor(latestQrCode.textColor || '#FFFFFF');
+              }
+
               setIsExistingQrCode(true);
               setExistingQrCodeId(latestQrCode.id);
 
               // 自分のQRコードなので編集可能
               setIsSlugAvailable(true);
+
+              // 既存のQRコードURLを設定
+              const fullUrl = `${window.location.origin}/qr/${latestQrCode.slug}`;
+              setGeneratedUrl(fullUrl);
             } else {
               // QRコードがない場合はランダムスラグを設定
               const randomSlug = Math.random().toString(36).substring(2, 7);
@@ -107,8 +121,8 @@ export function QrCodeGenerator() {
       }
     };
 
-    loadProfileAndQrCode();
-  }, []);
+    loadQrCodeData();
+  }, [corporateBranding]);
 
   // カスタムURLスラグの利用可能性をチェック
   const checkSlugAvailability = async (slug: string) => {
@@ -198,11 +212,10 @@ export function QrCodeGenerator() {
         primaryColor,
         secondaryColor: primaryColor,
         accentColor: '#FFFFFF',
-        userName: userProfileName,
-        profileUrl,
+        textColor: textColor,
+        userName: userProfile.userName,
+        profileUrl: userProfile.profileUrl,
       };
-
-      console.log('Sending QR code data:', qrCodeData);
 
       // 既存QRコードの更新または新規作成
       const endpoint =
@@ -210,38 +223,30 @@ export function QrCodeGenerator() {
           ? `/api/qrcode/update/${existingQrCodeId}`
           : '/api/qrcode/create';
 
-      console.log(`Using endpoint: ${endpoint}`);
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(qrCodeData),
+      });
 
-      try {
-        const response = await fetch(endpoint, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(qrCodeData),
-        });
+      const responseData = await response.json();
 
-        const responseData = await response.json();
-        console.log('Response from API:', responseData);
-
-        if (!response.ok) {
-          throw new Error(responseData.error || 'QRコードページの作成に失敗しました');
-        }
-
-        // 成功
-        const fullUrl = `${window.location.origin}/qr/${customUrlSlug}`;
-        setGeneratedUrl(fullUrl);
-
-        toast.success(
-          isExistingQrCode ? 'QRコードページを更新しました！' : 'QRコードページを作成しました！',
-        );
-      } catch (err) {
-        console.error('API呼び出しエラー:', err);
-        toast.error(err instanceof Error ? err.message : '予期せぬエラーが発生しました');
+      if (!response.ok) {
+        throw new Error(responseData.error || 'QRコードページの作成に失敗しました');
       }
+
+      // 成功
+      const fullUrl = `${window.location.origin}/qr/${customUrlSlug}`;
+      setGeneratedUrl(fullUrl);
+
+      toast.success(
+        isExistingQrCode ? 'QRコードページを更新しました！' : 'QRコードページを作成しました！',
+      );
     } catch (err) {
       console.error('QRコードページ作成/更新エラー:', err);
-      toast.error('QRコードページの作成に失敗しました');
+      toast.error(err instanceof Error ? err.message : 'QRコードページの作成に失敗しました');
     } finally {
       setIsSaving(false);
     }
@@ -255,7 +260,39 @@ export function QrCodeGenerator() {
     }
   };
 
-  // 以下、コンポーネントのレンダリング部分（変更なし）
+  // 法人ブランディングの切り替え
+  const toggleCorporateBranding = () => {
+    if (corporateBranding) {
+      if (useCorporateBranding) {
+        // 法人ブランディングをOFFにする場合はユーザーのヘッダーテキストに戻す
+        setUseCorporateBranding(false);
+        setHeaderText(userProfile.headerText || 'シンプルにつながる、スマートにシェア。');
+      } else {
+        // 法人ブランディングをONにして設定を復元
+        setPrimaryColor(corporateBranding.primaryColor);
+        setTextColor(corporateBranding.textColor);
+        setHeaderText(corporateBranding.headerText);
+        setUseCorporateBranding(true);
+      }
+    }
+  };
+
+  // また、useEffectでuserProfile.headerTextが変更された場合に更新
+  useEffect(() => {
+    if (!useCorporateBranding && userProfile.headerText) {
+      setHeaderText(userProfile.headerText);
+    }
+  }, [userProfile.headerText, useCorporateBranding]);
+  
+  // 法人メンバー向けのUI調整
+  const buttonStyle = corporateBranding
+    ? { backgroundColor: useCorporateBranding ? corporateBranding.primaryColor : undefined }
+    : undefined;
+
+  const buttonVariant = corporateBranding && useCorporateBranding ? 'corporate' : undefined;
+  const outlineButtonVariant =
+    corporateBranding && useCorporateBranding ? 'corporateOutline' : 'outline';
+
   return (
     <div className="space-y-6">
       <div className="flex items-center mb-6">
@@ -282,6 +319,28 @@ export function QrCodeGenerator() {
           <p className="text-sm text-muted-foreground mb-6 text-justify">
             QRコードのデザインと色をカスタマイズできます
           </p>
+
+          {/* 法人ブランディングの切り替え（法人メンバーの場合のみ表示） */}
+          {corporateBranding && (
+            <div className="mb-6">
+              <label className="block text-sm font-medium text-gray-700 mb-2">
+                法人ブランディング
+              </label>
+              <div className="flex items-center">
+                <input
+                  type="checkbox"
+                  checked={useCorporateBranding}
+                  onChange={toggleCorporateBranding}
+                  className="h-4 w-4 text-blue-600 rounded border-gray-300 focus:ring-blue-500"
+                  style={{ accentColor: corporateBranding.primaryColor }}
+                />
+                <span className="ml-2 text-sm text-gray-700">法人カラーを適用する</span>
+              </div>
+              <p className="text-xs text-gray-500 mt-1">
+                法人カラーを適用すると、QRコードページは法人のブランディングに合わせたデザインになります。
+              </p>
+            </div>
+          )}
 
           {/* カスタムURLスラグ入力 */}
           <div className="mb-6">
@@ -318,27 +377,33 @@ export function QrCodeGenerator() {
             </div>
           </div>
 
-          {/* カラーピッカー - メインカラーとテキストカラー */}
-          <div className="space-y-6">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">メインカラー</label>
-              <p className="text-xs text-gray-500 mb-2">ヘッダーとボタンに適用されます</p>
-              <EnhancedColorPicker color={primaryColor} onChange={setPrimaryColor} />
-            </div>
+          {/* カラーピッカー - メインカラーとテキストカラー （法人ブランディングがOFFの場合のみ表示） */}
+          {(!corporateBranding || !useCorporateBranding) && (
+            <div className="space-y-6">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">メインカラー</label>
+                <p className="text-xs text-gray-500 mb-2">ヘッダーとボタンに適用されます</p>
+                <EnhancedColorPicker color={primaryColor} onChange={setPrimaryColor} />
+              </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">テキストカラー</label>
-              <p className="text-xs text-gray-500 mb-2">
-                ヘッダーとボタン内のテキストカラーに適用されます
-              </p>
-              <EnhancedColorPicker color={textColor} onChange={setTextColor} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  テキストカラー
+                </label>
+                <p className="text-xs text-gray-500 mb-2">
+                  ヘッダーとボタン内のテキストカラーに適用されます
+                </p>
+                <EnhancedColorPicker color={textColor} onChange={setTextColor} />
+              </div>
             </div>
-          </div>
+          )}
 
           {/* QRコードページ生成ボタン */}
           <div className="mt-6 space-y-3">
             <Button
-              className="w-full flex items-center gap-2 justify-center bg-blue-700 hover:bg-blue-800 text-white"
+              className="w-full flex items-center gap-2 justify-center"
+              style={buttonStyle}
+              variant={buttonVariant}
               onClick={generateQrCodePage}
               disabled={isSaving || (!isSlugAvailable && !isExistingQrCode)}
             >
@@ -360,7 +425,7 @@ export function QrCodeGenerator() {
               className="w-full flex items-center gap-2 justify-center"
               onClick={copyGeneratedUrl}
               disabled={!generatedUrl}
-              variant="outline"
+              variant={outlineButtonVariant}
             >
               <FaCopy className="h-4 w-4" />
               {generatedUrl ? 'URLをコピー' : 'QRコードページを先に作成してください'}
@@ -376,13 +441,20 @@ export function QrCodeGenerator() {
                     readOnly
                     className="flex-1 text-sm p-2 border border-gray-300 rounded-l-md"
                   />
-                  <Button className="rounded-l-none bg-gray-800" onClick={copyGeneratedUrl}>
+                  <Button
+                    className="rounded-l-none"
+                    variant={buttonVariant}
+                    style={buttonStyle}
+                    onClick={copyGeneratedUrl}
+                  >
                     コピー
                   </Button>
                 </div>
                 <div className="mt-2">
                   <Button
-                    className="w-full bg-green-600 hover:bg-green-700"
+                    className="w-full"
+                    variant={buttonVariant}
+                    style={buttonStyle}
                     onClick={() => window.open(generatedUrl, '_blank')}
                   >
                     QRコードページを開く
@@ -393,7 +465,7 @@ export function QrCodeGenerator() {
 
             <Button
               type="button"
-              variant="outline"
+              variant={outlineButtonVariant}
               className="w-full flex items-center gap-2 justify-center"
               onClick={() => setShowSaveInstructions(true)}
             >
@@ -418,21 +490,21 @@ export function QrCodeGenerator() {
             設定したカラーとデザインがQRコードにどのように適用されるかを確認できます
           </p>
           <QrCodePreview
-            profileUrl={profileUrl}
-            userName={userProfileName}
-            nameEn={userProfileNameEn}
+            profileUrl={generatedUrl || userProfile.profileUrl}
+            userName={userProfile.userName}
+            nameEn={userProfile.nameEn}
             templateId="simple" // テンプレートは固定
             primaryColor={primaryColor}
             secondaryColor={primaryColor} // メインカラーと同じに
             accentColor="#FFFFFF" // 使用しない
             headerText={headerText}
             textColor={textColor}
-            profileImage={profileImage}
+            profileImage={userProfile.profileImage}
           />
         </motion.div>
       </div>
 
-      {/* モーダル部分（変更なし） */}
+      {/* モーダル部分 */}
       {showSaveInstructions && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl">
@@ -468,7 +540,8 @@ export function QrCodeGenerator() {
             <div className="flex justify-end">
               <Button
                 onClick={() => setShowSaveInstructions(false)}
-                className="bg-blue-700 hover:bg-blue-800 text-white"
+                variant={buttonVariant}
+                style={buttonStyle}
               >
                 閉じる
               </Button>

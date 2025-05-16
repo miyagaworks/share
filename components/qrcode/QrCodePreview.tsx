@@ -1,19 +1,17 @@
 // components/qrcode/QrCodePreview.tsx
-'use client';
-
-import { useRef } from 'react';
+import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import Image from 'next/image';
 
 interface QrCodePreviewProps {
   profileUrl: string;
   userName: string;
-  nameEn?: string;
-  templateId: string;
+  nameEn?: string | null;
+  templateId?: string; // オプショナルに
   primaryColor: string;
-  secondaryColor: string;
-  accentColor: string;
-  headerText?: string;
+  secondaryColor?: string; // オプショナルに
+  accentColor?: string; // オプショナルに
+  headerText?: string | null;
   textColor?: string;
   profileImage?: string;
 }
@@ -21,56 +19,66 @@ interface QrCodePreviewProps {
 export function QrCodePreview({
   profileUrl,
   userName,
-  nameEn,
+  nameEn = '',
+  // templateId = 'simple', // 使わない場合はコメントアウト
   primaryColor,
-  headerText,
-  textColor,
-  profileImage, // プロフィール画像を引数に追加
+  // secondaryColor, // 使わない場合はコメントアウト
+  // accentColor, // 使わない場合はコメントアウト
+  headerText = 'シンプルにつながる、スマートにシェア。',
+  textColor = '#FFFFFF', // nullではなく文字列のデフォルト値を設定
+  profileImage,
 }: QrCodePreviewProps) {
-  const qrRef = useRef<HTMLDivElement>(null);
-  const qrSize = 180; // 小さくしたQRコードサイズ
+  // プレビューのサイズ設定
+  const containerStyle = {
+    width: '100%',
+    maxWidth: '320px',
+    margin: '0 auto',
+    borderRadius: '8px',
+    overflow: 'hidden',
+    backgroundColor: '#ebeeef',
+    boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+  };
 
-  // デフォルト値の設定
-  const mainColor = primaryColor || '#3b82f6';
-  const textCol = textColor || '#FFFFFF';
-  const header = headerText || 'シンプルにつながる、スマートにシェア。';
+  // ヘッダースタイル
+  const headerStyle = {
+    backgroundColor: primaryColor,
+    color: textColor || '#FFFFFF', // null の場合は #FFFFFF を使用
+    width: 'calc(100% - 40px)',
+    display: 'flex' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    borderBottomLeftRadius: '15px',
+    borderBottomRightRadius: '15px',
+    margin: '0 auto',
+    padding: '0.75rem 1rem',
+  };
+
+  // ヘッダーテキストスタイル
+  const headerTextStyle = {
+    color: textColor,
+    textAlign: 'center' as const,
+    fontWeight: '500' as const,
+    whiteSpace: 'pre-wrap' as const,
+    margin: 0,
+  };
 
   return (
-    <div className="flex flex-col items-center">
-      <div className="w-full max-w-xs bg-[#ebeeef]">
-        {/* ヘッダーテキスト - 上部にくっついて下側だけ角丸 */}
-        <div
-          style={{
-            backgroundColor: mainColor,
-            width: 'calc(100% - 40px)', // 左右に20pxずつの余白
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            borderBottomLeftRadius: '15px',
-            borderBottomRightRadius: '15px',
-            margin: '0 auto', // 中央寄せ
-            padding: '0.75rem 1rem', // paddingで調整
-          }}
-        >
-          <p
-            style={{
-              color: textCol,
-              textAlign: 'center',
-              fontWeight: '500',
-              whiteSpace: 'pre-wrap',
-              margin: 0,
-            }}
-          >
-            {header}
-          </p>
+    <div style={containerStyle}>
+      <div style={{ minHeight: '480px' }}>
+        {/* ヘッダーテキスト */}
+        <div style={headerStyle}>
+          <p style={headerTextStyle}>{headerText || 'シンプルにつながる、スマートにシェア。'}</p>
         </div>
 
         <div style={{ padding: '1.5rem' }}>
-          {/* プロフィール部分 - 条件付きで画像を表示 */}
+          {/* プロフィール部分 */}
           <div className="text-center mt-4 mb-6">
             <div
               className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3 flex items-center justify-center"
-              style={{ backgroundColor: profileImage ? 'transparent' : '#5e6372' }}
+              style={{
+                backgroundColor: profileImage ? 'transparent' : '#5e6372',
+                border: profileImage ? '1px solid #e5e7eb' : 'none',
+              }}
             >
               {profileImage ? (
                 <Image
@@ -79,6 +87,7 @@ export function QrCodePreview({
                   width={80}
                   height={80}
                   className="w-full h-full object-cover"
+                  unoptimized
                 />
               ) : (
                 <svg
@@ -98,24 +107,23 @@ export function QrCodePreview({
               )}
             </div>
 
-            {/* ユーザー名 - フォントサイズ調整 */}
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{userName || '宗光 徹'}</h1>
-            {/* 英語名 - 常に表示する */}
-            <p style={{ color: '#4B5563', fontSize: '1rem' }}>{nameEn || 'Toru Munemitsu'}</p>
+            {/* ユーザー名 */}
+            <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{userName || 'ユーザー名'}</h1>
+            {/* 英語名 */}
+            {nameEn && <p style={{ color: '#4B5563', fontSize: '1rem' }}>{nameEn}</p>}
           </div>
 
-          {/* QRコード - サイズを小さく */}
+          {/* QRコード */}
           <div className="flex justify-center my-6">
             <div
-              className="bg-white p-4 rounded-lg"
+              className="bg-white p-6 rounded-lg"
               style={{
                 boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
               }}
-              ref={qrRef}
             >
               <QRCodeSVG
                 value={profileUrl || 'https://example.com'}
-                size={qrSize}
+                size={140}
                 level="M"
                 bgColor={'#FFFFFF'}
                 fgColor={'#000000'}
@@ -124,14 +132,13 @@ export function QrCodePreview({
             </div>
           </div>
 
-          {/* 以下は変更なし */}
           {/* 反転ボタン */}
           <div className="mt-8">
             <button
               className="w-full py-3 rounded-md flex items-center justify-center"
               style={{
-                backgroundColor: mainColor,
-                color: textCol, // ここでテキストカラーを適用
+                backgroundColor: primaryColor,
+                color: textColor || '#FFFFFF', // null の場合は #FFFFFF を使用
               }}
             >
               <div className="flex items-center text-xl">
@@ -139,7 +146,7 @@ export function QrCodePreview({
                   xmlns="http://www.w3.org/2000/svg"
                   className="h-5 w-5 mr-2"
                   viewBox="0 0 20 20"
-                  fill="currentColor" // currentColorはボタンのcolorプロパティを継承
+                  fill="currentColor"
                 >
                   <path
                     fillRule="evenodd"
@@ -152,7 +159,7 @@ export function QrCodePreview({
             </button>
           </div>
 
-          {/* フッター - フォントサイズ調整 */}
+          {/* フッター */}
           <div className="mt-8 text-center border-t border-gray-300 pt-4">
             <p style={{ fontSize: '0.75rem', color: '#6B7280' }}>Powered by Share</p>
           </div>

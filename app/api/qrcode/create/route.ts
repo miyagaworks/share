@@ -15,17 +15,11 @@ export async function POST(request: Request) {
 
     // リクエストボディを取得
     const body = await request.json();
-    console.log('Create QR code - Request body:', body); // デバッグ用
+    console.log('QRコードデータ受信:', body); // デバッグ用
+    console.log('textColor値:', body.textColor); // 特にtextColorをチェック
 
-    const {
-      slug,
-      template,
-      primaryColor,
-      secondaryColor,
-      accentColor,
-      userName,
-      profileUrl,
-    } = body;
+    const { slug, template, primaryColor, secondaryColor, accentColor, userName, profileUrl } =
+      body;
 
     // 必須フィールドのバリデーション
     if (!slug || !template || !primaryColor || !profileUrl) {
@@ -42,7 +36,7 @@ export async function POST(request: Request) {
       if (existingQrCode.userId !== session.user.id) {
         return NextResponse.json({ error: 'このスラグは既に使用されています' }, { status: 409 });
       }
-      
+
       // 自分のものなら更新
       try {
         const updatedQrCode = await prisma.qrCodePage.update({
@@ -51,13 +45,14 @@ export async function POST(request: Request) {
             primaryColor,
             secondaryColor: secondaryColor || primaryColor,
             accentColor: accentColor || '#FFFFFF',
+            textColor: body.textColor || '#FFFFFF',
             userName: userName || '',
             profileUrl,
           },
         });
-        
+
         console.log('Updated existing QR code:', updatedQrCode);
-        
+
         return NextResponse.json({
           success: true,
           qrCode: updatedQrCode,
@@ -66,7 +61,10 @@ export async function POST(request: Request) {
       } catch (prismaError) {
         console.error('Prisma update error:', prismaError);
         // Prismaエラーの詳細を確認
-        return NextResponse.json({ error: `データベース更新エラー: ${prismaError}` }, { status: 500 });
+        return NextResponse.json(
+          { error: `データベース更新エラー: ${prismaError}` },
+          { status: 500 },
+        );
       }
     }
 
@@ -85,13 +83,14 @@ export async function POST(request: Request) {
             primaryColor,
             secondaryColor: secondaryColor || primaryColor,
             accentColor: accentColor || '#FFFFFF',
+            textColor: body.textColor || '#FFFFFF',
             userName: userName || '',
             profileUrl,
           },
         });
-        
+
         console.log('Updated user QR code:', updatedQrCode);
-        
+
         return NextResponse.json({
           success: true,
           qrCode: updatedQrCode,
@@ -99,7 +98,10 @@ export async function POST(request: Request) {
         });
       } catch (prismaError) {
         console.error('Prisma update error:', prismaError);
-        return NextResponse.json({ error: `データベース更新エラー: ${prismaError}` }, { status: 500 });
+        return NextResponse.json(
+          { error: `データベース更新エラー: ${prismaError}` },
+          { status: 500 },
+        );
       }
     }
 
@@ -113,6 +115,7 @@ export async function POST(request: Request) {
       primaryColor,
       secondaryColor: secondaryColor || primaryColor,
       accentColor: accentColor || '#FFFFFF',
+      textColor: body.textColor || '#FFFFFF',
     };
 
     console.log('Creating new QR code with data:', createData);
@@ -122,9 +125,9 @@ export async function POST(request: Request) {
       const newQrCode = await prisma.qrCodePage.create({
         data: createData,
       });
-      
+
       console.log('Created new QR code:', newQrCode);
-      
+
       return NextResponse.json({
         success: true,
         qrCode: newQrCode,
@@ -132,7 +135,10 @@ export async function POST(request: Request) {
       });
     } catch (prismaError) {
       console.error('Prisma create error:', prismaError);
-      return NextResponse.json({ error: `データベース作成エラー: ${prismaError}` }, { status: 500 });
+      return NextResponse.json(
+        { error: `データベース作成エラー: ${prismaError}` },
+        { status: 500 },
+      );
     }
   } catch (error) {
     console.error('QRコードページ作成エラー:', error);
