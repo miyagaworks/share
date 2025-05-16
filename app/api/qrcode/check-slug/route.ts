@@ -3,12 +3,17 @@ export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { auth } from '@/auth'; // authをインポート
 
 export async function GET(request: Request) {
   try {
     // URLからクエリパラメータを取得
     const url = new URL(request.url);
     const slug = url.searchParams.get('slug');
+
+    // 認証チェック
+    const session = await auth();
+    const userId = session?.user?.id;
 
     if (!slug) {
       return NextResponse.json(
@@ -34,9 +39,23 @@ export async function GET(request: Request) {
     });
 
     // 存在しなければ使用可能
+    if (!existingQrCode) {
+      return NextResponse.json({
+        available: true,
+        message: '使用可能なスラグです',
+      });
+    }
+
+    // 自分のQRコードかどうかをチェック
+    const ownedByCurrentUser = userId && existingQrCode.userId === userId;
+
     return NextResponse.json({
-      available: !existingQrCode,
-      message: existingQrCode ? 'このスラグは既に使用されています' : '使用可能なスラグです',
+      available: false,
+      ownedByCurrentUser,
+      qrCodeId: ownedByCurrentUser ? existingQrCode.id : null,
+      message: ownedByCurrentUser
+        ? 'このスラグは既にあなたが使用しています'
+        : 'このスラグは既に使用されています',
     });
   } catch (error) {
     console.error('スラグチェックエラー:', error);

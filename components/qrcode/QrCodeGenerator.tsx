@@ -11,17 +11,18 @@ import { QrCodePreview } from './QrCodePreview';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/Input';
 
-// クライアント側の型定義
-interface QrCodeCreateData {
-  userId: string;
-  slug: string;
-  template: string;
-  primaryColor: string;
-  secondaryColor: string;
+interface UpdateQrCodeData {
+  userId?: string;
+  slug?: string;
+  template?: string;
+  primaryColor?: string;
+  secondaryColor?: string;
   accentColor?: string;
-  userName: string;
+  userName?: string;
   nameEn?: string;
-  profileUrl: string;
+  profileUrl?: string;
+  headerText?: string;
+  textColor?: string;
 }
 
 export function QrCodeGenerator() {
@@ -43,60 +44,83 @@ export function QrCodeGenerator() {
   const [isExistingQrCode, setIsExistingQrCode] = useState(false);
   const [existingQrCodeId, setExistingQrCodeId] = useState<string | null>(null);
 
-  // ユーザーのプロフィールURLを読み込む
+  // ユーザーのプロフィールURLとQRコード情報を読み込む
   useEffect(() => {
-    const loadProfileUrl = async () => {
+    const loadProfileAndQrCode = async () => {
       try {
-        const response = await fetch('/api/profile');
-        if (response.ok) {
-          const data = await response.json();
-          if (data?.user?.profile?.slug) {
-            const baseUrl = `${window.location.origin}/${data.user.profile.slug}`;
-            setProfileUrl(baseUrl);
-            setUserId(data.user.id);
+        // プロフィール情報の取得
+        const profileResponse = await fetch('/api/profile');
+        if (!profileResponse.ok) {
+          throw new Error('プロフィール情報の取得に失敗しました');
+        }
 
-            // ヘッダーテキストとテキストカラーを設定
-            if (data?.user?.headerText) {
-              setHeaderText(data.user.headerText);
-            }
-            if (data?.user?.textColor) {
-              setTextColor(data.user.textColor);
+        const profileData = await profileResponse.json();
+        if (profileData?.user?.profile?.slug) {
+          const baseUrl = `${window.location.origin}/${profileData.user.profile.slug}`;
+          setProfileUrl(baseUrl);
+          setUserId(profileData.user.id);
+
+          // ユーザー情報を設定
+          if (profileData?.user?.name) {
+            setUserProfileName(profileData.user.name);
+          }
+          if (profileData?.user?.nameEn) {
+            setUserProfileNameEn(profileData.user.nameEn);
+          }
+          if (profileData?.user?.image) {
+            setProfileImage(profileData.user.image);
+          }
+          if (profileData?.user?.mainColor) {
+            setPrimaryColor(profileData.user.mainColor);
+          }
+          if (profileData?.user?.headerText) {
+            setHeaderText(profileData.user.headerText);
+          }
+          if (profileData?.user?.textColor) {
+            setTextColor(profileData.user.textColor);
+          }
+
+          // 既存のQRコードを取得
+          try {
+            const qrCodesResponse = await fetch('/api/qrcode');
+            if (!qrCodesResponse.ok) {
+              throw new Error('QRコード情報の取得に失敗しました');
             }
 
-            // ユーザー名を設定
-            if (data?.user?.name) {
-              setUserProfileName(data.user.name);
-            }
+            const qrCodesData = await qrCodesResponse.json();
+            if (qrCodesData.qrCodes && qrCodesData.qrCodes.length > 0) {
+              // 最新のQRコードを使用
+              const latestQrCode = qrCodesData.qrCodes[0];
+              setCustomUrlSlug(latestQrCode.slug);
+              setPrimaryColor(latestQrCode.primaryColor);
+              setTextColor(latestQrCode.textColor || '#FFFFFF');
+              setHeaderText(latestQrCode.headerText || 'シンプルにつながる、スマートにシェア。');
+              setIsExistingQrCode(true);
+              setExistingQrCodeId(latestQrCode.id);
 
-            // 英語名を設定
-            if (data?.user?.nameEn) {
-              setUserProfileNameEn(data.user.nameEn);
+              // 自分のQRコードなので編集可能
+              setIsSlugAvailable(true);
+            } else {
+              // QRコードがない場合はランダムスラグを設定
+              const randomSlug = Math.random().toString(36).substring(2, 7);
+              setCustomUrlSlug(randomSlug);
+              checkSlugAvailability(randomSlug);
             }
-
-            // プロフィール画像を設定
-            if (data?.user?.image) {
-              setProfileImage(data.user.image);
-            }
-
-            // ユーザーの設定色を取得
-            if (data?.user?.mainColor) {
-              setPrimaryColor(data.user.mainColor);
-            }
-
-            // カスタムURLスラグのデフォルト値を設定（ランダム値）
+          } catch (error) {
+            console.error('QRコード取得エラー:', error);
+            // QRコード取得に失敗した場合もランダムスラグを設定
             const randomSlug = Math.random().toString(36).substring(2, 7);
             setCustomUrlSlug(randomSlug);
-
-            // 利用可能性をチェック
             checkSlugAvailability(randomSlug);
           }
         }
       } catch (error) {
         console.error('プロフィールURLの取得に失敗しました', error);
+        toast.error('プロフィール情報の取得に失敗しました');
       }
     };
 
-    loadProfileUrl();
+    loadProfileAndQrCode();
   }, []);
 
   // カスタムURLスラグの利用可能性をチェック
@@ -114,13 +138,22 @@ export function QrCodeGenerator() {
       const response = await fetch(`/api/qrcode/check-slug?slug=${slug}`);
       const data = await response.json();
 
-      setIsSlugAvailable(data.available);
-
-      // 既存のQRコードかどうかをチェック
-      if (!data.available && data.qrCodeId && data.ownedByCurrentUser) {
-        setIsExistingQrCode(true);
-        setExistingQrCodeId(data.qrCodeId);
+      if (!data.available) {
+        // 既に使用されているスラグ
+        if (data.ownedByCurrentUser) {
+          // 自分のQRコードの場合は編集可能とする
+          setIsSlugAvailable(true);
+          setIsExistingQrCode(true);
+          setExistingQrCodeId(data.qrCodeId);
+        } else {
+          // 他のユーザーのスラグは使用不可
+          setIsSlugAvailable(false);
+          setIsExistingQrCode(false);
+          setExistingQrCodeId(null);
+        }
       } else {
+        // 新しいスラグは使用可能
+        setIsSlugAvailable(true);
         setIsExistingQrCode(false);
         setExistingQrCodeId(null);
       }
@@ -148,7 +181,7 @@ export function QrCodeGenerator() {
     }
   };
 
-  // QRコードページを生成する
+  // QRコードページを生成または更新する
   const generateQrCodePage = async () => {
     if (!customUrlSlug || customUrlSlug.length < 3) {
       toast.error('有効なURLスラグを入力してください');
@@ -161,7 +194,7 @@ export function QrCodeGenerator() {
       return;
     }
 
-    // userId が null でないことを確認
+    // ユーザーIDが取得できているか確認
     if (!userId) {
       toast.error('ユーザーIDが取得できません');
       return;
@@ -170,8 +203,8 @@ export function QrCodeGenerator() {
     setIsSaving(true);
 
     try {
-      // QRコードページの設定を保存
-      const qrCodeData: QrCodeCreateData = {
+      // QRコードページの設定データを準備
+      const qrCodeData: UpdateQrCodeData = {
         userId,
         slug: customUrlSlug,
         template: 'simple',
@@ -179,8 +212,13 @@ export function QrCodeGenerator() {
         secondaryColor: primaryColor,
         accentColor: '#FFFFFF',
         userName: userProfileName,
-        profileUrl: profileUrl,
+        nameEn: userProfileNameEn,
+        profileUrl,
+        headerText,
+        textColor,
       };
+
+      console.log('送信するデータ:', qrCodeData);
 
       // 既存QRコードの更新または新規作成
       const endpoint =
@@ -196,22 +234,22 @@ export function QrCodeGenerator() {
         body: JSON.stringify(qrCodeData),
       });
 
-      if (response.ok) {
-        // サーバーからのレスポンスからURLを生成
-        const fullUrl = `${window.location.origin}/qr/${customUrlSlug}`;
-        setGeneratedUrl(fullUrl);
-
-        toast.success(
-          isExistingQrCode ? 'QRコードページを更新しました！' : 'QRコードページを作成しました！',
-        );
-      } else {
+      if (!response.ok) {
         const errorData = await response.json();
-        console.error('エラーレスポンス:', errorData);
-        toast.error(errorData.error || 'QRコードページの作成に失敗しました');
+        throw new Error(errorData.error || 'QRコードページの作成に失敗しました');
       }
+
+      // 生成されたQRコードページのURL
+      const fullUrl = `${window.location.origin}/qr/${customUrlSlug}`;
+      setGeneratedUrl(fullUrl);
+
+      // 成功メッセージを表示
+      toast.success(
+        isExistingQrCode ? 'QRコードページを更新しました！' : 'QRコードページを作成しました！',
+      );
     } catch (error) {
-      console.error('QRコードページ作成エラー:', error);
-      toast.error(`QRコードページの作成に失敗しました: ${error}`);
+      console.error('QRコードページ作成/更新エラー:', error);
+      toast.error(error instanceof Error ? error.message : '予期せぬエラーが発生しました');
     } finally {
       setIsSaving(false);
     }
@@ -287,7 +325,7 @@ export function QrCodeGenerator() {
             </div>
           </div>
 
-          {/* カラーピッカー - メインカラーとテキストカラーのみに簡素化 */}
+          {/* カラーピッカー - メインカラーとテキストカラー */}
           <div className="space-y-6">
             <div>
               <label className="block text-sm font-medium text-gray-700 mb-2">メインカラー</label>

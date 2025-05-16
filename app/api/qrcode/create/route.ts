@@ -1,4 +1,6 @@
 // app/api/qrcode/create/route.ts
+export const dynamic = 'force-dynamic';
+
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
@@ -22,8 +24,10 @@ export async function POST(request: Request) {
       secondaryColor,
       accentColor,
       userName,
+      nameEn,
       profileUrl,
-      // nameEn, headerText, textColorは使用しない
+      headerText,
+      textColor,
     } = body;
 
     // 必須フィールドのバリデーション
@@ -47,20 +51,33 @@ export async function POST(request: Request) {
     });
 
     if (existingQrCode) {
-      return NextResponse.json({ error: 'このスラグは既に使用されています' }, { status: 409 });
+      // 自分のものかチェック
+      if (existingQrCode.userId !== session.user.id) {
+        return NextResponse.json({ error: 'このスラグは既に使用されています' }, { status: 409 });
+      }
+      // 自分のものなら更新
+      return NextResponse.json(
+        {
+          info: 'このスラグは既に使用されています。更新してください。',
+          qrCode: existingQrCode,
+        },
+        { status: 200 },
+      );
     }
 
-    // 新しいQRコードページのデータを準備（スキーマに合わせて必要なフィールドのみを含む）
+    // 新しいQRコードページのデータを準備
     const createData = {
       slug,
       userId: session.user.id,
       userName: userName || '',
+      nameEn: nameEn || '',
       profileUrl,
       template,
       primaryColor,
       secondaryColor: secondaryColor || primaryColor,
       accentColor: accentColor || '#FFFFFF',
-      // headerText, textColor, nameEnは含めない
+      headerText: headerText || 'シンプルにつながる、スマートにシェア。',
+      textColor: textColor || '#FFFFFF',
     };
 
     console.log('Creating QR code with data:', createData); // デバッグ用

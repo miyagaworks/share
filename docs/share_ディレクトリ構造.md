@@ -144,13 +144,20 @@ share/
 │   │   │       └── [id]
 │   │   │           └── route.ts
 │   │   ├── profile
-│   │   │   └── route.ts
+│   │   │   ├── route.ts
+│   │   │   └── update
+│   │   │       └── route.ts
 │   │   ├── qrcode
 │   │   │   ├── [slug]
 │   │   │   │   └── route.ts
+│   │   │   ├── check-slug
+│   │   │   │   └── route.ts
 │   │   │   ├── create
 │   │   │   │   └── route.ts
-│   │   │   └── route.ts
+│   │   │   ├── route.ts
+│   │   │   └── update
+│   │   │       └── [id]
+│   │   │           └── route.ts
 │   │   ├── route-config.ts
 │   │   ├── subscription
 │   │   │   ├── cancel
@@ -171,6 +178,9 @@ share/
 │   │   ├── test-email
 │   │   │   └── route.ts
 │   │   ├── user
+│   │   │   ├── [userId]
+│   │   │   │   └── profile
+│   │   │   │       └── route.ts
 │   │   │   ├── check-password
 │   │   │   │   └── route.ts
 │   │   │   └── delete

@@ -51,6 +51,22 @@ export default function QrCodeViewPage() {
         const data = await response.json();
         console.log('QR code data:', data);
         console.log('QR code fields:', data.qrCode ? Object.keys(data.qrCode) : 'No QR code data');
+
+        if (data.qrCode) {
+          console.log('Header text:', data.qrCode.headerText);
+          console.log('Text color:', data.qrCode.textColor);
+          // 空文字チェック追加
+          if (data.qrCode.headerText === '') {
+            console.log('Header text is empty string');
+          }
+          if (data.qrCode.headerText === null) {
+            console.log('Header text is null');
+          }
+          if (data.qrCode.headerText === undefined) {
+            console.log('Header text is undefined');
+          }
+        }
+
         setQrData(data.qrCode);
 
         // QRコードの所有者のプロフィール情報を取得
@@ -118,9 +134,11 @@ export default function QrCodeViewPage() {
   // メインカラーとテキストカラーを設定（デフォルト値を用意）
   const mainColor = qrData.primaryColor || '#3b82f6';
   const textColor =
-    qrData.textColor === null || qrData.textColor === undefined ? '#FFFFFF' : qrData.textColor;
+    qrData.textColor === null || qrData.textColor === undefined || qrData.textColor === ''
+      ? '#FFFFFF'
+      : qrData.textColor;
   const headerText =
-    qrData.headerText === null || qrData.headerText === undefined
+    qrData.headerText === null || qrData.headerText === undefined || qrData.headerText === ''
       ? 'シンプルにつながる、スマートにシェア。'
       : qrData.headerText;
 

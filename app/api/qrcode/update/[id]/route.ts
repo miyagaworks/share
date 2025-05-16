@@ -33,12 +33,33 @@ export async function POST(request: Request, { params }: { params: { id: string 
       return NextResponse.json({ error: '権限がありません' }, { status: 403 });
     }
 
+    // スラグの更新がある場合は重複チェック
+    if (body.slug && body.slug !== existingQrCode.slug) {
+      const slugExists = await prisma.qrCodePage.findUnique({
+        where: { slug: body.slug },
+      });
+
+      if (slugExists) {
+        return NextResponse.json(
+          {
+            error: 'このスラグは既に使用されています',
+            currentSlug: existingQrCode.slug,
+          },
+          { status: 409 },
+        );
+      }
+    }
+
     // 更新データを準備
     const updateData = {
       primaryColor: body.primaryColor,
       secondaryColor: body.secondaryColor || body.primaryColor,
       accentColor: body.accentColor || '#FFFFFF',
-      // 他のフィールドも必要に応じて追加
+      headerText: body.headerText || 'シンプルにつながる、スマートにシェア。',
+      textColor: body.textColor || '#FFFFFF',
+      userName: body.userName || existingQrCode.userName,
+      // nameEn フィールドはスキーマに存在しない場合は除外
+      slug: body.slug || existingQrCode.slug, // スラグも更新可能に
     };
 
     // QRコードページを更新
@@ -50,7 +71,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
     return NextResponse.json({
       success: true,
       qrCode: updatedQrCode,
-      url: `/qr/${existingQrCode.slug}`,
+      url: `/qr/${updatedQrCode.slug}`,
     });
   } catch (error) {
     console.error('QRコードページ更新エラー:', error);
