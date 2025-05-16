@@ -6,6 +6,7 @@ import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { NotificationBell } from './NotificationBell'; // 追加
 
 export function DashboardHeader() {
   const { data: session } = useSession();
@@ -13,6 +14,39 @@ export function DashboardHeader() {
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
+
+  // プロフィール情報を保持するためのstate
+  const [profileData, setProfileData] = useState<{
+    name: string;
+    image: string | null;
+  }>({
+    name: session?.user?.name || 'ユーザー',
+    image: session?.user?.image || null,
+  });
+
+  // APIからプロフィール情報を取得
+  useEffect(() => {
+    if (session?.user?.id) {
+      const fetchProfileData = async () => {
+        try {
+          const response = await fetch('/api/profile');
+          if (response.ok) {
+            const data = await response.json();
+            if (data.user) {
+              setProfileData({
+                name: data.user.name || session?.user?.name || 'ユーザー',
+                image: data.user.image || null,
+              });
+            }
+          }
+        } catch (error) {
+          console.error('プロフィール情報取得エラー:', error);
+        }
+      };
+
+      fetchProfileData();
+    }
+  }, [session]);
 
   // クリックイベントハンドラを設定して、メニュー外のクリックを検知
   useEffect(() => {
@@ -41,13 +75,6 @@ export function DashboardHeader() {
     return null;
   }
 
-  // ユーザー情報
-  const user = {
-    name: session.user?.name || 'ユーザー',
-    image: session.user?.image || null,
-    hasUploadedImage: !!session.user?.image,
-  };
-
   // ログアウト処理
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/' });
@@ -69,7 +96,11 @@ export function DashboardHeader() {
           </Link>
         </div>
 
-        <div className="flex items-center">
+        <div className="flex items-center space-x-4">
+          {' '}
+          {/* space-x-4を追加 */}
+          {/* お知らせベル */}
+          <NotificationBell />
           {/* ユーザーアイコン */}
           <div className="relative">
             <button
@@ -77,15 +108,20 @@ export function DashboardHeader() {
               onClick={() => setIsMenuOpen(!isMenuOpen)}
               className="flex items-center space-x-2 rounded-full focus:outline-none"
             >
-              {user.image ? (
-                // 画像がアップロードされている場合
+              {profileData.image ? (
+                // 画像がある場合
                 <div className="overflow-hidden rounded-full border-2 border-transparent hover:border-blue-500 transition-colors">
                   <Image
-                    src={user.image}
-                    alt={user.name}
+                    src={profileData.image}
+                    alt={profileData.name}
                     width={32}
                     height={32}
                     className="h-8 w-8 rounded-full object-cover"
+                    onError={(e) => {
+                      console.error('プロフィール画像の読み込みエラー:', e);
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
                   />
                 </div>
               ) : (
@@ -107,7 +143,7 @@ export function DashboardHeader() {
                   </svg>
                 </div>
               )}
-              <span className="hidden md:inline-block text-sm font-medium">{user.name}</span>
+              <span className="hidden md:inline-block text-sm font-medium">{profileData.name}</span>
             </button>
 
             {/* ドロップダウンメニュー */}
@@ -117,7 +153,7 @@ export function DashboardHeader() {
                 className="absolute right-0 mt-2 w-48 rounded-md bg-white py-1 shadow-lg ring-1 ring-black ring-opacity-5 z-50"
               >
                 <div className="px-4 py-2 border-b border-gray-100">
-                  <p className="text-sm font-medium text-gray-900">{user.name}</p>
+                  <p className="text-sm font-medium text-gray-900">{profileData.name}</p>
                 </div>
 
                 <Link

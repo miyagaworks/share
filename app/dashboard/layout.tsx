@@ -19,6 +19,7 @@ import {
   HiCog,
   HiShieldCheck,
   HiKey,
+  HiBell,
 } from 'react-icons/hi';
 import {
   corporateAccessState,
@@ -170,6 +171,11 @@ const adminSidebarItems: SidebarItem[] = [
     title: '永久利用権管理',
     href: '/dashboard/admin/permissions',
     icon: <HiKey className="h-5 w-5" />,
+  },
+  {
+    title: 'お知らせ管理',
+    href: '/dashboard/admin/notifications',
+    icon: <HiBell className="h-5 w-5" />,
   },
 ];
 
