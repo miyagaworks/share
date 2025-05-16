@@ -12,7 +12,6 @@ import { ImageUpload } from '@/components/ui/ImageUpload';
 import { QuickIntroButton } from '@/components/ui/QuickIntroButton';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import type { User, Profile } from '@prisma/client';
 import {
   HiUser,
   HiMail,
@@ -23,11 +22,28 @@ import {
   HiSparkles,
 } from 'react-icons/hi';
 
-// より安全な型定義
-interface UserWithProfile extends Partial<User> {
-  profile?: Profile | null;
+// UserWithProfileを修正
+interface UserWithProfile {
+  id?: string;
+  email?: string;
+  name?: string;
+  image?: string | null;
+  lastName?: string | null;
+  firstName?: string | null;
+  lastNameKana?: string | null;
+  firstNameKana?: string | null;
+  nameEn?: string | null;
+  bio?: string | null;
+  phone?: string | null;
+  company?: string | null;
   companyUrl?: string | null;
   companyLabel?: string | null;
+  profile?: {
+    id?: string;
+    userId?: string;
+    slug?: string | null;
+    // 必要に応じて他のフィールドを追加
+  } | null;
 }
 
 export default function ProfilePage() {

@@ -12,9 +12,10 @@ export async function GET(request: Request, { params }: { params: { slug: string
       return NextResponse.json({ error: 'スラグが指定されていません' }, { status: 400 });
     }
 
-    // QRコードページを検索
+    // QRコードページを検索（select句を使用しない）
     const qrCode = await prisma.qrCodePage.findUnique({
       where: { slug },
+      // select句は使用せず、デフォルトでモデルに存在するフィールドのみ取得
     });
 
     if (!qrCode) {

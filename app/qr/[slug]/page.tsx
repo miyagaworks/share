@@ -7,22 +7,22 @@ import { useParams } from 'next/navigation';
 import { Spinner } from '@/components/ui/Spinner';
 import Image from 'next/image';
 
+// QRCodePageインターフェースを実際のモデルに合わせて修正
 interface QrCodePage {
   id: string;
   slug: string;
   userId: string;
   userName: string;
-  nameEn?: string;
   profileUrl: string;
   template: string;
   primaryColor: string;
   secondaryColor: string;
   accentColor: string;
-  headerText?: string;
-  textColor?: string;
-  profileImage?: string;
-  createdAt: string;
-  updatedAt: string;
+  textColor?: string; // QRCodePageモデルに存在する場合
+  views: number;
+  lastAccessed: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export default function QrCodeViewPage() {
@@ -33,25 +33,29 @@ export default function QrCodeViewPage() {
   const [error, setError] = useState<string | null>(null);
   const [isFlipped, setIsFlipped] = useState(false);
   const [userProfileImage, setUserProfileImage] = useState<string | null>(null);
-  // 欠けていた状態変数を追加
   const [headerText, setHeaderText] = useState<string>('シンプルにつながる、スマートにシェア。');
   const [textColor, setTextColor] = useState<string>('#FFFFFF');
+  const [nameEn, setNameEn] = useState<string>('Taro Yamada'); // 英語名の状態変数
 
   useEffect(() => {
     const fetchQrCodeData = async () => {
       try {
+        console.log(`Fetching QR code data for slug: ${slug}`);
+
         // QRコード情報を取得
         const response = await fetch(`/api/qrcode/${slug}`);
         if (!response.ok) {
-          throw new Error('QRコードの取得に失敗しました');
+          throw new Error(`QRコードの取得に失敗しました: ${response.status}`);
         }
 
         const data = await response.json();
+        console.log('QR code data received:', data.qrCode);
+
         setQrData(data.qrCode);
 
-        // textColorはQRCodePageから優先的に取得
+        // textColorはQRCodePageから取得
         if (data.qrCode && data.qrCode.textColor) {
-          console.log('Setting text color from QR data:', data.qrCode.textColor);
+          console.log(`Setting text color from QR data: ${data.qrCode.textColor}`);
           setTextColor(data.qrCode.textColor);
         } else {
           console.log('No text color in QR data, using default #FFFFFF');
@@ -61,22 +65,33 @@ export default function QrCodeViewPage() {
         // QRコードの所有者のプロフィール情報を取得
         if (data.qrCode && data.qrCode.userId) {
           try {
+            console.log(`Fetching user profile for userId: ${data.qrCode.userId}`);
+
             const userResponse = await fetch(`/api/user/${data.qrCode.userId}/profile`);
-            if (userResponse.ok) {
-              const userData = await userResponse.json();
+            if (!userResponse.ok) {
+              throw new Error(`ユーザープロフィール取得エラー: ${userResponse.status}`);
+            }
 
-              // ユーザー情報を設定
-              if (userData.user) {
-                // プロフィール画像
-                if (userData.user.image) {
-                  setUserProfileImage(userData.user.image);
-                }
+            const userData = await userResponse.json();
+            console.log('User data received:', userData.user);
 
-                // ヘッダーテキストはユーザーモデルから取得
-                if (userData.user.headerText) {
-                  console.log('Setting header text from user data:', userData.user.headerText);
-                  setHeaderText(userData.user.headerText);
-                }
+            // ユーザー情報を設定
+            if (userData.user) {
+              // プロフィール画像
+              if (userData.user.image) {
+                setUserProfileImage(userData.user.image);
+              }
+
+              // 英語名
+              if (userData.user.nameEn) {
+                setNameEn(userData.user.nameEn);
+                console.log(`Name En set from user data: ${userData.user.nameEn}`);
+              }
+
+              // ヘッダーテキストはユーザーモデルから取得
+              if (userData.user.headerText) {
+                setHeaderText(userData.user.headerText);
+                console.log(`Header text set from user data: ${userData.user.headerText}`);
               }
             }
           } catch (userError) {
@@ -91,7 +106,12 @@ export default function QrCodeViewPage() {
       }
     };
 
-    fetchQrCodeData();
+    if (slug) {
+      fetchQrCodeData();
+    } else {
+      setError('QRコードが見つかりません');
+      setIsLoading(false);
+    }
   }, [slug]);
 
   // 画面の向きが変わったときにFlipの状態をリセット
@@ -131,28 +151,17 @@ export default function QrCodeViewPage() {
     );
   }
 
-  // メインカラーとテキストカラーを設定（デフォルト値を用意）
+  // メインカラーとテキストカラーを設定
   const mainColor = qrData.primaryColor || '#3b82f6';
-  // 状態変数のtextColorを優先して使用
-  const displayTextColor = textColor || '#FFFFFF';
-  // 状態変数のheaderTextを優先して使用
-  const displayHeaderText = headerText || 'シンプルにつながる、スマートにシェア。';
 
-  // コンポーネントの状態値を使用するためコメントアウト
-  // const textColor =
-  //  qrData.textColor === null || qrData.textColor === undefined || qrData.textColor === ''
-  //    ? '#FFFFFF'
-  //    : qrData.textColor;
-  // const headerText =
-  //  qrData.headerText === null || qrData.headerText === undefined || qrData.headerText === ''
-  //    ? 'シンプルにつながる、スマートにシェア。'
-  //    : qrData.headerText;
-
-  // さらに確認のためにログを追加
-  console.log('Header text from state:', headerText);
-  console.log('Text color from state:', textColor);
-  console.log('QR Data header text:', qrData.headerText);
-  console.log('QR Data text color:', qrData.textColor);
+  // ログ出力
+  console.log('==== QR CODE PAGE RENDER DATA ====');
+  console.log('Main color:', mainColor);
+  console.log('Text color state:', textColor);
+  console.log('Text color from QR data:', qrData.textColor);
+  console.log('Header text state:', headerText);
+  console.log('Name En state:', nameEn);
+  console.log('=================================');
 
   const containerStyle = {
     transform: isFlipped ? 'rotate(180deg)' : 'rotate(0deg)',
@@ -168,35 +177,35 @@ export default function QrCodeViewPage() {
     <div className="min-h-screen bg-gray-100 flex flex-col items-center" style={containerStyle}>
       <div className="w-full max-w-md" style={{ backgroundColor: '#ebeeef' }}>
         <div style={{ minHeight: '100vh' }}>
-          {/* ヘッダーテキスト - 上部にくっついて下側だけ角丸 */}
+          {/* ヘッダーテキスト */}
           <div
             style={{
               backgroundColor: mainColor,
-              width: 'calc(100% - 40px)', // 左右に20pxずつの余白
+              width: 'calc(100% - 40px)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
               borderBottomLeftRadius: '15px',
               borderBottomRightRadius: '15px',
-              margin: '0 auto', // 中央寄せ
-              padding: '0.75rem 1rem', // paddingで調整
+              margin: '0 auto',
+              padding: '0.75rem 1rem',
             }}
           >
             <p
               style={{
-                color: displayTextColor,
+                color: textColor, // 明示的に状態変数を使用
                 textAlign: 'center',
                 fontWeight: '500',
                 whiteSpace: 'pre-wrap',
                 margin: 0,
               }}
             >
-              {displayHeaderText}
+              {headerText}
             </p>
           </div>
 
           <div style={{ padding: '1.5rem' }}>
-            {/* プロフィール部分 - 画像を修正 */}
+            {/* プロフィール部分 */}
             <div className="text-center mt-4 mb-6">
               <div
                 className="w-20 h-20 rounded-full overflow-hidden mx-auto mb-3 flex items-center justify-center"
@@ -229,13 +238,13 @@ export default function QrCodeViewPage() {
                 )}
               </div>
 
-              {/* ユーザー名 - フォントサイズ調整 */}
+              {/* ユーザー名 */}
               <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{qrData.userName}</h1>
-              {/* 英語名 - 常に表示する */}
-              <p style={{ color: '#4B5563', fontSize: '1rem' }}>{qrData.nameEn || 'Taro Yamada'}</p>
+              {/* 英語名 - 状態変数から取得 */}
+              <p style={{ color: '#4B5563', fontSize: '1rem' }}>{nameEn}</p>
             </div>
 
-            {/* QRコード - 余白を大きくして影をつける */}
+            {/* QRコード */}
             <div className="flex justify-center my-6">
               <div
                 className="bg-white p-6 rounded-lg"
@@ -254,14 +263,14 @@ export default function QrCodeViewPage() {
               </div>
             </div>
 
-            {/* 反転ボタン - ボタン内部のコンテンツだけ反転するよう修正 */}
+            {/* 反転ボタン - テキストカラーを適用 */}
             <div className="mt-8">
               <button
                 onClick={handleFlip}
                 className="w-full py-3 rounded-md flex items-center justify-center"
                 style={{
                   backgroundColor: mainColor,
-                  color: displayTextColor, // テキストカラーを適用
+                  color: textColor, // 明示的に状態変数を使用
                 }}
               >
                 <div style={buttonContentStyle} className="flex items-center text-xl">
@@ -269,7 +278,7 @@ export default function QrCodeViewPage() {
                     xmlns="http://www.w3.org/2000/svg"
                     className="h-5 w-5 mr-2"
                     viewBox="0 0 20 20"
-                    fill="currentColor" // currentColorはボタンのcolorプロパティを継承
+                    fill="currentColor"
                   >
                     <path
                       fillRule="evenodd"
@@ -282,7 +291,7 @@ export default function QrCodeViewPage() {
               </button>
             </div>
 
-            {/* フッター - フォントサイズ調整 */}
+            {/* フッター */}
             <div className="mt-8 text-center border-t border-gray-300 pt-4">
               <p style={{ fontSize: '0.75rem', color: '#6B7280' }}>Powered by Share</p>
             </div>
@@ -293,6 +302,16 @@ export default function QrCodeViewPage() {
       <div className="mt-6 text-center text-sm text-gray-500 px-4 mb-8" style={containerStyle}>
         <p>このQRコードはスマホのホーム画面に追加できます</p>
       </div>
+
+      {/* 開発環境用のデバッグ情報表示 */}
+      {process.env.NODE_ENV === 'development' && (
+        <div className="fixed bottom-0 left-0 bg-black bg-opacity-75 text-white p-2 text-xs max-w-xs overflow-auto max-h-40">
+          <div>Main color: {mainColor}</div>
+          <div>Text color: {textColor}</div>
+          <div>Header text: {headerText}</div>
+          <div>Name En: {nameEn}</div>
+        </div>
+      )}
     </div>
   );
 }

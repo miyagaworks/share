@@ -202,13 +202,15 @@ export function QrCodeGenerator() {
         profileUrl,
       };
 
-      console.log('送信するデータ:', qrCodeData);
+      console.log('Sending QR code data:', qrCodeData);
 
       // 既存QRコードの更新または新規作成
       const endpoint =
         isExistingQrCode && existingQrCodeId
           ? `/api/qrcode/update/${existingQrCodeId}`
           : '/api/qrcode/create';
+
+      console.log(`Using endpoint: ${endpoint}`);
 
       try {
         const response = await fetch(endpoint, {
@@ -219,16 +221,17 @@ export function QrCodeGenerator() {
           body: JSON.stringify(qrCodeData),
         });
 
+        const responseData = await response.json();
+        console.log('Response from API:', responseData);
+
         if (!response.ok) {
-          const errorData = await response.json();
-          throw new Error(errorData.error || 'QRコードページの作成に失敗しました');
+          throw new Error(responseData.error || 'QRコードページの作成に失敗しました');
         }
 
-        // 生成されたQRコードページのURL
+        // 成功
         const fullUrl = `${window.location.origin}/qr/${customUrlSlug}`;
         setGeneratedUrl(fullUrl);
 
-        // 成功メッセージを表示
         toast.success(
           isExistingQrCode ? 'QRコードページを更新しました！' : 'QRコードページを作成しました！',
         );

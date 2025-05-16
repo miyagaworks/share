@@ -55,7 +55,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
       primaryColor: body.primaryColor,
       secondaryColor: body.secondaryColor || body.primaryColor,
       accentColor: body.accentColor || '#FFFFFF',
-      textColor: body.textColor || '#FFFFFF',
+    //   textColor: body.textColor || '#FFFFFF',
       userName: body.userName || existingQrCode.userName,
       // nameEn フィールドはスキーマに存在しない場合は除外
       slug: body.slug || existingQrCode.slug, // スラグも更新可能に
