@@ -147,6 +147,8 @@ share/
 │   │   │   ├── route.ts
 │   │   │   └── update
 │   │   │       └── route.ts
+│   │   ├── qr-image
+│   │   │   └── route.ts
 │   │   ├── qrcode
 │   │   │   ├── [slug]
 │   │   │   │   └── route.ts

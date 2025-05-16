@@ -1,12 +1,12 @@
 // app/dashboard/page.tsx
 "use client";
 
-import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "next-auth/react";
-import Link from "next/link";
-import Image from "next/image";
-import { motion } from "framer-motion";
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import Link from 'next/link';
+import Image from 'next/image';
+import { motion } from 'framer-motion';
 import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
 import {
   HiHome,
@@ -19,8 +19,19 @@ import {
   HiPencil,
   HiEye,
   HiQrcode,
-  HiOfficeBuilding
+  HiOfficeBuilding,
+  HiDeviceMobile,
 } from 'react-icons/hi';
+
+// QRコードデータの型定義を追加
+interface QrCodeData {
+  id: string;
+  slug: string;
+  userId: string;
+  createdAt: string;
+  updatedAt: string;
+  // 他の必要なプロパティも追加
+}
 
 // ユーザーデータの型定義
 interface UserWithProfile {
@@ -41,6 +52,7 @@ export default function ImprovedDashboardPage() {
   const [userData, setUserData] = useState<UserWithProfile | null>(null);
   const [snsCount, setSnsCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
+  const [qrCodeSlug, setQrCodeSlug] = useState<string | null>(null);
 
   // APIからデータを取得する関数
   const fetchData = async () => {
@@ -59,10 +71,18 @@ export default function ImprovedDashboardPage() {
       }
       const linksData = await linksResponse.json();
 
+      // QRコード情報の取得
+      const qrCodeResponse = await fetch('/api/qrcode');
+      let qrCodeData: { qrCodes: QrCodeData[] } = { qrCodes: [] };
+      if (qrCodeResponse.ok) {
+        qrCodeData = await qrCodeResponse.json();
+      }
+
       return {
         user: profileData.user,
         snsLinks: linksData.snsLinks || [],
         customLinks: linksData.customLinks || [],
+        qrCodes: qrCodeData.qrCodes || [],
       };
     } catch (error) {
       console.error('データ取得エラー:', error);
@@ -87,6 +107,17 @@ export default function ImprovedDashboardPage() {
         const data = await fetchData();
         setUserData(data.user);
         setSnsCount(data.snsLinks.length);
+
+        // 最新のQRコードの取得（存在する場合）
+        if (data.qrCodes && data.qrCodes.length > 0) {
+          // 型アサーションを追加して型エラーを回避
+          const qrCodes = data.qrCodes as QrCodeData[];
+          // 最新のQRコードを取得（作成日時で降順ソート）
+          const latestQrCode = qrCodes.sort(
+            (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+          )[0];
+          setQrCodeSlug(latestQrCode.slug);
+        }
       } catch (error) {
         console.error('データロードエラー:', error);
         setError('データの取得に失敗しました');
@@ -195,6 +226,13 @@ export default function ImprovedDashboardPage() {
       </div>
     );
   }
+
+  // ボタンのスタイルを統一するためのクラス定義
+  const primaryButtonClass =
+    'flex items-center justify-center w-full py-2.5 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors';
+  const secondaryButtonClass =
+    'flex items-center justify-center w-full py-2.5 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-700 transition-colors';
+  const buttonGroupClass = 'space-y-1';
 
   // プロフィールURLの取得
   const profileUrl = userData.profile ? `/${userData.profile.slug}` : null;
@@ -345,6 +383,78 @@ export default function ImprovedDashboardPage() {
           </div>
         </motion.div>
 
+        {/* 公開QRコードカード */}
+        <motion.div
+          variants={cardVariants}
+          className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden md:col-span-1"
+          transition={{ duration: 0.3 }}
+        >
+          <div className="border-b border-gray-200 px-6 py-4">
+            <div className="flex items-center">
+              <HiQrcode className="h-5 w-5 text-gray-700" />
+              <h2 className="ml-2 text-lg font-semibold">公開QRコード</h2>
+            </div>
+          </div>
+          <div className="p-6">
+            {qrCodeSlug ? (
+              <>
+                <div className="flex justify-center mb-4">
+                  <div className="bg-white p-3 rounded-lg shadow-sm">
+                    {/* QRコードを表示 - シンプルな画像として表示 */}
+                    <div className="w-32 h-32 relative">
+                      <Image
+                        src={`/api/qr-image?url=${encodeURIComponent(`${typeof window !== 'undefined' ? window.location.origin : ''}/qr/${qrCodeSlug}`)}`}
+                        alt="QRコード"
+                        width={128}
+                        height={128}
+                        className="object-contain"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className={`flex flex-col ${buttonGroupClass}`}>
+                  <Link href={`/qr/${qrCodeSlug}`} target="_blank" className="mb-1">
+                    <button className={primaryButtonClass}>
+                      <HiEye className="mr-2 h-4 w-4" />
+                      表示
+                    </button>
+                  </Link>
+                  <Link href="/qrcode" className="mb-1">
+                    <button className={secondaryButtonClass}>
+                      <HiColorSwatch className="mr-2 h-4 w-4" />
+                      デザイン変更
+                    </button>
+                  </Link>
+                  <button
+                    onClick={() => {
+                      router.push('/qrcode?showSaveInstructions=true');
+                    }}
+                    className={secondaryButtonClass}
+                  >
+                    <HiDeviceMobile className="mr-2 h-4 w-4" />
+                    スマホに保存する方法
+                  </button>
+                </div>
+              </>
+            ) : (
+              <>
+                <div className="text-center py-4 mb-4">
+                  <HiQrcode className="h-16 w-16 text-gray-300 mx-auto" />
+                  <p className="text-gray-600 mt-2 mb-4">QRコードが作成されていません</p>
+                </div>
+                <div className={buttonGroupClass}>
+                  <Link href="/qrcode">
+                    <button className={primaryButtonClass}>
+                      <HiPlus className="mr-2 h-4 w-4" />
+                      QRコードを作成
+                    </button>
+                  </Link>
+                </div>
+              </>
+            )}
+          </div>
+        </motion.div>
+
         {/* クイックアクションカード */}
         <motion.div
           variants={cardVariants}
@@ -358,27 +468,23 @@ export default function ImprovedDashboardPage() {
             </div>
           </div>
           <div className="p-6">
-            <div className="mb-2">
-              <Link href="/dashboard/design">
-                <button className="flex items-center justify-center w-full py-3 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
+            <div className={`flex flex-col ${buttonGroupClass}`}>
+              <Link href="/dashboard/design" className="mb-1">
+                <button className={primaryButtonClass}>
                   <HiColorSwatch className="mr-2 h-4 w-4" />
                   デザインをカスタマイズする
                 </button>
               </Link>
-            </div>
 
-            <div className="mb-2">
-              <Link href="/dashboard/links">
-                <button className="flex items-center justify-center w-full py-3 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-700 transition-colors">
+              <Link href="/dashboard/links" className="mb-1">
+                <button className={secondaryButtonClass}>
                   <HiPlus className="mr-2 h-4 w-4" />
                   SNSを追加する
                 </button>
               </Link>
-            </div>
 
-            <div>
               <Link href="/dashboard/share">
-                <button className="flex items-center justify-center w-full py-3 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-700 transition-colors">
+                <button className={secondaryButtonClass}>
                   <HiQrcode className="mr-2 h-4 w-4" />
                   QRコードを生成する
                 </button>
@@ -421,11 +527,11 @@ export default function ImprovedDashboardPage() {
                 <h3 className="font-medium">有効なプラン</h3>
               </div>
             </div>
-            <Link href="/dashboard/subscription">
-              <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
-                詳細
-              </button>
-            </Link>
+            <div className={buttonGroupClass}>
+              <Link href="/dashboard/subscription">
+                <button className={primaryButtonClass}>詳細</button>
+              </Link>
+            </div>
           </div>
         </motion.div>
       </motion.div>
@@ -450,12 +556,14 @@ export default function ImprovedDashboardPage() {
                 あなたは法人プランのメンバーです。法人プロフィールを管理するには、
                 以下のリンクから法人メンバーダッシュボードにアクセスしてください。
               </p>
-              <Link href="/dashboard/corporate-member">
-                <button className="flex items-center justify-center py-2 px-4 bg-blue-900 rounded-md text-sm font-medium text-white hover:bg-blue-950 transition-colors">
-                  <HiOfficeBuilding className="mr-2 h-4 w-4" />
-                  法人メンバーダッシュボードへ
-                </button>
-              </Link>
+              <div className={buttonGroupClass}>
+                <Link href="/dashboard/corporate-member">
+                  <button className={primaryButtonClass}>
+                    <HiOfficeBuilding className="mr-2 h-4 w-4" />
+                    法人メンバーダッシュボードへ
+                  </button>
+                </Link>
+              </div>
             </div>
           </motion.div>
         )
