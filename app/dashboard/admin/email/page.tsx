@@ -6,7 +6,12 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from 'react-hot-toast';
-import { HiOutlineMail, HiOutlineInformationCircle, HiOutlineClipboardList } from 'react-icons/hi';
+import {
+  HiOutlineMail,
+  HiOutlineInformationCircle,
+  HiOutlineClipboardList,
+  HiOutlineTrash,
+} from 'react-icons/hi';
 
 // 送信履歴の型定義
 interface EmailHistory {
@@ -36,6 +41,9 @@ export default function AdminEmailPage() {
   const [showHistory, setShowHistory] = useState(false);
   const [emailHistory, setEmailHistory] = useState<EmailHistory[]>([]);
   const [historyLoading, setHistoryLoading] = useState(false);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
+  const [bulkDeleting, setBulkDeleting] = useState(false);
   const [formData, setFormData] = useState({
     subject: '',
     title: '',
@@ -189,6 +197,83 @@ export default function AdminEmailPage() {
     }
   };
 
+  // 単一の履歴を削除するハンドラ
+  const handleDeleteHistory = async (id: string) => {
+    if (!confirm('この送信履歴を削除しますか？')) {
+      return;
+    }
+
+    setDeletingId(id);
+
+    try {
+      const response = await fetch(`/api/admin/email/history/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (response.ok) {
+        toast.success('送信履歴を削除しました');
+        // 履歴を再取得
+        fetchEmailHistory();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || '送信履歴の削除に失敗しました');
+      }
+    } catch (error) {
+      console.error('送信履歴削除エラー:', error);
+      toast.error('送信履歴の削除中にエラーが発生しました');
+    } finally {
+      setDeletingId(null);
+    }
+  };
+
+  // 履歴の選択状態を切り替えるハンドラ
+  const handleToggleSelectHistory = (id: string) => {
+    setSelectedHistoryIds((prev) =>
+      prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
+    );
+  };
+
+  // 選択した履歴を一括削除するハンドラ
+  const handleBulkDelete = async () => {
+    if (selectedHistoryIds.length === 0) {
+      toast.error('削除する履歴を選択してください');
+      return;
+    }
+
+    if (!confirm(`選択した${selectedHistoryIds.length}件の送信履歴を削除しますか？`)) {
+      return;
+    }
+
+    setBulkDeleting(true);
+
+    try {
+      const response = await fetch('/api/admin/email/history', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ ids: selectedHistoryIds }),
+      });
+
+      if (response.ok) {
+        const data = await response.json();
+        toast.success(`${data.deletedCount}件の送信履歴を削除しました`);
+        // 選択をクリア
+        setSelectedHistoryIds([]);
+        // 履歴を再取得
+        fetchEmailHistory();
+      } else {
+        const data = await response.json();
+        toast.error(data.error || '送信履歴の一括削除に失敗しました');
+      }
+    } catch (error) {
+      console.error('送信履歴一括削除エラー:', error);
+      toast.error('送信履歴の一括削除中にエラーが発生しました');
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
   // ターゲットグループの表示名を取得
   const getTargetGroupLabel = (value: string) => {
     const group = targetGroups.find((g) => g.value === value);
@@ -262,7 +347,25 @@ export default function AdminEmailPage() {
         {/* 送信履歴セクション */}
         {showHistory && (
           <div className="mb-8">
-            <h2 className="text-xl font-semibold mb-4">送信履歴</h2>
+            <div className="flex justify-between items-center mb-4">
+              <h2 className="text-xl font-semibold">送信履歴</h2>
+
+              {/* 一括削除ボタン */}
+              {selectedHistoryIds.length > 0 && (
+                <button
+                  onClick={handleBulkDelete}
+                  disabled={bulkDeleting}
+                  className="inline-flex items-center px-3 py-1.5 border border-red-300 text-sm font-medium rounded-md text-red-700 bg-white hover:bg-red-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                >
+                  {bulkDeleting ? (
+                    <Spinner size="sm" className="mr-2" />
+                  ) : (
+                    <HiOutlineTrash className="mr-1 h-4 w-4" />
+                  )}
+                  選択した{selectedHistoryIds.length}件を削除
+                </button>
+              )}
+            </div>
 
             {historyLoading ? (
               <div className="flex justify-center items-center py-8">
@@ -278,6 +381,23 @@ export default function AdminEmailPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
+                      <th scope="col" className="px-4 py-3 w-10">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                          checked={
+                            selectedHistoryIds.length === emailHistory.length &&
+                            emailHistory.length > 0
+                          }
+                          onChange={() => {
+                            if (selectedHistoryIds.length === emailHistory.length) {
+                              setSelectedHistoryIds([]);
+                            } else {
+                              setSelectedHistoryIds(emailHistory.map((h) => h.id));
+                            }
+                          }}
+                        />
+                      </th>
                       <th
                         scope="col"
                         className="px-6 py-3 text-left text-base font-medium text-gray-500"
@@ -302,11 +422,25 @@ export default function AdminEmailPage() {
                       >
                         送信日時
                       </th>
+                      <th
+                        scope="col"
+                        className="px-6 py-3 w-16 text-right text-base font-medium text-gray-500"
+                      >
+                        操作
+                      </th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {emailHistory.map((history) => (
                       <tr key={history.id} className="hover:bg-gray-50">
+                        <td className="px-4 py-4 whitespace-nowrap">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            checked={selectedHistoryIds.includes(history.id)}
+                            onChange={() => handleToggleSelectHistory(history.id)}
+                          />
+                        </td>
                         <td className="px-6 py-4 whitespace-nowrap text-base text-gray-900">
                           {history.subject}
                         </td>
@@ -321,6 +455,19 @@ export default function AdminEmailPage() {
                         </td>
                         <td className="px-6 py-4 whitespace-nowrap text-base text-gray-900">
                           {formatDate(history.sentAt)}
+                        </td>
+                        <td className="px-6 py-4 whitespace-nowrap text-base text-gray-900 text-right">
+                          <button
+                            onClick={() => handleDeleteHistory(history.id)}
+                            className="text-red-600 hover:text-red-900 p-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                            disabled={deletingId === history.id}
+                          >
+                            {deletingId === history.id ? (
+                              <Spinner size="sm" />
+                            ) : (
+                              <HiOutlineTrash className="h-5 w-5" />
+                            )}
+                          </button>
                         </td>
                       </tr>
                     ))}

@@ -1,9 +1,6 @@
 // lib/email.ts
 import { Resend } from 'resend';
 
-// Resendのインスタンスを作成
-const resend = new Resend(process.env.RESEND_API_KEY);
-
 interface EmailOptions {
   to: string;
   subject: string;
@@ -11,6 +8,9 @@ interface EmailOptions {
   html?: string;
   from?: string;
 }
+
+// Resendのインスタンスを作成
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 /**
  * メールを送信する関数
@@ -37,22 +37,37 @@ export async function sendEmail(options: EmailOptions) {
   }
 
   try {
-    // Resend APIを使用してメールを送信
-    const result = await resend.emails.send({
-      from: options.from || defaultFrom,
-      to: options.to,
-      subject: options.subject,
-      text: options.text,
-      html: options.html,
-    });
+    // タイムアウトを防ぐためのシンプルな再試行ロジック
+    let retries = 3;
+    let result;
 
-    if (result.error) {
-      console.error('メール送信エラー:', result.error);
-      throw new Error(`メール送信エラー: ${result.error.message}`);
+    while (retries > 0) {
+      try {
+        // Resend APIを使用してメールを送信
+        result = await resend.emails.send({
+          from: options.from || defaultFrom,
+          to: options.to,
+          subject: options.subject,
+          text: options.text,
+          html: options.html,
+        });
+
+        break; // 成功したら再試行ループを抜ける
+      } catch (err) {
+        retries--;
+        if (retries === 0) throw err; // 再試行回数を使い切った場合はエラーを投げる
+
+        // 一時的なエラーの場合は少し待ってから再試行
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+      }
     }
 
-    console.log('メール送信成功:', result.data?.id);
-    return { success: true, messageId: result.data?.id || 'unknown' };
+    if (result?.error) {
+      throw new Error(`Resend API error: ${result.error.message}`);
+    }
+
+    console.log('メール送信成功:', result?.data?.id || 'unknown');
+    return { success: true, messageId: result?.data?.id || 'unknown' };
   } catch (error) {
     console.error('メール送信エラー:', error);
     throw error;

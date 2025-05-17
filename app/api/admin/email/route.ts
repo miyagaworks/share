@@ -1,41 +1,67 @@
 // app/api/admin/email/route.ts
-export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { isAdminUser } from '@/lib/utils/admin-access';
 import { sendEmail } from '@/lib/email';
 import { getAdminNotificationEmailTemplate } from '@/lib/email/templates/admin-notification';
-import { withIdempotency } from '@/lib/utils/idempotency';
 
-export const POST = withIdempotency(async (request: Request) => {
+export const dynamic = 'force-dynamic';
+export const maxDuration = 60; // 60秒に延長
+
+interface EmailResult {
+  success: boolean;
+  emailLogId: string;
+  totalCount: number;
+  sentCount: number;
+  failCount: number;
+  results: Array<{
+    userId: string;
+    email: string;
+    success: boolean;
+    messageId?: string;
+    error?: string;
+  }>;
+}
+
+// 簡易的なインメモリキャッシュ - サーバー再起動、新しいインスタンス生成時にはリセット
+// 必要に応じてRedisなどの永続的なキャッシュに変更可能
+const emailRequestCache = new Map<string, EmailResult>();
+
+export async function POST(request: Request) {
   try {
+    // ステップ1: 認証と管理者権限チェック
     const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
-    // 管理者チェック
     const isAdmin = await isAdminUser(session.user.id);
-
     if (!isAdmin) {
       return NextResponse.json({ error: '管理者権限がありません' }, { status: 403 });
     }
 
-    // リクエストボディを取得
+    // ステップ2: 冪等性キーの取得と処理済みチェック
+    const idempotencyKey = request.headers.get('X-Idempotency-Key');
+
+    // 冪等性キーがあり、既に処理済みならキャッシュから結果を返す
+    if (idempotencyKey && emailRequestCache.has(idempotencyKey)) {
+      console.log(`既に処理済みのリクエスト: ${idempotencyKey}`);
+      return NextResponse.json(emailRequestCache.get(idempotencyKey));
+    }
+
+    // ステップ3: リクエストボディの取得とバリデーション
     const body = (await request.json()) as {
       subject: string;
       title: string;
       message: string;
-      targetGroup: string; // 'all', 'active', 'trial', 'premium', 'permanent'
+      targetGroup: string;
       ctaText?: string;
       ctaUrl?: string;
     };
     const { subject, title, message, targetGroup, ctaText, ctaUrl } = body;
 
-    // 必須項目のバリデーション
     if (!subject || !title || !message || !targetGroup) {
       return NextResponse.json(
         { error: '件名、タイトル、メッセージ、ターゲットグループは必須です' },
@@ -286,94 +312,138 @@ export const POST = withIdempotency(async (request: Request) => {
       sampleEmails: users.slice(0, 3).map((u) => u.email),
     });
 
-    // 送信処理をトランザクション内で実行
-    const result = await prisma.$transaction(async (tx) => {
-      // メール送信ログの作成
-      const emailLog = await tx.adminEmailLog.create({
-        data: {
-          subject,
-          title,
-          message,
-          targetGroup,
-          ctaText: ctaText || null,
-          ctaUrl: ctaUrl || null,
-          sentCount: 0,
-          failCount: 0,
-          sentBy: session.user.id,
-          sentAt: new Date(),
-        },
-      });
+    // ステップ5: メール送信ログの作成
+    const emailLog = await prisma.adminEmailLog.create({
+      data: {
+        subject,
+        title,
+        message,
+        targetGroup,
+        ctaText: ctaText || null,
+        ctaUrl: ctaUrl || null,
+        sentCount: 0,
+        failCount: 0,
+        sentBy: session.user.id,
+        sentAt: new Date(),
+      },
+    });
 
-      // 各ユーザーにメールを送信
-      const emailResults = [];
-      let sentCount = 0;
-      let failCount = 0;
+    // ステップ6: ユーザーを小さなバッチに分割して処理
+    const BATCH_SIZE = 10;
+    const batches = [];
+    for (let i = 0; i < users.length; i += BATCH_SIZE) {
+      batches.push(users.slice(i, i + BATCH_SIZE));
+    }
 
-      for (const user of users) {
-        try {
-          const emailTemplate = getAdminNotificationEmailTemplate({
-            subject,
-            title,
-            message,
-            userName: user.name || undefined,
-            ctaText,
-            ctaUrl,
-          });
+    let sentCount = 0;
+    let failCount = 0;
+    const emailResults = [];
 
-          const result = await sendEmail({
-            to: user.email,
-            subject: emailTemplate.subject,
-            text: emailTemplate.text,
-            html: emailTemplate.html,
-          });
+    // バッチごとにメール送信
+    for (const batch of batches) {
+      // 各バッチ内のユーザーに対して並列でメール送信
+      const batchResults = await Promise.allSettled(
+        batch.map(async (user) => {
+          try {
+            const emailTemplate = getAdminNotificationEmailTemplate({
+              subject,
+              title,
+              message,
+              userName: user.name || undefined,
+              ctaText,
+              ctaUrl,
+            });
 
-          sentCount++;
-          emailResults.push({
-            userId: user.id,
-            email: user.email,
-            success: true,
-            messageId: result.messageId,
-          });
-        } catch (error) {
+            const result = await sendEmail({
+              to: user.email,
+              subject: emailTemplate.subject,
+              text: emailTemplate.text,
+              html: emailTemplate.html,
+            });
+
+            return {
+              userId: user.id,
+              email: user.email,
+              success: true,
+              messageId: result.messageId,
+            };
+          } catch (error) {
+            console.error(`ユーザー ${user.id} へのメール送信エラー:`, error);
+            return {
+              userId: user.id,
+              email: user.email,
+              success: false,
+              error: error instanceof Error ? error.message : String(error),
+            };
+          }
+        }),
+      );
+
+      // バッチの結果を集計
+      for (const result of batchResults) {
+        if (result.status === 'fulfilled') {
+          if (result.value.success) {
+            sentCount++;
+          } else {
+            failCount++;
+          }
+          emailResults.push(result.value);
+        } else {
           failCount++;
           emailResults.push({
-            userId: user.id,
-            email: user.email,
+            userId: 'unknown',
+            email: 'unknown',
             success: false,
-            error: error instanceof Error ? error.message : String(error),
+            error: String(result.reason),
           });
         }
       }
 
-      // 送信結果をログに更新
-      await tx.adminEmailLog.update({
+      // レート制限対策として少し待機
+      await new Promise((resolve) => setTimeout(resolve, 500));
+
+      // バッチごとに進捗を更新
+      await prisma.adminEmailLog.update({
         where: { id: emailLog.id },
         data: {
           sentCount,
           failCount,
         },
       });
+    }
 
-      console.log('メール送信完了:', {
-        emailLogId: emailLog.id,
-        totalCount: users.length,
-        sentCount,
-        failCount,
-      });
-
-      return {
-        emailLogId: emailLog.id,
-        totalCount: users.length,
-        sentCount,
-        failCount,
-        results: emailResults,
-      };
-    });
-
-    return NextResponse.json({
+    // ステップ7: 結果を準備
+    const result = {
       success: true,
-      ...result,
+      emailLogId: emailLog.id,
+      totalCount: users.length,
+      sentCount,
+      failCount,
+      results: emailResults,
+    };
+
+    // ステップ8: 冪等性キャッシュへの保存
+    if (idempotencyKey) {
+      emailRequestCache.set(idempotencyKey, result);
+
+      // メモリリーク防止のために30分後に削除
+      setTimeout(
+        () => {
+          emailRequestCache.delete(idempotencyKey);
+        },
+        30 * 60 * 1000,
+      );
+    }
+
+    console.log('メール送信完了:', {
+      emailLogId: emailLog.id,
+      totalCount: users.length,
+      sentCount,
+      failCount,
     });
+
+    // 結果を返却
+    return NextResponse.json(result);
   } catch (error) {
     console.error('管理者メール送信エラー:', error);
     return NextResponse.json(
@@ -384,4 +454,4 @@ export const POST = withIdempotency(async (request: Request) => {
       { status: 500 },
     );
   }
-});
+}
