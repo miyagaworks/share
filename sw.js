@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE_NAME = 'qrcode-pwa-v2';
+const CACHE_NAME = 'qrcode-pwa-v3';
 const APP_SHELL = [
   '/qrcode',
   '/qrcode-manifest.json',
