@@ -1,7 +1,8 @@
 // public/sw.js
-const CACHE_NAME = 'qrcode-pwa-v3';
+const CACHE_NAME = 'qrcode-pwa-v4'; // バージョンを上げる
 const APP_SHELL = [
-  '/qrcode',
+  '/qr', // /qrcode から /qr に変更
+  '/qrcode', // 両方キャッシュしておく
   '/qrcode-manifest.json',
   '/pwa/apple-touch-icon.png',
   '/pwa/android-chrome-192x192.png',
@@ -39,11 +40,11 @@ self.addEventListener('fetch', (event) => {
             type: 'GET_USER_QR_PATH',
           });
 
-          // 特定のパスが見つからない場合は汎用QRコードページにリダイレクト
-          return Response.redirect('/qrcode', 302);
+          // 特定のパスが見つからない場合は /qr にリダイレクト（変更点）
+          return Response.redirect('/qr', 302);
         } else {
-          // クライアントがない場合は汎用QRコードページにリダイレクト
-          return Response.redirect('/qrcode', 302);
+          // クライアントがない場合は /qr にリダイレクト（変更点）
+          return Response.redirect('/qr', 302);
         }
       }),
     );
@@ -70,7 +71,7 @@ self.addEventListener('fetch', (event) => {
         .catch(() => {
           // オフライン時は最低限のフォールバックを返す
           if (event.request.mode === 'navigate') {
-            return caches.match('/qrcode');
+            return caches.match('/qr'); // /qrcode から /qr に変更
           }
           return new Response('Network error');
         });
@@ -126,7 +127,7 @@ self.addEventListener('message', (event) => {
     }
   } else if (event.data && event.data.type === 'NAVIGATE') {
     // 特定のパスへのナビゲーション要求
-    const path = event.data.url || '/qrcode';
+    const path = event.data.url || '/qr'; // デフォルトパスを /qr に変更
     self.clients
       .matchAll({
         includeUncontrolled: true,

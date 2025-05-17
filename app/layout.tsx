@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   description:
     '【無料トライアル実施中】経営者・ビジネスパーソン向けデジタル名刺サービス。複数SNSを一つに集約、QRコード一つでスマートに共有。先進的なビジネスツールで周囲と差をつけ、第一印象を変革します。 ',
   metadataBase: new URL('https://app.sns-share.com'),
-  manifest: '/manifest.json',
+  // manifest 設定を削除
   openGraph: {
     type: 'website',
     locale: 'ja_JP',
@@ -53,12 +53,13 @@ export const metadata: Metadata = {
   },
 };
 
-// ビューポート設定
+// ビューポート設定も修正（PWAでは user-scalable: false は避けるべき）
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1.0,
-  maximumScale: 1.0,
-  userScalable: false,
+  // 以下の制限を削除
+  // maximumScale: 1.0,
+  // userScalable: false,
 };
 
 export default function RootLayout({
