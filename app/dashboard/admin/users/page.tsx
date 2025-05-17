@@ -152,9 +152,9 @@ export default function AdminUsersPage() {
           // 法人プラン管理者のエラーの場合、より目立つエラー表示
           setDeleteConfirm(null); // 削除ダイアログを閉じる
 
-          // より詳細なエラーメッセージのモーダルを表示
+          // 詳細なエラーメッセージのモーダルを表示
           setCorporateAdminErrorDetails({
-            message: data.error,
+            message: data.error || '法人プラン管理者は削除できません',
             details: data.details || '管理者権限を他のユーザーに移譲してから削除してください。',
             userId,
           });
