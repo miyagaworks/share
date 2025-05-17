@@ -296,17 +296,8 @@ export default function QrCodeViewPage() {
                   </div>
                 </button>
               </div>
-
-              {/* フッター */}
-              <div className="mt-8 text-center border-t border-gray-300 pt-4">
-                <p style={{ fontSize: '0.75rem', color: '#6B7280' }}>Powered by Share</p>
-              </div>
             </div>
           </div>
-        </div>
-
-        <div className="mt-6 text-center text-sm text-gray-500 px-4 mb-8" style={containerStyle}>
-          <p>このQRコードはスマホのホーム画面に追加できます</p>
         </div>
 
         {/* 開発環境用のデバッグ情報表示 */}

@@ -158,11 +158,6 @@ export function QrCodePreview({
               </div>
             </button>
           </div>
-
-          {/* フッター */}
-          <div className="mt-8 text-center border-t border-gray-300 pt-4">
-            <p style={{ fontSize: '0.75rem', color: '#6B7280' }}>Powered by Share</p>
-          </div>
         </div>
       </div>
     </div>
