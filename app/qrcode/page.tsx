@@ -197,6 +197,44 @@ export default function QrCodePage() {
     }
   }, [session, status, router, isCorporateMember, fetchCorporateData, checkProfileExists]);
 
+  // PWAとして実行されているかチェックし、必要に応じてページを更新
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // サービスワーカーからのメッセージを受け取る
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.addEventListener('message', (event) => {
+        if (event.data && event.data.type === 'PWA_INSTALLED') {
+          // PWAとしてインストールされたことをローカルストレージに記録
+          localStorage.setItem('pwaInstalled', 'true');
+          localStorage.setItem('pwaStartUrl', '/qrcode');
+        }
+      });
+    }
+
+    // ホーム画面から起動された場合、常に/qrcodeにリダイレクト
+    const isPwa = localStorage.getItem('pwaInstalled') === 'true';
+    const isStandalone =
+      window.matchMedia('(display-mode: standalone)').matches ||
+      (window.navigator as unknown as { standalone?: boolean }).standalone === true;
+
+    if (isPwa && isStandalone && window.location.pathname !== '/qrcode') {
+      window.location.href = '/qrcode';
+    }
+  }, []);
+
+  // ホーム画面追加の効果をより強調
+  const handleInstallClick = () => {
+    setShowInstallPrompt(false);
+    localStorage.setItem('installPromptShown', 'true');
+
+    // PWAインストール後の通知
+    toast.success('ホーム画面に追加すると、常にQRコードページが表示されます', {
+      duration: 5000,
+      icon: '📱',
+    });
+  };
+
   // iOSホーム画面追加プロンプト表示の useEffect (追加)
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -244,27 +282,39 @@ export default function QrCodePage() {
 
       {/* PWA インストールプロンプト */}
       {showInstallPrompt && (
-        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-sm">
-          <h3 className="font-bold text-blue-800 mb-2">QRコードをホーム画面に追加しましょう！</h3>
-          <p className="text-sm text-blue-700 mb-2">
-            このページをホーム画面に追加すると、ワンタップですぐにQRコードを表示できます。
+        <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5 shadow-sm">
+          <h3 className="font-bold text-blue-800 mb-2 flex items-center">
+            <span className="mr-2 text-xl">📱</span>
+            QRコードをホーム画面に追加しましょう！
+          </h3>
+          <p className="text-sm text-blue-700 mb-3">
+            このページをホーム画面に追加すると、いつでもワンタップで
+            <strong>このQRコードを表示</strong>できます。
           </p>
-          <ol className="text-sm text-blue-600 list-decimal pl-5 mb-3">
-            <li>画面下部の「共有」ボタン（□に↑のアイコン）をタップ</li>
-            <li>「ホーム画面に追加」を選択</li>
-            <li>
-              <strong>ホーム画面から開く</strong>と、常にこのQRコードページが表示されます
-            </li>
-          </ol>
-          <button
-            onClick={() => {
-              setShowInstallPrompt(false);
-              localStorage.setItem('installPromptShown', 'true');
-            }}
-            className="text-sm text-blue-600 underline"
-          >
-            閉じる
-          </button>
+          <div className="bg-white p-3 rounded mb-3 border border-blue-100">
+            <ol className="text-sm text-blue-600 list-decimal pl-5 mb-0">
+              <li className="mb-1">
+                画面下部の<strong>「共有」ボタン</strong>（□に↑のアイコン）をタップ
+              </li>
+              <li className="mb-1">
+                <strong>「ホーム画面に追加」</strong>を選択
+              </li>
+              <li className="mb-1">
+                名前はそのままで<strong>「追加」</strong>をタップ
+              </li>
+              <li>
+                <strong>ホーム画面のアイコンから開く</strong>と、常にQRコードページが表示されます
+              </li>
+            </ol>
+          </div>
+          <div className="flex justify-end">
+            <button
+              onClick={handleInstallClick}
+              className="text-white bg-blue-600 hover:bg-blue-700 px-4 py-2 rounded text-sm font-medium"
+            >
+              理解しました
+            </button>
+          </div>
         </div>
       )}
 

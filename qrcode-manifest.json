@@ -2,13 +2,16 @@
     "name": "Share QRコード",
     "short_name": "My QR",
     "description": "あなたのプロフィールをQRコードで即座に共有",
-    "start_url": "/qrcode",
-    "scope": "/qrcode",
     "id": "/qrcode",
+    "start_url": "/qrcode",
+    "scope": "/",
     "display": "standalone",
     "display_override": ["standalone", "minimal-ui"],
     "background_color": "#ffffff",
     "theme_color": "#3B82F6",
+    "orientation": "portrait",
+    "prefer_related_applications": false,
+    "categories": ["utilities", "social"],
     "icons": [
       {
         "src": "/pwa/android-chrome-192x192.png",
@@ -26,5 +29,21 @@
         "type": "image/png",
         "purpose": "any maskable"
       }
-    ]
+    ],
+    "screenshots": [
+      {
+        "src": "/pwa/screenshot1.png",
+        "sizes": "1170x2532",
+        "type": "image/png"
+      }
+    ],
+    "shortcuts": [
+      {
+        "name": "QRコード表示",
+        "url": "/qrcode",
+        "description": "QRコードを素早く表示"
+      }
+    ],
+    "dir": "ltr",
+    "lang": "ja"
   }
