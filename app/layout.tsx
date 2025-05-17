@@ -17,7 +17,7 @@ const robotoMono = Roboto_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Share - 先進的なデジタル名刺でビジネスに差をつける | QRコードで瞬時に共有',
+  title: 'Share',
   description:
     '【無料トライアル実施中】経営者・ビジネスパーソン向けデジタル名刺サービス。複数SNSを一つに集約、QRコード一つでスマートに共有。先進的なビジネスツールで周囲と差をつけ、第一印象を変革します。 ',
   metadataBase: new URL('https://app.sns-share.com'),

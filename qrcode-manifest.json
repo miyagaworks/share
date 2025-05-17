@@ -1,7 +1,7 @@
 {
-    "name": "My QR コード",
+    "name": "QRコード共有",
     "short_name": "My QR",
-    "description": "あなたのプロフィールをQRコードで即座に共有",
+    "description": "あなたのプロフィールをQRコードで共有",
     "id": "/qr",
     "start_url": "/qr",
     "scope": "/",
