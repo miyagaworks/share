@@ -23,14 +23,17 @@ interface UserData {
   name: string | null;
   nameKana: string | null;
   email: string;
-  createdAt: string;
+  createdAt: string; // 登録日
+  updatedAt: string; // 更新日（追加）
   isPermanentUser: boolean;
   isGracePeriodExpired?: boolean;
   trialEndsAt?: string | null;
   subscription: {
     status: string;
     plan: string;
+    currentPeriodEnd?: string; // サブスクリプション期限（追加）
   } | null;
+  subscriptionStatus: string;
 }
 
 // 法人管理者エラー詳細の型定義
@@ -239,8 +242,53 @@ export default function AdminUsersPage() {
     return null; // リダイレクト処理中は表示なし
   }
 
+  // 日付フォーマット用のヘルパー関数
+  const formatDate = (dateString: string | undefined | null) => {
+    if (!dateString) return '未設定';
+    return new Date(dateString).toLocaleDateString('ja-JP');
+  };
+
+  // サブスクリプション期限の表示用関数
+  const getSubscriptionEndDate = (user: UserData) => {
+    if (user.isPermanentUser) {
+      return '永久利用';
+    }
+
+    if (user.subscription?.currentPeriodEnd) {
+      const endDate = new Date(user.subscription.currentPeriodEnd);
+      const today = new Date();
+
+      // 期限切れの場合
+      if (endDate < today) {
+        return (
+          <span className="text-red-500">
+            {formatDate(user.subscription.currentPeriodEnd)} (期限切れ)
+          </span>
+        );
+      }
+
+      return formatDate(user.subscription.currentPeriodEnd);
+    }
+
+    if (user.trialEndsAt) {
+      const trialEnd = new Date(user.trialEndsAt);
+      const today = new Date();
+
+      // トライアル期限切れの場合
+      if (trialEnd < today) {
+        return (
+          <span className="text-red-500">{formatDate(user.trialEndsAt)} (トライアル期限切れ)</span>
+        );
+      }
+
+      return `${formatDate(user.trialEndsAt)} (トライアル)`;
+    }
+
+    return '未設定';
+  };
+
   return (
-    <div className="max-w-6xl mx-auto">
+    <div className="max-w-7xl mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
         <div className="flex items-center mb-4">
           <HiUsers className="h-6 w-6 text-blue-600 mr-3" />
@@ -414,10 +462,16 @@ export default function AdminUsersPage() {
                   登録日
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  更新日
+                </th>
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   プラン状態
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  操作
+                  利用期限
+                </th>
+                <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  操 作
                 </th>
               </tr>
             </thead>
@@ -438,7 +492,12 @@ export default function AdminUsersPage() {
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap">
                     <div className="text-sm text-gray-500">
-                      {new Date(user.createdAt).toLocaleDateString('ja-JP')}
+                      {formatDate(user.createdAt)}
+                    </div>
+                  </td>
+                  <td className="py-4 px-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">
+                      {formatDate(user.updatedAt)}
                     </div>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap">
@@ -446,15 +505,24 @@ export default function AdminUsersPage() {
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-red-100 text-red-800">
                         猶予期間終了
                       </span>
+                    ) : user.isPermanentUser ? (
+                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
+                        永久利用権
+                      </span>
                     ) : user.subscription?.status === 'active' ? (
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                        {user.subscription?.status || 'なし'}
+                        {user.subscription?.plan || '有効'}
                       </span>
                     ) : (
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
                         {user.subscription?.status || 'なし'}
                       </span>
                     )}
+                  </td>
+                  <td className="py-4 px-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-500">
+                      {getSubscriptionEndDate(user)}
+                    </div>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap text-right text-sm font-medium">
                     <Button

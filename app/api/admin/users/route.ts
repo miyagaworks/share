@@ -25,19 +25,21 @@ export async function GET() {
       return NextResponse.json({ error: '管理者権限がありません' }, { status: 403 });
     }
 
-    // すべてのユーザーを取得
+    // すべてのユーザーを取得（updatedAtとsubscription.currentPeriodEndを追加）
     const users = await prisma.user.findMany({
       select: {
         id: true,
         name: true,
-        nameKana: true, // フリガナを追加
+        nameKana: true,
         email: true,
         createdAt: true,
+        updatedAt: true, // 追加
         trialEndsAt: true,
         subscription: {
           select: {
             status: true,
             plan: true,
+            currentPeriodEnd: true, // 追加
           },
         },
         subscriptionStatus: true,
@@ -61,9 +63,10 @@ export async function GET() {
       return {
         id: user.id,
         name: user.name,
-        nameKana: user.nameKana, // フリガナを追加
+        nameKana: user.nameKana,
         email: user.email,
         createdAt: user.createdAt.toISOString(),
+        updatedAt: user.updatedAt.toISOString(), // 追加
         trialEndsAt: user.trialEndsAt?.toISOString() || null,
         isPermanentUser,
         isGracePeriodExpired,
