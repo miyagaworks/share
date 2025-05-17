@@ -15,7 +15,8 @@
         "fix-tenant-relations": "ts-node scripts/fix-tenant-relations.ts",
         "check-user": "ts-node scripts/check-user-relations.ts",
         "delete-user": "ts-node scripts/delete-user.ts",
-        "update-permanent-users": "NODE_OPTIONS=\"--loader ts-node/esm\" node scripts/update-permanent-users-plan.ts"
+        "update-permanent-users": "NODE_OPTIONS=\"--loader ts-node/esm\" node scripts/update-permanent-users-plan.ts",
+        "test-email": "RESEND_API_KEY=your_actual_api_key EMAIL_FROM=your_email_from node scripts/test-email.js"
     },
     "dependencies": {
         "@auth/prisma-adapter": "^2.9.0",
@@ -75,6 +76,7 @@
         "@types/tinycolor2": "^1.4.6",
         "@types/uuid": "^10.0.0",
         "async_hooks": "^1.0.0",
+        "dotenv": "^16.5.0",
         "eslint": "^9",
         "eslint-config-next": "15.2.1",
         "eslint-config-prettier": "^10.0.2",

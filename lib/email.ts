@@ -1,16 +1,8 @@
 // lib/email.ts
-import nodemailer from 'nodemailer';
+import { Resend } from 'resend';
 
-// SMTPトランスポーターの設定
-const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_SERVER_HOST,
-  port: Number(process.env.EMAIL_SERVER_PORT) || 587,
-  secure: process.env.EMAIL_SERVER_PORT === '465',
-  auth: {
-    user: process.env.EMAIL_SERVER_USER,
-    pass: process.env.EMAIL_SERVER_PASSWORD,
-  },
-});
+// Resendのインスタンスを作成
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 interface EmailOptions {
   to: string;
@@ -25,7 +17,7 @@ interface EmailOptions {
  */
 export async function sendEmail(options: EmailOptions) {
   // デフォルトの送信元メールアドレス
-  const defaultFrom = process.env.EMAIL_FROM || 'noreply@sns-share.com';
+  const defaultFrom = process.env.EMAIL_FROM || 'onboarding@resend.dev';
 
   // 開発環境でもメール送信を強制する環境変数
   const forceEmailInDev = process.env.FORCE_EMAIL_IN_DEV === 'true';
@@ -45,23 +37,22 @@ export async function sendEmail(options: EmailOptions) {
   }
 
   try {
-    const mailOptions = {
+    // Resend APIを使用してメールを送信
+    const result = await resend.emails.send({
       from: options.from || defaultFrom,
       to: options.to,
       subject: options.subject,
       text: options.text,
       html: options.html,
-    };
-
-    console.log('メール送信を試みます:', {
-      from: mailOptions.from,
-      to: mailOptions.to,
-      subject: mailOptions.subject,
     });
 
-    const result = await transporter.sendMail(mailOptions);
-    console.log('メール送信成功:', result.messageId);
-    return { success: true, messageId: result.messageId };
+    if (result.error) {
+      console.error('メール送信エラー:', result.error);
+      throw new Error(`メール送信エラー: ${result.error.message}`);
+    }
+
+    console.log('メール送信成功:', result.data?.id);
+    return { success: true, messageId: result.data?.id || 'unknown' };
   } catch (error) {
     console.error('メール送信エラー:', error);
     throw error;
@@ -92,12 +83,12 @@ export async function sendVerificationEmail(email: string, verificationUrl: stri
 export async function sendPasswordResetEmail(email: string, resetToken: string) {
   const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
   const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
-  
+
   console.log('パスワードリセットURL:', resetUrl);
-  
+
   // サイト名を追加（スパムフィルター対策）
   const siteName = 'Share';
-  
+
   return sendEmail({
     to: email,
     subject: `【${siteName}】パスワードリセットのご案内`,

@@ -6,11 +6,7 @@ import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from 'react-hot-toast';
-import {
-  HiOutlineMail,
-  HiOutlineInformationCircle,
-  HiOutlineClipboardList,
-} from 'react-icons/hi';
+import { HiOutlineMail, HiOutlineInformationCircle, HiOutlineClipboardList } from 'react-icons/hi';
 
 // 送信履歴の型定義
 interface EmailHistory {
@@ -20,6 +16,15 @@ interface EmailHistory {
   sentCount: number;
   failCount: number;
   sentAt: string;
+}
+
+// メール送信結果の型定義
+interface EmailResult {
+  userId: string;
+  email: string;
+  success: boolean;
+  messageId?: string;
+  error?: string;
 }
 
 export default function AdminEmailPage() {
@@ -122,20 +127,42 @@ export default function AdminEmailPage() {
   // メール送信ハンドラ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // すでに送信中なら処理をスキップ
+    if (sending) return;
+
     setSending(true);
 
     try {
+      // 冪等性キーを生成
+      const idempotencyKey = crypto.randomUUID();
+
       const response = await fetch('/api/admin/email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'X-Idempotency-Key': idempotencyKey, // 冪等性キーをヘッダーに追加
         },
         body: JSON.stringify(formData),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
+        // 成功の場合
         toast.success(`メールを送信しました（${data.sentCount}/${data.totalCount}件成功）`);
+
+        // 失敗したメールがある場合は通知
+        if (data.failCount > 0) {
+          toast(
+            `⚠️ ${data.failCount}件のメールは送信できませんでした。詳細はコンソールをご確認ください。`,
+          );
+          console.error(
+            '送信失敗したメール:',
+            data.results.filter((r: EmailResult) => !r.success),
+          );
+        }
+
         // フォームをリセット
         setFormData({
           subject: '',
@@ -151,12 +178,12 @@ export default function AdminEmailPage() {
           fetchEmailHistory();
         }
       } else {
-        const errorData = await response.json();
-        toast.error(errorData.error || 'メール送信に失敗しました');
+        // エラーの場合
+        toast.error(data.error || 'メール送信に失敗しました');
       }
     } catch (error) {
       console.error('メール送信エラー:', error);
-      toast.error('処理中にエラーが発生しました');
+      toast.error('処理中にエラーが発生しました。ネットワーク接続を確認してください。');
     } finally {
       setSending(false);
     }
@@ -413,7 +440,7 @@ export default function AdminEmailPage() {
             <button
               type="submit"
               disabled={sending}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {sending ? (
                 <>

@@ -7,18 +7,9 @@ import { prisma } from '@/lib/prisma';
 import { isAdminUser } from '@/lib/utils/admin-access';
 import { sendEmail } from '@/lib/email';
 import { getAdminNotificationEmailTemplate } from '@/lib/email/templates/admin-notification';
+import { withIdempotency } from '@/lib/utils/idempotency';
 
-// メール送信に必要なパラメータの型定義
-interface SendEmailRequest {
-  subject: string;
-  title: string;
-  message: string;
-  targetGroup: string; // 'all', 'active', 'trial', 'premium', 'permanent'
-  ctaText?: string;
-  ctaUrl?: string;
-}
-
-export async function POST(request: Request) {
+export const POST = withIdempotency(async (request: Request) => {
   try {
     const session = await auth();
 
@@ -34,7 +25,14 @@ export async function POST(request: Request) {
     }
 
     // リクエストボディを取得
-    const body: SendEmailRequest = await request.json();
+    const body = (await request.json()) as {
+      subject: string;
+      title: string;
+      message: string;
+      targetGroup: string; // 'all', 'active', 'trial', 'premium', 'permanent'
+      ctaText?: string;
+      ctaUrl?: string;
+    };
     const { subject, title, message, targetGroup, ctaText, ctaUrl } = body;
 
     // 必須項目のバリデーション
@@ -282,65 +280,99 @@ export async function POST(request: Request) {
       );
     }
 
-    // 各ユーザーにメールを送信
-    const emailResults = [];
-    for (const user of users) {
-      try {
-        const emailTemplate = getAdminNotificationEmailTemplate({
+    console.log('メール送信開始:', {
+      targetGroup,
+      userCount: users.length,
+      sampleEmails: users.slice(0, 3).map((u) => u.email),
+    });
+
+    // 送信処理をトランザクション内で実行
+    const result = await prisma.$transaction(async (tx) => {
+      // メール送信ログの作成
+      const emailLog = await tx.adminEmailLog.create({
+        data: {
           subject,
           title,
           message,
-          userName: user.name || undefined,
-          ctaText,
-          ctaUrl,
-        });
+          targetGroup,
+          ctaText: ctaText || null,
+          ctaUrl: ctaUrl || null,
+          sentCount: 0,
+          failCount: 0,
+          sentBy: session.user.id,
+          sentAt: new Date(),
+        },
+      });
 
-        const result = await sendEmail({
-          to: user.email,
-          subject: emailTemplate.subject,
-          text: emailTemplate.text,
-          html: emailTemplate.html,
-        });
+      // 各ユーザーにメールを送信
+      const emailResults = [];
+      let sentCount = 0;
+      let failCount = 0;
 
-        emailResults.push({
-          userId: user.id,
-          email: user.email,
-          success: true,
-          messageId: result.messageId,
-        });
-      } catch (error) {
-        console.error(`ユーザー ${user.id} へのメール送信エラー:`, error);
-        emailResults.push({
-          userId: user.id,
-          email: user.email,
-          success: false,
-          error: error instanceof Error ? error.message : String(error),
-        });
+      for (const user of users) {
+        try {
+          const emailTemplate = getAdminNotificationEmailTemplate({
+            subject,
+            title,
+            message,
+            userName: user.name || undefined,
+            ctaText,
+            ctaUrl,
+          });
+
+          const result = await sendEmail({
+            to: user.email,
+            subject: emailTemplate.subject,
+            text: emailTemplate.text,
+            html: emailTemplate.html,
+          });
+
+          sentCount++;
+          emailResults.push({
+            userId: user.id,
+            email: user.email,
+            success: true,
+            messageId: result.messageId,
+          });
+        } catch (error) {
+          failCount++;
+          emailResults.push({
+            userId: user.id,
+            email: user.email,
+            success: false,
+            error: error instanceof Error ? error.message : String(error),
+          });
+        }
       }
-    }
 
-    // メール送信履歴をデータベースに保存
-    await prisma.adminEmailLog.create({
-      data: {
-        subject,
-        title,
-        message,
-        targetGroup,
-        ctaText: ctaText || null,
-        ctaUrl: ctaUrl || null,
-        sentCount: emailResults.filter((r) => r.success).length,
-        failCount: emailResults.filter((r) => !r.success).length,
-        sentBy: session.user.id,
-        sentAt: new Date(),
-      },
+      // 送信結果をログに更新
+      await tx.adminEmailLog.update({
+        where: { id: emailLog.id },
+        data: {
+          sentCount,
+          failCount,
+        },
+      });
+
+      console.log('メール送信完了:', {
+        emailLogId: emailLog.id,
+        totalCount: users.length,
+        sentCount,
+        failCount,
+      });
+
+      return {
+        emailLogId: emailLog.id,
+        totalCount: users.length,
+        sentCount,
+        failCount,
+        results: emailResults,
+      };
     });
 
     return NextResponse.json({
       success: true,
-      totalCount: users.length,
-      sentCount: emailResults.filter((r) => r.success).length,
-      failCount: emailResults.filter((r) => !r.success).length,
-      results: emailResults,
+      ...result,
     });
   } catch (error) {
     console.error('管理者メール送信エラー:', error);
@@ -352,4 +384,4 @@ export async function POST(request: Request) {
       { status: 500 },
     );
   }
-}
+});

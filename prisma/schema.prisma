@@ -364,3 +364,13 @@ model AdminEmailLog {
   @@index([targetGroup])
   @@index([sentAt])
 }
+
+model IdempotencyRequest {
+  id          String    @id
+  endpoint    String    // どのAPIエンドポイントでのリクエストか
+  result      Json      // 処理結果
+  createdAt   DateTime  @default(now())
+  expiresAt   DateTime  // いつまで保持するか
+  
+  @@index([expiresAt]) // 期限切れレコードを効率的に削除するためのインデックス
+}
