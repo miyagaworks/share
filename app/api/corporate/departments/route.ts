@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
+import { generateVirtualTenantData } from '@/lib/corporateAccessState';
 
 // 部署一覧取得（GET）
 export async function GET() {
@@ -18,7 +19,10 @@ export async function GET() {
     // ユーザーのテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        subscriptionStatus: true, // 永久利用権ユーザー判定用
         adminOfTenant: true,
         tenant: true,
       },
@@ -26,6 +30,25 @@ export async function GET() {
 
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+    }
+
+    // 永久利用権ユーザーの場合、仮想テナントの部署情報を返す
+    if (user.subscriptionStatus === 'permanent') {
+      console.log('永久利用権ユーザー用仮想部署情報の生成:', user.id);
+      const virtualTenant = generateVirtualTenantData(user.id, user.name);
+
+      // 仮想部署データをユーザー数とともに整形
+      const virtualDepartments = virtualTenant.departments.map((dept) => ({
+        id: dept.id,
+        name: dept.name,
+        description: dept.description,
+        userCount: 1, // 自分だけが所属
+      }));
+
+      return NextResponse.json({
+        success: true,
+        departments: virtualDepartments,
+      });
     }
 
     // テナント情報を取得（管理者または一般メンバーのいずれか）
@@ -86,13 +109,27 @@ export async function POST(req: Request) {
     // ユーザーとテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
+      select: {
+        id: true,
+        subscriptionStatus: true, // 永久利用権ユーザー判定用
         adminOfTenant: true,
       },
     });
 
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+    }
+
+    // 永久利用権ユーザーの場合、部署の作成はサポートしない
+    if (user.subscriptionStatus === 'permanent') {
+      return NextResponse.json(
+        {
+          success: false,
+          error: '永久利用権ユーザーは部署を追加できません',
+          message: '永久利用権アカウントではこの操作はサポートされていません',
+        },
+        { status: 403 },
+      );
     }
 
     // 管理者権限の確認

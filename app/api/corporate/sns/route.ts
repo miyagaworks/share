@@ -84,6 +84,27 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
+    // 永久利用権ユーザーかどうかチェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      // 永久利用権ユーザーの場合は、成功を返すが実際には変更されない
+      // リクエストボディの取得
+      const body = await req.json();
+
+      return NextResponse.json({
+        success: true,
+        message: '永久利用権ユーザーのSNSリンクは更新されません',
+        link: {
+          id: `virtual-sns-${Date.now()}`,
+          platform: body.platform,
+          username: body.username || null,
+          url: body.url,
+          displayOrder: 999,
+          isRequired: body.isRequired || false,
+        },
+      });
+    }
+
     // 管理者権限の確認
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -183,6 +204,16 @@ export async function PATCH(req: NextRequest) {
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
+    }
+
+    // 永久利用権ユーザーかどうかチェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      // 永久利用権ユーザーの場合は、成功を返すが実際には変更されない
+      return NextResponse.json({
+        success: true,
+        message: '永久利用権ユーザーのSNSリンク設定は更新されません',
+      });
     }
 
     // 管理者権限の確認

@@ -19,12 +19,29 @@ export async function GET(req: NextRequest) {
 
     console.log('アクティビティログAPI - 認証済みユーザーID:', session.user.id);
 
-    // ユーザーのテナント情報を取得
+    // ユーザーのテナント情報を取得 - selectステートメント修正
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
-        adminOfTenant: true,
-        tenant: true,
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        image: true,
+        subscriptionStatus: true, // 永久利用権ユーザー判定用
+        adminOfTenant: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        tenantId: true,
+        corporateRole: true,
       },
     });
 
@@ -39,7 +56,84 @@ export async function GET(req: NextRequest) {
       hasAdminOfTenant: !!user.adminOfTenant,
       hasTenant: !!user.tenant,
       tenantId: user.tenantId,
+      subscriptionStatus: user.subscriptionStatus,
     });
+
+    // 永久利用権ユーザーの場合は仮想アクティビティログを返す
+    if (user.subscriptionStatus === 'permanent') {
+      console.log('アクティビティログAPI - 永久利用権ユーザー用仮想データを生成');
+
+      // クエリパラメータから取得（仮想データでも同じパラメータを使用）
+      const searchParams = req.nextUrl.searchParams;
+      const limit = parseInt(searchParams.get('limit') || '10', 10);
+      const page = parseInt(searchParams.get('page') || '1', 10);
+
+      // 仮想アクティビティログを生成
+      const now = new Date();
+      const virtualActivities = [
+        {
+          id: `virtual-activity-1-${user.id}`,
+          tenantId: `virtual-tenant-${user.id}`,
+          userId: user.id,
+          action: 'login',
+          entityType: 'user',
+          entityId: user.id,
+          description: '永久利用権アカウントでログインしました',
+          createdAt: now,
+          user: {
+            id: user.id,
+            name: user.name || '永久利用権ユーザー',
+            email: user.email,
+            image: user.image,
+            corporateRole: 'admin',
+          },
+        },
+        {
+          id: `virtual-activity-2-${user.id}`,
+          tenantId: `virtual-tenant-${user.id}`,
+          userId: user.id,
+          action: 'access',
+          entityType: 'tenant',
+          entityId: `virtual-tenant-${user.id}`,
+          description: '法人ダッシュボードにアクセスしました',
+          createdAt: new Date(now.getTime() - 3600000), // 1時間前
+          user: {
+            id: user.id,
+            name: user.name || '永久利用権ユーザー',
+            email: user.email,
+            image: user.image,
+            corporateRole: 'admin',
+          },
+        },
+        {
+          id: `virtual-activity-3-${user.id}`,
+          tenantId: `virtual-tenant-${user.id}`,
+          userId: user.id,
+          action: 'create',
+          entityType: 'tenant',
+          entityId: `virtual-tenant-${user.id}`,
+          description: '永久利用権が付与され、仮想テナントが作成されました',
+          createdAt: new Date(now.getTime() - 86400000), // 1日前
+          user: {
+            id: user.id,
+            name: user.name || '永久利用権ユーザー',
+            email: user.email,
+            image: user.image,
+            corporateRole: 'admin',
+          },
+        },
+      ];
+
+      return NextResponse.json({
+        activities: virtualActivities,
+        pagination: {
+          total: virtualActivities.length,
+          page,
+          limit,
+          pages: 1,
+        },
+      });
+    }
 
     // テナント情報を取得（管理者または一般メンバーのいずれか）
     const tenant = user.adminOfTenant || user.tenant;

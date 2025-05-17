@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { generateVirtualTenantData } from '@/lib/corporateAccessState';
 
 export async function GET() {
   try {
@@ -26,6 +27,8 @@ export async function GET() {
         where: { id: userId },
         select: {
           id: true,
+          name: true, // 仮想テナント用に名前も取得
+          subscriptionStatus: true, // 永久利用権ステータスを取得
           // 管理者テナント - 基本情報のみ
           adminOfTenant: {
             select: {
@@ -79,6 +82,37 @@ export async function GET() {
       if (!user) {
         console.log('[API] ユーザーが見つかりません:', userId);
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      // 永久利用権ユーザーの場合、仮想テナントデータを生成して返す
+      if (user.subscriptionStatus === 'permanent') {
+        console.log('[API] 永久利用権ユーザー用仮想テナントデータを生成:', userId);
+        const virtualTenant = generateVirtualTenantData(userId, user.name);
+
+        // 仮想テナントデータをレスポンス形式に変換
+        const responseData = {
+          tenant: {
+            id: virtualTenant.id,
+            name: virtualTenant.name,
+            logoUrl: virtualTenant.settings.logoUrl,
+            logoWidth: null,
+            logoHeight: null,
+            primaryColor: virtualTenant.settings.primaryColor,
+            secondaryColor: virtualTenant.settings.secondaryColor,
+            headerText: null,
+            textColor: null,
+            maxUsers: 50,
+            accountStatus: 'active',
+            userCount: 1,
+            departmentCount: virtualTenant.departments.length,
+            users: [{ id: userId, name: user.name, role: 'admin' }],
+            departments: virtualTenant.departments,
+          },
+          isAdmin: true,
+          userRole: 'admin',
+        };
+
+        return NextResponse.json(responseData);
       }
 
       // 法人テナント情報を取得（管理者または一般メンバー）

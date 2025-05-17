@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
+import { generateVirtualTenantData } from '@/lib/corporateAccessState';
 
 // ブランディング設定の取得（GET）
 export async function GET() {
@@ -18,7 +19,10 @@ export async function GET() {
     // ユーザーのテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
+      select: {
+        id: true,
+        name: true,
+        subscriptionStatus: true, // 永久利用権ユーザー判定用
         adminOfTenant: true,
         tenant: true,
       },
@@ -26,6 +30,25 @@ export async function GET() {
 
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+    }
+
+    // 永久利用権ユーザーの場合、仮想テナントのブランディング情報を返す
+    if (user.subscriptionStatus === 'permanent') {
+      console.log('永久利用権ユーザー用仮想ブランディング情報の生成:', user.id);
+      const virtualTenant = generateVirtualTenantData(user.id, user.name);
+
+      return NextResponse.json({
+        success: true,
+        branding: {
+          logoUrl: virtualTenant.settings.logoUrl,
+          logoWidth: null,
+          logoHeight: null,
+          primaryColor: virtualTenant.settings.primaryColor,
+          secondaryColor: virtualTenant.settings.secondaryColor,
+          headerText: null,
+          textColor: null,
+        },
+      });
     }
 
     // テナント情報を取得（管理者または一般メンバーのいずれか）
@@ -77,13 +100,36 @@ export async function PUT(req: Request) {
     // ユーザーとテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
+      select: {
+        id: true,
+        subscriptionStatus: true, // 永久利用権ユーザー判定用
         adminOfTenant: true,
       },
     });
 
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+    }
+
+    // 永久利用権ユーザーの場合、仮想テナントの設定を更新（ローカルストレージに保存）
+    if (user.subscriptionStatus === 'permanent') {
+      console.log('永久利用権ユーザーの仮想ブランディング設定は更新できません');
+
+      // 更新はサポートせず、成功レスポンスを返す
+      return NextResponse.json({
+        success: true,
+        message: '永久利用権ユーザーの仮想ブランディング設定は更新されません',
+        tenant: {
+          primaryColor,
+          secondaryColor,
+          logoUrl,
+          // 表示のみのために他のフィールドも含める
+          logoWidth: logoWidth ? Number(logoWidth) : null,
+          logoHeight: logoHeight ? Number(logoHeight) : null,
+          headerText,
+          textColor,
+        },
+      });
     }
 
     // 管理者権限の確認

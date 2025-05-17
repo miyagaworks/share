@@ -23,11 +23,44 @@ export async function GET() {
     // ユーザー情報を取得（より単純なクエリ）
     const user = await prisma.user.findUnique({
       where: { id: userId },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        subscriptionStatus: true, // 永久利用権ユーザー判定用
+      },
     });
 
     if (!user) {
       console.log('[API] ユーザーが見つかりません');
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+    }
+
+    // 永久利用権ユーザーの場合、仮想テナントユーザー情報を返す
+    if (user.subscriptionStatus === 'permanent') {
+      console.log('[API] 永久利用権ユーザー用仮想ユーザーデータを生成:', userId);
+
+      // 単一ユーザーの仮想データを生成
+      const virtualUser = {
+        id: userId,
+        name: user.name || '永久利用権ユーザー',
+        email: user.email,
+        corporateRole: 'admin',
+        department: { id: 'default-dept', name: '全社' },
+        isAdmin: true,
+        isSoleAdmin: true,
+        isInvited: false,
+        invitedAt: null,
+        createdAt: new Date().toISOString(),
+      };
+
+      return NextResponse.json({
+        success: true,
+        users: [virtualUser],
+        isAdmin: true,
+        tenantId: `virtual-tenant-${userId}`,
+        adminCount: 1,
+      });
     }
 
     // テナントIDを取得するための追加クエリ
