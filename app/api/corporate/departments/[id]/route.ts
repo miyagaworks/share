@@ -102,11 +102,36 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
   try {
     // 永久利用権ユーザーかどうかチェック
     const isPermanent = checkPermanentAccess();
-    if (isPermanent) {
+    const session = await auth();
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: '認証されていません' }, { status: 401 });
+    }
+
+    // ユーザー情報を取得（subscriptionStatusのみを取得）
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        subscriptionStatus: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+    }
+
+    // isPermanentまたはDBからのsubscriptionStatusが'permanent'の場合
+    if (isPermanent || user.subscriptionStatus === 'permanent') {
       // リクエストボディを取得
       const body = await req.json();
       const { name, description } = body;
-
+      
+      console.log('永久利用権ユーザーからの部署更新リクエスト:', {
+        id: params.id, 
+        body
+      });
+      
       // 仮想的に成功したものとして返す
       return NextResponse.json({
         success: true,
@@ -115,16 +140,13 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
           id: params.id,
           name: name || 'デフォルト部署',
           description: description || 'デフォルト部署の説明',
+          // tenantId: user.adminOfTenant.id の代わりに仮想テナントID
+          tenantId: `virtual-tenant-${session.user.id}`,
         },
       });
     }
 
-    const session = await auth();
-
-    if (!session?.user?.id) {
-      return NextResponse.json({ error: '認証されていません' }, { status: 401 });
-    }
-
+    // 通常のユーザー処理
     const departmentId = params.id;
     const body = await req.json();
     const { name, description } = body;
@@ -134,20 +156,20 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: '部署名は必須です' }, { status: 400 });
     }
 
-    // ユーザーとテナント情報を取得
-    const user = await prisma.user.findUnique({
+    // ユーザーとテナント情報を取得 - 管理者権限の確認用
+    const adminUser = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
         adminOfTenant: true,
       },
     });
 
-    if (!user) {
+    if (!adminUser) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
 
     // 管理者権限の確認
-    if (!user.adminOfTenant) {
+    if (!adminUser.adminOfTenant) {
       return NextResponse.json({ error: '部署の更新には管理者権限が必要です' }, { status: 403 });
     }
 
@@ -155,7 +177,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     const existingDepartment = await prisma.department.findFirst({
       where: {
         id: departmentId,
-        tenantId: user.adminOfTenant.id,
+        tenantId: adminUser.adminOfTenant.id,
       },
     });
 
