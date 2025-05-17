@@ -21,12 +21,9 @@ export const metadata: Metadata = {
   title: 'Share',
   description: 'デジタル名刺サービス',
   icons: {
-    icon: [
-      { url: '/pwa/favicon.ico' },
-      { url: '/pwa/favicon-16x16.png', sizes: '16x16', type: 'image/png' },
-      { url: '/pwa/favicon-32x32.png', sizes: '32x32', type: 'image/png' },
-    ],
-    apple: [{ url: '/pwa/apple-touch-icon.png' }],
+    icon: '/pwa/favicon.ico', // 正しいパスを指定
+    shortcut: '/pwa/favicon.ico',
+    apple: '/pwa/apple-touch-icon.png',
   },
 };
 
