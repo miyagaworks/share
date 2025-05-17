@@ -70,7 +70,7 @@ export async function POST(request: Request) {
         tenant = await tx.corporateTenant.create({
           data: {
             name: `${user.name || 'ユーザー'}の法人`,
-            maxUsers: 50, // ここを10から50に変更（business_plusの上限値）
+            maxUsers: 50, // business_plusの上限値
             primaryColor: '#3B82F6',
             secondaryColor: '#60A5FA',
             admin: { connect: { id: userId } },
