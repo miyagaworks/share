@@ -1,11 +1,10 @@
 // app/dashboard/admin/notifications/page.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
+import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
 import { Spinner } from '@/components/ui/Spinner';
-import { Button } from '@/components/ui/Button';
 import {
   HiBell,
   HiPlus,
@@ -13,8 +12,12 @@ import {
   HiTrash,
   HiRefresh,
   HiSearch,
+  HiChevronDown,
+  HiChevronUp,
 } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
+import { formatDistanceToNow } from 'date-fns';
+import { ja } from 'date-fns/locale';
 
 // お知らせの型定義
 interface Notification {
@@ -45,6 +48,19 @@ interface NotificationFormData {
   active: boolean;
 }
 
+// フィルター設定の型
+interface FilterConfig {
+  status: string;
+  type: string;
+  priority: string;
+}
+
+// ソート設定の型
+interface SortConfig {
+  key: string;
+  direction: string;
+}
+
 // 初期フォームデータ
 const initialFormData: NotificationFormData = {
   title: '',
@@ -58,13 +74,45 @@ const initialFormData: NotificationFormData = {
   active: true,
 };
 
+// お知らせ統計データの型
+interface NotificationStats {
+  total: number;
+  active: number;
+  inactive: number;
+  upcoming: number;
+  expired: number;
+  byType: Record<string, number>;
+}
+
 export default function AdminNotificationsPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [filteredNotifications, setFilteredNotifications] = useState<Notification[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const [stats, setStats] = useState<NotificationStats>({
+    total: 0,
+    active: 0,
+    inactive: 0,
+    upcoming: 0,
+    expired: 0,
+    byType: {},
+  });
+
+  // フィルター状態
+  const [filters, setFilters] = useState({
+    status: 'all', // 'all', 'active', 'inactive', 'upcoming', 'expired'
+    type: 'all', // 'all', 'announcement', 'maintenance', 'feature', 'alert'
+    priority: 'all', // 'all', 'high', 'normal', 'low'
+  });
+
+  // 並べ替え状態
+  const [sortConfig, setSortConfig] = useState<SortConfig>({
+    key: 'createdAt',
+    direction: 'desc',
+  });
 
   // フォーム状態
   const [showForm, setShowForm] = useState(false);
@@ -75,6 +123,31 @@ export default function AdminNotificationsPage() {
   // 削除確認状態
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  // 詳細表示状態
+  const [expandedId, setExpandedId] = useState<string | null>(null);
+
+  // お知らせ一覧取得
+  const fetchNotifications = useCallback(async () => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/admin/notifications');
+      if (response.ok) {
+        const data = await response.json();
+        setNotifications(data.notifications || []);
+        calculateStats(data.notifications || []);
+        applyFiltersAndSort(data.notifications || [], filters, searchTerm, sortConfig);
+      } else {
+        console.error('お知らせ一覧取得エラー');
+        toast.error('お知らせ一覧の取得に失敗しました');
+      }
+    } catch (error) {
+      console.error('お知らせ一覧取得エラー:', error);
+      toast.error('お知らせ情報の取得中にエラーが発生しました');
+    } finally {
+      setLoading(false);
+    }
+  }, [filters, searchTerm, sortConfig]);
 
   // 管理者チェック
   useEffect(() => {
@@ -101,26 +174,152 @@ export default function AdminNotificationsPage() {
     };
 
     checkAdminAccess();
-  }, [session, router]);
+  }, [session, router, fetchNotifications]);
 
-  // お知らせ一覧取得
-  const fetchNotifications = async () => {
-    setLoading(true);
-    try {
-      const response = await fetch('/api/admin/notifications');
-      if (response.ok) {
-        const data = await response.json();
-        setNotifications(data.notifications || []);
+  // お知らせ統計情報の計算
+  const calculateStats = (notificationList: Notification[]) => {
+    const now = new Date();
+    const stats: NotificationStats = {
+      total: notificationList.length,
+      active: 0,
+      inactive: 0,
+      upcoming: 0,
+      expired: 0,
+      byType: {},
+    };
+
+    notificationList.forEach((notification) => {
+      // アクティブ/非アクティブのカウント
+      if (notification.active) {
+        stats.active++;
       } else {
-        console.error('お知らせ一覧取得エラー');
-        toast.error('お知らせ一覧の取得に失敗しました');
+        stats.inactive++;
       }
-    } catch (error) {
-      console.error('お知らせ一覧取得エラー:', error);
-      toast.error('お知らせ情報の取得中にエラーが発生しました');
-    } finally {
-      setLoading(false);
+
+      // 開始前のお知らせをカウント
+      if (new Date(notification.startDate) > now) {
+        stats.upcoming++;
+      }
+
+      // 終了済みのお知らせをカウント
+      if (notification.endDate && new Date(notification.endDate) < now) {
+        stats.expired++;
+      }
+
+      // タイプ別カウント
+      const type = notification.type;
+      stats.byType[type] = (stats.byType[type] || 0) + 1;
+    });
+
+    setStats(stats);
+  };
+
+  // フィルタリングと並べ替えを適用
+  const applyFiltersAndSort = (
+    notificationList: Notification[],
+    filters: FilterConfig,
+    search: string,
+    sortConfig: SortConfig,
+  ) => {
+    let filtered = [...notificationList];
+    const now = new Date();
+
+    // 検索フィルター
+    if (search) {
+      const lowerSearch = search.toLowerCase();
+      filtered = filtered.filter(
+        (notification) =>
+          notification.title.toLowerCase().includes(lowerSearch) ||
+          notification.content.toLowerCase().includes(lowerSearch),
+      );
     }
+
+    // ステータスフィルター
+    if (filters.status !== 'all') {
+      switch (filters.status) {
+        case 'active':
+          filtered = filtered.filter((n) => n.active);
+          break;
+        case 'inactive':
+          filtered = filtered.filter((n) => !n.active);
+          break;
+        case 'upcoming':
+          filtered = filtered.filter((n) => new Date(n.startDate) > now);
+          break;
+        case 'expired':
+          filtered = filtered.filter((n) => n.endDate && new Date(n.endDate) < now);
+          break;
+      }
+    }
+
+    // タイプフィルター
+    if (filters.type !== 'all') {
+      filtered = filtered.filter((n) => n.type === filters.type);
+    }
+
+    // 優先度フィルター
+    if (filters.priority !== 'all') {
+      filtered = filtered.filter((n) => n.priority === filters.priority);
+    }
+
+    // 並べ替え
+    filtered.sort((a, b) => {
+      // 値を取得
+      const keyToSort = sortConfig.key as keyof Notification;
+      const aValue = a[keyToSort];
+      const bValue = b[keyToSort];
+
+      // 日付型の場合は数値に変換
+      if (
+        typeof aValue === 'string' &&
+        ['createdAt', 'updatedAt', 'startDate', 'endDate'].includes(sortConfig.key)
+      ) {
+        // 日付文字列をタイムスタンプに変換
+        const aTimestamp = aValue ? new Date(aValue).getTime() : 0;
+        const bTimestamp = bValue ? new Date(bValue as string).getTime() : 0;
+
+        // 昇順/降順に応じて比較
+        return sortConfig.direction === 'asc' ? aTimestamp - bTimestamp : bTimestamp - aTimestamp;
+      }
+
+      // nullチェックを追加して安全に比較
+      // null値は常に最後に配置
+      if (aValue === null && bValue === null) return 0;
+      if (aValue === null) return sortConfig.direction === 'asc' ? 1 : -1;
+      if (bValue === null) return sortConfig.direction === 'asc' ? -1 : 1;
+
+      // それ以外の型の場合の比較
+      if (aValue! < bValue!) {
+        return sortConfig.direction === 'asc' ? -1 : 1;
+      }
+      if (aValue! > bValue!) {
+        return sortConfig.direction === 'asc' ? 1 : -1;
+      }
+      return 0;
+    });
+
+    setFilteredNotifications(filtered);
+  };
+
+  // フィルター変更時に再適用
+  useEffect(() => {
+    applyFiltersAndSort(notifications, filters, searchTerm, sortConfig);
+  }, [filters, searchTerm, sortConfig, notifications]);
+
+  // 並べ替え変更ハンドラ
+  const handleSort = (key: string) => {
+    setSortConfig((prevConfig) => ({
+      key,
+      direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc',
+    }));
+  };
+
+  // フィルター変更ハンドラ
+  const handleFilterChange = (filterType: string, value: string) => {
+    setFilters((prev) => ({
+      ...prev,
+      [filterType]: value,
+    }));
   };
 
   // フォーム入力変更ハンドラ
@@ -167,7 +366,7 @@ export default function AdminNotificationsPage() {
       });
 
       if (response.ok) {
-        await response.json(); // 応答を読み込むだけで変数に割り当てない
+        await response.json();
         toast.success(editingId ? 'お知らせを更新しました' : 'お知らせを作成しました');
 
         // フォームをリセット
@@ -241,13 +440,6 @@ export default function AdminNotificationsPage() {
     setEditingId(null);
   };
 
-  // 検索フィルター
-  const filteredNotifications = notifications.filter(
-    (notification) =>
-      notification.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      notification.content.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
-
   // プライオリティに応じたバッジカラー
   const getPriorityBadgeClass = (priority: string) => {
     switch (priority) {
@@ -310,6 +502,33 @@ export default function AdminNotificationsPage() {
     }
   };
 
+  // 日付のフォーマット
+  const formatDate = (dateString: string | null) => {
+    if (!dateString) return '-';
+    try {
+      return new Date(dateString).toLocaleDateString('ja-JP');
+    } catch {
+      return dateString;
+    }
+  };
+
+  // 相対日付のフォーマット
+  const formatRelativeDate = (dateString: string) => {
+    try {
+      return formatDistanceToNow(new Date(dateString), {
+        addSuffix: true,
+        locale: ja,
+      });
+    } catch {
+      return dateString;
+    }
+  };
+
+  // 詳細表示切り替え
+  const toggleExpand = (id: string) => {
+    setExpandedId(expandedId === id ? null : id);
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -333,6 +552,26 @@ export default function AdminNotificationsPage() {
           <h1 className="text-2xl font-bold">お知らせ管理</h1>
         </div>
 
+        {/* 統計情報 */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <div className="bg-blue-50 p-4 rounded-lg">
+            <h3 className="text-sm font-semibold text-blue-800">合計</h3>
+            <p className="text-2xl font-bold">{stats.total}</p>
+          </div>
+          <div className="bg-green-50 p-4 rounded-lg">
+            <h3 className="text-sm font-semibold text-green-800">有効</h3>
+            <p className="text-2xl font-bold">{stats.active}</p>
+          </div>
+          <div className="bg-yellow-50 p-4 rounded-lg">
+            <h3 className="text-sm font-semibold text-yellow-800">開始前</h3>
+            <p className="text-2xl font-bold">{stats.upcoming}</p>
+          </div>
+          <div className="bg-red-50 p-4 rounded-lg">
+            <h3 className="text-sm font-semibold text-red-800">無効/期限切れ</h3>
+            <p className="text-2xl font-bold">{stats.inactive + stats.expired}</p>
+          </div>
+        </div>
+
         {/* 検索・アクションエリア */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <div className="relative w-full sm:w-64">
@@ -349,20 +588,67 @@ export default function AdminNotificationsPage() {
           </div>
 
           <div className="flex space-x-2">
-            <Button
+            <button
               onClick={() => {
                 setShowForm(true);
                 setEditingId(null);
+                setFormData(initialFormData);
               }}
+              className="flex items-center px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
             >
               <HiPlus className="mr-2 h-4 w-4" />
               新規作成
-            </Button>
-            <Button variant="outline" onClick={fetchNotifications}>
+            </button>
+            <button
+              onClick={fetchNotifications}
+              className="flex items-center px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 transition-colors"
+            >
               <HiRefresh className="mr-2 h-4 w-4" />
               更新
-            </Button>
+            </button>
           </div>
+        </div>
+
+        {/* フィルターエリア */}
+        <div className="flex flex-wrap gap-2 mb-4">
+          <select
+            value={filters.status}
+            onChange={(e) => handleFilterChange('status', e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+          >
+            <option value="all">全てのステータス</option>
+            <option value="active">有効</option>
+            <option value="inactive">無効</option>
+            <option value="upcoming">開始前</option>
+            <option value="expired">期限切れ</option>
+          </select>
+
+          <select
+            value={filters.type}
+            onChange={(e) => handleFilterChange('type', e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+          >
+            <option value="all">全てのタイプ</option>
+            <option value="announcement">お知らせ</option>
+            <option value="maintenance">メンテナンス</option>
+            <option value="feature">新機能</option>
+            <option value="alert">アラート</option>
+          </select>
+
+          <select
+            value={filters.priority}
+            onChange={(e) => handleFilterChange('priority', e.target.value)}
+            className="border border-gray-300 rounded-md px-3 py-1.5 text-sm"
+          >
+            <option value="all">全ての重要度</option>
+            <option value="high">高</option>
+            <option value="normal">通常</option>
+            <option value="low">低</option>
+          </select>
+
+          <span className="text-sm text-gray-500 flex items-center ml-auto">
+            {filteredNotifications.length}件表示 / 全{notifications.length}件
+          </span>
         </div>
 
         {/* フォーム */}
@@ -500,15 +786,19 @@ export default function AdminNotificationsPage() {
               </div>
 
               <div className="flex justify-end space-x-2">
-                <Button
+                <button
                   type="button"
-                  variant="outline"
                   onClick={handleCancelForm}
                   disabled={formSubmitting}
+                  className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
                 >
                   キャンセル
-                </Button>
-                <Button type="submit" disabled={formSubmitting}>
+                </button>
+                <button
+                  type="submit"
+                  disabled={formSubmitting}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+                >
                   {formSubmitting ? (
                     <>
                       <Spinner size="sm" className="mr-2" />
@@ -517,7 +807,7 @@ export default function AdminNotificationsPage() {
                   ) : (
                     <>{editingId ? '更新' : '作成'}</>
                   )}
-                </Button>
+                </button>
               </div>
             </form>
           </div>
@@ -528,25 +818,80 @@ export default function AdminNotificationsPage() {
           <table className="min-w-full bg-white">
             <thead className="bg-gray-50">
               <tr>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  タイトル
+                <th
+                  className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('title')}
+                >
+                  <div className="flex items-center">
+                    タイトル
+                    {sortConfig.key === 'title' &&
+                      (sortConfig.direction === 'asc' ? (
+                        <HiChevronUp className="ml-1" />
+                      ) : (
+                        <HiChevronDown className="ml-1" />
+                      ))}
+                  </div>
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  タイプ
+                <th
+                  className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('type')}
+                >
+                  <div className="flex items-center">
+                    タイプ
+                    {sortConfig.key === 'type' &&
+                      (sortConfig.direction === 'asc' ? (
+                        <HiChevronUp className="ml-1" />
+                      ) : (
+                        <HiChevronDown className="ml-1" />
+                      ))}
+                  </div>
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  重要度
+                <th
+                  className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('priority')}
+                >
+                  <div className="flex items-center">
+                    重要度
+                    {sortConfig.key === 'priority' &&
+                      (sortConfig.direction === 'asc' ? (
+                        <HiChevronUp className="ml-1" />
+                      ) : (
+                        <HiChevronDown className="ml-1" />
+                      ))}
+                  </div>
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  対象
+                <th
+                  className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('targetGroup')}
+                >
+                  <div className="flex items-center">
+                    対象
+                    {sortConfig.key === 'targetGroup' &&
+                      (sortConfig.direction === 'asc' ? (
+                        <HiChevronUp className="ml-1" />
+                      ) : (
+                        <HiChevronDown className="ml-1" />
+                      ))}
+                  </div>
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  表示期間
+                <th
+                  className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer"
+                  onClick={() => handleSort('startDate')}
+                >
+                  <div className="flex items-center">
+                    表示期間
+                    {sortConfig.key === 'startDate' &&
+                      (sortConfig.direction === 'asc' ? (
+                        <HiChevronUp className="ml-1" />
+                      ) : (
+                        <HiChevronDown className="ml-1" />
+                      ))}
+                  </div>
                 </th>
                 <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   ステータス
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="py-3 px-4 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">
                   操作
                 </th>
               </tr>
@@ -554,83 +899,171 @@ export default function AdminNotificationsPage() {
             <tbody className="divide-y divide-gray-200">
               {filteredNotifications.length > 0 ? (
                 filteredNotifications.map((notification) => (
-                  <tr key={notification.id} className="hover:bg-gray-50">
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">{notification.title}</div>
-                      <div className="text-sm text-gray-500 truncate max-w-xs">
-                        {notification.content}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeBadgeClass(notification.type)}`}
-                      >
-                        {notification.type === 'maintenance' && 'メンテナンス'}
-                        {notification.type === 'announcement' && 'お知らせ'}
-                        {notification.type === 'feature' && '新機能'}
-                        {notification.type === 'alert' && 'アラート'}
-                        {!['maintenance', 'announcement', 'feature', 'alert'].includes(
-                          notification.type,
-                        ) && notification.type}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityBadgeClass(notification.priority)}`}
-                      >
-                        {notification.priority === 'high' && '高'}
-                        {notification.priority === 'normal' && '通常'}
-                        {notification.priority === 'low' && '低'}
-                        {!['high', 'normal', 'low'].includes(notification.priority) &&
-                          notification.priority}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <span
-                        className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getTargetGroupBadgeClass(notification.targetGroup)}`}
-                      >
-                        {getTargetGroupDisplay(notification.targetGroup)}
-                      </span>
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      <div className="text-sm text-gray-500">
-                        {new Date(notification.startDate).toLocaleDateString('ja-JP')}
-                        {notification.endDate &&
-                          ` ～ ${new Date(notification.endDate).toLocaleDateString('ja-JP')}`}
-                        {!notification.endDate && ' ～ 無期限'}
-                      </div>
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap">
-                      {notification.active ? (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
-                          有効
-                        </span>
-                      ) : (
-                        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                          無効
-                        </span>
-                      )}
-                    </td>
-                    <td className="py-4 px-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex space-x-2">
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => handleEdit(notification)}
+                  <Fragment key={notification.id}>
+                    <tr
+                      className={`hover:bg-gray-50 ${expandedId === notification.id ? 'bg-gray-50' : ''}`}
+                      onClick={() => toggleExpand(notification.id)}
+                    >
+                      <td className="py-4 px-4">
+                        <div className="flex items-center">
+                          <div className="text-sm font-medium text-gray-900 cursor-pointer">
+                            {notification.title}
+                          </div>
+                          {expandedId === notification.id ? (
+                            <HiChevronUp className="ml-2 h-4 w-4 text-gray-500" />
+                          ) : (
+                            <HiChevronDown className="ml-2 h-4 w-4 text-gray-500" />
+                          )}
+                        </div>
+                        <div className="text-sm text-gray-500 truncate max-w-xs">
+                          {notification.content.length > 50
+                            ? `${notification.content.substring(0, 50)}...`
+                            : notification.content}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getTypeBadgeClass(notification.type)}`}
                         >
-                          <HiPencil className="h-4 w-4" />
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-red-300 text-red-600 hover:bg-red-50"
-                          onClick={() => setDeleteConfirm(notification.id)}
+                          {notification.type === 'maintenance' && 'メンテナンス'}
+                          {notification.type === 'announcement' && 'お知らせ'}
+                          {notification.type === 'feature' && '新機能'}
+                          {notification.type === 'alert' && 'アラート'}
+                          {!['maintenance', 'announcement', 'feature', 'alert'].includes(
+                            notification.type,
+                          ) && notification.type}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getPriorityBadgeClass(notification.priority)}`}
                         >
-                          <HiTrash className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </td>
-                  </tr>
+                          {notification.priority === 'high' && '高'}
+                          {notification.priority === 'normal' && '通常'}
+                          {notification.priority === 'low' && '低'}
+                          {!['high', 'normal', 'low'].includes(notification.priority) &&
+                            notification.priority}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <span
+                          className={`px-2 inline-flex text-xs leading-5 font-semibold rounded-full ${getTargetGroupBadgeClass(notification.targetGroup)}`}
+                        >
+                          {getTargetGroupDisplay(notification.targetGroup)}
+                        </span>
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        <div className="text-sm text-gray-500">
+                          {formatDate(notification.startDate)}
+                          {notification.endDate && ` ～ ${formatDate(notification.endDate)}`}
+                          {!notification.endDate && ' ～ 無期限'}
+                        </div>
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap">
+                        {notification.active ? (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-green-100 text-green-800">
+                            有効
+                          </span>
+                        ) : (
+                          <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+                            無効
+                          </span>
+                        )}
+                      </td>
+                      <td className="py-4 px-4 whitespace-nowrap text-right text-sm font-medium">
+                        <div className="flex space-x-2 justify-end">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleEdit(notification);
+                            }}
+                            className="text-blue-600 hover:text-blue-900 p-1"
+                          >
+                            <HiPencil className="h-4 w-4" />
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setDeleteConfirm(notification.id);
+                            }}
+                            className="text-red-600 hover:text-red-900 p-1"
+                          >
+                            <HiTrash className="h-4 w-4" />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                    {expandedId === notification.id && (
+                      <tr className="bg-gray-50">
+                        <td colSpan={7} className="py-4 px-6 border-t border-gray-100">
+                          <div className="text-sm">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4">
+                              <div>
+                                <h4 className="font-medium text-gray-900 mb-1">詳細情報</h4>
+                                <ul className="space-y-1">
+                                  <li className="text-gray-600">
+                                    <span className="font-medium text-gray-900">作成日時:</span>{' '}
+                                    {formatDate(notification.createdAt)} (
+                                    {formatRelativeDate(notification.createdAt)})
+                                  </li>
+                                  <li className="text-gray-600">
+                                    <span className="font-medium text-gray-900">更新日時:</span>{' '}
+                                    {formatDate(notification.updatedAt)} (
+                                    {formatRelativeDate(notification.updatedAt)})
+                                  </li>
+                                  <li className="text-gray-600">
+                                    <span className="font-medium text-gray-900">ID:</span>{' '}
+                                    {notification.id}
+                                  </li>
+                                  {notification.imageUrl && (
+                                    <li className="text-gray-600">
+                                      <span className="font-medium text-gray-900">画像URL:</span>{' '}
+                                      <a
+                                        href={notification.imageUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-600 hover:underline"
+                                      >
+                                        {notification.imageUrl}
+                                      </a>
+                                    </li>
+                                  )}
+                                </ul>
+                              </div>
+                              <div>
+                                <h4 className="font-medium text-gray-900 mb-1">内容</h4>
+                                <p className="text-gray-600 whitespace-pre-wrap">
+                                  {notification.content}
+                                </p>
+                              </div>
+                            </div>
+                            <div className="mt-2 flex justify-end">
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  handleEdit(notification);
+                                }}
+                                className="text-blue-600 hover:text-blue-900 inline-flex items-center mr-4"
+                              >
+                                <HiPencil className="h-4 w-4 mr-1" />
+                                編集
+                              </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setDeleteConfirm(notification.id);
+                                }}
+                                className="text-red-600 hover:text-red-900 inline-flex items-center"
+                              >
+                                <HiTrash className="h-4 w-4 mr-1" />
+                                削除
+                              </button>
+                            </div>
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
                 ))
               ) : (
                 <tr>
@@ -658,17 +1091,17 @@ export default function AdminNotificationsPage() {
               この操作は元に戻せません。
             </p>
             <div className="flex justify-end space-x-3">
-              <Button
-                variant="outline"
+              <button
                 onClick={() => setDeleteConfirm(null)}
                 disabled={!!deletingId}
+                className="px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50"
               >
                 キャンセル
-              </Button>
-              <Button
+              </button>
+              <button
                 onClick={() => handleDelete(deleteConfirm)}
                 disabled={!!deletingId}
-                className="bg-red-600 hover:bg-red-700"
+                className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
               >
                 {deletingId === deleteConfirm ? (
                   <>
@@ -677,11 +1110,11 @@ export default function AdminNotificationsPage() {
                   </>
                 ) : (
                   <>
-                    <HiTrash className="mr-2 h-4 w-4" />
+                    <HiTrash className="mr-2 h-4 w-4 inline" />
                     削除する
                   </>
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         </div>

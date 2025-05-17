@@ -332,7 +332,7 @@ model NotificationRead {
   id             String       @id @db.Uuid
   notificationId String       @db.Uuid
   notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
-  user_id        String       @db.Uuid
+  user_id        String
   readAt         DateTime     @db.Timestamptz
   
   @@unique([notificationId, user_id])

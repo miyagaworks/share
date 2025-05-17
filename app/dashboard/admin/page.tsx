@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
-import { HiShieldCheck, HiUsers, HiCreditCard, HiKey } from 'react-icons/hi';
+import { HiShieldCheck, HiUsers, HiCreditCard, HiKey, HiBell } from 'react-icons/hi';
 
 export default function AdminDashboardPage() {
   const { data: session } = useSession();
@@ -94,7 +94,7 @@ export default function AdminDashboardPage() {
         <p className="mt-2 opacity-90">システム管理者専用のダッシュボードです。</p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <AdminMenuCard
           title="ユーザー管理"
           icon={<HiUsers className="h-6 w-6 text-blue-600" />}
@@ -110,10 +110,17 @@ export default function AdminDashboardPage() {
         />
 
         <AdminMenuCard
-          title="権限管理"
+          title="永久利用権管理"
           icon={<HiKey className="h-6 w-6 text-blue-600" />}
           description="永久利用権の付与と管理"
           onClick={() => router.push('/dashboard/admin/permissions')}
+        />
+
+        <AdminMenuCard
+          title="お知らせ管理"
+          icon={<HiBell className="h-6 w-6 text-blue-600" />}
+          description="システムお知らせの作成と管理"
+          onClick={() => router.push('/dashboard/admin/notifications')}
         />
       </div>
     </div>

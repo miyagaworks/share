@@ -6,7 +6,7 @@ import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
-import { NotificationBell } from './NotificationBell'; // 追加
+import NotificationBell from './NotificationBell';
 
 export function DashboardHeader() {
   const { data: session } = useSession();

@@ -21,7 +21,7 @@ interface Notification {
   createdAt: string;
 }
 
-export function NotificationBell() {
+export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
   const [loading, setLoading] = useState<boolean>(false);
@@ -99,7 +99,7 @@ export function NotificationBell() {
 
   // お知らせを既読にする
   const markAsRead = async (notificationId: string) => {
-    // まずUI側で既読状態を更新（UX向上のため）
+    // UIを先に更新（UX向上のため）
     setNotifications(
       notifications.map((notification) =>
         notification.id === notificationId ? { ...notification, isRead: true } : notification,
@@ -109,27 +109,21 @@ export function NotificationBell() {
     setUnreadCount((prev) => Math.max(0, prev - 1));
 
     try {
-      console.log(`既読設定送信: ${notificationId}`);
       const response = await fetch('/api/notifications/read', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ notificationId }),
-        credentials: 'include', // 認証情報を含める
       });
 
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({ error: '応答解析エラー' }));
-        console.error('既読設定エラー:', response.status, errorData);
-        // エラーがあってもUI上での既読表示は維持する
-      } else {
-        const data = await response.json();
-        console.log('既読設定成功:', data);
+        console.error('既読API応答エラー:', response.status);
+        // エラーが発生してもUI側の表示は変更しない（UX向上のため）
       }
     } catch (err) {
-      console.error('既読API呼び出しエラー:', err);
-      // エラーがあってもUI上での既読表示は維持する
+      console.error('お知らせ既読設定エラー:', err);
+      // エラーが発生してもUI側の表示は変更しない（UX向上のため）
     }
   };
 
@@ -250,15 +244,18 @@ export function NotificationBell() {
           </div>
 
           <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-right">
-            <button
+            <span
               onClick={fetchNotifications}
-              className="text-xs text-blue-600 hover:text-blue-800"
+              className="text-xs text-blue-600 hover:text-blue-800 cursor-pointer"
             >
               更新
-            </button>
+            </span>
           </div>
         </div>
       )}
     </div>
   );
 }
+
+// 名前付きエクスポートも追加
+export { NotificationBell };
