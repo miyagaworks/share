@@ -514,11 +514,19 @@ export function QrCodeGenerator({ corporateBranding, userProfile }: QrCodeGenera
               <div>
                 <h4 className="font-medium text-lg mb-2">iPhoneの場合:</h4>
                 <ol className="list-decimal pl-5 space-y-2 text-sm">
-                  <li>作成したQRコードページをSafariで開きます</li>
+                  <li>Safariでこのページを開きます</li>
                   <li>共有ボタン（□に↑のアイコン）をタップ</li>
                   <li>「ホーム画面に追加」を選択</li>
-                  <li>追加をタップ</li>
+                  <li>名前は変更せず、そのまま「追加」をタップ</li>
+                  <li>
+                    <strong className="text-red-500">
+                      重要: 追加後は必ずホーム画面から開いてください
+                    </strong>
+                  </li>
                 </ol>
+                <p className="mt-2 text-xs text-red-500">
+                  ※ブラウザからではなく、必ずホーム画面のアイコンから開くことで正しいQRコードページが表示されます
+                </p>
               </div>
 
               <div>

@@ -9,7 +9,6 @@ import { QrCodeGenerator } from '@/components/qrcode/QrCodeGenerator';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
-import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
 
 export default function QrCodePage() {
   const { data: session, status } = useSession();
@@ -27,13 +26,19 @@ export default function QrCodePage() {
   const [nameEn, setNameEn] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [headerText, setHeaderText] = useState<string | null>(null);
+  // PWAインストールプロンプト用の状態
+  const [showInstallPrompt, setShowInstallPrompt] = useState(false);
 
   // 法人アクセス権チェック
   useEffect(() => {
     const checkAccess = async () => {
       try {
-        await checkCorporateAccess();
-        setIsCorporateMember(corporateAccessState.hasAccess === true);
+        // API経由で企業メンバーかどうかを確認
+        const response = await fetch('/api/corporate/access');
+        if (response.ok) {
+          const data = await response.json();
+          setIsCorporateMember(data.hasAccess === true);
+        }
       } catch (err) {
         console.error('法人アクセス権チェックエラー:', err);
       }
@@ -176,7 +181,43 @@ export default function QrCodePage() {
       // 一般ユーザーの場合はプロフィール確認のみ
       checkProfileExists();
     }
+
+    // Service Worker の登録 (PWA対応)
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker
+          .register('/sw.js')
+          .then((registration) => {
+            console.log('ServiceWorker registration successful:', registration.scope);
+          })
+          .catch((error) => {
+            console.log('ServiceWorker registration failed:', error);
+          });
+      });
+    }
   }, [session, status, router, isCorporateMember, fetchCorporateData, checkProfileExists]);
+
+  // iOSホーム画面追加プロンプト表示の useEffect (追加)
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    // iOSデバイス判定
+    const isIOS =
+      /iPad|iPhone|iPod/.test(navigator.userAgent) &&
+      !(window as unknown as { MSStream: unknown }).MSStream === undefined;
+    // 既にスタンドアロンモードで実行されているかチェック
+    const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
+
+    // インストールバナーを表示するかの判定
+    if (isIOS && !isStandalone && !localStorage.getItem('installPromptShown')) {
+      // 数秒後に表示
+      const timer = setTimeout(() => {
+        setShowInstallPrompt(true);
+      }, 3000);
+
+      return () => clearTimeout(timer);
+    }
+  }, []);
 
   if (isLoading) {
     return (
@@ -200,6 +241,32 @@ export default function QrCodePage() {
           共有設定に戻る
         </Link>
       </div>
+
+      {/* PWA インストールプロンプト */}
+      {showInstallPrompt && (
+        <div className="mb-6 bg-blue-50 border border-blue-200 rounded-lg p-4 shadow-sm">
+          <h3 className="font-bold text-blue-800 mb-2">QRコードをホーム画面に追加しましょう！</h3>
+          <p className="text-sm text-blue-700 mb-2">
+            このページをホーム画面に追加すると、ワンタップですぐにQRコードを表示できます。
+          </p>
+          <ol className="text-sm text-blue-600 list-decimal pl-5 mb-3">
+            <li>画面下部の「共有」ボタン（□に↑のアイコン）をタップ</li>
+            <li>「ホーム画面に追加」を選択</li>
+            <li>
+              <strong>ホーム画面から開く</strong>と、常にこのQRコードページが表示されます
+            </li>
+          </ol>
+          <button
+            onClick={() => {
+              setShowInstallPrompt(false);
+              localStorage.setItem('installPromptShown', 'true');
+            }}
+            className="text-sm text-blue-600 underline"
+          >
+            閉じる
+          </button>
+        </div>
+      )}
 
       <QrCodeGenerator
         corporateBranding={
