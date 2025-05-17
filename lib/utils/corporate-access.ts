@@ -48,7 +48,7 @@ export async function checkCorporateAccess(userId: string) {
       return {
         hasCorporateAccess: true,
         isAdmin: true, // 管理者権限も付与
-        isSuperAdmin: false, // スーパー管理者権限は付与しない - ここを修正
+        isSuperAdmin: false, // スーパー管理者権限は付与しない
         tenant: user.adminOfTenant ||
           user.tenant || {
             // 仮想テナント情報
@@ -56,7 +56,7 @@ export async function checkCorporateAccess(userId: string) {
             accountStatus: 'active',
           },
         subscription: {
-          plan: 'business',
+          plan: 'business_plus', // business_plus に変更
           status: 'active',
         },
         userRole: 'admin', // ユーザーロールも明示的に設定

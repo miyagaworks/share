@@ -124,6 +124,19 @@ export function isPermanentUser(): boolean {
         if (isPermanent) {
           corporateAccessState.isPermanentUser = true;
           corporateAccessState.isSuperAdmin = false; // 強制的にfalseに設定
+          corporateAccessState.hasAccess = true; // 法人アクセス権を付与
+
+          // 仮想テナントIDを設定
+          if (!corporateAccessState.tenantId) {
+            corporateAccessState.tenantId = `virtual-tenant-${userData.id}`;
+            corporateAccessState.userRole = 'admin';
+
+            // 仮想テナントデータを生成
+            const virtualData = generateVirtualTenantData(userData.id, userData.name);
+            if (isClient() && typeof localStorage !== 'undefined') {
+              localStorage.setItem('virtualTenantData', JSON.stringify(virtualData));
+            }
+          }
         }
 
         return isPermanent;
