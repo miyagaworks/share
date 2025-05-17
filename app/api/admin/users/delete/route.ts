@@ -32,21 +32,28 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'ユーザーIDが必要です' }, { status: 400 });
     }
 
-    // 削除対象ユーザーが存在するか確認
+    // 削除対象ユーザーが存在するか確認（より詳細な情報を取得）
     const user = await prisma.user.findUnique({
       where: { id: userId },
       select: {
         id: true,
         email: true,
         name: true,
-        adminOfTenant: true, // 法人テナント管理者かどうかを確認
-        tenant: {
+        tenantId: true, // 追加: テナントID
+        corporateRole: true, // 追加: 法人ロール
+        departmentId: true, // 追加: 部署ID
+        adminOfTenant: {
           select: {
             id: true,
+            name: true,
+            subscription: {
+              select: {
+                status: true,
+                currentPeriodEnd: true,
+              },
+            },
           },
         },
-        departmentId: true,
-        corporateRole: true,
       },
     });
 
@@ -59,13 +66,21 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '管理者アカウントは削除できません' }, { status: 403 });
     }
 
-    // 法人テナントの管理者の場合は削除できない
+    // 法人テナント管理者の場合の追加チェック
     if (user.adminOfTenant) {
-      return NextResponse.json({
-        error:
-          'このユーザーは法人テナントの管理者です。テナントの管理者権限を他のユーザーに移譲してから削除してください。',
-        status: 403,
-      });
+      // サブスクリプションが存在し、アクティブ状態であるか確認
+      if (
+        user.adminOfTenant.subscription &&
+        user.adminOfTenant.subscription.status === 'active' &&
+        new Date(user.adminOfTenant.subscription.currentPeriodEnd) > new Date()
+      ) {
+        return NextResponse.json({
+          error: '法人プラン管理者は有効なサブスクリプション期間内に削除できません',
+          details: `${user.adminOfTenant.name}の管理者を削除するには、管理者権限を他のメンバーに移譲するか、サブスクリプション期間（${new Date(user.adminOfTenant.subscription.currentPeriodEnd).toLocaleDateString('ja-JP')}まで）の終了を待つ必要があります。`,
+          isCorporateAdmin: true, // フロントエンドで法人管理者エラーを識別するためのフラグ
+          status: 403,
+        });
+      }
     }
 
     try {
@@ -102,7 +117,7 @@ export async function POST(request: Request) {
         });
 
         // ユーザーが法人メンバーの場合、テナントからの関連を解除
-        if (user.tenant) {
+        if (user.tenantId) {
           await tx.user.update({
             where: { id: userId },
             data: {
@@ -132,12 +147,22 @@ export async function POST(request: Request) {
     } catch (dbError) {
       console.error('ユーザー削除中のデータベースエラー:', dbError);
 
-      // 外部キー制約エラーの場合
+      // 外部キー制約エラーの場合、より具体的なエラーメッセージ
       if (dbError instanceof Error && dbError.message.includes('Foreign key constraint')) {
+        if (dbError.message.includes('CorporateTenant_adminId_fkey')) {
+          return NextResponse.json(
+            {
+              error: '法人プラン管理者は削除できません',
+              details: '管理者権限を他のメンバーに移譲してから削除してください。',
+              isCorporateAdmin: true, // フロントエンドで法人管理者エラーを識別するためのフラグ
+            },
+            { status: 403 },
+          );
+        }
+
         return NextResponse.json(
           {
-            error:
-              'このユーザーは他のデータと関連付けられているため削除できません。法人テナントの管理者である可能性があります。',
+            error: 'このユーザーは他のデータと関連付けられているため削除できません',
             details: dbError.message,
           },
           { status: 400 },

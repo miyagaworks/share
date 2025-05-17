@@ -33,6 +33,13 @@ interface UserData {
   } | null;
 }
 
+// 法人管理者エラー詳細の型定義
+interface CorporateAdminErrorDetails {
+  message: string;
+  details: string;
+  userId: string;
+}
+
 // 並び替えのタイプ
 type SortType =
   | 'created_asc'
@@ -54,6 +61,8 @@ export default function AdminUsersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [sortType, setSortType] = useState<SortType>('grace_period');
+  const [corporateAdminErrorDetails, setCorporateAdminErrorDetails] =
+    useState<CorporateAdminErrorDetails | null>(null);
 
   // URLパラメータから削除アクションを確認
   useEffect(() => {
@@ -126,17 +135,30 @@ export default function AdminUsersPage() {
         }),
       });
 
+      const data = await response.json();
+
       if (response.ok) {
-        const data = await response.json();
         toast.success(data.message || 'ユーザーを削除しました');
         // 削除確認をクリア
         setDeleteConfirm(null);
         // 一覧を再取得
         fetchUsers();
       } else {
-        const errorData = await response.json();
-        console.error('ユーザー削除エラー:', errorData);
-        toast.error(errorData.error || 'ユーザー削除に失敗しました');
+        // エラーメッセージの表示を改善
+        if (data.isCorporateAdmin) {
+          // 法人プラン管理者のエラーの場合、より目立つエラー表示
+          setDeleteConfirm(null); // 削除ダイアログを閉じる
+
+          // より詳細なエラーメッセージのモーダルを表示
+          setCorporateAdminErrorDetails({
+            message: data.error,
+            details: data.details || '管理者権限を他のユーザーに移譲してから削除してください。',
+            userId,
+          });
+        } else {
+          // 通常のエラー
+          toast.error(data.error || 'ユーザー削除に失敗しました');
+        }
       }
     } catch (error) {
       console.error('ユーザー削除処理エラー:', error);
@@ -341,6 +363,33 @@ export default function AdminUsersPage() {
                       削除する
                     </>
                   )}
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* 法人プラン管理者エラーモーダル（新規追加） */}
+        {corporateAdminErrorDetails && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-lg p-6 max-w-md w-full">
+              <div className="flex items-center mb-4 text-red-500">
+                <HiExclamationCircle className="h-7 w-7 mr-2" />
+                <h3 className="text-lg font-medium">{corporateAdminErrorDetails.message}</h3>
+              </div>
+              <div className="bg-red-50 border-l-4 border-red-400 p-4 mb-4">
+                <p className="text-sm text-red-700">{corporateAdminErrorDetails.details}</p>
+              </div>
+              <div className="mt-6">
+                <p className="text-sm text-gray-600 mb-4">法人プランの管理者を削除するには：</p>
+                <ul className="list-disc pl-5 text-sm text-gray-600 mb-4">
+                  <li>別のメンバーを管理者に設定してください</li>
+                  <li>または、サブスクリプションが終了するまでお待ちください</li>
+                </ul>
+              </div>
+              <div className="flex justify-end space-x-3 mt-4">
+                <Button variant="outline" onClick={() => setCorporateAdminErrorDetails(null)}>
+                  閉じる
                 </Button>
               </div>
             </div>
