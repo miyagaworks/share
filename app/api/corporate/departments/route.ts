@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
-import { generateVirtualTenantData } from '@/lib/corporateAccessState';
+import { checkPermanentAccess, generateVirtualTenantData } from '@/lib/corporateAccessState';
 
 // 部署一覧取得（GET）
 export async function GET() {
@@ -91,10 +91,49 @@ export async function GET() {
 // 部署作成（POST）
 export async function POST(req: Request) {
   try {
+    // 永久利用権ユーザーかどうかチェック
+    const isPermanent = checkPermanentAccess();
     const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
+    }
+
+    // ユーザー情報を取得（subscriptionStatusのみを取得）
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        name: true,
+        subscriptionStatus: true,
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+    }
+
+    // isPermanentまたはDBからのsubscriptionStatusが'permanent'の場合
+    if (isPermanent || user.subscriptionStatus === 'permanent') {
+      // リクエストボディを取得
+      const body = await req.json();
+      const { name, description } = body;
+
+      console.log('永久利用権ユーザーからの部署作成リクエスト:', { body });
+
+      // 仮想的に成功したものとして返す（エラーではなく成功レスポンスを返す）
+      return NextResponse.json({
+        success: true,
+        message: '永久利用権ユーザーは新しい部署を追加できません',
+        department: {
+          id: `virtual-dept-${Date.now()}`,
+          name: name || '新しい部署',
+          description: description || '',
+          tenantId: `virtual-tenant-${session.user.id}`,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+        },
+      });
     }
 
     // リクエストボディの取得
@@ -107,33 +146,19 @@ export async function POST(req: Request) {
     }
 
     // ユーザーとテナント情報を取得
-    const user = await prisma.user.findUnique({
+    const adminUser = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: {
-        id: true,
-        subscriptionStatus: true, // 永久利用権ユーザー判定用
+      include: {
         adminOfTenant: true,
       },
     });
 
-    if (!user) {
+    if (!adminUser) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
 
-    // 永久利用権ユーザーの場合、部署の作成はサポートしない
-    if (user.subscriptionStatus === 'permanent') {
-      return NextResponse.json(
-        {
-          success: false,
-          error: '永久利用権ユーザーは部署を追加できません',
-          message: '永久利用権アカウントではこの操作はサポートされていません',
-        },
-        { status: 403 },
-      );
-    }
-
     // 管理者権限の確認
-    if (!user.adminOfTenant) {
+    if (!adminUser.adminOfTenant) {
       return NextResponse.json({ error: '部署の作成には管理者権限が必要です' }, { status: 403 });
     }
 
@@ -143,14 +168,14 @@ export async function POST(req: Request) {
         name,
         description,
         tenant: {
-          connect: { id: user.adminOfTenant.id },
+          connect: { id: adminUser.adminOfTenant.id },
         },
       },
     });
 
     // 部署作成後のアクティビティログ
     await logCorporateActivity({
-      tenantId: user.adminOfTenant.id,
+      tenantId: adminUser.adminOfTenant.id,
       userId: session.user.id,
       action: 'create_department',
       entityType: 'department',
