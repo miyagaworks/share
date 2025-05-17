@@ -5,11 +5,37 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
+import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccessState';
 // import type { CorporateSnsLink } from '@prisma/client';
 
 // 法人共通SNSリンクの取得
 export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    // 永久利用権ユーザーかどうかチェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      // 仮想テナントデータからSNSリンク情報を返す
+      const virtualData = getVirtualTenantData();
+      if (!virtualData) {
+        return NextResponse.json(
+          { error: '仮想テナントデータの取得に失敗しました' },
+          { status: 500 },
+        );
+      }
+
+      // IDに一致するSNSリンクを検索
+      const snsLink = virtualData.snsLinks.find((link) => link.id === params.id);
+      if (!snsLink) {
+        return NextResponse.json({ error: 'リンクが見つかりません' }, { status: 404 });
+      }
+
+      return NextResponse.json({
+        success: true,
+        link: snsLink,
+        isAdmin: true,
+      });
+    }
+
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -64,6 +90,25 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
 // 法人共通SNSリンクの更新
 export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    // 永久利用権ユーザーかどうかチェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      // リクエストボディを取得
+      const body = await req.json();
+
+      return NextResponse.json({
+        success: true,
+        message: '永久利用権ユーザーのSNSリンク設定は更新されません',
+        link: {
+          id: params.id,
+          platform: 'platform' in body ? body.platform : 'unknown',
+          username: 'username' in body ? body.username : null,
+          url: 'url' in body ? body.url : 'https://example.com',
+          isRequired: 'isRequired' in body ? body.isRequired : false,
+        },
+      });
+    }
+
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -139,6 +184,15 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
 // 法人共通SNSリンクの削除
 export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
   try {
+    // 永久利用権ユーザーかどうかチェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      return NextResponse.json({
+        success: true,
+        message: '永久利用権ユーザーのSNSリンク設定は削除されません',
+      });
+    }
+
     const session = await auth();
 
     if (!session?.user?.id) {

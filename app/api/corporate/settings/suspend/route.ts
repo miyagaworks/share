@@ -4,9 +4,20 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { checkPermanentAccess } from '@/lib/corporateAccessState';
 
 export async function POST() {
   try {
+    // 永久利用権ユーザーかどうかチェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      return NextResponse.json({
+        success: true,
+        message: '永久利用権ユーザーのアカウントは一時停止されません',
+        status: 'active', // 常にアクティブ
+      });
+    }
+
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -16,10 +27,21 @@ export async function POST() {
     // ユーザーとテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      include: {
+      select: {
+        id: true,
+        subscriptionStatus: true, // 念のため追加
         adminOfTenant: true,
       },
     });
+
+    // 再度永久利用権チェック (DBからの確認)
+    if (user?.subscriptionStatus === 'permanent') {
+      return NextResponse.json({
+        success: true,
+        message: '永久利用権ユーザーのアカウントは一時停止されません',
+        status: 'active',
+      });
+    }
 
     if (!user || !user.adminOfTenant) {
       return NextResponse.json(

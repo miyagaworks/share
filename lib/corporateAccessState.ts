@@ -654,7 +654,7 @@ export function generateVirtualTenantData(
 ): VirtualTenantData {
   return {
     id: `virtual-tenant-${userId}`,
-    name: '仮想法人環境',
+    name: '仮想法人名',
     users: [{ id: userId, role: 'admin', name: userName || '仮想ユーザー' }],
     departments: [{ id: 'default-dept', name: '全社', description: 'デフォルト部署' }],
     snsLinks: [

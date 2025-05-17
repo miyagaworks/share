@@ -100,6 +100,25 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
 // 部署更新（PUT）
 export async function PUT(req: Request, { params }: { params: { id: string } }) {
   try {
+    // 永久利用権ユーザーかどうかチェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      // リクエストボディを取得
+      const body = await req.json();
+      const { name, description } = body;
+
+      // 仮想的に成功したものとして返す
+      return NextResponse.json({
+        success: true,
+        message: '永久利用権ユーザーの部署設定は更新されません',
+        department: {
+          id: params.id,
+          name: name || 'デフォルト部署',
+          description: description || 'デフォルト部署の説明',
+        },
+      });
+    }
+
     const session = await auth();
 
     if (!session?.user?.id) {
@@ -169,6 +188,15 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 // 部署削除（DELETE）
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
+    // 永久利用権ユーザーかどうかチェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      return NextResponse.json({
+        success: true,
+        message: '永久利用権ユーザーの部署設定は削除されません',
+      });
+    }
+
     const session = await auth();
 
     if (!session?.user?.id) {
