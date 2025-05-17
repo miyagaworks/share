@@ -34,63 +34,72 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
 
     // プラットフォーム名を標準化
     const normalizedPlatform = normalizeSnsPlatform(link.platform);
+    // SNS_METADATAから正しい名前を取得
     const name = SNS_METADATA[normalizedPlatform]?.name || link.platform;
 
     // ネイティブアプリ起動のために最適な形式でURLを生成
     const getOptimizedUrl = () => {
-        // 元のURL（これがなければ表示しない）
-        if (!link.url) return '#';
-        
-        // プラットフォーム固有の処理
-        switch (normalizedPlatform) {
-            case "line":
-                // LINEアプリの起動を試みる
-                if (link.username) {
-                    return `line://ti/p/${link.username}`;
-                }
-                break;
-            case "bereal":
-                // LINEと同様にURLをそのまま使用
-                // ユーザーがhttps://bere.al/usernameをコピーしてペーストした場合の処理
-                if (link.url.startsWith('https://bere.al/')) {
-                    return link.url;
-                }
-                break;
-            case "instagram":
-                // Instagramアプリの起動を試みる
-                if (/instagram\.com\/([^\/]+)/.test(link.url)) {
-                    const username = link.url.match(/instagram\.com\/([^\/]+)/)?.[1];
-                    return `instagram://user?username=${username}`;
-                }
-                break;
-            case "x":
-                // Xアプリの起動を試みる
-                if (/x\.com\/([^\/]+)/.test(link.url)) {
-                    const username = link.url.match(/x\.com\/([^\/]+)/)?.[1];
-                    return `twitter://user?screen_name=${username}`;
-                }
-                break;
-            case "facebook":
-                // Facebookアプリの起動を試みる
-                return `fb://profile/${link.username}`;
-            case "tiktok":
-                // TikTokアプリの起動を試みる
-                if (/tiktok\.com\/@([^\/]+)/.test(link.url)) {
-                    const username = link.url.match(/tiktok\.com\/@([^\/]+)/)?.[1];
-                    return `tiktok://user?username=${username}`;
-                }
-                break;
-            case "youtube":
-                // YouTubeアプリの起動を試みる
-                if (/youtube\.com\/channel\/([^\/]+)/.test(link.url)) {
-                    const channelId = link.url.match(/youtube\.com\/channel\/([^\/]+)/)?.[1];
-                    return `vnd.youtube://channel/${channelId}`;
-                }
-                break;
-        }
+      // 元のURL（これがなければ表示しない）
+      if (!link.url) return '#';
 
-        // デフォルトはブラウザで開く
-        return link.url;
+      // プラットフォーム固有の処理
+      switch (normalizedPlatform) {
+        case 'line':
+          // LINEアプリの起動を試みる
+          if (link.username) {
+            return `line://ti/p/${link.username}`;
+          }
+          break;
+        case 'official-line':
+          // 公式LINEはURLをそのまま使用
+          return link.url;
+        case 'bereal':
+          // BeRealの処理
+          if (link.url.startsWith('https://bere.al/')) {
+            return link.url;
+          }
+          break;
+        case 'instagram':
+          // Instagramの処理
+          if (/instagram\.com\/([^\/]+)/.test(link.url)) {
+            const username = link.url.match(/instagram\.com\/([^\/]+)/)?.[1];
+            return `instagram://user?username=${username}`;
+          }
+          break;
+        case 'x':
+          // Xの処理
+          if (/x\.com\/([^\/]+)/.test(link.url)) {
+            const username = link.url.match(/x\.com\/([^\/]+)/)?.[1];
+            return `twitter://user?screen_name=${username}`;
+          }
+          break;
+        case 'facebook':
+          // Facebookの処理
+          return `fb://profile/${link.username}`;
+        case 'tiktok':
+          // TikTokの処理
+          if (/tiktok\.com\/@([^\/]+)/.test(link.url)) {
+            const username = link.url.match(/tiktok\.com\/@([^\/]+)/)?.[1];
+            return `tiktok://user?username=${username}`;
+          }
+          break;
+        case 'youtube':
+          // YouTubeの処理
+          if (/youtube\.com\/channel\/([^\/]+)/.test(link.url)) {
+            const channelId = link.url.match(/youtube\.com\/channel\/([^\/]+)/)?.[1];
+            return `vnd.youtube://channel/${channelId}`;
+          }
+          break;
+        case 'threads':
+        case 'pinterest':
+        case 'note':
+        default:
+          // その他のプラットフォームはURLをそのまま使用
+          return link.url;
+      }
+
+      // デフォルトはブラウザで開く
+      return link.url;
     };
 
     // クリックイベントハンドラを追加（ネイティブアプリ起動用）

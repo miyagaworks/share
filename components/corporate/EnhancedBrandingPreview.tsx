@@ -36,8 +36,6 @@ interface EnhancedBrandingPreviewProps {
   bio?: string | null;
   corporateSnsLinks?: CorporateSnsLink[];
   personalSnsLinks?: SnsLink[];
-  department?: string | null;
-  position?: string | null;
 }
 
 export function EnhancedBrandingPreview({
@@ -56,8 +54,6 @@ export function EnhancedBrandingPreview({
   bio,
   corporateSnsLinks = [],
   personalSnsLinks = [],
-  department,
-  position,
 }: EnhancedBrandingPreviewProps) {
   // null チェックを行い、デフォルト値を設定
   const safeTextColor = textColor || '#FFFFFF';
