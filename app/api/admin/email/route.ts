@@ -56,8 +56,9 @@ export async function POST(request: Request) {
           targetGroup: string;
           ctaText?: string;
           ctaUrl?: string;
+          userId?: string;
         };
-        const { subject, title, message, targetGroup, ctaText, ctaUrl } = body;
+        const { subject, title, message, targetGroup, ctaText, ctaUrl, userId } = body;
 
         if (!subject || !title || !message || !targetGroup) {
           return NextResponse.json(
@@ -287,6 +288,37 @@ export async function POST(request: Request) {
               },
             });
             break;
+
+          case 'single_user':
+            // 特定のユーザーIDが指定されている場合
+            if (!userId) {
+              return NextResponse.json(
+                { error: '特定ユーザー送信の場合はユーザーIDが必要です' },
+                { status: 400 },
+              );
+            }
+
+            // ユーザーIDで検索
+            const singleUser = await prisma.user.findUnique({
+              where: { id: userId },
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            });
+
+            if (!singleUser) {
+              return NextResponse.json(
+                { error: '指定されたユーザーが見つかりません' },
+                { status: 404 },
+              );
+            }
+
+            users = [singleUser];
+            break;
+
+          // 既存のケース...
 
           default:
             return NextResponse.json(

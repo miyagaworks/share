@@ -39,6 +39,14 @@ export async function POST(request: Request) {
         id: true,
         email: true,
         name: true,
+        adminOfTenant: true, // 法人テナント管理者かどうかを確認
+        tenant: {
+          select: {
+            id: true,
+          },
+        },
+        departmentId: true,
+        corporateRole: true,
       },
     });
 
@@ -51,40 +59,64 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: '管理者アカウントは削除できません' }, { status: 403 });
     }
 
+    // 法人テナントの管理者の場合は削除できない
+    if (user.adminOfTenant) {
+      return NextResponse.json({
+        error:
+          'このユーザーは法人テナントの管理者です。テナントの管理者権限を他のユーザーに移譲してから削除してください。',
+        status: 403,
+      });
+    }
+
     try {
-      // ユーザーのプロフィールを削除
-      await prisma.profile.deleteMany({
-        where: { userId: userId },
-      });
+      // トランザクションを使用して一括で削除処理
+      await prisma.$transaction(async (tx) => {
+        // ユーザーのプロフィールを削除
+        await tx.profile.deleteMany({
+          where: { userId: userId },
+        });
 
-      // ユーザーのSNSリンクを削除
-      await prisma.snsLink.deleteMany({
-        where: { userId: userId },
-      });
+        // ユーザーのSNSリンクを削除
+        await tx.snsLink.deleteMany({
+          where: { userId: userId },
+        });
 
-      // ユーザーのカスタムリンクを削除
-      await prisma.customLink.deleteMany({
-        where: { userId: userId },
-      });
+        // ユーザーのカスタムリンクを削除
+        await tx.customLink.deleteMany({
+          where: { userId: userId },
+        });
 
-      // ユーザーのサブスクリプションを削除
-      await prisma.subscription.deleteMany({
-        where: { userId: userId },
-      });
+        // ユーザーのサブスクリプションを削除
+        await tx.subscription.deleteMany({
+          where: { userId: userId },
+        });
 
-      // ユーザーの請求履歴を削除
-      await prisma.billingRecord.deleteMany({
-        where: { userId: userId },
-      });
+        // ユーザーの請求履歴を削除
+        await tx.billingRecord.deleteMany({
+          where: { userId: userId },
+        });
 
-      // ユーザーのアカウントを削除
-      await prisma.account.deleteMany({
-        where: { userId: userId },
-      });
+        // ユーザーのアカウントを削除
+        await tx.account.deleteMany({
+          where: { userId: userId },
+        });
 
-      // 最後にユーザー自体を削除
-      await prisma.user.delete({
-        where: { id: userId },
+        // ユーザーが法人メンバーの場合、テナントからの関連を解除
+        if (user.tenant) {
+          await tx.user.update({
+            where: { id: userId },
+            data: {
+              tenantId: null,
+              corporateRole: null,
+              departmentId: null,
+            },
+          });
+        }
+
+        // 最後にユーザー自体を削除
+        await tx.user.delete({
+          where: { id: userId },
+        });
       });
 
       console.log(`ユーザー削除完了: ${user.email}`);
@@ -99,6 +131,19 @@ export async function POST(request: Request) {
       });
     } catch (dbError) {
       console.error('ユーザー削除中のデータベースエラー:', dbError);
+
+      // 外部キー制約エラーの場合
+      if (dbError instanceof Error && dbError.message.includes('Foreign key constraint')) {
+        return NextResponse.json(
+          {
+            error:
+              'このユーザーは他のデータと関連付けられているため削除できません。法人テナントの管理者である可能性があります。',
+            details: dbError.message,
+          },
+          { status: 400 },
+        );
+      }
+
       return NextResponse.json(
         {
           error: 'ユーザー削除中にエラーが発生しました',

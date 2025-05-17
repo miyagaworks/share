@@ -1,7 +1,7 @@
 // app/dashboard/admin/email/page.tsx
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Spinner } from '@/components/ui/Spinner';
@@ -11,9 +11,18 @@ import {
   HiOutlineInformationCircle,
   HiOutlineClipboardList,
   HiOutlineTrash,
+  HiOutlineSearch,
+  HiOutlineUser,
 } from 'react-icons/hi';
 
-// 送信履歴の型定義
+// ユーザー検索モーダル用の型
+interface User {
+  id: string;
+  name: string | null;
+  email: string;
+}
+
+// メール履歴の型定義
 interface EmailHistory {
   id: string;
   subject: string;
@@ -21,10 +30,14 @@ interface EmailHistory {
   sentCount: number;
   failCount: number;
   sentAt: string;
+  sender?: {
+    name: string | null;
+    email: string;
+  };
 }
 
 // メール送信結果の型定義
-interface EmailResult {
+interface EmailResultItem {
   userId: string;
   email: string;
   success: boolean;
@@ -44,6 +57,14 @@ export default function AdminEmailPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+
+  // ユーザー検索関連の状態
+  const [showUserSearchModal, setShowUserSearchModal] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<User[]>([]);
+  const [searchLoading, setSearchLoading] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
   const [formData, setFormData] = useState({
     subject: '',
     title: '',
@@ -51,6 +72,7 @@ export default function AdminEmailPage() {
     targetGroup: 'all',
     ctaText: '',
     ctaUrl: '',
+    userId: '', // 個別ユーザーID
   });
 
   // ターゲットグループオプション
@@ -67,6 +89,7 @@ export default function AdminEmailPage() {
     { value: 'corporate_yearly', label: '法人プラン（年更新）' },
     { value: 'inactive', label: '非アクティブユーザー' },
     { value: 'expired', label: '利用期限切れユーザー' },
+    { value: 'single_user', label: '特定のユーザー' }, // 追加: 特定ユーザーオプション
   ];
 
   // 管理者チェック
@@ -97,6 +120,50 @@ export default function AdminEmailPage() {
     checkAdminAccess();
   }, [session, router]);
 
+  // 入力フォームの変更ハンドラ
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
+  ) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+
+    // ターゲットグループが変更されたとき、single_user以外に変更された場合はselectedUserをクリア
+    if (name === 'targetGroup' && value !== 'single_user') {
+      setSelectedUser(null);
+      setFormData((prev) => ({ ...prev, userId: '' }));
+    }
+  };
+
+  // 追加: ユーザー検索の実行
+  const searchUsers = useCallback(async () => {
+    if (!searchQuery.trim()) return;
+
+    setSearchLoading(true);
+    try {
+      const response = await fetch(
+        `/api/admin/users/search?query=${encodeURIComponent(searchQuery)}`,
+      );
+      if (response.ok) {
+        const data = await response.json();
+        setSearchResults(data.users || []);
+      } else {
+        toast.error('ユーザー検索に失敗しました');
+      }
+    } catch (error) {
+      console.error('ユーザー検索エラー:', error);
+      toast.error('ユーザーの検索中にエラーが発生しました');
+    } finally {
+      setSearchLoading(false);
+    }
+  }, [searchQuery]);
+
+  // 追加: ユーザー選択ハンドラ
+  const handleSelectUser = (user: User) => {
+    setSelectedUser(user);
+    setFormData((prev) => ({ ...prev, userId: user.id }));
+    setShowUserSearchModal(false);
+  };
+
   // 送信履歴の取得
   const fetchEmailHistory = async () => {
     setHistoryLoading(true);
@@ -117,27 +184,18 @@ export default function AdminEmailPage() {
     }
   };
 
-  // 履歴表示切り替え時に履歴を取得
-  useEffect(() => {
-    if (showHistory && emailHistory.length === 0) {
-      fetchEmailHistory();
-    }
-  }, [showHistory, emailHistory.length]);
-
-  // 入力フォームの変更ハンドラ
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-  ) => {
-    const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
-  };
-
   // メール送信ハンドラ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     // すでに送信中なら処理をスキップ
     if (sending) return;
+
+    // 特定ユーザー選択時にユーザーIDがない場合はエラー
+    if (formData.targetGroup === 'single_user' && !formData.userId) {
+      toast.error('ユーザーを選択してください');
+      return;
+    }
 
     setSending(true);
 
@@ -149,7 +207,7 @@ export default function AdminEmailPage() {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'X-Idempotency-Key': idempotencyKey, // 冪等性キーをヘッダーに追加
+          'X-Idempotency-Key': idempotencyKey,
         },
         body: JSON.stringify(formData),
       });
@@ -165,9 +223,10 @@ export default function AdminEmailPage() {
           toast(
             `⚠️ ${data.failCount}件のメールは送信できませんでした。詳細はコンソールをご確認ください。`,
           );
+          // 型を明示的に指定
           console.error(
             '送信失敗したメール:',
-            data.results.filter((r: EmailResult) => !r.success),
+            data.results.filter((r: EmailResultItem) => !r.success),
           );
         }
 
@@ -179,7 +238,9 @@ export default function AdminEmailPage() {
           targetGroup: 'all',
           ctaText: '',
           ctaUrl: '',
+          userId: '',
         });
+        setSelectedUser(null);
 
         // 履歴を更新
         if (showHistory) {
@@ -499,6 +560,49 @@ export default function AdminEmailPage() {
             </select>
           </div>
 
+          {/* 特定ユーザー選択フィールド */}
+          {formData.targetGroup === 'single_user' && (
+            <div>
+              <label className="block text-base font-medium text-gray-700 mb-2">
+                ユーザーを選択
+              </label>
+              <div className="flex items-center">
+                <div
+                  className={`flex-1 p-3 border ${selectedUser ? 'border-green-300 bg-green-50' : 'border-gray-300'} rounded-md`}
+                >
+                  {selectedUser ? (
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <div className="font-medium">{selectedUser.name || '名前なし'}</div>
+                        <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSelectedUser(null);
+                          setFormData((prev) => ({ ...prev, userId: '' }));
+                        }}
+                        className="text-red-500 hover:text-red-700 p-1"
+                      >
+                        <HiOutlineTrash className="h-5 w-5" />
+                      </button>
+                    </div>
+                  ) : (
+                    <div className="text-gray-500">ユーザーが選択されていません</div>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setShowUserSearchModal(true)}
+                  className="ml-3 inline-flex items-center px-4 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  <HiOutlineSearch className="mr-2 h-5 w-5" />
+                  ユーザー検索
+                </button>
+              </div>
+            </div>
+          )}
+
           <div>
             <label htmlFor="subject" className="block text-base font-medium text-gray-700 mb-2">
               件名
@@ -586,7 +690,7 @@ export default function AdminEmailPage() {
           <div className="flex justify-end">
             <button
               type="submit"
-              disabled={sending}
+              disabled={sending || (formData.targetGroup === 'single_user' && !formData.userId)}
               className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {sending ? (
@@ -604,6 +708,88 @@ export default function AdminEmailPage() {
           </div>
         </form>
       </div>
+
+      {/* 追加: ユーザー検索モーダル */}
+      {showUserSearchModal && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-2xl w-full">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-medium">ユーザー検索</h3>
+              <button
+                onClick={() => setShowUserSearchModal(false)}
+                className="text-gray-400 hover:text-gray-500"
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="mb-4">
+              <div className="flex items-center">
+                <input
+                  type="text"
+                  placeholder="名前またはメールアドレスで検索..."
+                  className="w-full border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyPress={(e) => e.key === 'Enter' && searchUsers()}
+                />
+                <button
+                  onClick={searchUsers}
+                  disabled={searchLoading}
+                  className="inline-flex items-center px-4 py-3 border border-l-0 border-gray-300 bg-gray-50 text-gray-700 rounded-r-md hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                >
+                  {searchLoading ? <Spinner size="sm" /> : <HiOutlineSearch className="h-5 w-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="max-h-80 overflow-y-auto">
+              {searchResults.length > 0 ? (
+                <ul className="divide-y divide-gray-200">
+                  {searchResults.map((user) => (
+                    <li key={user.id} className="py-3 hover:bg-gray-50">
+                      <button
+                        onClick={() => handleSelectUser(user)}
+                        className="w-full text-left flex items-center p-2 rounded hover:bg-blue-50"
+                      >
+                        <div className="bg-blue-100 rounded-full p-2 mr-3">
+                          <HiOutlineUser className="h-5 w-5 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium text-gray-900">{user.name || '名前なし'}</p>
+                          <p className="text-sm text-gray-500">{user.email}</p>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : searchQuery && !searchLoading ? (
+                <div className="text-center py-4 text-gray-500">ユーザーが見つかりませんでした</div>
+              ) : !searchQuery ? (
+                <div className="text-center py-4 text-gray-500">
+                  ユーザー名またはメールアドレスを入力して検索してください
+                </div>
+              ) : null}
+
+              {searchLoading && (
+                <div className="flex justify-center items-center py-4">
+                  <Spinner size="md" />
+                  <p className="ml-3 text-gray-500">検索中...</p>
+                </div>
+              )}
+            </div>
+
+            <div className="mt-4 flex justify-end">
+              <button
+                onClick={() => setShowUserSearchModal(false)}
+                className="inline-flex items-center px-4 py-2 border border-gray-300 text-base font-medium rounded-md shadow-sm text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              >
+                キャンセル
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
