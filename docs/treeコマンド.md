@@ -24,5 +24,5 @@ rsync -av --progress ./ backup_$(date +%Y%m%d)/ \
   --exclude=".git"
 
 
-# Prisma クライアントを再生成
+# Prisma クライアントを再生成！！
 npx prisma generate
