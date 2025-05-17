@@ -304,7 +304,6 @@ share/
 │   │   └── subscription
 │   │       └── page.tsx
 │   ├── error.tsx
-│   ├── favicon.ico
 │   ├── globals.css
 │   ├── jikogene
 │   │   ├── components
@@ -535,6 +534,7 @@ share/
 │   └── schema.prisma
 ├── public
 │   ├── bereal.svg
+│   ├── favicon.ico
 │   ├── favicon.svg
 │   ├── file.svg
 │   ├── globe.svg
