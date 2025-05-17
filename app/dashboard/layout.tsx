@@ -20,6 +20,7 @@ import {
   HiShieldCheck,
   HiKey,
   HiBell,
+  HiOutlineMail,
 } from 'react-icons/hi';
 import {
   corporateAccessState,
@@ -176,6 +177,11 @@ const adminSidebarItems: SidebarItem[] = [
     title: 'お知らせ管理',
     href: '/dashboard/admin/notifications',
     icon: <HiBell className="h-5 w-5" />,
+  },
+  {
+    title: 'メール配信管理',
+    href: '/dashboard/admin/email',
+    icon: <HiOutlineMail className="h-5 w-5" />,
   },
 ];
 

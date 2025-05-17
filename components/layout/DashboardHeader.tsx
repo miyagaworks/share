@@ -96,7 +96,7 @@ export function DashboardHeader() {
           </Link>
         </div>
 
-        <div className="flex items-center space-x-4">
+        <div className="flex items-center space-x-4 mt-1">
           {' '}
           {/* space-x-4を追加 */}
           {/* お知らせベル */}
@@ -106,7 +106,7 @@ export function DashboardHeader() {
             <button
               ref={buttonRef}
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="flex items-center space-x-2 rounded-full focus:outline-none"
+              className="flex items-center space-x-2 rounded-full focus:outline-none mb-1"
             >
               {profileData.image ? (
                 // 画像がある場合

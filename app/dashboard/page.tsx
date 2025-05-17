@@ -536,38 +536,35 @@ export default function ImprovedDashboardPage() {
         </motion.div>
       </motion.div>
 
-      {/* 法人プランユーザー向けのカード - 最後のコンテンツの後に追加 */}
-      {
-        // windowオブジェクトへの直接アクセスを避け、インポートしたstateを使用
-        corporateAccessState.hasAccess === true && (
-          <motion.div
-            variants={cardVariants}
-            className="rounded-xl border border-blue-100 bg-blue-50 shadow-sm overflow-hidden col-span-full mt-4"
-            transition={{ duration: 0.3 }}
-          >
-            <div className="border-b border-blue-200 px-6 py-4">
-              <div className="flex items-center">
-                <HiOfficeBuilding className="h-5 w-5 text-blue-900" />
-                <h2 className="ml-2 text-lg font-semibold text-blue-900">法人プロフィール管理</h2>
-              </div>
+      {/* 法人プランユーザー向けのカード */}
+      {corporateAccessState.hasAccess === true && (
+        <motion.div
+          variants={cardVariants}
+          className="rounded-xl border border-[#1E3A8A]/40 bg-white shadow-sm overflow-hidden col-span-full mt-4"
+          transition={{ duration: 0.3 }}
+        >
+          <div className="border-b border-[#1E3A8A]/40 px-6 py-4">
+            <div className="flex items-center">
+              <HiOfficeBuilding className="h-5 w-5 text-gray-700" />
+              <h2 className="ml-2 text-lg font-semibold text-gray-700">法人プロフィール管理</h2>
             </div>
-            <div className="p-6">
-              <p className="text-blue-900 mb-4 text-justify">
-                あなたは法人プランのメンバーです。法人プロフィールを管理するには、
-                以下のリンクから法人メンバーダッシュボードにアクセスしてください。
-              </p>
-              <div className={buttonGroupClass}>
-                <Link href="/dashboard/corporate-member">
-                  <button className={primaryButtonClass}>
-                    <HiOfficeBuilding className="mr-2 h-4 w-4" />
-                    法人メンバーダッシュボードへ
-                  </button>
-                </Link>
-              </div>
+          </div>
+          <div className="p-6">
+            <p className="text-gray-700 mb-4 text-justify">
+              あなたは法人プランのメンバーです。法人プロフィールを管理するには、
+              以下のリンクから法人メンバーダッシュボードにアクセスしてください。
+            </p>
+            <div className={buttonGroupClass}>
+              <Link href="/dashboard/corporate-member">
+                <button className="flex items-center justify-center w-full py-2.5 px-4 rounded-md text-sm font-medium transition-colors btn-corporate">
+                  <HiOfficeBuilding className="mr-2 h-4 w-4" />
+                  法人メンバーダッシュボードへ
+                </button>
+              </Link>
             </div>
-          </motion.div>
-        )
-      }
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 }

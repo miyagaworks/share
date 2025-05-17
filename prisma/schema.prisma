@@ -71,7 +71,10 @@ model User {
 
   // 問い合わせ関連
   contacts Contact[]
-
+  
+  // 管理者メール関連
+  sentEmails AdminEmailLog[] @relation("SentByAdmin")
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
@@ -337,4 +340,27 @@ model NotificationRead {
   
   @@unique([notificationId, user_id])
   @@map("NotificationRead")
+}
+
+model AdminEmailLog {
+  id          String   @id @default(uuid())
+  subject     String
+  title       String
+  message     String   @db.Text
+  targetGroup String
+  ctaText     String?
+  ctaUrl      String?
+  sentCount   Int
+  failCount   Int
+  sentBy      String
+  sentAt      DateTime @default(now())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // リレーション
+  sender      User     @relation("SentByAdmin", fields: [sentBy], references: [id])
+  
+  @@index([sentBy])
+  @@index([targetGroup])
+  @@index([sentAt])
 }

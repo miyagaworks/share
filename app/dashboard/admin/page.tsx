@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
-import { HiShieldCheck, HiUsers, HiCreditCard, HiKey, HiBell } from 'react-icons/hi';
+import { HiShieldCheck, HiUsers, HiCreditCard, HiKey, HiBell, HiOutlineMail } from 'react-icons/hi';
 
 export default function AdminDashboardPage() {
   const { data: session } = useSession();
@@ -121,6 +121,13 @@ export default function AdminDashboardPage() {
           icon={<HiBell className="h-6 w-6 text-blue-600" />}
           description="システムお知らせの作成と管理"
           onClick={() => router.push('/dashboard/admin/notifications')}
+        />
+
+        <AdminMenuCard
+          title="メール配信管理"
+          icon={<HiOutlineMail className="h-6 w-6 text-blue-600" />}
+          description="ユーザーグループへのメール配信"
+          onClick={() => router.push('/dashboard/admin/email')}
         />
       </div>
     </div>
