@@ -27,6 +27,12 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── grant-permanent
 │   │   │   │   └── route.ts
+│   │   │   ├── notifications
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── create
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
 │   │   │   ├── permissions
 │   │   │   │   └── route.ts
 │   │   │   ├── subscriptions
@@ -143,6 +149,10 @@ share/
 │   │   │   └── sns
 │   │   │       └── [id]
 │   │   │           └── route.ts
+│   │   ├── notifications
+│   │   │   ├── read
+│   │   │   │   └── route.ts
+│   │   │   └── route.ts
 │   │   ├── profile
 │   │   │   ├── route.ts
 │   │   │   └── update
@@ -218,6 +228,8 @@ share/
 │   │   │   └── delete
 │   │   │       └── page.tsx
 │   │   ├── admin
+│   │   │   ├── notifications
+│   │   │   │   └── page.tsx
 │   │   │   ├── page.tsx
 │   │   │   ├── permissions
 │   │   │   │   └── page.tsx
@@ -378,6 +390,7 @@ share/
 │   │   ├── Footer.tsx
 │   │   ├── Header.tsx
 │   │   ├── MobileMenuButton.tsx
+│   │   ├── NotificationBell.tsx
 │   │   ├── PageLayout.tsx
 │   │   └── Sidebar.tsx
 │   ├── profile

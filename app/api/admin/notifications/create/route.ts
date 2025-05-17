@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { isAdminUser } from '@/lib/utils/admin-access';
+import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {
   try {
@@ -34,6 +35,7 @@ export async function POST(request: Request) {
     // お知らせを作成
     const notification = await prisma.notification.create({
       data: {
+        id: uuidv4(), // UUIDを生成して設定
         title,
         content,
         type,
@@ -43,9 +45,11 @@ export async function POST(request: Request) {
         endDate: endDate ? new Date(endDate) : null,
         targetGroup: targetGroup || 'all',
         active: active !== undefined ? active : true,
+        createdAt: new Date(), // createdAtを明示的に設定
+        updatedAt: new Date(), // updatedAtを明示的に設定
       },
     });
-
+  
     return NextResponse.json({
       success: true,
       notification,
@@ -53,6 +57,29 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('お知らせ作成エラー:', error);
-    return NextResponse.json({ error: 'お知らせの作成に失敗しました' }, { status: 500 });
+    
+    // エラーをPrismaErrorとして型付け
+    type PrismaError = Error & {
+      meta?: {
+        target?: string[];
+        [key: string]: unknown;
+      };
+    };
+    
+    const errorDetails = error instanceof Error 
+      ? {
+          message: error.message,
+          name: error.name,
+          ...(error as PrismaError).meta && { meta: (error as PrismaError).meta }
+        } 
+      : String(error);
+      
+    return NextResponse.json(
+      { 
+        error: 'お知らせの作成に失敗しました', 
+        details: errorDetails
+      },
+      { status: 500 }
+    );
   }
 }

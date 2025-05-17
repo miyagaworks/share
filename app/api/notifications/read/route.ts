@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { markNotificationAsRead } from '@/lib/utils/notification-helpers';
 
 export async function POST(request: Request) {
   try {
@@ -29,26 +30,24 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'お知らせが見つかりません' }, { status: 404 });
     }
 
-    // 既読状態の作成（既に存在する場合は無視）
-    await prisma.notificationRead.upsert({
-      where: {
-        notificationId_user_id: {
-          notificationId,
-          user_id: userId,
-        },
-      },
-      update: {}, // 既に存在する場合は更新しない
-      create: {
-        notificationId,
-        user_id: userId,
-        readAt: new Date(),
-      },
-    });
+    try {
+      // 専用ヘルパー関数を使用
+      await markNotificationAsRead(notificationId, userId);
 
-    return NextResponse.json({
-      success: true,
-      message: 'お知らせを既読にしました',
-    });
+      return NextResponse.json({
+        success: true,
+        message: 'お知らせを既読にしました',
+      });
+    } catch (error) {
+      console.error('既読設定エラー:', error);
+      return NextResponse.json(
+        {
+          error: '既読設定処理中にエラーが発生しました',
+          details: error instanceof Error ? error.message : String(error),
+        },
+        { status: 500 },
+      );
+    }
   } catch (error) {
     console.error('お知らせ既読設定エラー:', error);
     return NextResponse.json({ error: 'お知らせの既読設定に失敗しました' }, { status: 500 });

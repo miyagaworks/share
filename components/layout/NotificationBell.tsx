@@ -62,16 +62,36 @@ export function NotificationBell() {
     setLoading(true);
     setError(null);
     try {
-      const response = await fetch('/api/notifications');
+      const response = await fetch('/api/notifications', {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include', // クッキー（認証情報）を含める
+      });
+
       if (!response.ok) {
-        throw new Error('お知らせの取得に失敗しました');
+        const errorData = await response.json().catch(() => ({}));
+        console.error('お知らせAPI応答エラー:', response.status, errorData);
+        throw new Error(`API応答エラー: ${response.status}`);
       }
+
       const data = await response.json();
+      console.log('お知らせデータ取得成功:', data);
+
+      if (!data.notifications) {
+        console.warn('お知らせデータが不正な形式です:', data);
+        setNotifications([]);
+        setUnreadCount(0);
+        return;
+      }
+
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount || 0);
     } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '不明なエラー';
+      console.error('お知らせ取得エラー:', errorMessage);
       setError('お知らせの取得に失敗しました');
-      console.error('お知らせ取得エラー:', err);
     } finally {
       setLoading(false);
     }
@@ -79,27 +99,37 @@ export function NotificationBell() {
 
   // お知らせを既読にする
   const markAsRead = async (notificationId: string) => {
+    // まずUI側で既読状態を更新（UX向上のため）
+    setNotifications(
+      notifications.map((notification) =>
+        notification.id === notificationId ? { ...notification, isRead: true } : notification,
+      ),
+    );
+    // 未読カウントを減らす
+    setUnreadCount((prev) => Math.max(0, prev - 1));
+
     try {
+      console.log(`既読設定送信: ${notificationId}`);
       const response = await fetch('/api/notifications/read', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({ notificationId }),
+        credentials: 'include', // 認証情報を含める
       });
 
-      if (response.ok) {
-        // 既読状態を更新
-        setNotifications(
-          notifications.map((notification) =>
-            notification.id === notificationId ? { ...notification, isRead: true } : notification,
-          ),
-        );
-        // 未読カウントを減らす
-        setUnreadCount((prev) => Math.max(0, prev - 1));
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({ error: '応答解析エラー' }));
+        console.error('既読設定エラー:', response.status, errorData);
+        // エラーがあってもUI上での既読表示は維持する
+      } else {
+        const data = await response.json();
+        console.log('既読設定成功:', data);
       }
     } catch (err) {
-      console.error('お知らせ既読設定エラー:', err);
+      console.error('既読API呼び出しエラー:', err);
+      // エラーがあってもUI上での既読表示は維持する
     }
   };
 
@@ -148,7 +178,7 @@ export function NotificationBell() {
       >
         <HiBell className="h-6 w-6" />
         {unreadCount > 0 && (
-          <span className="absolute top-0 right-0 inline-flex items-center justify-center px-2 py-1 text-xs font-bold leading-none text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
+          <span className="absolute top-0 right-0 flex items-center justify-center w-5 h-5 text-xs font-bold text-white transform translate-x-1/2 -translate-y-1/2 bg-red-600 rounded-full">
             {unreadCount}
           </span>
         )}
