@@ -16,6 +16,7 @@ import {
   HiSortDescending,
 } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
+import FixPermanentUsersButton from './fix-permanent-button';
 
 // ユーザー情報の型定義
 interface UserData {
@@ -218,6 +219,8 @@ export default function AdminPermissionsPage() {
           </div>
 
           <div className="flex space-x-2">
+            {/* 修正ボタン */}
+            <FixPermanentUsersButton />
             <div className="dropdown">
               <Button variant="outline" className="flex items-center">
                 <span className="mr-1">並び替え</span>
