@@ -39,9 +39,9 @@ export async function POST(request: Request) {
         id: true,
         email: true,
         name: true,
-        tenantId: true, // 追加: テナントID
-        corporateRole: true, // 追加: 法人ロール
-        departmentId: true, // 追加: 部署ID
+        tenantId: true,
+        corporateRole: true,
+        departmentId: true,
         adminOfTenant: {
           select: {
             id: true,
@@ -68,7 +68,7 @@ export async function POST(request: Request) {
 
     // 法人テナント管理者の場合の追加チェック
     if (user.adminOfTenant) {
-      // サブスクリプションが存在し、アクティブ状態であるか確認
+      // サブスクリプションが存在し、アクティブ状態かつ現在日時が期限前である場合
       if (
         user.adminOfTenant.subscription &&
         user.adminOfTenant.subscription.status === 'active' &&
@@ -77,14 +77,69 @@ export async function POST(request: Request) {
         return NextResponse.json({
           error: '法人プラン管理者は有効なサブスクリプション期間内に削除できません',
           details: `${user.adminOfTenant.name}の管理者を削除するには、管理者権限を他のメンバーに移譲するか、サブスクリプション期間（${new Date(user.adminOfTenant.subscription.currentPeriodEnd).toLocaleDateString('ja-JP')}まで）の終了を待つ必要があります。`,
-          isCorporateAdmin: true, // フロントエンドで法人管理者エラーを識別するためのフラグ
+          isCorporateAdmin: true,
           status: 403,
         });
+      }
+
+      // 期限切れまたは非アクティブの場合は、関連する法人テナントを削除してからユーザーを削除
+      try {
+        // 法人テナント関連のデータをすべて削除（トランザクションで一括処理）
+        await prisma.$transaction(async (tx) => {
+          const tenantId = user.adminOfTenant?.id;
+
+          if (!tenantId) {
+            console.log('法人テナントIDが見つかりません');
+            return; // tenantIdがない場合は処理をスキップ
+          }
+
+          console.log(`法人テナント削除開始: ${tenantId}`);
+
+          // 法人テナントに関連する全データを削除
+          await tx.corporateSnsLink.deleteMany({
+            where: { tenantId: tenantId },
+          });
+
+          await tx.corporateActivityLog.deleteMany({
+            where: { tenantId: tenantId },
+          });
+
+          // すべてのユーザーを法人テナントから切り離す
+          await tx.user.updateMany({
+            where: { tenantId: tenantId },
+            data: {
+              tenantId: null,
+              corporateRole: null,
+              departmentId: null,
+            },
+          });
+
+          // 部署を削除
+          await tx.department.deleteMany({
+            where: { tenantId: tenantId },
+          });
+
+          // 最後に法人テナント自体を削除
+          await tx.corporateTenant.delete({
+            where: { id: tenantId },
+          });
+
+          console.log(`法人テナント削除完了: ${tenantId}`);
+        });
+      } catch (tenantError) {
+        console.error('法人テナント削除エラー:', tenantError);
+        return NextResponse.json(
+          {
+            error: '法人テナントの削除に失敗しました',
+            details: tenantError instanceof Error ? tenantError.message : String(tenantError),
+          },
+          { status: 500 },
+        );
       }
     }
 
     try {
-      // トランザクションを使用して一括で削除処理
+      // ユーザー削除処理
       await prisma.$transaction(async (tx) => {
         // ユーザーのプロフィールを削除
         await tx.profile.deleteMany({
@@ -149,12 +204,13 @@ export async function POST(request: Request) {
 
       // 外部キー制約エラーの場合、より具体的なエラーメッセージ
       if (dbError instanceof Error && dbError.message.includes('Foreign key constraint')) {
+        // CorporateTenant_adminId_fkeyに関するエラーの場合
         if (dbError.message.includes('CorporateTenant_adminId_fkey')) {
           return NextResponse.json(
             {
               error: '法人プラン管理者は削除できません',
               details: '管理者権限を他のメンバーに移譲してから削除してください。',
-              isCorporateAdmin: true, // フロントエンドで法人管理者エラーを識別するためのフラグ
+              isCorporateAdmin: true,
             },
             { status: 403 },
           );
