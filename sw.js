@@ -1,5 +1,5 @@
 // public/sw.js
-const CACHE_NAME = 'qrcode-pwa-v1';
+const CACHE_NAME = 'qrcode-pwa-v2';
 const APP_SHELL = [
   '/qrcode',
   '/qrcode-manifest.json',
@@ -25,14 +25,28 @@ self.addEventListener('install', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // ホーム画面から開いた場合にQRコードページにリダイレクト
+  // ホーム画面から開いた場合の処理
   if (
     requestUrl.origin === self.location.origin &&
     requestUrl.pathname === '/' &&
     event.request.mode === 'navigate'
   ) {
-    console.log('[Service Worker] Redirecting to QR code page');
-    event.respondWith(Response.redirect('/qrcode', 302));
+    event.respondWith(
+      clients.matchAll().then(function (clientList) {
+        // クライアントにユーザーのQRコードパスの取得を要求
+        if (clientList.length > 0) {
+          clientList[0].postMessage({
+            type: 'GET_USER_QR_PATH',
+          });
+
+          // 特定のパスが見つからない場合は汎用QRコードページにリダイレクト
+          return Response.redirect('/qrcode', 302);
+        } else {
+          // クライアントがない場合は汎用QRコードページにリダイレクト
+          return Response.redirect('/qrcode', 302);
+        }
+      }),
+    );
     return;
   }
 
@@ -97,21 +111,22 @@ self.addEventListener('activate', (event) => {
   return self.clients.claim();
 });
 
-// プッシュイベントリスナー（今後の拡張用）
-self.addEventListener('push', (event) => {
-  console.log('[Service Worker] Push received');
-  const title = 'Share QRコード';
-  const options = {
-    body: 'QRコードが更新されました',
-    icon: '/pwa/android-chrome-192x192.png',
-  };
-
-  event.waitUntil(self.registration.showNotification(title, options));
-});
-
-// ユーザーがPWAを開いているときにナビゲーションを制御
+// クライアントからのメッセージを受け取る
 self.addEventListener('message', (event) => {
-  if (event.data && event.data.type === 'NAVIGATE') {
+  if (event.data && event.data.type === 'USER_QR_PATH_RESPONSE') {
+    // ユーザー固有のQRコードパスを受け取った場合
+    const userQrPath = event.data.path;
+    if (userQrPath) {
+      // クライアントをユーザー固有のパスにリダイレクト
+      self.clients.matchAll().then((clients) => {
+        clients.forEach((client) => {
+          client.navigate(userQrPath);
+        });
+      });
+    }
+  } else if (event.data && event.data.type === 'NAVIGATE') {
+    // 特定のパスへのナビゲーション要求
+    const path = event.data.url || '/qrcode';
     self.clients
       .matchAll({
         includeUncontrolled: true,
@@ -119,7 +134,7 @@ self.addEventListener('message', (event) => {
       })
       .then((clients) => {
         if (clients && clients.length) {
-          clients[0].navigate('/qrcode');
+          clients[0].navigate(path);
           clients[0].focus();
         }
       });

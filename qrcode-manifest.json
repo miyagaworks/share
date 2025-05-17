@@ -2,7 +2,7 @@
     "name": "Share QRコード",
     "short_name": "My QR",
     "description": "あなたのプロフィールをQRコードで即座に共有",
-    "id": "/qrcode",
+    "id": "/qr",
     "start_url": "/qrcode",
     "scope": "/",
     "display": "standalone",
@@ -29,21 +29,5 @@
         "type": "image/png",
         "purpose": "any maskable"
       }
-    ],
-    "screenshots": [
-      {
-        "src": "/pwa/screenshot1.png",
-        "sizes": "1170x2532",
-        "type": "image/png"
-      }
-    ],
-    "shortcuts": [
-      {
-        "name": "QRコード表示",
-        "url": "/qrcode",
-        "description": "QRコードを素早く表示"
-      }
-    ],
-    "dir": "ltr",
-    "lang": "ja"
+    ]
   }

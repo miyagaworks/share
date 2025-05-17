@@ -3,21 +3,18 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'QRコードデザイナー | Share',
+  title: 'QRコード | Share',
   description: 'スタイリッシュなQRコードを作成してスマホに保存できます',
-  applicationName: 'Share QR Code',
-  // カスタムタグを追加（Next.jsのMetadataでサポートされていない場合）
   other: {
-    // PWA関連の追加メタタグ
     'mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-capable': 'yes',
     'apple-mobile-web-app-status-bar-style': 'black-translucent',
-    'apple-mobile-web-app-title': 'My QR Code',
+    'apple-mobile-web-app-title': 'My QR', // ホーム画面アイコン名
   },
   appleWebApp: {
     capable: true,
     statusBarStyle: 'black-translucent',
-    title: 'My QR Code',
+    title: 'My QR', // ここでもアイコン名を設定
     startupImage: [
       {
         url: '/pwa/apple-splash.png',
@@ -38,30 +35,40 @@ export const viewport: Viewport = {
 export default function QrCodeLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
-      {/* 重要：headタグ内に直接マニフェストリンクを追加 */}
       <head>
         <link rel="manifest" href="/qrcode-manifest.json" />
         <meta name="theme-color" content="#ffffff" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
-        <meta name="apple-mobile-web-app-title" content="My QR Code" />
+        <meta name="apple-mobile-web-app-title" content="My QR" />
         <link rel="apple-touch-icon" href="/pwa/apple-touch-icon.png" />
       </head>
 
-      {/* PWA用のインラインスクリプト追加 */}
-      <Script id="pwa-start-url-fix" strategy="beforeInteractive">
+      {/* ユーザー固有のQRコードURLを記憶するスクリプト */}
+      <Script id="pwa-user-qr-setup" strategy="beforeInteractive">
         {`
-          if ('serviceWorker' in navigator) {
-            window.addEventListener('load', function() {
-              // PWAとして実行されているか確認
-              if (window.matchMedia('(display-mode: standalone)').matches) {
-                // ホーム画面からの起動時は常にQRコードページに遷移
-                if (window.location.pathname !== '/qrcode') {
-                  window.location.href = '/qrcode';
-                }
+          (function() {
+            // ホーム画面からの実行かチェック
+            const isStandalone = window.matchMedia('(display-mode: standalone)').matches || 
+                               navigator.standalone === true;
+            
+            if (isStandalone) {
+              // 現在のURLが/qr/から始まるか確認
+              const pathMatch = window.location.pathname.match(/\\/qr\\/([\\w-]+)/);
+              const userQrPath = pathMatch ? '/qr/' + pathMatch[1] : null;
+              
+              // ユーザーのQRパスを記録
+              if (userQrPath) {
+                localStorage.setItem('userQrPath', userQrPath);
               }
-            });
-          }
+              
+              // 保存されたQRパスがあれば、そこに遷移
+              const savedPath = localStorage.getItem('userQrPath');
+              if (savedPath && window.location.pathname !== savedPath) {
+                window.location.href = savedPath;
+              }
+            }
+          })();
         `}
       </Script>
 

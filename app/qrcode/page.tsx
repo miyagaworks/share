@@ -197,29 +197,50 @@ export default function QrCodePage() {
     }
   }, [session, status, router, isCorporateMember, fetchCorporateData, checkProfileExists]);
 
-  // PWAとして実行されているかチェックし、必要に応じてページを更新
+  // ユーザー固有のQRコードパスを記憶
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // サービスワーカーからのメッセージを受け取る
+    // 現在のURLパスが /qr/ から始まるかチェック
+    const pathMatch = window.location.pathname.match(/\/qr\/([a-zA-Z0-9-]+)/);
+    if (pathMatch) {
+      const userQrPath = '/qr/' + pathMatch[1];
+      localStorage.setItem('userQrPath', userQrPath);
+
+      // Service Workerにパスを通知
+      if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
+        navigator.serviceWorker.controller.postMessage({
+          type: 'USER_QR_PATH_UPDATE',
+          path: userQrPath,
+        });
+      }
+    }
+
+    // Service Workerからのメッセージリスナー
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (event) => {
-        if (event.data && event.data.type === 'PWA_INSTALLED') {
-          // PWAとしてインストールされたことをローカルストレージに記録
+        if (event.data && event.data.type === 'GET_USER_QR_PATH') {
+          const savedPath = localStorage.getItem('userQrPath');
+          navigator.serviceWorker.controller?.postMessage({
+            type: 'USER_QR_PATH_RESPONSE',
+            path: savedPath || '/qrcode',
+          });
+        } else if (event.data && event.data.type === 'PWA_INSTALLED') {
           localStorage.setItem('pwaInstalled', 'true');
-          localStorage.setItem('pwaStartUrl', '/qrcode');
         }
       });
     }
 
-    // ホーム画面から起動された場合、常に/qrcodeにリダイレクト
-    const isPwa = localStorage.getItem('pwaInstalled') === 'true';
+    // ホーム画面から開かれた場合の処理
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
       (window.navigator as unknown as { standalone?: boolean }).standalone === true;
-
-    if (isPwa && isStandalone && window.location.pathname !== '/qrcode') {
-      window.location.href = '/qrcode';
+    if (isStandalone) {
+      const savedPath = localStorage.getItem('userQrPath');
+      if (savedPath && window.location.pathname !== savedPath) {
+        // 保存されたユーザー固有のQRコードパスへリダイレクト
+        window.location.href = savedPath;
+      }
     }
   }, []);
 
@@ -285,11 +306,11 @@ export default function QrCodePage() {
         <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5 shadow-sm">
           <h3 className="font-bold text-blue-800 mb-2 flex items-center">
             <span className="mr-2 text-xl">📱</span>
-            QRコードをホーム画面に追加しましょう！
+            あなたのQRコードをホーム画面に追加しましょう！
           </h3>
           <p className="text-sm text-blue-700 mb-3">
-            このページをホーム画面に追加すると、いつでもワンタップで
-            <strong>このQRコードを表示</strong>できます。
+            <strong>このページを今すぐホーム画面に追加</strong>
+            すると、いつでもワンタップであなたの専用QRコードを表示できます。
           </p>
           <div className="bg-white p-3 rounded mb-3 border border-blue-100">
             <ol className="text-sm text-blue-600 list-decimal pl-5 mb-0">
@@ -300,10 +321,10 @@ export default function QrCodePage() {
                 <strong>「ホーム画面に追加」</strong>を選択
               </li>
               <li className="mb-1">
-                名前はそのままで<strong>「追加」</strong>をタップ
+                名前は<strong>「My QR」</strong>のままで<strong>「追加」</strong>をタップ
               </li>
               <li>
-                <strong>ホーム画面のアイコンから開く</strong>と、常にQRコードページが表示されます
+                <strong>必ずホーム画面のアイコンから開いてください</strong>
               </li>
             </ol>
           </div>
