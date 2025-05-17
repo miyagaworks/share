@@ -43,7 +43,20 @@ export default function FixPermanentUsersButton() {
       setIsLoading(true);
       setResult(null);
 
-      const response = await fetch('/api/admin/fix-permanent-users');
+      // 👇 API URLの修正（末尾のスラッシュを追加）
+      const response = await fetch('/api/admin/fix-permanent-users/');
+
+      // responseが正常なJSONかをチェック
+      const contentType = response.headers.get('content-type');
+      if (!contentType || !contentType.includes('application/json')) {
+        // JSONではないレスポンスを処理
+        const text = await response.text();
+        console.error('JSONではないレスポンスを受信:', text);
+        toast.error('APIからの応答が不正です: JSONではありません');
+        setIsLoading(false);
+        return;
+      }
+
       const data: FixPermanentUsersResponse = await response.json();
 
       if (response.ok) {
@@ -56,11 +69,14 @@ export default function FixPermanentUsersButton() {
           toast.error('処理中にエラーが発生しました: ' + (data.error || '不明なエラー'));
         }
       } else {
-        toast.error('APIエラー: ' + (data.error || '不明なエラー'));
+        // APIからのエラーレスポンスを表示
+        toast.error('APIエラー: ' + (data.error || `ステータスコード ${response.status}`));
       }
     } catch (error) {
       console.error('永久利用権ユーザー修正エラー:', error);
-      toast.error('リクエスト中にエラーが発生しました');
+      toast.error(
+        `リクエスト中にエラーが発生しました: ${error instanceof Error ? error.message : String(error)}`,
+      );
     } finally {
       setIsLoading(false);
     }
