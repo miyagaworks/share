@@ -123,27 +123,69 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 
     // isPermanentまたはDBからのsubscriptionStatusが'permanent'の場合
     if (isPermanent || user.subscriptionStatus === 'permanent') {
-      // リクエストボディを取得
-      const body = await req.json();
-      const { name, description } = body;
-      
-      console.log('永久利用権ユーザーからの部署更新リクエスト:', {
-        id: params.id, 
-        body
-      });
-      
-      // 仮想的に成功したものとして返す
-      return NextResponse.json({
-        success: true,
-        message: '永久利用権ユーザーの部署設定は更新されません',
-        department: {
+      try {
+        // リクエストボディを取得
+        const body = await req.json();
+        const { name, description } = body;
+
+        console.log('永久利用権ユーザーからの部署更新リクエスト:', {
           id: params.id,
-          name: name || 'デフォルト部署',
-          description: description || 'デフォルト部署の説明',
-          // tenantId: user.adminOfTenant.id の代わりに仮想テナントID
-          tenantId: `virtual-tenant-${session.user.id}`,
-        },
-      });
+          body,
+        });
+
+        // 必須フィールドの検証
+        if (!name || name.trim() === '') {
+          return NextResponse.json({ error: '部署名は必須です' }, { status: 400 });
+        }
+
+        // ユーザーのテナント情報を取得
+        const userWithTenant = await prisma.user.findUnique({
+          where: { id: session.user.id },
+          include: {
+            adminOfTenant: true,
+            tenant: true,
+          },
+        });
+
+        // テナント情報を取得
+        const tenant = userWithTenant?.adminOfTenant || userWithTenant?.tenant;
+
+        if (!tenant) {
+          return NextResponse.json({ error: '法人テナント情報が見つかりません' }, { status: 404 });
+        }
+
+        // 部署の存在確認と所有権確認
+        const existingDepartment = await prisma.department.findFirst({
+          where: {
+            id: params.id,
+            tenantId: tenant.id,
+          },
+        });
+
+        if (!existingDepartment) {
+          return NextResponse.json(
+            { error: '部署が見つからないか、更新権限がありません' },
+            { status: 404 },
+          );
+        }
+
+        // 部署を更新
+        const updatedDepartment = await prisma.department.update({
+          where: { id: params.id },
+          data: {
+            name,
+            description,
+          },
+        });
+
+        return NextResponse.json({
+          success: true,
+          department: updatedDepartment,
+        });
+      } catch (error) {
+        console.error('永久利用権ユーザーの部署更新エラー:', error);
+        return NextResponse.json({ error: '部署の更新に失敗しました' }, { status: 500 });
+      }
     }
 
     // 通常のユーザー処理
@@ -210,21 +252,81 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
 // 部署削除（DELETE）
 export async function DELETE(req: Request, { params }: { params: { id: string } }) {
   try {
-    // 永久利用権ユーザーかどうかチェック
-    const isPermanent = checkPermanentAccess();
-    if (isPermanent) {
-      return NextResponse.json({
-        success: true,
-        message: '永久利用権ユーザーの部署設定は削除されません',
-      });
-    }
-
+    // セッション認証をまず行う
     const session = await auth();
 
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
+    // 永久利用権ユーザーかどうかチェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      try {
+        const departmentId = params.id;
+
+        // ユーザーのテナント情報を取得
+        const userWithTenant = await prisma.user.findUnique({
+          where: { id: session.user.id }, // sessionはすでに取得済み
+          include: {
+            adminOfTenant: true,
+            tenant: true,
+          },
+        });
+
+        // テナント情報を取得
+        const tenant = userWithTenant?.adminOfTenant || userWithTenant?.tenant;
+        
+        if (!tenant) {
+          return NextResponse.json({ error: '法人テナント情報が見つかりません' }, { status: 404 });
+        }
+
+        // 部署の存在確認
+        const department = await prisma.department.findFirst({
+          where: {
+            id: departmentId,
+            tenantId: tenant.id,
+          },
+          include: {
+            users: true,
+          },
+        });
+
+        if (!department) {
+          return NextResponse.json(
+            { error: '部署が見つからないか、削除権限がありません' },
+            { status: 404 },
+          );
+        }
+
+        // 所属ユーザーがいるかチェック
+        if (department.users.length > 0) {
+          return NextResponse.json(
+            {
+              error:
+                'ユーザーが所属している部署は削除できません。先にユーザーを移動または削除してください。',
+              userCount: department.users.length,
+            },
+            { status: 400 },
+          );
+        }
+
+        // 部署を削除
+        await prisma.department.delete({
+          where: { id: departmentId },
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: '部署が正常に削除されました',
+        });
+      } catch (error) {
+        console.error('永久利用権ユーザーの部署削除エラー:', error);
+        return NextResponse.json({ error: '部署の削除に失敗しました' }, { status: 500 });
+      }
+    }
+
+    // 以下は通常のユーザー処理（既存コード）
     const departmentId = params.id;
 
     // ユーザーとテナント情報を取得

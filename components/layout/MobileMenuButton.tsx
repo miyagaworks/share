@@ -63,12 +63,25 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
   const isCorporateMemberSection = pathname?.startsWith('/dashboard/corporate-member');
   const isCorporateRelated = isCorporateSection || isCorporateMemberSection;
 
+  // components/layout/MobileMenuButton.tsx の修正部分
+
   // 追加リンク処理
   const additionalLinks: MenuItemType[] = [];
 
+  // メインメニューに存在するリンクのパスを収集
+  const mainItemPaths = new Set(mainMenuItems.map((item) => item.href));
+
+  // リンクを追加する関数（重複チェック付き）
+  const addLink = (link: MenuItemType) => {
+    // すでにメインメニューに存在する場合は追加しない
+    if (!mainItemPaths.has(link.href)) {
+      additionalLinks.push(link);
+    }
+  };
+
   // 法人セクションにいる場合、個人ダッシュボードと法人メンバーダッシュボードへのリンクを追加
   if (isCorporateSection) {
-    additionalLinks.push({
+    addLink({
       title: '個人ダッシュボード',
       href: '/dashboard',
       icon: <HiHome className="h-5 w-5" />,
@@ -76,7 +89,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
 
     // 法人管理者は法人メンバーダッシュボードも表示
     if (corporateAccessState.hasAccess) {
-      additionalLinks.push({
+      addLink({
         title: '法人メンバープロフィール',
         href: '/dashboard/corporate-member',
         icon: <HiUser className="h-5 w-5" />,
@@ -86,7 +99,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
 
   // 法人メンバーセクションにいる場合、個人ダッシュボードと法人ダッシュボードへのリンクを追加
   else if (isCorporateMemberSection) {
-    additionalLinks.push({
+    addLink({
       title: '個人ダッシュボード',
       href: '/dashboard',
       icon: <HiHome className="h-5 w-5" />,
@@ -94,7 +107,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
 
     // 法人管理者の場合は法人管理ダッシュボードへのリンクも表示
     if (corporateAccessState.isAdmin) {
-      additionalLinks.push({
+      addLink({
         title: '法人管理ダッシュボード',
         href: '/dashboard/corporate',
         icon: <HiOfficeBuilding className="h-5 w-5" />,
@@ -110,7 +123,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
     corporateAccessState.hasAccess
   ) {
     // 法人メンバーダッシュボードへのリンクを追加
-    additionalLinks.push({
+    addLink({
       title: '法人メンバープロフィール',
       href: '/dashboard/corporate-member',
       icon: <HiUser className="h-5 w-5" />,
@@ -118,7 +131,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
 
     // 法人管理者の場合は法人管理ダッシュボードへのリンクも追加
     if (corporateAccessState.isAdmin) {
-      additionalLinks.push({
+      addLink({
         title: '法人管理ダッシュボード',
         href: '/dashboard/corporate',
         icon: <HiOfficeBuilding className="h-5 w-5" />,

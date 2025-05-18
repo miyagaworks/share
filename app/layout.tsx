@@ -21,7 +21,7 @@ export const metadata: Metadata = {
   title: 'Share',
   description: 'デジタル名刺サービス',
   icons: {
-    icon: '/pwa/favicon.ico', // 正しいパスを指定
+    icon: '/pwa/favicon.ico',
     shortcut: '/pwa/favicon.ico',
     apple: '/pwa/apple-touch-icon.png',
   },
