@@ -12,6 +12,7 @@ interface MenuItemType {
   title: string;
   href: string;
   icon: React.ReactNode;
+  isDivider?: boolean;
   adminOnly?: boolean;
 }
 
@@ -63,13 +64,11 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
   const isCorporateMemberSection = pathname?.startsWith('/dashboard/corporate-member');
   const isCorporateRelated = isCorporateSection || isCorporateMemberSection;
 
-  // components/layout/MobileMenuButton.tsx の修正部分
+  // メインメニューに存在するリンクのパスを収集
+  const mainItemPaths = new Set(mainMenuItems.map((item) => item.href));
 
   // 追加リンク処理
   const additionalLinks: MenuItemType[] = [];
-
-  // メインメニューに存在するリンクのパスを収集
-  const mainItemPaths = new Set(mainMenuItems.map((item) => item.href));
 
   // リンクを追加する関数（重複チェック付き）
   const addLink = (link: MenuItemType) => {
@@ -198,6 +197,22 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
           <div className="flex-1 overflow-y-auto p-4">
             <nav className="space-y-3">
               {filteredMainItems.map((item) => {
+                // 区切り線の場合は特別な表示を行う
+                if (item.isDivider) {
+                  return (
+                    <div key={`divider-${item.title}`} className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div className="w-full border-t border-gray-200"></div>
+                      </div>
+                      <div className="relative flex justify-center">
+                        <span className="px-2 bg-white text-xs font-semibold uppercase text-gray-500">
+                          {item.title}
+                        </span>
+                      </div>
+                    </div>
+                  );
+                }
+
                 // アクティブなリンクかどうか
                 const isActive = pathname === item.href;
                 // 法人関連のリンクかどうか
@@ -248,8 +263,36 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
 
               {/* 追加リンク */}
               {additionalLinks.length > 0 && (
-                <div className="pt-4 mt-4 border-t border-gray-200">
+                <div className="pt-4">
+                  {/* 区切り線 */}
+                  <div className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div className="w-full border-t border-gray-200"></div>
+                    </div>
+                    <div className="relative flex justify-center">
+                      <span className="px-2 bg-white text-xs font-semibold uppercase text-gray-500">
+                        その他
+                      </span>
+                    </div>
+                  </div>
+
                   {additionalLinks.map((link, index) => {
+                    // 区切り線の場合は特別な表示を行う
+                    if (link.isDivider) {
+                      return (
+                        <div key={`add-divider-${link.title}-${index}`} className="relative my-6">
+                          <div className="absolute inset-0 flex items-center">
+                            <div className="w-full border-t border-gray-200"></div>
+                          </div>
+                          <div className="relative flex justify-center">
+                            <span className="px-2 bg-white text-xs font-semibold uppercase text-gray-500">
+                              {link.title}
+                            </span>
+                          </div>
+                        </div>
+                      );
+                    }
+
                     // アクティブなリンクかどうか
                     const isActive = pathname === link.href;
                     // 法人関連のリンクかどうか
@@ -284,7 +327,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
 
                     return (
                       <Link
-                        key={link.href + index}
+                        key={`add-${link.href}-${index}`}
                         href={link.href}
                         className={cn(
                           'flex items-center px-4 py-4 text-lg font-medium rounded-md transition-colors group',
