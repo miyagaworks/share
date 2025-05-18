@@ -225,23 +225,23 @@ export default async function ProfilePage({ params }: { params: { slug: string }
 
           {/* テナント名または会社名（テナントに所属している場合のみ表示） */}
           {tenant && (
-            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{tenant.name}</h3>
             </div>
           )}
 
           {/* 部署と役職情報（ユーザーが法人テナントに所属している場合） */}
           {profile.user.department && (
-            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '0.1rem' }}>
               <p style={{ fontSize: '0.875rem', color: '#4B5563' }} className="profile-text">
                 {profile.user.department.name}
               </p>
             </div>
           )}
-          
+
           {/* 役職情報（部署と独立して表示） */}
           {profile.user.position && (
-            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+            <div style={{ textAlign: 'center', marginBottom: '0.1rem' }}>
               <p style={{ fontSize: '0.875rem', color: '#4B5563' }} className="profile-text">
                 {profile.user.position}
               </p>
@@ -249,7 +249,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           )}
 
           {/* ユーザー名 */}
-          <div style={{ textAlign: 'center', marginTop: '0.8rem', marginBottom: '2rem' }}>
+          <div style={{ textAlign: 'center', marginTop: '0.3rem', marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{profile.user.name}</h1>
             {profile.user.nameEn && (
               <p style={{ color: '#4B5563' }} className="profile-text">
