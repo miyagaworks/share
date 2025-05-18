@@ -236,11 +236,15 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               <p style={{ fontSize: '0.875rem', color: '#4B5563' }} className="profile-text">
                 {profile.user.department.name}
               </p>
-              {profile.user.position && (
-                <p style={{ fontSize: '0.875rem', color: '#4B5563' }} className="profile-text">
-                  {profile.user.position}
-                </p>
-              )}
+            </div>
+          )}
+          
+          {/* 役職情報（部署と独立して表示） */}
+          {profile.user.position && (
+            <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+              <p style={{ fontSize: '0.875rem', color: '#4B5563' }} className="profile-text">
+                {profile.user.position}
+              </p>
             </div>
           )}
 
