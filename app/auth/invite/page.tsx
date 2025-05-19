@@ -26,9 +26,22 @@ function InvitePageContent() {
   const [lastNameKana, setLastNameKana] = useState('');
   const [firstNameKana, setFirstNameKana] = useState('');
   const [email, setEmail] = useState('');
+  const [isFormValid, setIsFormValid] = useState(false);
   // userIdは実際に使用する場合のみコメントを外してください
   // const [userId, setUserId] = useState('');
 
+  useEffect(() => {
+    const isValid =
+      lastName.trim() !== '' &&
+      firstName.trim() !== '' &&
+      lastNameKana.trim() !== '' &&
+      firstNameKana.trim() !== '' &&
+      password.length >= 8 &&
+      password === confirmPassword;
+
+    setIsFormValid(isValid);
+  }, [lastName, firstName, lastNameKana, firstNameKana, password, confirmPassword]);
+  
   // トークンの検証
   useEffect(() => {
     const verifyToken = async () => {
@@ -65,7 +78,7 @@ function InvitePageContent() {
         // ユーザー情報をセット
         setEmail(userData.email || '');
 
-        // 名前情報がある場合は分割して設定
+        // 名前情報がある場合は分割して設定 - ここを修正
         if (userData.name) {
           const nameParts = userData.name.split(' ');
           if (nameParts.length >= 2) {
@@ -75,6 +88,10 @@ function InvitePageContent() {
             // 分割できない場合は姓のみにセット
             setLastName(userData.name);
           }
+        } else {
+          // 名前情報がない場合は空の状態にしておく
+          setLastName('');
+          setFirstName('');
         }
 
         // ここでuserIdを設定するため、setUserIdを使用
@@ -144,6 +161,9 @@ function InvitePageContent() {
       if (result?.error) {
         throw new Error('自動ログインに失敗しました');
       }
+
+      // ダッシュボードへリダイレクト - 法人メンバーダッシュボードにリダイレクト
+      router.push('/dashboard/corporate-member');
 
       // ログイン成功後、法人メンバーダッシュボードへリダイレクト
       // テナント情報がある場合は法人メンバーダッシュボードへ、ない場合は通常ダッシュボードへ
@@ -343,7 +363,7 @@ function InvitePageContent() {
             <Button
               type="submit"
               className="w-full bg-blue-600 text-white hover:bg-blue-800 transform hover:-translate-y-0.5 transition-all"
-              disabled={isLoading}
+              disabled={isLoading || !isFormValid}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
@@ -386,15 +406,22 @@ export default function InvitePage() {
     <Suspense
       fallback={
         <div className="flex min-h-screen">
-          <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 flex-col justify-center items-center p-12 relative overflow-hidden"></div>
-          <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-6 py-12 bg-white">
-            <div className="w-full max-w-md text-center">
-              <div className="mb-8">
-                <div className="w-[90px] h-[90px] mx-auto bg-gray-200 animate-pulse rounded-md"></div>
-              </div>
-              <div className="h-8 bg-gray-200 rounded-md w-3/4 mx-auto mb-4 animate-pulse"></div>
-              <div className="flex justify-center">
-                <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-blue-600"></div>
+          <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 flex-col justify-center items-center p-12 relative overflow-hidden">
+            <div className="absolute inset-0 bg-blue-700 opacity-20">
+              <div className="absolute inset-0 bg-pattern opacity-10"></div>
+            </div>
+            <div className="z-10 max-w-md text-center">
+              <h1 className="text-4xl font-bold text-white mb-6">Share</h1>
+              <p className="text-xl text-white/90 mb-8">シンプルにつながる、スマートにシェア。</p>
+              <div className="flex flex-col space-y-4 mt-12">
+                <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
+                  <p className="text-white text-left mb-3">
+                    「Share」を使えば、あなたのSNSアカウントと連絡先情報をひとつにまとめて、簡単に共有できます。
+                  </p>
+                  <p className="text-white/80 text-left">
+                    QRコードでシェアして、ビジネスでもプライベートでも人とのつながりをもっと簡単に。
+                  </p>
+                </div>
               </div>
             </div>
           </div>

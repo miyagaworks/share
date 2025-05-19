@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { prisma } from '@/lib/prisma';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -38,6 +39,50 @@ export async function middleware(request: NextRequest) {
     if (!token) {
       console.log('未認証ユーザー: ログインページにリダイレクト');
       return NextResponse.redirect(new URL('/auth/signin', request.url));
+    }
+
+    // ユーザーの種類を判断してリダイレクト先を決定する関数
+    async function determineRedirectPath(req: NextRequest) {
+      const token = await getToken({ req });
+
+      if (!token) return null; // ログインしていない場合
+
+      try {
+        // ユーザー情報を取得
+        const user = await prisma.user.findUnique({
+          where: { id: token.sub as string },
+          include: {
+            tenant: true,
+            adminOfTenant: true,
+          },
+        });
+
+        if (!user) return null;
+
+        // 法人テナント管理者の場合
+        if (user.adminOfTenant) {
+          return '/dashboard/corporate';
+        }
+
+        // 法人テナントメンバーの場合
+        if (user.tenant) {
+          return '/dashboard/corporate-member';
+        }
+
+        // それ以外は個人ダッシュボード
+        return '/dashboard';
+      } catch (error) {
+        console.error('ユーザー情報取得エラー:', error);
+        return null;
+      }
+    }
+
+    // ミドルウェア内で呼び出す
+    if (pathname === '/dashboard') {
+      const redirectPath = await determineRedirectPath(request);
+      if (redirectPath && redirectPath !== '/dashboard') {
+        return NextResponse.redirect(new URL(redirectPath, request.url));
+      }
     }
 
     console.log('認証済みユーザー: アクセス許可');
