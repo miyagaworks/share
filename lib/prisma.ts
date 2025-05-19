@@ -13,8 +13,27 @@ let lastConnectionError: Error | null = null;
 let lastSuccessfulConnection = 0;
 let queryCount = 0;
 
+// ブラウザ環境検出
+const isServer = typeof window === 'undefined';
+
 // 効率的な接続プールを設定したPrismaClientを作成する関数
 function createPrismaClient() {
+  // ブラウザ環境での実行を防止
+  if (!isServer) {
+    console.warn(
+      '[Prisma] ブラウザ環境での実行は許可されていません。サーバーコンポーネントまたはAPI Routeを使用してください。',
+    );
+
+    // ブラウザ環境用のダミーオブジェクト（エラーを投げるプロキシ）
+    return new Proxy({} as PrismaClient, {
+      get() {
+        throw new Error(
+          'PrismaClientはブラウザ環境で実行できません。サーバーコンポーネントまたはAPIルートを使用してください。',
+        );
+      },
+    });
+  }
+
   // 接続試行回数を記録
   connectionAttempts++;
   console.log(`[Prisma] 接続試行 #${connectionAttempts}`);
@@ -92,7 +111,7 @@ const globalWithPrisma = global as typeof global & {
 export const prisma = globalWithPrisma.prisma || createPrismaClient();
 
 // 開発環境でのみグローバル変数に保存（本番環境では毎回新しいインスタンスを作成）
-if (process.env.NODE_ENV !== 'production') {
+if (process.env.NODE_ENV !== 'production' && isServer) {
   globalWithPrisma.prisma = prisma;
 }
 

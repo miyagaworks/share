@@ -2,7 +2,6 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
-import { prisma } from '@/lib/prisma';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -19,20 +18,7 @@ export async function middleware(request: NextRequest) {
       req: request,
       secret: process.env.NEXTAUTH_SECRET,
       secureCookie: process.env.NODE_ENV === 'production',
-      cookieName: 'next-auth.session-token', // クッキー名を明示的に指定
-    });
-
-    // デバッグ出力
-    console.log(`Middleware詳細ログ: ${pathname}`, {
-      hasToken: !!token,
-      cookieHeader: request.headers.get('cookie'),
-      tokenData: token
-        ? JSON.stringify({
-            name: token.name,
-            email: token.email,
-            sub: token.sub,
-          })
-        : 'トークンなし',
+      cookieName: 'next-auth.session-token',
     });
 
     // 未認証ユーザーはログインページへリダイレクト
@@ -41,48 +27,11 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
 
-    // ユーザーの種類を判断してリダイレクト先を決定する関数
-    async function determineRedirectPath(req: NextRequest) {
-      const token = await getToken({ req });
-
-      if (!token) return null; // ログインしていない場合
-
-      try {
-        // ユーザー情報を取得
-        const user = await prisma.user.findUnique({
-          where: { id: token.sub as string },
-          include: {
-            tenant: true,
-            adminOfTenant: true,
-          },
-        });
-
-        if (!user) return null;
-
-        // 法人テナント管理者の場合
-        if (user.adminOfTenant) {
-          return '/dashboard/corporate';
-        }
-
-        // 法人テナントメンバーの場合
-        if (user.tenant) {
-          return '/dashboard/corporate-member';
-        }
-
-        // それ以外は個人ダッシュボード
-        return '/dashboard';
-      } catch (error) {
-        console.error('ユーザー情報取得エラー:', error);
-        return null;
-      }
-    }
-
-    // ミドルウェア内で呼び出す
+    // トップレベルのダッシュボードアクセス時、ユーザータイプに応じてリダイレクト
     if (pathname === '/dashboard') {
-      const redirectPath = await determineRedirectPath(request);
-      if (redirectPath && redirectPath !== '/dashboard') {
-        return NextResponse.redirect(new URL(redirectPath, request.url));
-      }
+      // ユーザータイプ判定用のAPI Routeにリダイレクト
+      // この方法ではミドルウェアでPrismaを使わず、代わりにAPI Routeで処理する
+      return NextResponse.rewrite(new URL('/api/auth/dashboard-redirect', request.url));
     }
 
     console.log('認証済みユーザー: アクセス許可');

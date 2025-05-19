@@ -1,4 +1,4 @@
-// auth.ts
+// auth.ts（修正版）
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -9,12 +9,16 @@ import type { DefaultSession } from 'next-auth';
 declare module 'next-auth' {
   interface User {
     role?: string;
+    tenantId?: string | null;
+    isAdmin?: boolean;
   }
 
   interface Session {
     user: {
       id: string;
       role?: string;
+      tenantId?: string | null;
+      isAdmin?: boolean;
     } & DefaultSession['user'];
   }
 }
@@ -23,8 +27,13 @@ declare module 'next-auth' {
 declare module 'next-auth/jwt' {
   interface JWT {
     role?: string;
+    tenantId?: string | null;
+    isAdmin?: boolean;
   }
 }
+
+// authConfig設定を取得
+const { callbacks: baseCallbacks, ...restAuthConfig } = authConfig;
 
 // NextAuth設定
 export const { handlers, auth, signIn, signOut } = NextAuth({
@@ -38,7 +47,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
-        domain: undefined, // ドメイン設定を削除して問題解決
+        domain: undefined,
       },
     },
     // 他のCookieも明示的に設定
@@ -50,7 +59,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: undefined,
-      }
+      },
     },
     csrfToken: {
       name: 'next-auth.csrf-token',
@@ -60,11 +69,57 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         path: '/',
         secure: process.env.NODE_ENV === 'production',
         domain: undefined,
-      }
-    }
+      },
+    },
   },
-  // authConfigからイベントハンドラーとページ設定を取得
-  ...authConfig,
+  callbacks: {
+    // 既存のコールバックとマージ（必要なものだけ実装）
+    async jwt({ token, user, ...rest }) {
+      // 既存のjwtコールバックがあれば呼び出す
+      if (baseCallbacks?.jwt) {
+        token = await baseCallbacks.jwt({ token, user, ...rest });
+      }
+
+      // 初回サインイン時にユーザー情報をトークンに追加
+      if (user) {
+        try {
+          // Prisma使用はサーバーサイドのみで行う
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            include: {
+              tenant: true,
+              adminOfTenant: true,
+            },
+          });
+
+          if (dbUser) {
+            token.isAdmin = !!dbUser.adminOfTenant;
+            token.tenantId = dbUser.tenant?.id || null;
+            token.role = dbUser.adminOfTenant
+              ? 'admin'
+              : dbUser.tenant
+                ? 'corporate-member'
+                : 'personal';
+          }
+        } catch (error) {
+          console.error('JWTコールバックでのDB取得エラー:', error);
+        }
+      }
+      return token;
+    },
+
+    async session({ session, token }) {
+      if (token && session.user) {
+        session.user.id = token.sub as string;
+        session.user.role = token.role;
+        session.user.isAdmin = token.isAdmin;
+        session.user.tenantId = token.tenantId;
+      }
+      return session;
+    },
+  },
+  // authConfigから残りの設定を取得
+  ...restAuthConfig,
 });
 
 // セキュリティ問題発生時の強制ログアウト関数
