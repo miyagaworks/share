@@ -1,5 +1,4 @@
 // lib/stripe.ts
-
 import Stripe from 'stripe';
 
 // このファイルはサーバーサイドでのみ使用
@@ -8,14 +7,21 @@ if (!process.env.STRIPE_SECRET_KEY) {
 }
 
 // サーバーサイドのみで使用するエクスポート
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  // @ts-expect-error - Stripe型定義の制限を回避するため
-  apiVersion: process.env.STRIPE_API_VERSION || '2025-04-30.basil',
-  appInfo: {
-    name: 'Share',
-    version: '0.1.0',
-  },
-});
+export const stripe = process.env.STRIPE_SECRET_KEY
+  ? new Stripe(process.env.STRIPE_SECRET_KEY, {
+      // リテラル型としてAPIバージョンを指定
+      apiVersion: '2025-02-24.acacia',
+      appInfo: {
+        name: 'Share',
+        version: '0.1.0',
+      },
+    })
+  : null;
+
+// Stripe利用可能かどうかをチェックするヘルパー関数
+export function isStripeAvailable(): boolean {
+  return !!process.env.STRIPE_SECRET_KEY;
+}
 
 // プラン定義 - クライアントサイドとサーバーサイドの両方で使用可能
 export const PLANS = {

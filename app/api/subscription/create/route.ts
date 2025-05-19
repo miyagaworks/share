@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-// import { stripe } from "@/lib/stripe"; // 本番環境では必要
+import { isStripeAvailable } from '@/lib/stripe';
 
 // プランに基づいて適切な期間終了日を計算する関数
 function calculatePeriodEndDate(plan: string, interval: string, startDate: Date): Date {
@@ -36,6 +36,15 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       console.log('認証エラー: ユーザーIDが見つかりません');
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
+    }
+
+    // 本番環境でStripeが利用可能かどうかをチェック
+    if (process.env.NODE_ENV === 'production' && !isStripeAvailable()) {
+      console.error('本番環境でStripe APIキーが設定されていません');
+      return NextResponse.json(
+        { error: '決済システムが正しく構成されていません。管理者にお問い合わせください。' },
+        { status: 500 },
+      );
     }
 
     // リクエストボディのパース
