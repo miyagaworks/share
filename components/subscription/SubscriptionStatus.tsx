@@ -1,13 +1,14 @@
 // components/subscription/SubscriptionStatus.tsx
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { addDays } from 'date-fns';
+import { addDays } from 'date-fns'; // 既存のコードで使用されているので残す
 import { HiCheck, HiRefresh, HiXCircle, HiExclamation, HiClock } from 'react-icons/hi';
+import { checkCorporateAccess } from '@/lib/corporateAccessState'; // updateCorporateAccessStateは使わないので削除
 
 // 型定義を修正
 interface SubscriptionData {
@@ -33,6 +34,20 @@ interface SubscriptionStatusProps {
   } | null;
 }
 
+// GracePeriodInfo型を追加
+interface GracePeriodInfo {
+  isInGracePeriod?: boolean;
+  isGracePeriodExpired?: boolean;
+  daysRemaining?: number;
+  gracePeriodEndDate?: Date;
+}
+
+// StatusDisplay型を追加
+interface StatusDisplay {
+  text: string;
+  className: string;
+}
+
 export default function SubscriptionStatus({
   onReloadSubscription,
   userData,
@@ -42,6 +57,17 @@ export default function SubscriptionStatus({
   const [error, setError] = useState<string | null>(null);
   const [reactivating, setReactivating] = useState(false);
   const [cancelling, setCancelling] = useState(false);
+  // 前回のプラン情報を保持するstate
+  const [previousPlan, setPreviousPlan] = useState<string | null>(null);
+  const [previousInterval, setPreviousInterval] = useState<string | null>(null);
+
+  // onReloadSubscriptionの参照を保持するためのref
+  const onReloadSubscriptionRef = useRef(onReloadSubscription);
+
+  // onReloadSubscriptionが変更されたらrefを更新
+  useEffect(() => {
+    onReloadSubscriptionRef.current = onReloadSubscription;
+  }, [onReloadSubscription]);
 
   // 日付のフォーマット関数
   const formatDate = (dateString: string) => {
@@ -58,8 +84,31 @@ export default function SubscriptionStatus({
     }
   };
 
+  // 法人アクセス権をリフレッシュする関数
+  const refreshCorporateAccess = useCallback(async () => {
+    try {
+      console.log('法人アクセス権のリフレッシュを実行');
+      const result = await checkCorporateAccess(true); // 強制的にリフレッシュ
+
+      // イベントをディスパッチして他のコンポーネントに通知
+      if (typeof window !== 'undefined') {
+        window.dispatchEvent(
+          new CustomEvent('corporateAccessChanged', {
+            detail: { ...result },
+          }),
+        );
+      }
+
+      console.log('法人アクセス権のリフレッシュ結果:', result);
+      return result;
+    } catch (error) {
+      console.error('法人アクセス権のリフレッシュエラー:', error);
+      return null;
+    }
+  }, []);
+
   // ご利用プラン情報を取得
-  const fetchSubscription = async () => {
+  const fetchSubscription = useCallback(async () => {
     try {
       setLoading(true);
       const response = await fetch('/api/subscription');
@@ -73,6 +122,12 @@ export default function SubscriptionStatus({
 
       if (data.subscription) {
         setSubscription(data.subscription);
+
+        // 初回読み込み時は前回のプラン情報を設定
+        if (previousPlan === null) {
+          setPreviousPlan(data.subscription.plan);
+          setPreviousInterval(data.subscription.interval || 'month');
+        }
       }
 
       setError(null);
@@ -83,19 +138,93 @@ export default function SubscriptionStatus({
     } finally {
       setLoading(false);
     }
-  };
+  }, [previousPlan]);
 
   // 初回読み込み
   useEffect(() => {
     fetchSubscription();
-  }, []);
+  }, [fetchSubscription]);
+
+  // プラン変更を検知して法人アクセス権を更新
+  useEffect(() => {
+    if (!subscription) return;
+
+    const currentPlan = subscription.plan;
+    const currentInterval = subscription.interval || 'month';
+
+    // 初回読み込み時
+    if (previousPlan === null) {
+      setPreviousPlan(currentPlan);
+      setPreviousInterval(currentInterval);
+      return;
+    }
+
+    // プランまたは契約期間が変更された場合
+    if (previousPlan !== currentPlan || previousInterval !== currentInterval) {
+      console.log('プラン変更を検知:', {
+        previous: { plan: previousPlan, interval: previousInterval },
+        current: { plan: currentPlan, interval: currentInterval },
+      });
+
+      // 法人プラン関連のプラン変更の場合のみアクセス権をリフレッシュ
+      const isCorporateRelated =
+        currentPlan.includes('business') ||
+        currentPlan.includes('enterprise') ||
+        currentPlan.includes('starter') ||
+        currentPlan.includes('corp') ||
+        (previousPlan &&
+          (previousPlan.includes('business') ||
+            previousPlan.includes('enterprise') ||
+            previousPlan.includes('starter') ||
+            previousPlan.includes('corp')));
+
+      if (isCorporateRelated) {
+        // 少し遅延させてリフレッシュする（UI更新の完了を待つため）
+        setTimeout(() => {
+          refreshCorporateAccess().then(() => {
+            console.log('プラン変更後にアクセス権を更新しました');
+
+            // サイドバーやメニューを強制的に更新するために画面をリロード
+            toast.success('プランが更新されました。メニューを更新します...', {
+              duration: 2000,
+            });
+
+            // 少し遅延させてからリロード
+            setTimeout(() => {
+              window.location.reload();
+            }, 2000);
+          });
+        }, 500);
+      }
+
+      // 前回のプラン情報を更新
+      setPreviousPlan(currentPlan);
+      setPreviousInterval(currentInterval);
+    }
+  }, [subscription, previousPlan, previousInterval, refreshCorporateAccess]);
+
+  // 拡張された再読み込み処理を作成
+  const enhancedReload = useCallback(() => {
+    // 元の再読み込み処理を実行
+    if (onReloadSubscriptionRef.current) {
+      onReloadSubscriptionRef.current();
+    }
+
+    // 少し遅延させてからプラン情報を再取得
+    setTimeout(() => {
+      fetchSubscription().then(() => {
+        // プラン情報取得後に法人アクセス権も更新
+        refreshCorporateAccess();
+      });
+    }, 1000);
+  }, [fetchSubscription, refreshCorporateAccess]);
 
   // ご利用プランステータスに基づいた表示情報を取得
-  const getStatusDisplay = (subscription: SubscriptionData | null) => {
-    if (!subscription) return { text: '不明', className: 'bg-gray-100 text-gray-800' };
+  const getStatusDisplay = useCallback((sub: SubscriptionData | null): StatusDisplay => {
+    if (!sub) return { text: '不明', className: 'bg-gray-100 text-gray-800' };
 
     // 永久利用権ユーザーの場合
-    if (subscription.isPermanentUser) {
+    if (sub.isPermanentUser) {
       return {
         text: '永久利用',
         className: 'bg-blue-100 text-blue-800',
@@ -103,7 +232,7 @@ export default function SubscriptionStatus({
     }
 
     // 無料トライアル中
-    if (subscription.status === 'trialing') {
+    if (sub.status === 'trialing') {
       return {
         text: '無料トライアル中',
         className: 'bg-blue-100 text-blue-800',
@@ -111,33 +240,33 @@ export default function SubscriptionStatus({
     }
 
     // アクティブなプラン
-    if (subscription.status === 'active') {
+    if (sub.status === 'active') {
       let planType = '';
       let renewalInfo = '';
 
       // プランの種類を判定
       if (
-        subscription.plan.includes('business') ||
-        subscription.plan === 'business_plus' ||
-        subscription.plan === 'starter' ||
-        subscription.plan === 'enterprise'
+        sub.plan.includes('business') ||
+        sub.plan === 'business_plus' ||
+        sub.plan === 'starter' ||
+        sub.plan === 'enterprise'
       ) {
         // 法人プラン
-        const interval = subscription.interval || 'month'; // サブスクリプションから interval を取得
+        const interval = sub.interval || 'month'; // サブスクリプションから interval を取得
 
-        if (subscription.plan === 'starter') {
+        if (sub.plan === 'starter') {
           planType = 'スタータープラン';
           renewalInfo = interval === 'year' ? '(年間/10名まで)' : '(月額/10名まで)';
-        } else if (subscription.plan === 'business') {
+        } else if (sub.plan === 'business') {
           planType = 'ビジネスプラン';
           renewalInfo = interval === 'year' ? '(年間/30名まで)' : '(月額/30名まで)';
-        } else if (subscription.plan === 'enterprise') {
+        } else if (sub.plan === 'enterprise') {
           planType = 'エンタープライズプラン';
           renewalInfo = interval === 'year' ? '(年間/50名まで)' : '(月額/50名まで)';
-        } else if (subscription.plan === 'business_legacy') {
+        } else if (sub.plan === 'business_legacy') {
           planType = 'スタータープラン';
           renewalInfo = '(10名まで)';
-        } else if (subscription.plan === 'business-plus' || subscription.plan === 'business_plus') {
+        } else if (sub.plan === 'business-plus' || sub.plan === 'business_plus') {
           planType = 'ビジネスプラン';
           renewalInfo = '(30名まで)';
         }
@@ -151,7 +280,7 @@ export default function SubscriptionStatus({
     }
 
     // その他のケース
-    switch (subscription.status) {
+    switch (sub.status) {
       case 'past_due':
         return {
           text: '支払い遅延中',
@@ -164,11 +293,11 @@ export default function SubscriptionStatus({
         };
       default:
         return {
-          text: subscription.displayStatus || '不明',
+          text: sub.displayStatus || '不明',
           className: 'bg-gray-100 text-gray-800',
         };
     }
-  };
+  }, []);
 
   // ご利用プランを再アクティブ化
   const handleReactivate = async () => {
@@ -194,10 +323,11 @@ export default function SubscriptionStatus({
       setSubscription(data.subscription);
       toast.success('プランを再アクティブ化しました');
 
-      // 親コンポーネントに通知
-      if (onReloadSubscription) {
-        onReloadSubscription();
-      }
+      // 法人アクセス権も更新
+      await refreshCorporateAccess();
+
+      // 拡張された再読み込み処理を実行
+      enhancedReload();
     } catch (err) {
       console.error('再アクティブ化エラー:', err);
       toast.error(err instanceof Error ? err.message : 'プランの再アクティブ化に失敗しました');
@@ -241,10 +371,11 @@ export default function SubscriptionStatus({
       setSubscription(data.subscription);
       toast.success('ご利用のプランをキャンセルしました');
 
-      // 親コンポーネントに通知
-      if (onReloadSubscription) {
-        onReloadSubscription();
-      }
+      // 法人アクセス権も更新
+      await refreshCorporateAccess();
+
+      // 拡張された再読み込み処理を実行
+      enhancedReload();
     } catch (err) {
       console.error('キャンセルエラー:', err);
       toast.error(err instanceof Error ? err.message : 'ご利用プランのキャンセルに失敗しました');
@@ -254,7 +385,7 @@ export default function SubscriptionStatus({
   };
 
   // 猶予期間の計算関数
-  const getGracePeriodInfo = () => {
+  const getGracePeriodInfo = useCallback((): GracePeriodInfo | null => {
     if (!userData?.trialEndsAt) return null;
 
     const trialEndDate = new Date(userData.trialEndsAt);
@@ -293,8 +424,12 @@ export default function SubscriptionStatus({
     }
 
     return null;
-  };
+  }, [userData, subscription]);
+
   const gracePeriodInfo = getGracePeriodInfo();
+  const statusDisplay = subscription
+    ? getStatusDisplay(subscription)
+    : { text: '読み込み中...', className: 'bg-gray-100 text-gray-800' };
 
   // 読み込み中
   if (loading) {
@@ -319,7 +454,7 @@ export default function SubscriptionStatus({
           <div>
             <h3 className="text-lg font-medium text-red-800">エラーが発生しました</h3>
             <p className="mt-2 text-sm text-red-700">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={fetchSubscription}>
+            <Button variant="outline" className="mt-4" onClick={() => fetchSubscription()}>
               <HiRefresh className="mr-2 h-4 w-4" />
               再読み込み
             </Button>
@@ -330,7 +465,7 @@ export default function SubscriptionStatus({
   }
 
   // 猶予期間中の警告表示
-  if (gracePeriodInfo?.isInGracePeriod) {
+  if (gracePeriodInfo?.isInGracePeriod && gracePeriodInfo.gracePeriodEndDate) {
     return (
       <div className="bg-white rounded-lg border border-red-200 shadow-sm p-6">
         <div className="flex items-start">
@@ -422,13 +557,6 @@ export default function SubscriptionStatus({
     );
   }
 
-  // 永久利用権ユーザーかどうかを判定
-  const isPermanentUser =
-    userData?.subscriptionStatus === 'permanent' || subscription?.isPermanentUser === true;
-
-  // ステータス表示情報を取得
-  const statusDisplay = getStatusDisplay(subscription);
-
   // アクティブなご利用プラン
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -439,22 +567,22 @@ export default function SubscriptionStatus({
       >
         <div className="flex items-start">
           <div className="flex-shrink-0 mr-3">
-            {subscription.isPermanentUser ? (
+            {subscription?.isPermanentUser ? (
               <div className="bg-blue-100 p-2 rounded-full">
                 <HiCheck className="h-5 w-5 text-blue-600" />
               </div>
-            ) : subscription.status === 'active' &&
+            ) : subscription?.status === 'active' &&
               (subscription.plan.includes('business') || subscription.plan === 'business_plus') ? (
               // 法人プランの場合は青色
               <div className="bg-blue-100 p-2 rounded-full">
                 <HiCheck className="h-5 w-5 text-blue-600" />
               </div>
-            ) : subscription.status === 'active' ? (
+            ) : subscription?.status === 'active' ? (
               // 個人プランの場合は緑色
               <div className="bg-green-100 p-2 rounded-full">
                 <HiCheck className="h-5 w-5 text-green-600" />
               </div>
-            ) : subscription.status === 'trialing' ? (
+            ) : subscription?.status === 'trialing' ? (
               <div className="bg-blue-100 p-2 rounded-full">
                 <HiClock className="h-5 w-5 text-blue-600" />
               </div>
@@ -477,17 +605,19 @@ export default function SubscriptionStatus({
 
             <div className="mt-4 space-y-3">
               {/* 永久利用権ユーザーでない場合のみ次回更新日を表示 */}
-              {!isPermanentUser && (
+              {!(subscription?.isPermanentUser || userData?.subscriptionStatus === 'permanent') && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">次回更新日</span>
                   <span className="text-sm font-medium">
-                    {formatDate(subscription.currentPeriodEnd)}
+                    {subscription?.currentPeriodEnd
+                      ? formatDate(subscription.currentPeriodEnd)
+                      : '-'}
                   </span>
                 </div>
               )}
 
               {/* 永久利用権ユーザーの場合の表示 */}
-              {isPermanentUser && (
+              {(subscription?.isPermanentUser || userData?.subscriptionStatus === 'permanent') && (
                 <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
                   <p className="text-sm text-blue-800 text-justify">
                     特別会員ステータスです。料金を支払わずに永続的に全ての機能をご利用いただけます。
@@ -495,57 +625,62 @@ export default function SubscriptionStatus({
                 </div>
               )}
 
-              {subscription.status === 'trialing' && !isPermanentUser && (
-                <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
-                  <p className="text-sm text-blue-800 text-justify">
-                    無料トライアル期間中です。
-                    <strong>
-                      {formatDate(subscription.trialEnd || subscription.currentPeriodEnd)}
-                    </strong>
-                    まで
-                    {subscription.plan === 'monthly'
-                      ? '月額'
-                      : subscription.plan === 'yearly'
-                        ? '年額'
-                        : ''}
-                    プランをお試しいただけます。
-                  </p>
-                </div>
-              )}
+              {subscription?.status === 'trialing' &&
+                !subscription?.isPermanentUser &&
+                userData?.subscriptionStatus !== 'permanent' && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
+                    <p className="text-sm text-blue-800 text-justify">
+                      無料トライアル期間中です。
+                      <strong>
+                        {formatDate(subscription.trialEnd || subscription.currentPeriodEnd)}
+                      </strong>
+                      まで
+                      {subscription.plan === 'monthly'
+                        ? '月額'
+                        : subscription.plan === 'yearly'
+                          ? '年額'
+                          : ''}
+                      プランをお試しいただけます。
+                    </p>
+                  </div>
+                )}
 
-              {subscription.cancelAtPeriodEnd && !isPermanentUser && (
-                <div className="bg-amber-50 border border-amber-100 rounded-md p-3 mt-4">
-                  <p className="text-sm text-amber-800">
-                    このプランは
-                    <strong>{formatDate(subscription.currentPeriodEnd)}</strong>
-                    にキャンセルされる予定です。それまではすべての機能をご利用いただけます。
-                  </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
-                    onClick={handleReactivate}
-                    disabled={reactivating}
-                  >
-                    {reactivating ? (
-                      <>
-                        <Spinner size="sm" className="mr-2" />
-                        処理中...
-                      </>
-                    ) : (
-                      <>
-                        <HiRefresh className="mr-2 h-4 w-4" />
-                        プランを継続する
-                      </>
-                    )}
-                  </Button>
-                </div>
-              )}
+              {subscription?.cancelAtPeriodEnd &&
+                !subscription?.isPermanentUser &&
+                userData?.subscriptionStatus !== 'permanent' && (
+                  <div className="bg-amber-50 border border-amber-100 rounded-md p-3 mt-4">
+                    <p className="text-sm text-amber-800">
+                      このプランは
+                      <strong>{formatDate(subscription.currentPeriodEnd)}</strong>
+                      にキャンセルされる予定です。それまではすべての機能をご利用いただけます。
+                    </p>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="mt-2"
+                      onClick={handleReactivate}
+                      disabled={reactivating}
+                    >
+                      {reactivating ? (
+                        <>
+                          <Spinner size="sm" className="mr-2" />
+                          処理中...
+                        </>
+                      ) : (
+                        <>
+                          <HiRefresh className="mr-2 h-4 w-4" />
+                          プランを継続する
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                )}
             </div>
 
-            {!isPermanentUser &&
-              !subscription.cancelAtPeriodEnd &&
-              (subscription.status === 'active' || subscription.status === 'trialing') && (
+            {!subscription?.isPermanentUser &&
+              userData?.subscriptionStatus !== 'permanent' &&
+              !subscription?.cancelAtPeriodEnd &&
+              (subscription?.status === 'active' || subscription?.status === 'trialing') && (
                 <div className="mt-6">
                   <Button
                     variant="outline"

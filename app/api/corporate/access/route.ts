@@ -107,7 +107,8 @@ export async function GET(request: Request) {
         user.subscription &&
         (planLower.includes('business') ||
           planLower.includes('corp') ||
-          planLower.includes('pro')) &&
+          planLower.includes('pro') ||
+          planLower.includes('enterprise')) && // エンタープライズプランを追加
         user.subscription.status === 'active';
 
       // アクセス権の判定

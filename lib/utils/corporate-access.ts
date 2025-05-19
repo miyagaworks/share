@@ -75,21 +75,26 @@ export async function checkCorporateAccess(userId: string) {
     // 法人サブスクリプションが有効かチェック - 判定ロジックを拡張
     const hasCorporateSubscription =
       user.subscription &&
-      // 正確な一致
+      // 正確な一致（年間プランを追加）
       ([
         'business',
         'business-plus',
         'business_plus',
         'businessplus',
         'enterprise',
+        'enterprise_yearly', // 年間エンタープライズプランを追加
+        'starter_yearly', // 年間スタータープランを追加
+        'business_yearly', // 年間ビジネスプランを追加
         'corp',
         'corporate',
         'pro',
       ].includes((user.subscription.plan || '').toLowerCase().trim()) ||
-        // 部分一致
+        // 部分一致 (より柔軟な判定を追加)
         (user.subscription.plan || '').toLowerCase().includes('business') ||
         (user.subscription.plan || '').toLowerCase().includes('corp') ||
-        (user.subscription.plan || '').toLowerCase().includes('pro')) &&
+        (user.subscription.plan || '').toLowerCase().includes('pro') ||
+        (user.subscription.plan || '').toLowerCase().includes('enterprise') || // enterprise を含むかどうかをチェック
+        (user.subscription.plan || '').toLowerCase().includes('starter')) && // starter を含むかどうかをチェック
       user.subscription.status === 'active';
 
     // テナントが存在し、停止されておらず、有効なサブスクリプションがある場合のみアクセス権あり

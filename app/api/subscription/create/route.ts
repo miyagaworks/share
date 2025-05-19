@@ -212,12 +212,13 @@ export async function POST(req: NextRequest) {
     // ご利用プラン情報を更新または作成
     const subscriptionData = {
       status: 'active',
-      plan: plan || 'monthly',
+      // interval が 'year' の場合は、plan に _yearly を追加
+      plan: interval === 'year' ? `${plan || 'monthly'}_yearly` : plan || 'monthly',
       priceId,
       subscriptionId: mockSubscription.id,
       currentPeriodStart: currentPeriodStart,
       currentPeriodEnd: currentPeriodEnd,
-      interval: interval || 'month', // 追加: 契約期間の保存
+      interval: interval || 'month',
       trialStart: null,
       trialEnd: null,
       cancelAtPeriodEnd: false,
