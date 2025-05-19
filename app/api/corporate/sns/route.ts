@@ -265,7 +265,11 @@ export async function PATCH(req: NextRequest) {
         message: '表示順を更新しました',
       });
     } else if (operation === 'sync') {
-      // 全ユーザーにSNSリンクを同期
+      // 管理者権限の確認
+      if (!user || !user.adminOfTenant) {
+        return NextResponse.json({ error: 'この操作には管理者権限が必要です' }, { status: 403 });
+      }
+
       // 法人共通SNSリンクを取得
       const corporateSnsLinks = await prisma.corporateSnsLink.findMany({
         where: { tenantId: user.adminOfTenant.id },
@@ -295,48 +299,66 @@ export async function PATCH(req: NextRequest) {
       let updatedCount = 0;
       let createdCount = 0;
 
-      // 各ユーザーに対して処理
-      for (const tenantUser of tenantUsers) {
-        // 既存のSNSリンクマップを作成
-        const userSnsLinksMap = new Map(tenantUser.snsLinks.map((link) => [link.platform, link]));
+      // トランザクションでSNSリンク同期処理を行う
+      await prisma.$transaction(async (tx) => {
+        // 各ユーザーに対して処理
+        for (const tenantUser of tenantUsers) {
+          // 既存のSNSリンクマップを作成
+          const userSnsLinksMap = new Map(tenantUser.snsLinks.map((link) => [link.platform, link]));
 
-        // 必須の法人共通SNSリンクを追加/更新
-        for (const corpLink of corporateSnsLinks.filter(
-          (link: CorporateSnsLink) => link.isRequired,
-        )) {
-          const existingUserLink = userSnsLinksMap.get(corpLink.platform);
+          // 必須の法人共通SNSリンクを追加/更新
+          for (const corpLink of corporateSnsLinks.filter(
+            (link: CorporateSnsLink) => link.isRequired,
+          )) {
+            const existingUserLink = userSnsLinksMap.get(corpLink.platform);
 
-          if (existingUserLink) {
-            // 既存のリンクを更新
-            await prisma.snsLink.update({
-              where: { id: existingUserLink.id },
-              data: {
-                url: corpLink.url,
-                username: corpLink.username,
-              },
-            });
-            updatedCount++;
-          } else {
-            // 新しいリンクを追加
-            // 現在のユーザーのSNSリンク最大表示順を取得
-            const maxDisplayOrder =
-              tenantUser.snsLinks.length > 0
-                ? Math.max(...tenantUser.snsLinks.map((link) => link.displayOrder))
-                : 0;
+            if (existingUserLink) {
+              // 既存のリンクを更新
+              await tx.snsLink.update({
+                where: { id: existingUserLink.id },
+                data: {
+                  url: corpLink.url,
+                  username: corpLink.username,
+                },
+              });
+              updatedCount++;
+            } else {
+              // 新しいリンクを追加
+              // 現在のユーザーのSNSリンク最大表示順を取得
+              const maxDisplayOrder =
+                tenantUser.snsLinks.length > 0
+                  ? Math.max(...tenantUser.snsLinks.map((link) => link.displayOrder))
+                  : 0;
 
-            await prisma.snsLink.create({
-              data: {
-                userId: tenantUser.id,
-                platform: corpLink.platform,
-                username: corpLink.username,
-                url: corpLink.url,
-                displayOrder: maxDisplayOrder + 1,
-              },
-            });
-            createdCount++;
+              await tx.snsLink.create({
+                data: {
+                  userId: tenantUser.id,
+                  platform: corpLink.platform,
+                  username: corpLink.username,
+                  url: corpLink.url,
+                  displayOrder: maxDisplayOrder + 1,
+                },
+              });
+              createdCount++;
+            }
           }
         }
-      }
+      });
+
+      // アクティビティログを記録 - ループの外側に移動し、トランザクション完了後に一度だけ記録
+      await logCorporateActivity({
+        tenantId: user.adminOfTenant.id,
+        userId: session.user.id,
+        action: 'update_sns',
+        entityType: 'tenant',
+        entityId: user.adminOfTenant.id,
+        description: `SNSリンクを${tenantUsers.length}人のユーザーに同期しました`,
+        metadata: {
+          updatedCount,
+          createdCount,
+          userCount: tenantUsers.length,
+        },
+      });
 
       return NextResponse.json({
         success: true,

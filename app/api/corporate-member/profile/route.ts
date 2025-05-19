@@ -1,4 +1,5 @@
 // app/api/corporate-member/profile/route.ts
+
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -8,47 +9,78 @@ import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAcces
 
 export async function GET() {
   try {
-    const session = await auth();
+    // 永久利用権ユーザーかどうかをチェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      // 仮想テナントデータからプロフィール情報を返す
+      const virtualData = getVirtualTenantData();
+      if (!virtualData) {
+        return NextResponse.json(
+          { error: '仮想テナントデータの取得に失敗しました' },
+          { status: 500 },
+        );
+      }
 
+      // セッションからユーザー情報を取得
+      const session = await auth();
+      if (!session?.user?.id) {
+        return NextResponse.json({ error: '認証されていません' }, { status: 401 });
+      }
+
+      // ユーザー基本情報を取得
+      const userData = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          nameEn: true,
+          nameKana: true,
+          lastName: true,
+          firstName: true,
+          lastNameKana: true,
+          firstNameKana: true,
+          bio: true,
+          phone: true,
+          position: true,
+          image: true,
+          profile: true,
+        },
+      });
+
+      if (!userData) {
+        return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+      }
+
+      // 仮想テナントデータをレスポンスとして返す
+      return NextResponse.json({
+        user: {
+          ...userData,
+          department: { id: 'default-dept', name: '全社' },
+          corporateRole: 'admin',
+        },
+        tenant: {
+          id: virtualData.id,
+          name: virtualData.name,
+          logoUrl: virtualData.settings.logoUrl,
+          primaryColor: virtualData.settings.primaryColor,
+          secondaryColor: virtualData.settings.secondaryColor,
+          headerText: null,
+          textColor: null,
+        },
+      });
+    }
+
+    // 通常のユーザーの場合（永久利用権でない場合）
+    const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
-    // 永久利用権ユーザーかどうかチェック
-    const isPermanent = checkPermanentAccess();
-
-    // ユーザー情報を取得
-    const user = await prisma.user.findUnique({
+    // ユーザー情報を取得（テナント情報も含める）
+    const userData = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: {
-        id: true,
-        email: true,
-        name: true,
-        nameEn: true,
-        nameKana: true,
-        password: true, // 後で除外するため
-        image: true,
-        bio: true,
-        mainColor: true,
-        snsIconColor: true,
-        bioBackgroundColor: true,
-        bioTextColor: true,
-        phone: true,
-        company: true,
-        companyUrl: true,
-        companyLabel: true,
-        emailVerified: true,
-        stripeCustomerId: true,
-        subscriptionStatus: true,
-        trialEndsAt: true,
-        corporateRole: true,
-        position: true,
-        departmentId: true,
-        tenantId: true,
-        createdAt: true,
-        updatedAt: true,
-
-        // 関連データ
+      include: {
         profile: true,
         department: true,
         tenant: {
@@ -56,21 +88,12 @@ export async function GET() {
             id: true,
             name: true,
             logoUrl: true,
+            logoWidth: true,
+            logoHeight: true,
             primaryColor: true,
             secondaryColor: true,
-            corporateSnsLinks: {
-              select: {
-                id: true,
-                platform: true,
-                username: true,
-                url: true,
-                displayOrder: true,
-                isRequired: true,
-              },
-              orderBy: {
-                displayOrder: 'asc',
-              },
-            },
+            headerText: true,
+            textColor: true,
           },
         },
         adminOfTenant: {
@@ -78,143 +101,47 @@ export async function GET() {
             id: true,
             name: true,
             logoUrl: true,
+            logoWidth: true,
+            logoHeight: true,
             primaryColor: true,
             secondaryColor: true,
-          },
-        },
-        snsLinks: {
-          select: {
-            id: true,
-            platform: true,
-            username: true,
-            url: true,
-            displayOrder: true,
-          },
-          orderBy: {
-            displayOrder: 'asc',
-          },
-        },
-        customLinks: {
-          select: {
-            id: true,
-            name: true,
-            url: true,
-            displayOrder: true,
-          },
-          orderBy: {
-            displayOrder: 'asc',
+            headerText: true,
+            textColor: true,
           },
         },
       },
     });
 
-    if (!user) {
+    if (!userData) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
 
-    // 永久利用権ユーザーの場合
-    if (isPermanent || user.subscriptionStatus === 'permanent') {
-      console.log('永久利用権ユーザー用プロフィール情報を生成:', user.id);
-
-      // 仮想テナントデータを取得
-      const virtualData = getVirtualTenantData();
-
-      // 仮想テナントがない場合はデフォルト値を設定
-      const virtualTenantId = `virtual-tenant-${user.id}`;
-      const virtualTenantName = virtualData?.name || `${user.name || 'ユーザー'}の法人`;
-      const virtualPrimaryColor = virtualData?.settings?.primaryColor || '#3B82F6';
-      const virtualSecondaryColor = virtualData?.settings?.secondaryColor || '#60A5FA';
-
-      // 仮想SNSリンク
-      const virtualSnsLinks = virtualData?.snsLinks || [
-        {
-          id: `vs-1-${user.id}`,
-          platform: 'line',
-          url: 'https://line.me/ti/p/~',
-          username: null,
-          displayOrder: 1,
-          isRequired: true,
-        },
-        {
-          id: `vs-2-${user.id}`,
-          platform: 'instagram',
-          url: 'https://www.instagram.com/',
-          username: null,
-          displayOrder: 2,
-          isRequired: true,
-        },
-        {
-          id: `vs-3-${user.id}`,
-          platform: 'youtube',
-          url: 'https://www.youtube.com/c/',
-          username: null,
-          displayOrder: 3,
-          isRequired: false,
-        },
-      ];
-
-      // 仮想部署
-      const virtualDepartment = {
-        id: 'default-dept',
-        name: '全社',
-      };
-
-      // 仮想テナント情報
-      const virtualTenant = {
-        id: virtualTenantId,
-        name: virtualTenantName,
-        logoUrl: null,
-        primaryColor: virtualPrimaryColor,
-        secondaryColor: virtualSecondaryColor,
-        corporateSnsLinks: virtualSnsLinks,
-      };
-
-      // センシティブな情報を除外
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      const { password, ...safeUser } = user;
-
-      // ユーザー情報を仮想テナント用に更新
-      const virtualUser = {
-        ...safeUser,
-        corporateRole: 'admin',
-        department: virtualDepartment,
-        tenant: null, // 既存のtenantを削除
-        adminOfTenant: null, // 既存のadminOfTenantを削除
-        // adminOfTenantに仮想テナントを設定（フロントエンドのルールに従って）
-        // 注: この値は実際のDBとは異なりますが、フロントエンド側の処理のためのもの
-      };
-
-      return NextResponse.json({
-        success: true,
-        user: virtualUser,
-        tenant: virtualTenant,
-      });
-    }
-
-    // 通常のユーザー処理（永久利用権ユーザーでない場合）
-
-    // ユーザーが法人テナントに所属しているか確認
-    if (!user.tenant && !user.adminOfTenant) {
-      return NextResponse.json({ error: '法人テナントに所属していません' }, { status: 403 });
-    }
-
-    // テナント情報を取得（管理者または一般メンバー）
-    const tenant = user.adminOfTenant || user.tenant;
-
-    // センシティブな情報を除外して返す
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    const { password, ...safeUser } = user;
+    // テナント情報（管理者または一般メンバーのいずれか）
+    const tenantData = userData.adminOfTenant || userData.tenant;
 
     return NextResponse.json({
-      success: true,
-      user: safeUser,
-      tenant: tenant,
+      user: {
+        id: userData.id,
+        name: userData.name,
+        email: userData.email,
+        nameEn: userData.nameEn,
+        nameKana: userData.nameKana,
+        lastName: userData.lastName,
+        firstName: userData.firstName,
+        lastNameKana: userData.lastNameKana,
+        firstNameKana: userData.firstNameKana,
+        bio: userData.bio,
+        phone: userData.phone,
+        position: userData.position,
+        image: userData.image,
+        department: userData.department,
+        corporateRole: userData.corporateRole,
+        profile: userData.profile,
+      },
+      tenant: tenantData,
     });
   } catch (error) {
-    console.error('法人メンバープロフィール取得エラー:', error);
-    return NextResponse.json(
-      { error: '法人メンバープロフィール情報の取得に失敗しました' },
-      { status: 500 },
-    );
+    console.error('プロフィール取得エラー:', error);
+    return NextResponse.json({ error: 'プロフィール情報の取得に失敗しました' }, { status: 500 });
   }
 }

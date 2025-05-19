@@ -145,8 +145,13 @@ function InvitePageContent() {
         throw new Error('自動ログインに失敗しました');
       }
 
-      // ダッシュボードへリダイレクト
-      router.push('/dashboard/corporate');
+      // ログイン成功後、法人メンバーダッシュボードへリダイレクト
+      // テナント情報がある場合は法人メンバーダッシュボードへ、ない場合は通常ダッシュボードへ
+      if (data.hasTenanct) {
+        router.push('/dashboard/corporate-member');
+      } else {
+        router.push('/dashboard');
+      }
     } catch (error) {
       console.error('招待受け入れエラー:', error);
       setError(error instanceof Error ? error.message : '招待の受け入れに失敗しました');

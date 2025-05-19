@@ -12,7 +12,6 @@ export function getInviteEmailTemplate(params: InviteEmailParams) {
   const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
         <div style="text-align: center; margin-bottom: 30px;">
-          <img src="https://app.sns-share.com/logo_blue.svg" alt="${siteName}" width="90" height="90" style="display: block; margin: 0 auto;">
           <h1 style="color: #333; font-size: 24px; margin-top: 15px; margin-bottom: 5px;">${companyName}からの招待</h1>
           <p style="color: #666; margin-top: 5px;">シンプルにつながる、スマートにシェア</p>
         </div>

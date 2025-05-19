@@ -386,8 +386,19 @@ export function MemberSnsManager({
     }
   };
 
-  // SNSリンク削除処理
-  const handleDeleteSns = async (id: string) => {
+  // 法人必須SNSリンクかどうかを判定する
+  const isRequiredCorporateLink = (platform: string) => {
+    return corporatePlatforms.includes(platform);
+  };
+
+  // SNSリンク削除処理に条件を追加
+  const handleDeleteSns = async (id: string, platform: string) => {
+    // 法人必須リンクは削除不可
+    if (isRequiredCorporateLink(platform)) {
+      toast.error('法人共通の必須SNSリンクは削除できません');
+      return;
+    }
+
     // 削除確認
     if (!confirm('このSNSリンクを削除してもよろしいですか？')) {
       return;
@@ -871,7 +882,7 @@ export function MemberSnsManager({
                         variant="outline"
                         size="sm"
                         className="flex items-center text-red-600 border-red-300 w-full sm:w-auto"
-                        onClick={() => handleDeleteSns(link.id)}
+                        onClick={() => handleDeleteSns(link.id, link.platform)}
                       >
                         <HiTrash className="mr-1 h-3 w-3" />
                         削除
@@ -886,9 +897,7 @@ export function MemberSnsManager({
       </div>
 
       {/* カスタムリンク管理セクション */}
-      <div
-        className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm"
-      >
+      <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-lg font-semibold flex items-center">
             <HiLink className="mr-2 h-5 w-5 text-gray-600" />
