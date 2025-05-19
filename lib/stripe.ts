@@ -19,12 +19,15 @@ export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
 
 // プラン定義 - クライアントサイドとサーバーサイドの両方で使用可能
 export const PLANS = {
+  // 個人プラン（既存）
   MONTHLY: {
     name: '月額プラン',
     price: 500, // 円
     interval: 'month',
     priceId: process.env.STRIPE_MONTHLY_PRICE_ID || '',
     displayName: '個人プラン(1ヶ月で自動更新)',
+    planId: 'monthly',
+    maxUsers: 1,
   },
   YEARLY: {
     name: '年額プラン',
@@ -32,61 +35,106 @@ export const PLANS = {
     interval: 'year',
     priceId: process.env.STRIPE_YEARLY_PRICE_ID || '',
     displayName: '個人プラン(1年で自動更新)',
+    planId: 'yearly',
+    maxUsers: 1,
   },
-  BUSINESS: {
+
+  // 法人プラン（新規または修正）
+  STARTER: {
     name: '法人スタータープラン',
     price: 3000, // 円
     interval: 'month',
-    priceId: process.env.STRIPE_BUSINESS_PRICE_ID || '',
-    displayName: '法人スタータープラン(1ヶ月で自動更新)',
+    priceId: process.env.STRIPE_STARTER_PRICE_ID || '',
+    displayName: '法人スタータープラン(10名まで・月額)',
+    planId: 'starter',
+    maxUsers: 10,
   },
-  BUSINESS_YEARLY: {
+  STARTER_YEARLY: {
     name: '法人スタータープラン(年間)',
     price: 30000, // 円
     interval: 'year',
-    priceId: process.env.STRIPE_BUSINESS_YEARLY_PRICE_ID || '',
-    displayName: '法人スタータープラン(1年で自動更新)',
+    priceId: process.env.STRIPE_STARTER_YEARLY_PRICE_ID || '',
+    displayName: '法人スタータープラン(10名まで・年額)',
+    planId: 'starter',
+    maxUsers: 10,
   },
-  BUSINESS_PLUS: {
+  BUSINESS: {
     name: '法人ビジネスプラン',
-    price: 12000, // 円
+    price: 6000, // 円
     interval: 'month',
-    priceId: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PLUS_PRICE_ID || '',
-    displayName: '法人ビジネスプラン(1ヶ月で自動更新)',
+    priceId: process.env.STRIPE_BUSINESS_PRICE_ID || '',
+    displayName: '法人ビジネスプラン(30名まで・月額)',
+    planId: 'business',
+    maxUsers: 30,
   },
-  BUSINESS_PLUS_YEARLY: {
+  BUSINESS_YEARLY: {
     name: '法人ビジネスプラン(年間)',
-    price: 120000, // 円
+    price: 60000, // 円
     interval: 'year',
-    priceId: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PLUS_YEARLY_PRICE_ID || '',
-    displayName: '法人ビジネスプラン(1年で自動更新)',
+    priceId: process.env.STRIPE_BUSINESS_YEARLY_PRICE_ID || '',
+    displayName: '法人ビジネスプラン(30名まで・年額)',
+    planId: 'business',
+    maxUsers: 30,
+  },
+  ENTERPRISE: {
+    name: '法人エンタープライズプラン',
+    price: 9000, // 円
+    interval: 'month',
+    priceId: process.env.STRIPE_ENTERPRISE_PRICE_ID || '',
+    displayName: '法人エンタープライズプラン(50名まで・月額)',
+    planId: 'enterprise',
+    maxUsers: 50,
+  },
+  ENTERPRISE_YEARLY: {
+    name: '法人エンタープライズプラン(年間)',
+    price: 90000, // 円
+    interval: 'year',
+    priceId: process.env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID || '',
+    displayName: '法人エンタープライズプラン(50名まで・年額)',
+    planId: 'enterprise',
+    maxUsers: 50,
   },
 };
 
 // planIdからプラン名を直接取得する関数
 export function getPlanNameFromId(planId: string, interval?: string): string {
-  // ご利用プランID + 更新間隔からプラン表示名を取得
+  // 個人プラン
   if (planId === 'monthly') {
     return '個人プラン(1ヶ月で自動更新)';
   } else if (planId === 'yearly') {
     return '個人プラン(1年で自動更新)';
+  }
+
+  // 法人プラン
+  else if (planId === 'starter') {
+    return interval === 'year'
+      ? '法人スタータープラン(10名まで・年額)'
+      : '法人スタータープラン(10名まで・月額)';
   } else if (planId === 'business') {
     return interval === 'year'
-      ? '法人スタータープラン(1年で自動更新)'
-      : '法人スタータープラン(1ヶ月で自動更新)';
-  } else if (planId === 'business_plus' || planId === 'business-plus') {
-    return interval === 'year'
-      ? '法人ビジネスプラン(1年で自動更新)'
-      : '法人ビジネスプラン(1ヶ月で自動更新)';
+      ? '法人ビジネスプラン(30名まで・年額)'
+      : '法人ビジネスプラン(30名まで・月額)';
   } else if (planId === 'enterprise') {
-    return 'エンタープライズプラン';
-  } else if (planId === 'permanent') {
+    return interval === 'year'
+      ? '法人エンタープライズプラン(50名まで・年額)'
+      : '法人エンタープライズプラン(50名まで・月額)';
+  }
+
+  // 古いプランID（互換性のため）
+  else if (planId === 'business_legacy') {
+    return '法人スタータープラン(10名まで)';
+  } else if (planId === 'business-plus' || planId === 'business_plus') {
+    return '法人ビジネスプラン(30名まで)';
+  }
+
+  // 特殊プラン
+  else if (planId === 'permanent') {
     return '永久利用可能';
   } else if (planId === 'trial') {
     return '無料トライアル中';
   }
 
-  // プランを特定できない場合は不明なプランを返す
+  // プランを特定できない場合
   return '不明なプラン';
 }
 

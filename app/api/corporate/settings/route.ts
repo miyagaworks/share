@@ -157,6 +157,7 @@ export async function PUT(req: Request) {
       billingAddress?: Prisma.InputJsonValue;
       billingEmail?: string;
       billingContact?: string;
+      onboardingCompleted?: boolean;
     };
 
     let updateData: UpdateData = {};
@@ -164,11 +165,19 @@ export async function PUT(req: Request) {
 
     switch (type) {
       case 'general':
-        // 必須フィールドの検証
-        if (!bodyName || bodyName.trim() === '') {
+        // 必須フィールドの検証（onboardingCompletedが存在する場合は検証をスキップ）
+        if (body.onboardingCompleted === undefined && (!bodyName || bodyName.trim() === '')) {
           return NextResponse.json({ error: '会社名は必須です' }, { status: 400 });
         }
-        updateData = { name: bodyName };
+
+        // オブジェクトリテラルを一度に代入する方式に変更
+        updateData = {
+          ...(bodyName && { name: bodyName }),
+          ...(body.onboardingCompleted !== undefined && {
+            onboardingCompleted: !!body.onboardingCompleted,
+          }),
+        };
+
         billingDescription = '基本設定の更新';
         break;
 

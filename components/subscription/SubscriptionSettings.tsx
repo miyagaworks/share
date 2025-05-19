@@ -13,7 +13,9 @@ import { FiUsers } from 'react-icons/fi';
 import { HiUser, HiOfficeBuilding } from 'react-icons/hi';
 
 // ご利用プラン種類の型定義
-type SubscriptionPlan = 'monthly' | 'yearly' | 'business' | 'business_plus';
+type SubscriptionPlan = 'monthly' | 'yearly' | 'starter' | 'business' | 'enterprise';
+type SubscriptionInterval = 'month' | 'year';
+type PlanPriceIdKey = keyof typeof PLAN_PRICE_IDS;
 
 interface SubscriptionData {
   id: string;
@@ -47,29 +49,77 @@ interface SubscriptionResponse {
 
 // 各プランのプレースホルダーpriceIdを設定
 const PLAN_PRICE_IDS = {
+  // 個人プラン
   monthly: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || 'price_monthly_placeholder',
   yearly: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID || 'price_yearly_placeholder',
+
+  // 法人プラン
+  starter: process.env.NEXT_PUBLIC_STRIPE_STARTER_PRICE_ID || 'price_starter_placeholder',
   business: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID || 'price_business_placeholder',
-  business_plus: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PLUS_PRICE_ID || 'price_business_plus_placeholder',
+  enterprise: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise_placeholder',
 };
 
-// 法人プランの特徴リスト
-const BUSINESS_FEATURES = [
+// 年間プランのpriceIdを取得する関数
+const getYearlyPriceId = (plan: SubscriptionPlan): string => {
+  switch (plan) {
+    case 'starter':
+      return (
+        process.env.NEXT_PUBLIC_STRIPE_STARTER_YEARLY_PRICE_ID || 'price_starter_yearly_placeholder'
+      );
+    case 'business':
+      return (
+        process.env.NEXT_PUBLIC_STRIPE_BUSINESS_YEARLY_PRICE_ID ||
+        'price_business_yearly_placeholder'
+      );
+    case 'enterprise':
+      return (
+        process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_YEARLY_PRICE_ID ||
+        'price_enterprise_yearly_placeholder'
+      );
+    default:
+      // 安全なキャスト
+      return PLAN_PRICE_IDS[plan as PlanPriceIdKey];
+  }
+};
+
+const renderFeatures = (plan: SubscriptionPlan) => {
+  switch (plan) {
+    case 'starter':
+      return STARTER_FEATURES;
+    case 'business':
+      return BUSINESS_FEATURES;
+    case 'enterprise':
+      return ENTERPRISE_FEATURES;
+    default:
+      return [];
+  }
+};
+
+// 法人プランの特徴リストを更新
+const STARTER_FEATURES = [
   '最大10名のユーザー管理',
   '共通カラーテーマ設定',
   '会社ロゴ表示',
   'メールサポート',
 ];
 
-const BUSINESS_PLUS_FEATURES = [
-  '最大50名のユーザー管理',
+const BUSINESS_FEATURES = [
+  '最大30名のユーザー管理',
   '部署/チーム分け機能',
-  '高度なユーザー権限設定',
+  '高度なカスタマイズ',
   '優先サポート（営業時間内）',
+];
+
+const ENTERPRISE_FEATURES = [
+  '最大50名のユーザー管理',
+  '高度なユーザー権限設定',
+  'カスタムドメイン設定',
+  '専任サポート担当者',
 ];
 
 export default function SubscriptionSettings() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>('monthly');
+  const [selectedInterval, setSelectedInterval] = useState<SubscriptionInterval>('month');
   const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [showCorporatePlans, setShowCorporatePlans] = useState(false);
@@ -173,11 +223,15 @@ export default function SubscriptionSettings() {
     try {
       setProcessing(true);
 
-      // 選択されたプランに対応するpriceIdを取得
-      const priceId = PLAN_PRICE_IDS[selectedPlan];
+      // 選択されたプランと契約期間に応じたpriceIdを取得
+      const priceId =
+        selectedInterval === 'year'
+          ? getYearlyPriceId(selectedPlan)
+          : PLAN_PRICE_IDS[selectedPlan as keyof typeof PLAN_PRICE_IDS];
 
       console.log('法人プラン申し込みデータ:', {
         plan: selectedPlan,
+        interval: selectedInterval,
         priceId,
         paymentMethodId,
         isCorporate: true,
@@ -189,6 +243,7 @@ export default function SubscriptionSettings() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           plan: selectedPlan,
+          interval: selectedInterval,
           priceId: priceId,
           paymentMethodId: paymentMethodId,
           isCorporate: true,
@@ -405,8 +460,103 @@ export default function SubscriptionSettings() {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <h2 className="text-xl font-semibold mb-4">法人プランを選択</h2>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               {/* スタータープラン */}
+              <motion.div
+                className={`border rounded-lg p-4 cursor-pointer transition-all ${
+                  selectedPlan === 'starter' ? 'border-[#1E3A8A] bg-[#1E3A8A]/5' : 'border-gray-200'
+                }`}
+                onClick={() => setSelectedPlan('starter')}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="flex justify-between items-start">
+                  <div>
+                    <div className="flex items-center">
+                      <HiOutlineOfficeBuilding className="h-5 w-5 text-[#1E3A8A] mr-2" />
+                      <h3 className="font-semibold">スタータープラン</h3>
+                    </div>
+                    <p className="text-2xl font-bold mt-2">
+                      ¥{selectedInterval === 'month' ? '3,000' : '30,000'}
+                      <span className="text-sm font-normal text-gray-500">
+                        /{selectedInterval === 'month' ? '月' : '年'}
+                      </span>
+                    </p>
+
+                    {/* 月額/年額切り替えボタン */}
+                    <div className="flex space-x-2 mt-3 mb-3">
+                      <button
+                        type="button"
+                        className={`text-xs px-2 py-1 rounded-full transition-colors ${
+                          selectedInterval === 'month'
+                            ? 'bg-[#1E3A8A] text-white'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          setSelectedInterval('month');
+                        }}
+                      >
+                        月額
+                      </button>
+                      <button
+                        type="button"
+                        className={`text-xs px-2 py-1 rounded-full transition-colors ${
+                          selectedInterval === 'year'
+                            ? 'bg-[#1E3A8A] text-white'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          setSelectedInterval('year');
+                        }}
+                      >
+                        年額（16%お得）
+                      </button>
+                    </div>
+
+                    <div className="mt-3 mb-3">
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <FiUsers className="mr-1" /> 最大10名
+                      </span>
+                    </div>
+                    <ul className="mt-4 space-y-2 text-sm">
+                      {renderFeatures('starter').map((feature, index) => (
+                        <li key={index} className="flex items-center">
+                          <HiCheck className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
+                          <span>{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+
+                    {/* 登録ボタン */}
+                    <div className="mt-4">
+                      <Button
+                        onClick={handleCorporateSubscribe}
+                        disabled={!paymentMethodId || processing || selectedPlan !== 'starter'}
+                        className="w-full bg-[#1E3A8A] hover:bg-[#122153]"
+                        size="sm"
+                      >
+                        {processing && selectedPlan === 'starter' ? (
+                          <>
+                            <Spinner size="sm" className="mr-2" />
+                            処理中...
+                          </>
+                        ) : (
+                          '選択して申し込む'
+                        )}
+                      </Button>
+                    </div>
+                  </div>
+                  {selectedPlan === 'starter' && (
+                    <div className="bg-[#1E3A8A] rounded-full p-1">
+                      <HiCheck className="h-4 w-4 text-white" />
+                    </div>
+                  )}
+                </div>
+              </motion.div>
+
+              {/* ビジネスプラン */}
               <motion.div
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
                   selectedPlan === 'business'
@@ -421,19 +571,54 @@ export default function SubscriptionSettings() {
                   <div>
                     <div className="flex items-center">
                       <HiOutlineOfficeBuilding className="h-5 w-5 text-[#1E3A8A] mr-2" />
-                      <h3 className="font-semibold">スタータープラン</h3>
+                      <h3 className="font-semibold">ビジネスプラン</h3>
                     </div>
                     <p className="text-2xl font-bold mt-2">
-                      ¥3,000 <span className="text-sm font-normal text-gray-500">/月</span>
+                      ¥{selectedInterval === 'month' ? '6,000' : '60,000'}
+                      <span className="text-sm font-normal text-gray-500">
+                        /{selectedInterval === 'month' ? '月' : '年'}
+                      </span>
                     </p>
-                    <p className="text-sm text-gray-500">年間契約: ¥30,000/年</p>
+
+                    {/* 月額/年額切り替えボタン */}
+                    <div className="flex space-x-2 mt-3 mb-3">
+                      <button
+                        type="button"
+                        className={`text-xs px-2 py-1 rounded-full transition-colors ${
+                          selectedInterval === 'month'
+                            ? 'bg-[#1E3A8A] text-white'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          setSelectedInterval('month');
+                        }}
+                      >
+                        月額
+                      </button>
+                      <button
+                        type="button"
+                        className={`text-xs px-2 py-1 rounded-full transition-colors ${
+                          selectedInterval === 'year'
+                            ? 'bg-[#1E3A8A] text-white'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          setSelectedInterval('year');
+                        }}
+                      >
+                        年額（16%お得）
+                      </button>
+                    </div>
+
                     <div className="mt-3 mb-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
-                        <FiUsers className="mr-1" /> 最大10名
+                        <FiUsers className="mr-1" /> 最大30名
                       </span>
                     </div>
                     <ul className="mt-4 space-y-2 text-sm">
-                      {BUSINESS_FEATURES.map((feature, index) => (
+                      {renderFeatures('business').map((feature, index) => (
                         <li key={index} className="flex items-center">
                           <HiCheck className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
                           <span>{feature}</span>
@@ -468,14 +653,14 @@ export default function SubscriptionSettings() {
                 </div>
               </motion.div>
 
-              {/* ビジネスプラン */}
+              {/* エンタープライズプラン */}
               <motion.div
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
-                  selectedPlan === 'business_plus' 
-                    ? 'border-[#1E3A8A] bg-[#1E3A8A]/5' 
+                  selectedPlan === 'enterprise'
+                    ? 'border-[#1E3A8A] bg-[#1E3A8A]/5'
                     : 'border-gray-200'
                 }`}
-                onClick={() => setSelectedPlan('business_plus')}
+                onClick={() => setSelectedPlan('enterprise')}
                 whileHover={{ scale: 1.02 }}
                 whileTap={{ scale: 0.98 }}
               >
@@ -483,19 +668,54 @@ export default function SubscriptionSettings() {
                   <div>
                     <div className="flex items-center">
                       <HiOutlineOfficeBuilding className="h-5 w-5 text-[#1E3A8A] mr-2" />
-                      <h3 className="font-semibold">ビジネスプラン</h3>
+                      <h3 className="font-semibold">エンタープライズプラン</h3>
                     </div>
                     <p className="text-2xl font-bold mt-2">
-                      ¥12,000 <span className="text-sm font-normal text-gray-500">/月</span>
+                      ¥{selectedInterval === 'month' ? '9,000' : '90,000'}
+                      <span className="text-sm font-normal text-gray-500">
+                        /{selectedInterval === 'month' ? '月' : '年'}
+                      </span>
                     </p>
-                    <p className="text-sm text-gray-500">年間契約: ¥120,000/年</p>
+
+                    {/* 月額/年額切り替えボタン */}
+                    <div className="flex space-x-2 mt-3 mb-3">
+                      <button
+                        type="button"
+                        className={`text-xs px-2 py-1 rounded-full transition-colors ${
+                          selectedInterval === 'month'
+                            ? 'bg-[#1E3A8A] text-white'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          setSelectedInterval('month');
+                        }}
+                      >
+                        月額
+                      </button>
+                      <button
+                        type="button"
+                        className={`text-xs px-2 py-1 rounded-full transition-colors ${
+                          selectedInterval === 'year'
+                            ? 'bg-[#1E3A8A] text-white'
+                            : 'bg-gray-100 text-gray-700'
+                        }`}
+                        onClick={(e) => {
+                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          setSelectedInterval('year');
+                        }}
+                      >
+                        年額（16%お得）
+                      </button>
+                    </div>
+
                     <div className="mt-3 mb-3">
                       <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
                         <FiUsers className="mr-1" /> 最大50名
                       </span>
                     </div>
                     <ul className="mt-4 space-y-2 text-sm">
-                      {BUSINESS_PLUS_FEATURES.map((feature, index) => (
+                      {renderFeatures('enterprise').map((feature, index) => (
                         <li key={index} className="flex items-center">
                           <HiCheck className="h-4 w-4 text-green-500 mr-2 flex-shrink-0" />
                           <span>{feature}</span>
@@ -503,15 +723,15 @@ export default function SubscriptionSettings() {
                       ))}
                     </ul>
 
-                    {/* ビジネスプラン選択ボタン - 有効化 */}
+                    {/* 登録ボタン */}
                     <div className="mt-4">
                       <Button
                         onClick={handleCorporateSubscribe}
-                        disabled={!paymentMethodId || processing || selectedPlan !== 'business_plus'}
+                        disabled={!paymentMethodId || processing || selectedPlan !== 'enterprise'}
                         className="w-full bg-[#1E3A8A] hover:bg-[#122153]"
                         size="sm"
                       >
-                        {processing && selectedPlan === 'business_plus' ? (
+                        {processing && selectedPlan === 'enterprise' ? (
                           <>
                             <Spinner size="sm" className="mr-2" />
                             処理中...
@@ -522,7 +742,7 @@ export default function SubscriptionSettings() {
                       </Button>
                     </div>
                   </div>
-                  {selectedPlan === 'business_plus' && (
+                  {selectedPlan === 'enterprise' && (
                     <div className="bg-[#1E3A8A] rounded-full p-1">
                       <HiCheck className="h-4 w-4 text-white" />
                     </div>

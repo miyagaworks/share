@@ -7,27 +7,17 @@ import { prisma } from '@/lib/prisma';
 // import { stripe } from "@/lib/stripe"; // 本番環境では必要
 
 // プランに基づいて適切な期間終了日を計算する関数
-function calculatePeriodEndDate(plan: string, startDate: Date): Date {
-  console.log(`計算開始日: ${startDate.toISOString()}`);
+function calculatePeriodEndDate(plan: string, interval: string, startDate: Date): Date {
+  console.log(`計算開始日: ${startDate.toISOString()}, interval: ${interval}`);
 
   const endDate = new Date(startDate);
 
-  switch (plan) {
-    case 'monthly':
-      // 1ヶ月後
-      endDate.setMonth(endDate.getMonth() + 1);
-      break;
-    case 'yearly':
-      // 1年後
-      endDate.setFullYear(endDate.getFullYear() + 1);
-      break;
-    case 'business':
-      // ビジネスプランも1ヶ月後と仮定
-      endDate.setMonth(endDate.getMonth() + 1);
-      break;
-    default:
-      // デフォルトは1ヶ月後
-      endDate.setMonth(endDate.getMonth() + 1);
+  if (interval === 'year') {
+    // 年間プランの場合は1年後
+    endDate.setFullYear(endDate.getFullYear() + 1);
+  } else {
+    // 月額プランの場合は1ヶ月後
+    endDate.setMonth(endDate.getMonth() + 1);
   }
 
   console.log(`計算終了日: ${endDate.toISOString()}`);
@@ -52,7 +42,7 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     console.log('リクエストボディ:', body);
 
-    const { priceId, paymentMethodId, plan, isCorporate = false } = body;
+    const { priceId, paymentMethodId, plan, interval = 'month', isCorporate = false } = body;
 
     // 必須パラメータの検証
     if (!priceId || !paymentMethodId) {
@@ -154,11 +144,22 @@ export async function POST(req: NextRequest) {
           console.log('ユーザーは既に法人テナントの管理者です:', existingTenantAsAdmin.id);
           corporateTenant = existingTenantAsAdmin;
         } else {
+          // プランに基づいてユーザー数上限を設定
+          let maxUsers = 10; // デフォルト値
+          if (plan === 'business') {
+            maxUsers = 30;
+          } else if (plan === 'enterprise') {
+            maxUsers = 50;
+          } else if (plan === 'business-plus' || plan === 'business_plus') {
+            // 互換性のため
+            maxUsers = 30;
+          }
+
           // 法人テナントを作成
           const newTenant = await prisma.corporateTenant.create({
             data: {
               name: companyName || '', // 空の文字列を設定し、後でユーザーに入力させる
-              maxUsers: plan === 'business-plus' ? 50 : 10,
+              maxUsers: maxUsers,
               adminId: session.user.id,
               users: { connect: [{ id: session.user.id }] },
               primaryColor: '#3B82F6',
@@ -186,10 +187,15 @@ export async function POST(req: NextRequest) {
 
     // 現在の日付と期間終了日を設定
     const currentPeriodStart = now;
-    const currentPeriodEnd = calculatePeriodEndDate(plan || 'monthly', currentPeriodStart);
+    const currentPeriodEnd = calculatePeriodEndDate(
+      plan || 'monthly',
+      interval || 'month',
+      currentPeriodStart,
+    );
 
     console.log('期間設定:', {
       plan: plan || 'monthly',
+      interval: interval || 'month',
       currentPeriodStart: currentPeriodStart.toISOString(),
       currentPeriodEnd: currentPeriodEnd.toISOString(),
     });
@@ -202,6 +208,7 @@ export async function POST(req: NextRequest) {
       subscriptionId: mockSubscription.id,
       currentPeriodStart: currentPeriodStart,
       currentPeriodEnd: currentPeriodEnd,
+      interval: interval || 'month', // 追加: 契約期間の保存
       trialStart: null,
       trialEnd: null,
       cancelAtPeriodEnd: false,

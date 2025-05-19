@@ -42,6 +42,7 @@ interface TenantData {
   updatedAt: string;
   users: User[];
   departments: Department[];
+  onboardingCompleted?: boolean;
 }
 
 interface OnboardingState {
@@ -81,25 +82,51 @@ export default function CorporateOnboardingPage() {
 
       try {
         setIsLoading(true);
+        console.log('テナント情報取得開始');
 
-        // テナント情報取得API
-        const response = await fetch('/api/corporate/tenant');
+        // テナント情報取得API - キャッシュを無効化
+        const response = await fetch('/api/corporate/tenant', {
+          headers: {
+            'Cache-Control': 'no-cache',
+            Pragma: 'no-cache',
+          },
+          cache: 'no-store',
+        });
 
         if (!response.ok) {
           throw new Error('テナント情報の取得に失敗しました');
         }
 
         const data = await response.json();
+        console.log('テナント情報取得成功:', data);
 
-        // テナントデータを設定する際に型に合わせて処理
-        // textColorとheaderTextがAPIから返ってこない場合に対応
+        // テナントデータを設定
         setTenantData({
           ...data.tenant,
-          textColor: data.tenant.textColor || null, // 追加
-          headerText: data.tenant.headerText || null, // 追加
+          textColor: data.tenant.textColor || null,
+          headerText: data.tenant.headerText || null,
         });
 
-        // 会社名の初期値設定を条件付きに
+        // onboardingCompletedの値を明示的に確認する
+        console.log('onboardingCompleted flag:', data.tenant?.onboardingCompleted);
+        console.log('テナントデータ詳細:', JSON.stringify(data.tenant, null, 2));
+
+        // オンボーディングが既に完了している場合はダッシュボードにリダイレクト
+        // 厳密な比較 (===) ではなく、緩い比較 (==) を使用して truthy な値もチェック
+        if (data.tenant?.onboardingCompleted) {
+          console.log('オンボーディングは既に完了しています。ダッシュボードにリダイレクトします。');
+          // 非同期関数内でのリダイレクトをより確実にするために、少し遅延させる
+          setTimeout(() => {
+            window.location.href = '/dashboard/corporate';
+          }, 100);
+          return;
+        } else {
+          console.log(
+            'オンボーディングは未完了または不明な状態です。オンボーディングページを表示します。',
+          );
+        }
+
+        // 会社名の初期値設定
         if (data.tenant?.name && !data.tenant.name.includes('の会社')) {
           setCompanyName(data.tenant.name);
           setOnboardingState((prev) => ({
@@ -107,7 +134,6 @@ export default function CorporateOnboardingPage() {
             companyName: data.tenant.name,
           }));
         }
-        // デフォルト名の場合は空欄に
       } catch (err) {
         console.error('テナント情報取得エラー:', err);
       } finally {
@@ -116,7 +142,44 @@ export default function CorporateOnboardingPage() {
     };
 
     fetchTenantData();
-  }, [session]);
+  }, [session, router]);
+
+  // オンボーディング完了時のフラグ設定関数
+  const completeOnboarding = async () => {
+    try {
+      setIsSaving(true);
+
+      // オンボーディング完了フラグを設定
+      const response = await fetch('/api/corporate/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          onboardingCompleted: true,
+          type: 'general',
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '設定の保存に失敗しました');
+      }
+
+      console.log('オンボーディング完了フラグを設定しました');
+
+      // ダッシュボードへリダイレクト
+      router.push('/dashboard/corporate');
+    } catch (error) {
+      console.error('オンボーディング完了設定エラー:', error);
+      toast.error('設定の保存に失敗しました');
+
+      // エラーが発生してもダッシュボードに移動
+      router.push('/dashboard/corporate');
+    } finally {
+      setIsSaving(false);
+    }
+  };
 
   // ステップを完了としてマーク
   const completeStep = (step: keyof OnboardingState['steps']) => {
@@ -150,8 +213,8 @@ export default function CorporateOnboardingPage() {
           ...prev,
           setupComplete: true,
         }));
-        // 全てのステップが完了したらダッシュボードへ
-        router.push('/dashboard/corporate');
+        // オンボーディング完了フラグを設定してダッシュボードへリダイレクト
+        completeOnboarding();
         break;
     }
   };
@@ -193,8 +256,31 @@ export default function CorporateOnboardingPage() {
   };
 
   // スキップしてダッシュボードへ
-  const skipToFinish = () => {
-    router.push('/dashboard/corporate');
+  const skipToFinish = async () => {
+    try {
+      setIsSaving(true);
+
+      // オンボーディング完了フラグを設定
+      await fetch('/api/corporate/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          onboardingCompleted: true,
+          type: 'general',
+        }),
+      });
+
+      console.log('オンボーディングをスキップし、完了フラグを設定しました');
+    } catch (error) {
+      console.error('オンボーディングスキップエラー:', error);
+    } finally {
+      setIsSaving(false);
+
+      // ダッシュボードへリダイレクト
+      router.push('/dashboard/corporate');
+    }
   };
 
   // 読み込み中

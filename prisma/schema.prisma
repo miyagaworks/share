@@ -221,6 +221,7 @@ model CorporateTenant {
   createdAt      DateTime               @default(now())
   updatedAt      DateTime               @updatedAt
   activityLogs   CorporateActivityLog[] @relation("TenantActivities")
+  onboardingCompleted Boolean               @default(false)
 
   // 追加する設定関連フィールド
   securitySettings     Json? // パスワードポリシー等のセキュリティ設定

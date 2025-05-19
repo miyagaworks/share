@@ -34,8 +34,11 @@ interface ExtendedSubscription {
   cancelAtPeriodEnd: boolean;
   canceledAt: Date | null;
   cancelReason: string | null;
+  interval?: string; // 追加: 更新間隔
+  originalPlan?: string; // 追加: 元のプラン
   [key: string]: unknown;
 }
+
 // 請求履歴の型定義（使用するため残します）
 interface BillingRecord {
   id: string;
@@ -45,6 +48,19 @@ interface BillingRecord {
   description: string;
   paidAt: Date | null;
   createdAt: Date;
+}
+
+// レガシープランから新プランへのマッピング関数
+function mapLegacyPlanToNew(legacyPlan: string): string {
+  switch (legacyPlan) {
+    case 'business':
+      return 'starter'; // 古い'business'は新しい'starter'に
+    case 'business-plus':
+    case 'business_plus':
+      return 'business'; // 古い'business-plus'は新しい'business'に
+    default:
+      return legacyPlan; // その他はそのまま
+  }
 }
 
 // ご利用プラン情報取得API
@@ -92,9 +108,27 @@ export async function GET() {
       // データベースから取得したサブスクリプションを拡張した型として扱う
       const extendedSubscription = userSubscription as ExtendedSubscription;
 
-      // プランの更新間隔を設定
-      // 変換：yearlyプランは年間更新、それ以外は月間更新
-      extendedSubscription.interval = extendedSubscription.plan === 'yearly' ? 'year' : 'month';
+      // 古いプランIDを新システムにマッピング
+      if (['business', 'business-plus', 'business_plus'].includes(extendedSubscription.plan)) {
+        extendedSubscription.originalPlan = extendedSubscription.plan; // 元のプランを保存
+        extendedSubscription.plan = mapLegacyPlanToNew(extendedSubscription.plan);
+      }
+
+      // プランの更新間隔を設定（データベースにintervalフィールドがない場合のフォールバック）
+      if (!extendedSubscription.interval) {
+        // プランIDから更新間隔を推測
+        if (
+          extendedSubscription.plan === 'yearly' ||
+          extendedSubscription.plan.includes('_yearly') ||
+          extendedSubscription.plan.includes('-yearly')
+        ) {
+          extendedSubscription.interval = 'year';
+        } else if (extendedSubscription.plan === 'permanent') {
+          extendedSubscription.interval = 'permanent';
+        } else {
+          extendedSubscription.interval = 'month';
+        }
+      }
 
       // userSubscriptionに代入
       userSubscription = extendedSubscription;

@@ -22,59 +22,13 @@ export async function GET() {
     console.log('[API] ユーザーID:', userId);
 
     try {
-      // クエリを大幅に最適化 - 最低限必要なデータのみを取得
+      // ユーザー情報を取得
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
           id: true,
-          name: true, // 仮想テナント用に名前も取得
-          subscriptionStatus: true, // 永久利用権ステータスを取得
-          // 管理者テナント - 基本情報のみ
-          adminOfTenant: {
-            select: {
-              id: true,
-              name: true,
-              logoUrl: true,
-              logoWidth: true,
-              logoHeight: true,
-              primaryColor: true,
-              secondaryColor: true,
-              headerText: true,
-              textColor: true,
-              maxUsers: true,
-              accountStatus: true,
-              // ユーザー数のカウントのみ
-              _count: {
-                select: {
-                  users: true,
-                  departments: true,
-                },
-              },
-            },
-          },
-          // 一般テナント - 基本情報のみ
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              logoUrl: true,
-              logoWidth: true,
-              logoHeight: true,
-              primaryColor: true,
-              secondaryColor: true,
-              headerText: true,
-              textColor: true,
-              maxUsers: true,
-              accountStatus: true,
-              // ユーザー数のカウントのみ
-              _count: {
-                select: {
-                  users: true,
-                  departments: true,
-                },
-              },
-            },
-          },
+          name: true,
+          subscriptionStatus: true,
         },
       });
 
@@ -103,6 +57,7 @@ export async function GET() {
             textColor: null,
             maxUsers: 50,
             accountStatus: 'active',
+            onboardingCompleted: true, // 永久利用権ユーザーは常にオンボーディング完了済みとする
             userCount: 1,
             departmentCount: virtualTenant.departments.length,
             users: [{ id: userId, name: user.name, role: 'admin' }],
@@ -115,8 +70,66 @@ export async function GET() {
         return NextResponse.json(responseData);
       }
 
-      // 法人テナント情報を取得（管理者または一般メンバー）
-      const tenant = user.adminOfTenant || user.tenant;
+      // 管理者としてのテナントを検索 - 明示的にフィールドを指定
+      const adminTenant = await prisma.corporateTenant.findUnique({
+        where: { adminId: userId },
+        select: {
+          id: true,
+          name: true,
+          logoUrl: true,
+          logoWidth: true,
+          logoHeight: true,
+          primaryColor: true,
+          secondaryColor: true,
+          headerText: true,
+          textColor: true,
+          maxUsers: true,
+          accountStatus: true,
+          onboardingCompleted: true, // 必ず明示的に選択
+          _count: {
+            select: {
+              users: true,
+              departments: true,
+            },
+          },
+        },
+      });
+
+      // 一般メンバーとしてのテナントを検索
+      const memberTenant = !adminTenant
+        ? await prisma.corporateTenant.findFirst({
+            where: {
+              users: {
+                some: {
+                  id: userId,
+                },
+              },
+            },
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              logoWidth: true,
+              logoHeight: true,
+              primaryColor: true,
+              secondaryColor: true,
+              headerText: true,
+              textColor: true,
+              maxUsers: true,
+              accountStatus: true,
+              onboardingCompleted: true, // 必ず明示的に選択
+              _count: {
+                select: {
+                  users: true,
+                  departments: true,
+                },
+              },
+            },
+          })
+        : null;
+
+      // テナント情報を取得（管理者または一般メンバー）
+      const tenant = adminTenant || memberTenant;
 
       // テナントが見つからない場合
       if (!tenant) {
@@ -125,13 +138,14 @@ export async function GET() {
       }
 
       // 管理者権限の確認
-      const isAdmin = !!user.adminOfTenant;
+      const isAdmin = !!adminTenant;
       const userRole = isAdmin ? 'admin' : 'member';
 
       console.log('[API] テナント情報取得成功:', {
         tenantId: tenant.id,
         isAdmin,
         userRole,
+        onboardingCompleted: tenant.onboardingCompleted,
       });
 
       // アカウント停止状態確認
@@ -144,6 +158,7 @@ export async function GET() {
               id: tenant.id,
               name: tenant.name,
               accountStatus: 'suspended',
+              onboardingCompleted: tenant.onboardingCompleted || false,
             },
             isAdmin,
             userRole,
@@ -166,6 +181,7 @@ export async function GET() {
           textColor: tenant.textColor,
           maxUsers: tenant.maxUsers,
           accountStatus: tenant.accountStatus,
+          onboardingCompleted: tenant.onboardingCompleted || false,
           userCount: tenant._count?.users ?? 0,
           departmentCount: tenant._count?.departments ?? 0,
           // 空の配列をフロントエンドの互換性のために提供
@@ -175,6 +191,12 @@ export async function GET() {
         isAdmin,
         userRole,
       };
+
+      // 追加: デバッグ用のログ出力
+      console.log(
+        '[API] テナントレスポンスのonboardingCompleted:',
+        responseData.tenant.onboardingCompleted,
+      );
 
       // 正常レスポンス
       return NextResponse.json(responseData);

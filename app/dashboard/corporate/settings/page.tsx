@@ -16,6 +16,7 @@ import {
   HiExclamation,
 } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
+import { getPlanNameFromId } from '@/lib/stripe';
 
 // 型定義
 interface PasswordPolicy {
@@ -595,17 +596,8 @@ export default function CorporateSettingsPage() {
   };
 
   // プラン名の取得
-  const getPlanName = (plan: string) => {
-    switch (plan) {
-      case 'business':
-        return 'スタータープラン';
-      case 'business-plus':
-        return 'ビジネスプラン';
-      case 'enterprise':
-        return 'エンタープライズプラン';
-      default:
-        return '法人プラン';
-    }
+  const getPlanName = (plan: string, interval?: string) => {
+    return getPlanNameFromId(plan, interval);
   };
 
   // 各設定タブのレンダリング

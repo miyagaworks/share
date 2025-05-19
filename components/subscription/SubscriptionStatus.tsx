@@ -116,30 +116,36 @@ export default function SubscriptionStatus({
       let renewalInfo = '';
 
       // プランの種類を判定
-      if (subscription.plan.includes('business') || subscription.plan === 'business_plus') {
+      if (
+        subscription.plan.includes('business') ||
+        subscription.plan === 'business_plus' ||
+        subscription.plan === 'starter' ||
+        subscription.plan === 'enterprise'
+      ) {
         // 法人プラン
-        if (subscription.plan === 'business') {
+        const interval = subscription.interval || 'month'; // サブスクリプションから interval を取得
+
+        if (subscription.plan === 'starter') {
           planType = 'スタータープラン';
-          renewalInfo = '(1ヶ月で自動更新)';
-        } else {
+          renewalInfo = interval === 'year' ? '(年間/10名まで)' : '(月額/10名まで)';
+        } else if (subscription.plan === 'business') {
           planType = 'ビジネスプラン';
-          renewalInfo = '(1年で自動更新)';
+          renewalInfo = interval === 'year' ? '(年間/30名まで)' : '(月額/30名まで)';
+        } else if (subscription.plan === 'enterprise') {
+          planType = 'エンタープライズプラン';
+          renewalInfo = interval === 'year' ? '(年間/50名まで)' : '(月額/50名まで)';
+        } else if (subscription.plan === 'business_legacy') {
+          planType = 'スタータープラン';
+          renewalInfo = '(10名まで)';
+        } else if (subscription.plan === 'business-plus' || subscription.plan === 'business_plus') {
+          planType = 'ビジネスプラン';
+          renewalInfo = '(30名まで)';
         }
         planType = `法人${planType}`;
 
         return {
           text: `${planType} ${renewalInfo}`,
           className: 'bg-blue-100 text-blue-800', // 法人プランは青色
-        };
-      } else {
-        // 個人プラン
-        planType = subscription.plan === 'monthly' ? '月額プラン' : '年額プラン';
-        planType = `個人${planType}`;
-        renewalInfo = subscription.interval === 'year' ? '(1年で自動更新)' : '(1ヶ月で自動更新)';
-
-        return {
-          text: `${planType} ${renewalInfo}`,
-          className: 'bg-green-100 text-green-800', // 個人プランは緑色
         };
       }
     }
