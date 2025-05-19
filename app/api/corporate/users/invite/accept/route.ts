@@ -7,8 +7,19 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
-    // リクエストボディから各フィールドを取得
-    const { token, password, lastName, firstName, lastNameKana, firstNameKana, name } = await request.json();
+    const { token, password, lastName, firstName, lastNameKana, firstNameKana, name } =
+      await request.json();
+
+    // デバッグログ
+    console.log('招待受け入れリクエスト:', {
+      token: token ? '存在します' : '存在しません',
+      password: password ? 'セットされています' : 'セットされていません',
+      lastName,
+      firstName,
+      lastNameKana,
+      firstNameKana,
+      name,
+    });
 
     if (!token || !password) {
       return NextResponse.json({ error: 'トークンとパスワードが必要です' }, { status: 400 });
@@ -38,13 +49,13 @@ export async function POST(request: Request) {
           // 必須フィールド
           password: hashedPassword,
           emailVerified: new Date(), // 認証済みにする
-          
+
           // 姓名と関連フィールド - 送信されていれば更新
           name: fullName || undefined,
           lastName: lastName || undefined,
           firstName: firstName || undefined,
           lastNameKana: lastNameKana || undefined,
-          firstNameKana: firstNameKana || undefined
+          firstNameKana: firstNameKana || undefined,
         },
       }),
       // 使用済みトークンを削除
@@ -52,6 +63,16 @@ export async function POST(request: Request) {
         where: { id: resetToken.id },
       }),
     ]);
+
+    // デバッグログ
+    console.log('ユーザー更新完了:', {
+      userId: resetToken.userId,
+      name: fullName,
+      lastName,
+      firstName,
+      lastNameKana,
+      firstNameKana,
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

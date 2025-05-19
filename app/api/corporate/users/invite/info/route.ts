@@ -28,6 +28,10 @@ export async function GET(request: Request) {
       userId: resetToken.userId,
       email: resetToken.user.email,
       name: resetToken.user.name || '',
+      lastName: resetToken.user.lastName || '',
+      firstName: resetToken.user.firstName || '',
+      lastNameKana: resetToken.user.lastNameKana || '',
+      firstNameKana: resetToken.user.firstNameKana || '',
     });
   } catch (error) {
     console.error('招待情報取得エラー:', error);
