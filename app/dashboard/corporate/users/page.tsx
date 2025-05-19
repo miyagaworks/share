@@ -19,6 +19,7 @@ import {
   HiInformationCircle,
   HiUserCircle,
   HiOfficeBuilding,
+  HiRefresh,
 } from 'react-icons/hi';
 
 // 型定義
@@ -57,6 +58,7 @@ export default function CorporateUsersPage() {
   const [selectedRole, setSelectedRole] = useState<string>('');
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedUser, setSelectedUser] = useState<CorporateUser | null>(null);
+  const [resendingInvites, setResendingInvites] = useState<Record<string, boolean>>({});
 
   // ユーザー情報と部署情報を取得
   useEffect(() => {
@@ -199,9 +201,8 @@ export default function CorporateUsersPage() {
   // 招待再送信処理
   const handleResendInvitation = async (userId: string) => {
     try {
-      // ボタンの状態を「送信中」に変更する変数を追加してもよい
-      // const [isResending, setIsResending] = useState<{[key: string]: boolean}>({});
-      // setIsResending({...isResending, [userId]: true});
+      // 送信中の状態を更新
+      setResendingInvites((prev) => ({ ...prev, [userId]: true }));
 
       const response = await fetch(`/api/corporate/users/${userId}/resend-invite`, {
         method: 'POST',
@@ -238,8 +239,8 @@ export default function CorporateUsersPage() {
       console.error('招待再送信エラー:', err);
       toast.error(err instanceof Error ? err.message : '招待の再送信に失敗しました');
     } finally {
-      // 状態を元に戻す場合
-      // setIsResending({...isResending, [userId]: false});
+      // 送信中の状態を解除
+      setResendingInvites((prev) => ({ ...prev, [userId]: false }));
     }
   };
 
@@ -295,9 +296,9 @@ export default function CorporateUsersPage() {
   // エラー表示
   if (error) {
     return (
-      <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
-        <div className="flex items-start">
-          <HiOutlineExclamation className="h-6 w-6 text-red-600 mr-3" />
+      <div className="bg-red-50 border border-red-200 rounded-lg p-4 md:p-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-start">
+          <HiOutlineExclamation className="h-6 w-6 text-red-600 mr-3 mb-2 md:mb-0" />
           <div>
             <h3 className="text-lg font-medium text-red-800">エラーが発生しました</h3>
             <p className="mt-2 text-red-700">{error}</p>
@@ -313,9 +314,9 @@ export default function CorporateUsersPage() {
   // 管理者権限がない場合
   if (!isAdmin) {
     return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-        <div className="flex items-start">
-          <HiOutlineExclamation className="h-6 w-6 text-yellow-600 mr-3" />
+      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 md:p-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-start">
+          <HiOutlineExclamation className="h-6 w-6 text-yellow-600 mr-3 mb-2 md:mb-0" />
           <div>
             <h3 className="text-lg font-medium text-yellow-800">管理者権限が必要です</h3>
             <p className="mt-2 text-yellow-700">ユーザー管理には法人管理者権限が必要です。</p>
@@ -348,19 +349,21 @@ export default function CorporateUsersPage() {
           </Button>
         </div>
       </div>
+
       {/* 説明セクション */}
       <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 w-full">
         <div className="flex flex-row items-start">
           <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
           <div className="w-full">
             <h3 className="font-medium text-blue-900 mb-1">ユーザー管理について</h3>
-            <p className="text-sm text-corporate-secondary break-words hyphens-auto text-justify">
+            <p className="text-sm text-corporate-secondary break-words hyphens-auto">
               法人アカウントに所属するユーザーを管理できます。招待メールを送信してユーザーを追加したり、
               役割や部署を変更したりすることができます。管理者は全ての操作が可能で、一般メンバーは自身のプロフィールのみ編集できます。
             </p>
           </div>
         </div>
       </div>
+
       {/* ユーザー一覧 - PC表示用テーブル */}
       {users.length > 0 ? (
         <>
@@ -445,7 +448,13 @@ export default function CorporateUsersPage() {
                                 size="sm"
                                 className="text-blue-600 hover:text-blue-800 mr-2"
                                 onClick={() => handleResendInvitation(user.id)}
+                                disabled={resendingInvites[user.id]}
                               >
+                                {resendingInvites[user.id] ? (
+                                  <Spinner size="sm" className="mr-1" />
+                                ) : (
+                                  <HiRefresh className="h-4 w-4 mr-1" />
+                                )}
                                 招待再送
                               </Button>
                             )}
@@ -488,7 +497,7 @@ export default function CorporateUsersPage() {
             </div>
           </div>
 
-          {/* ユーザー一覧 - スマホ表示用カード */}
+          {/* ユーザー一覧 - スマホ表示用カード（改善） */}
           <div className="block sm:hidden space-y-4 w-full">
             {users.map((user) => (
               <div key={user.id} className="bg-white rounded-lg border border-gray-200 p-4 w-full">
@@ -514,19 +523,19 @@ export default function CorporateUsersPage() {
                   </div>
                 </div>
 
-                <div className="space-y-1 mb-3">
+                <div className="space-y-2 mb-4">
                   <div className="flex items-start">
-                    <HiMail className="h-4 w-4 text-gray-500 mt-0.5 mr-2" />
+                    <HiMail className="h-4 w-4 text-gray-500 mt-0.5 mr-2 flex-shrink-0" />
                     <span className="text-sm text-gray-900 break-all">{user.email}</span>
                   </div>
                   <div className="flex items-start">
-                    <HiOfficeBuilding className="h-4 w-4 text-gray-500 mt-0.5 mr-2" />
+                    <HiOfficeBuilding className="h-4 w-4 text-gray-500 mt-0.5 mr-2 flex-shrink-0" />
                     <span className="text-sm text-gray-900">
                       {user.department ? user.department.name : '未所属'}
                     </span>
                   </div>
                   <div className="flex items-start">
-                    <HiUserGroup className="h-4 w-4 text-gray-500 mt-0.5 mr-2" />
+                    <HiUserGroup className="h-4 w-4 text-gray-500 mt-0.5 mr-2 flex-shrink-0" />
                     <span
                       className={`px-2 py-1 inline-flex text-xs leading-5 font-semibold rounded-full ${
                         user.corporateRole === 'admin'
@@ -539,51 +548,61 @@ export default function CorporateUsersPage() {
                   </div>
                 </div>
 
-                {/* スマホ表示のボタン部分 */}
-                <div className="flex items-center justify-end space-x-2">
+                {/* スマホ表示のボタン部分（改善） */}
+                <div className="flex items-center justify-end space-x-2 border-t pt-3 mt-2">
                   {/* 招待中のユーザーに対しては招待再送ボタンを表示 */}
                   {user.isInvited && (
                     <Button
-                      variant="ghost"
+                      variant="outline"
                       size="sm"
-                      className="text-blue-600 hover:text-blue-800 mr-2"
+                      className="text-blue-600 border-blue-200"
                       onClick={() => handleResendInvitation(user.id)}
+                      disabled={resendingInvites[user.id]}
                     >
-                      招待再送
+                      {resendingInvites[user.id] ? (
+                        <>
+                          <Spinner size="sm" className="mr-1" />
+                          送信中...
+                        </>
+                      ) : (
+                        <>
+                          <HiRefresh className="h-4 w-4 mr-1" />
+                          招待再送
+                        </>
+                      )}
                     </Button>
                   )}
 
                   {/* 全てのユーザーに対して編集ボタンを表示 */}
                   <Button
-                    variant="ghost"
+                    variant="outline"
                     size="sm"
-                    className="text-blue-600 hover:text-blue-800 mr-2"
+                    className="text-blue-600 border-blue-200"
                     onClick={() => handleEditUser(user)}
                   >
-                    <HiPencil className="h-4 w-4" />
+                    <HiPencil className="h-4 w-4 mr-1" />
+                    編集
                   </Button>
 
                   {/* 管理者の場合は削除ボタンを無効化 */}
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className={`${
-                      user.corporateRole === 'admin'
-                        ? 'text-gray-400 cursor-not-allowed'
-                        : 'text-red-600 hover:text-red-800'
-                    }`}
-                    onClick={() => user.corporateRole !== 'admin' && handleDeleteUser(user)}
-                    title={user.corporateRole === 'admin' ? '管理者は削除できません' : '削除'}
-                  >
-                    <HiTrash className="h-4 w-4" />
-                  </Button>
+                  {user.corporateRole !== 'admin' && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-red-600 border-red-200"
+                      onClick={() => handleDeleteUser(user)}
+                    >
+                      <HiTrash className="h-4 w-4 mr-1" />
+                      削除
+                    </Button>
+                  )}
                 </div>
               </div>
             ))}
           </div>
         </>
       ) : (
-        <div className="bg-white rounded-lg border border-gray-200 p-8 text-center w-full">
+        <div className="bg-white rounded-lg border border-gray-200 p-6 md:p-8 text-center w-full">
           <div className="mx-auto w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center">
             <HiUser className="h-6 w-6 text-blue-600" />
           </div>
@@ -597,19 +616,20 @@ export default function CorporateUsersPage() {
           </Button>
         </div>
       )}
-      {/* 役割編集ダイアログ */}
+
+      {/* 役割編集ダイアログ（レスポンシブ改善） */}
       <Dialog open={isEditRoleDialogOpen} onOpenChange={setIsEditRoleDialogOpen}>
-        <div className="p-6">
+        <div className="p-4 sm:p-6 w-full max-w-md mx-auto">
           <h2 className="text-xl font-bold mb-4">ユーザー情報を編集</h2>
           {selectedUser && (
             <div className="space-y-4">
               <div className="flex items-center mb-4">
-                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 mr-3">
+                <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center text-gray-500 mr-3 flex-shrink-0">
                   <HiUserCircle className="h-8 w-8" />
                 </div>
-                <div>
-                  <div className="font-medium">{selectedUser.name}</div>
-                  <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                <div className="overflow-hidden">
+                  <div className="font-medium truncate">{selectedUser.name}</div>
+                  <div className="text-sm text-gray-500 truncate">{selectedUser.email}</div>
                 </div>
               </div>
 
@@ -619,12 +639,12 @@ export default function CorporateUsersPage() {
                   value={selectedRole}
                   onChange={(e) => setSelectedRole(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isUpdating}
                 >
                   <option value="admin">管理者（全ての権限）</option>
                   <option value="member">メンバー（通常権限）</option>
                   <option value="restricted">制限付き（閲覧のみ）</option>
                 </select>
-                {/* 警告メッセージを削除 */}
               </div>
 
               <div className="space-y-2">
@@ -633,6 +653,7 @@ export default function CorporateUsersPage() {
                   value={selectedDepartmentId}
                   onChange={(e) => setSelectedDepartmentId(e.target.value)}
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  disabled={isUpdating}
                 >
                   <option value="">部署なし</option>
                   {departments && departments.length > 0 ? (
@@ -660,6 +681,7 @@ export default function CorporateUsersPage() {
                     setSelectedUser(null);
                   }}
                   type="button"
+                  disabled={isUpdating}
                 >
                   キャンセル
                 </Button>
@@ -683,9 +705,10 @@ export default function CorporateUsersPage() {
           )}
         </div>
       </Dialog>
-      {/* 削除確認ダイアログ */}
+
+      {/* 削除確認ダイアログ（レスポンシブ改善） */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
-        <div className="p-6">
+        <div className="p-4 sm:p-6 w-full max-w-md mx-auto">
           <h2 className="text-xl font-bold mb-4">ユーザーを削除</h2>
           {selectedUser && (
             <>
@@ -694,14 +717,16 @@ export default function CorporateUsersPage() {
                   <HiOutlineExclamation className="h-5 w-5 text-red-600 mr-3 flex-shrink-0 mt-0.5" />
                   <div>
                     <p className="text-sm text-red-700">
-                      <strong>{selectedUser.name}</strong> ({selectedUser.email}) を削除します。
+                      <strong className="break-words">{selectedUser.name}</strong>
                       <br />
-                      この操作は元に戻せません。
+                      <span className="break-all">({selectedUser.email})</span>
+                      <br />
+                      を削除します。この操作は元に戻せません。
                     </p>
                   </div>
                 </div>
               </div>
-              <div className="flex justify-end space-x-3">
+              <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                 <Button
                   variant="outline"
                   onClick={() => {
@@ -709,11 +734,12 @@ export default function CorporateUsersPage() {
                     setSelectedUser(null); // 選択ユーザーもクリア
                   }}
                   type="button"
+                  className="w-full sm:w-auto"
                 >
                   キャンセル
                 </Button>
                 <Button
-                  className="bg-red-600 hover:bg-red-700 text-white"
+                  className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
                   onClick={handleConfirmDelete}
                   type="button"
                 >
