@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import { logUserActivity } from '@/lib/utils/activity-logger';
 import { checkPermanentAccess } from '@/lib/corporateAccessState';
+import { getInviteEmailTemplate } from '@/lib/email/templates/invite-email';
 
 // ユーザー情報を更新するAPI（役割と部署の変更）
 export async function PATCH(request: Request, { params }: { params: { id: string } }) {
@@ -338,18 +339,17 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const inviteUrl = `${normalizedBaseUrl}/auth/invite?token=${token}`;
 
     // メール送信
+    const emailTemplate = getInviteEmailTemplate({
+      companyName: corporateTenant.name,
+      inviteUrl: inviteUrl,
+      email: targetUser.email,
+    });
+
     await sendEmail({
       to: targetUser.email,
-      subject: `${corporateTenant.name}からの招待（再送信）`,
-      text: `${corporateTenant.name}に招待されました。以下のリンクからアクセスしてください。\n\n${inviteUrl}\n\nこのリンクは72時間有効です。`,
-      html: `
-        <div>
-          <h1>${corporateTenant.name}からの招待（再送信）</h1>
-          <p>${corporateTenant.name}に招待されました。以下のリンクからアクセスしてください。</p>
-          <p><a href="${inviteUrl}">招待を受け入れる</a></p>
-          <p>このリンクは72時間有効です。</p>
-        </div>
-      `,
+      subject: emailTemplate.subject + '（再送信）',
+      text: emailTemplate.text,
+      html: emailTemplate.html,
     });
 
     // ユーザー情報を更新

@@ -20,7 +20,10 @@ function InvitePageContent() {
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [firstName, setFirstName] = useState('');
+  const [lastNameKana, setLastNameKana] = useState('');
+  const [firstNameKana, setFirstNameKana] = useState('');
   const [email, setEmail] = useState('');
   // userIdは実際に使用する場合のみコメントを外してください
   // const [userId, setUserId] = useState('');
@@ -60,7 +63,19 @@ function InvitePageContent() {
 
         // ユーザー情報をセット
         setEmail(userData.email || '');
-        setName(userData.name || '');
+
+        // 名前情報がある場合は分割して設定
+        if (userData.name) {
+          const nameParts = userData.name.split(' ');
+          if (nameParts.length >= 2) {
+            setLastName(nameParts[0] || '');
+            setFirstName(nameParts[1] || '');
+          } else {
+            // 分割できない場合は姓のみにセット
+            setLastName(userData.name);
+          }
+        }
+
         // ここでuserIdを設定するため、setUserIdを使用
         // setUserId(userData.userId || '');
         setIsValid(true);
@@ -93,13 +108,17 @@ function InvitePageContent() {
     setIsLoading(true);
 
     try {
+      // ここで姓と名を結合して完全な名前を作成
+      const fullName = `${lastName} ${firstName}`;
+
       // パスワードを設定し、招待を完了する
       const response = await fetch('/api/corporate/users/invite/accept', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ token, password, name }),
+        // ここでnameの代わりにfullNameを使用
+        body: JSON.stringify({ token, password, name: fullName }),
       });
 
       const data = await response.json();
@@ -201,7 +220,7 @@ function InvitePageContent() {
               className="mx-auto"
               priority
             />
-            <h2 className="text-3xl font-bold text-gray-900">招待を受け入れる</h2>
+            <h2 className="text-3xl mt-8 font-bold text-gray-900">招待を受け入れる</h2>
             <p className="mt-2 text-gray-600">アカウント情報を入力して設定を完了してください</p>
           </div>
 
@@ -238,15 +257,52 @@ function InvitePageContent() {
             </div>
 
             <div>
-              <Input
-                label="お名前"
-                type="text"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-                className="bg-white"
-                placeholder="山田 太郎"
-              />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <Input
+                    label="姓"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    required
+                    className="bg-white"
+                    placeholder="山田"
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="名"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    required
+                    className="bg-white"
+                    placeholder="太郎"
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="姓（フリガナ）"
+                    type="text"
+                    value={lastNameKana}
+                    onChange={(e) => setLastNameKana(e.target.value)}
+                    required
+                    className="bg-white"
+                    placeholder="ヤマダ"
+                  />
+                </div>
+                <div>
+                  <Input
+                    label="名（フリガナ）"
+                    type="text"
+                    value={firstNameKana}
+                    onChange={(e) => setFirstNameKana(e.target.value)}
+                    required
+                    className="bg-white"
+                    placeholder="タロウ"
+                  />
+                </div>
+              </div>
             </div>
 
             <div>

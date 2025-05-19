@@ -6,6 +6,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import { logUserActivity } from '@/lib/utils/activity-logger';
+import { getInviteEmailTemplate } from '@/lib/email/templates/invite-email';
 
 // POSTリクエストでユーザー招待を処理
 export async function POST(request: Request) {
@@ -135,18 +136,17 @@ export async function POST(request: Request) {
         const inviteUrl = `${normalizedBaseUrl}/auth/invite?token=${token}`;
 
         // メール送信
+        const emailTemplate = getInviteEmailTemplate({
+          companyName: corporateTenant.name,
+          inviteUrl: inviteUrl,
+          email: email,
+        });
+
         await sendEmail({
           to: email,
-          subject: `${corporateTenant.name}からの招待`,
-          text: `${corporateTenant.name}に招待されました。以下のリンクからアクセスしてください。\n\n${inviteUrl}\n\nこのリンクは72時間有効です。`,
-          html: `
-            <div>
-              <h1>${corporateTenant.name}からの招待</h1>
-              <p>${corporateTenant.name}に招待されました。以下のリンクからアクセスしてください。</p>
-              <p><a href="${inviteUrl}">招待を受け入れる</a></p>
-              <p>このリンクは72時間有効です。</p>
-            </div>
-          `,
+          subject: emailTemplate.subject,
+          text: emailTemplate.text,
+          html: emailTemplate.html,
         });
 
         // デバッグログ

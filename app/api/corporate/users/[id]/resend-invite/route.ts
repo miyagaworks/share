@@ -5,6 +5,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
+import { getInviteEmailTemplate } from '@/lib/email/templates/invite-email';
 
 export async function POST(request: Request, { params }: { params: { id: string } }) {
   try {
@@ -64,18 +65,17 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const inviteUrl = `${normalizedBaseUrl}/auth/invite?token=${token}`;
 
     // メール送信
+    const emailTemplate = getInviteEmailTemplate({
+      companyName: user.tenant.name,
+      inviteUrl: inviteUrl,
+      email: user.email,
+    });
+
     await sendEmail({
       to: user.email,
-      subject: `${user.tenant.name}からの招待（再送信）`,
-      text: `${user.tenant.name}に招待されました。以下のリンクからアクセスしてください。\n\n${inviteUrl}\n\nこのリンクは72時間有効です。`,
-      html: `
-        <div>
-          <h1>${user.tenant.name}からの招待（再送信）</h1>
-          <p>${user.tenant.name}に招待されました。以下のリンクからアクセスしてください。</p>
-          <p><a href="${inviteUrl}">招待を受け入れる</a></p>
-          <p>このリンクは72時間有効です。</p>
-        </div>
-      `,
+      subject: emailTemplate.subject + '（再送信）',
+      text: emailTemplate.text,
+      html: emailTemplate.html,
     });
 
     // ユーザー情報を更新
