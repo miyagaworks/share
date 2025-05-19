@@ -20,6 +20,7 @@ function InvitePageContent() {
   const [error, setError] = useState<string | null>(null);
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  // 名前関連のステートを追加
   const [lastName, setLastName] = useState('');
   const [firstName, setFirstName] = useState('');
   const [lastNameKana, setLastNameKana] = useState('');
@@ -108,17 +109,23 @@ function InvitePageContent() {
     setIsLoading(true);
 
     try {
-      // ここで姓と名を結合して完全な名前を作成
-      const fullName = `${lastName} ${firstName}`;
-
       // パスワードを設定し、招待を完了する
       const response = await fetch('/api/corporate/users/invite/accept', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        // ここでnameの代わりにfullNameを使用
-        body: JSON.stringify({ token, password, name: fullName }),
+        body: JSON.stringify({
+          token,
+          password,
+          // 姓名とフリガナを個別に送信
+          lastName,
+          firstName,
+          lastNameKana,
+          firstNameKana,
+          // フルネームも念のため送信
+          name: `${lastName} ${firstName}`.trim(),
+        }),
       });
 
       const data = await response.json();
@@ -256,52 +263,50 @@ function InvitePageContent() {
               <p className="mt-1 text-xs text-gray-500">招待時のメールアドレスが設定されています</p>
             </div>
 
-            <div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <Input
-                    label="姓"
-                    type="text"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
-                    required
-                    className="bg-white"
-                    placeholder="山田"
-                  />
-                </div>
-                <div>
-                  <Input
-                    label="名"
-                    type="text"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
-                    required
-                    className="bg-white"
-                    placeholder="太郎"
-                  />
-                </div>
-                <div>
-                  <Input
-                    label="姓（フリガナ）"
-                    type="text"
-                    value={lastNameKana}
-                    onChange={(e) => setLastNameKana(e.target.value)}
-                    required
-                    className="bg-white"
-                    placeholder="ヤマダ"
-                  />
-                </div>
-                <div>
-                  <Input
-                    label="名（フリガナ）"
-                    type="text"
-                    value={firstNameKana}
-                    onChange={(e) => setFirstNameKana(e.target.value)}
-                    required
-                    className="bg-white"
-                    placeholder="タロウ"
-                  />
-                </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Input
+                  label="姓"
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  required
+                  className="bg-white"
+                  placeholder="山田"
+                />
+              </div>
+              <div>
+                <Input
+                  label="名"
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  required
+                  className="bg-white"
+                  placeholder="太郎"
+                />
+              </div>
+              <div>
+                <Input
+                  label="姓（フリガナ）"
+                  type="text"
+                  value={lastNameKana}
+                  onChange={(e) => setLastNameKana(e.target.value)}
+                  required
+                  className="bg-white"
+                  placeholder="ヤマダ"
+                />
+              </div>
+              <div>
+                <Input
+                  label="名（フリガナ）"
+                  type="text"
+                  value={firstNameKana}
+                  onChange={(e) => setFirstNameKana(e.target.value)}
+                  required
+                  className="bg-white"
+                  placeholder="タロウ"
+                />
               </div>
             </div>
 

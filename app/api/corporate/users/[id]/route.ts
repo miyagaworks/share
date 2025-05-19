@@ -342,7 +342,6 @@ export async function POST(request: Request, { params }: { params: { id: string 
     const emailTemplate = getInviteEmailTemplate({
       companyName: corporateTenant.name,
       inviteUrl: inviteUrl,
-      email: targetUser.email,
     });
 
     await sendEmail({

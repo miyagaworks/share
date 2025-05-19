@@ -139,7 +139,6 @@ export async function POST(request: Request) {
         const emailTemplate = getInviteEmailTemplate({
           companyName: corporateTenant.name,
           inviteUrl: inviteUrl,
-          email: email,
         });
 
         await sendEmail({

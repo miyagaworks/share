@@ -7,7 +7,8 @@ import bcrypt from 'bcryptjs';
 
 export async function POST(request: Request) {
   try {
-    const { token, password, name } = await request.json();
+    // リクエストボディから各フィールドを取得
+    const { token, password, lastName, firstName, lastNameKana, firstNameKana, name } = await request.json();
 
     if (!token || !password) {
       return NextResponse.json({ error: 'トークンとパスワードが必要です' }, { status: 400 });
@@ -25,15 +26,25 @@ export async function POST(request: Request) {
     // パスワードをハッシュ化
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // 姓名を結合したname値の生成（必要な場合）
+    const fullName = name || `${lastName || ''} ${firstName || ''}`.trim();
+
     // トランザクションでユーザー情報を更新
     await prisma.$transaction([
       // ユーザー情報を更新
       prisma.user.update({
         where: { id: resetToken.userId },
         data: {
-          name: name || undefined,
+          // 必須フィールド
           password: hashedPassword,
           emailVerified: new Date(), // 認証済みにする
+          
+          // 姓名と関連フィールド - 送信されていれば更新
+          name: fullName || undefined,
+          lastName: lastName || undefined,
+          firstName: firstName || undefined,
+          lastNameKana: lastNameKana || undefined,
+          firstNameKana: firstNameKana || undefined
         },
       }),
       // 使用済みトークンを削除

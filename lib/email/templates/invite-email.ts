@@ -3,15 +3,11 @@
 interface InviteEmailParams {
   companyName: string;
   inviteUrl: string;
-  email?: string;
 }
 
 export function getInviteEmailTemplate(params: InviteEmailParams) {
-  const { companyName, inviteUrl, email } = params;
+  const { companyName, inviteUrl } = params;
   const siteName = 'Share';
-
-  // emailを使用する例（もし必要なら）
-  const personalizedGreeting = email ? `${email}様` : '';
 
   const html = `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e0e0e0; border-radius: 5px;">
@@ -59,8 +55,7 @@ export function getInviteEmailTemplate(params: InviteEmailParams) {
     `;
 
   // テキスト形式のメール内容
-  const text = `${personalizedGreeting ? `${personalizedGreeting}\n\n` : ''}${companyName}からの招待
-
+  const text = `${companyName}からの招待
   
   ${companyName}に招待されました。
   以下のリンクからアクセスして、アカウント情報を設定してください。
