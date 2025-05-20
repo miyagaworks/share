@@ -36,6 +36,14 @@ export async function sendEmail(options: EmailOptions) {
     return { success: true, messageId: 'dev-environment-skip' };
   }
 
+  // ここにログを追加
+  console.log('メール送信準備:', {
+    to: options.to,
+    subject: options.subject,
+    resendApiKey: process.env.RESEND_API_KEY ? '設定済み' : '未設定',
+    env: process.env.NODE_ENV,
+  });
+
   try {
     // タイムアウトを防ぐためのシンプルな再試行ロジック
     let retries = 3;

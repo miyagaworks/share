@@ -12,6 +12,7 @@ import { getInviteEmailTemplate } from '@/lib/email/templates/invite-email';
 export async function POST(request: Request) {
   try {
     console.log('[API] /api/corporate/users/invite POSTリクエスト受信');
+    console.log('リクエストボディ:', await request.clone().text());
 
     // セッション認証チェック
     const session = await auth();
@@ -138,6 +139,11 @@ export async function POST(request: Request) {
         // メール送信
         const emailTemplate = getInviteEmailTemplate({
           companyName: corporateTenant.name,
+          inviteUrl: inviteUrl,
+        });
+
+        console.log('招待メールテンプレート生成:', {
+          subject: emailTemplate.subject,
           inviteUrl: inviteUrl,
         });
 

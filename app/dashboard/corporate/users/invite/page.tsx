@@ -34,8 +34,9 @@ export default function InviteUserPage() {
   const [departmentId, setDepartmentId] = useState<string>('');
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [departments, setDepartments] = useState<Department[]>([]);
 
-  // テナント情報を取得
+  // テナント情報と部署情報を取得
   useEffect(() => {
     const fetchTenantData = async () => {
       if (!session?.user?.id) return;
@@ -44,24 +45,43 @@ export default function InviteUserPage() {
         setIsLoading(true);
 
         // テナント情報取得API
-        const response = await fetch('/api/corporate/tenant');
+        const tenantResponse = await fetch('/api/corporate/tenant');
 
-        if (!response.ok) {
+        if (!tenantResponse.ok) {
           throw new Error('テナント情報の取得に失敗しました');
         }
 
-        const data = await response.json();
+        const tenantData = await tenantResponse.json();
 
         // 管理者権限がない場合はリダイレクト
-        if (data.userRole !== 'admin') {
+        if (tenantData.userRole !== 'admin') {
           router.push('/dashboard/corporate/users');
           return;
         }
 
-        setTenantData({
-          ...data.tenant,
-          currentUserCount: data.tenant.users.length,
-        });
+        // 部署情報取得API
+        const deptResponse = await fetch('/api/corporate/departments');
+
+        if (!deptResponse.ok) {
+          console.error('部署情報取得エラー:', await deptResponse.json().catch(() => ({})));
+          toast.error('部署情報の取得に失敗しました。一部の機能が制限されます');
+
+          setTenantData({
+            ...tenantData.tenant,
+            currentUserCount: tenantData.tenant.users?.length || 0,
+            departments: [], // 空の配列をセット
+          });
+        } else {
+          const deptData = await deptResponse.json();
+          const departments = deptData.departments || [];
+
+          setDepartments(departments);
+          setTenantData({
+            ...tenantData.tenant,
+            currentUserCount: tenantData.tenant.users?.length || 0,
+            departments: departments,
+          });
+        }
 
         setError(null);
       } catch (err) {
@@ -195,6 +215,9 @@ export default function InviteUserPage() {
     );
   }
 
+  // 部署情報のデバッグ出力
+  console.log('使用可能な部署:', departments || []);
+
   return (
     <div className="space-y-6">
       {/* ヘッダー部分 */}
@@ -250,7 +273,6 @@ export default function InviteUserPage() {
                 >
                   <option value="member">メンバー（通常権限）</option>
                   <option value="admin">管理者（全ての権限）</option>
-                  <option value="restricted">制限付き（閲覧のみ）</option>
                 </select>
               </div>
 
@@ -268,12 +290,21 @@ export default function InviteUserPage() {
                   className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
                 >
                   <option value="">部署を選択（任意）</option>
-                  {tenantData.departments.map((dept) => (
-                    <option key={dept.id} value={dept.id}>
-                      {dept.name}
-                    </option>
-                  ))}
+                  {departments && departments.length > 0 ? (
+                    departments.map((dept) => (
+                      <option key={dept.id} value={dept.id}>
+                        {dept.name}
+                      </option>
+                    ))
+                  ) : (
+                    <option disabled>部署が登録されていません</option>
+                  )}
                 </select>
+                {departments.length === 0 && (
+                  <p className="text-xs text-yellow-600 mt-1">
+                    部署が登録されていません。部署管理ページで部署を登録してください。
+                  </p>
+                )}
               </div>
             </div>
 
