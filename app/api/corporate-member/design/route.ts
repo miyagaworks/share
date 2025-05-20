@@ -63,6 +63,8 @@ export async function GET() {
         id: tenant.id,
         name: tenant.name,
         logoUrl: tenant.logoUrl,
+        logoWidth: tenant.logoWidth, // 追加
+        logoHeight: tenant.logoHeight, // 追加
         primaryColor: tenant.primaryColor,
         secondaryColor: tenant.secondaryColor,
         headerText: tenant.headerText || null,

@@ -24,8 +24,12 @@ export async function GET() {
             id: true,
             name: true,
             logoUrl: true,
+            logoWidth: true, // 追加
+            logoHeight: true, // 追加
             primaryColor: true,
             secondaryColor: true,
+            headerText: true, // 追加
+            textColor: true, // 追加
           },
         },
         adminOfTenant: {
@@ -33,8 +37,12 @@ export async function GET() {
             id: true,
             name: true,
             logoUrl: true,
+            logoWidth: true, // 追加
+            logoHeight: true, // 追加
             primaryColor: true,
             secondaryColor: true,
+            headerText: true, // 追加
+            textColor: true, // 追加
           },
         },
       },

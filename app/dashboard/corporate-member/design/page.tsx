@@ -293,20 +293,20 @@ export default function ImprovedCorporateMemberDesignPage() {
                     primaryColor={tenantData.primaryColor || '#1E3A8A'}
                     secondaryColor={tenantData.secondaryColor || '#1E40AF'}
                     logoUrl={tenantData.logoUrl}
-                    logoWidth={tenantData.logoWidth}
-                    logoHeight={tenantData.logoHeight}
+                    logoWidth={tenantData.logoWidth} // デフォルト値を削除して実際の値を使用
+                    logoHeight={tenantData.logoHeight} // デフォルト値を削除して実際の値を使用
                     tenantName={tenantData.name}
                     userName={userData.name || '名前未設定'}
                     userNameEn={userData.nameEn}
                     userImage={userData.image}
-                    headerText={tenantData.headerText}
+                    headerText={tenantData.headerText || ''} // 空文字をデフォルト値に
                     textColor={tenantData.textColor || '#FFFFFF'}
                     snsIconColor={designData.snsIconColor}
-                    department={userData.department?.name}
-                    position={userData.position}
-                    bio={userData.bio}
-                    bioBackgroundColor={designData.bioBackgroundColor}
-                    bioTextColor={designData.bioTextColor}
+                    department={userData.department?.name || ''} // 未設定の場合は空文字
+                    position={userData.position || ''} // 未設定の場合は空文字
+                    bio={userData.bio || ''} // 未設定の場合は空文字
+                    bioBackgroundColor={designData.bioBackgroundColor || '#FFFFFF'}
+                    bioTextColor={designData.bioTextColor || '#333333'}
                     highlightSns={activeTab === 'sns'}
                     highlightBio={activeTab === 'bio'}
                   />

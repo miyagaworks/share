@@ -306,11 +306,12 @@ export default function CorporateMemberSharePage() {
                     {/* QRコードデザイナーボタン */}
                     <div className="mb-6">
                       <Link
-                        href="/qrcode"
+                        href={`/dashboard/corporate-member/share/qrcode?slug=${shareSettings?.slug || ''}`}
                         className="inline-flex items-center justify-center w-full bg-[#1E3A8A] hover:bg-[#122153] text-white px-4 py-3 rounded-md transition-colors"
+                        aria-label="QRコードデザイナーを開く"
                       >
                         <HiQrcode className="mr-2 h-5 w-5" />
-                        QRコードデザイナーを使用する
+                        <span>QRコードデザイナーを使用する</span>
                         <HiExternalLink className="ml-2 h-4 w-4" />
                       </Link>
                     </div>

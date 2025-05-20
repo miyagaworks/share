@@ -52,16 +52,16 @@ export function BrandingPreview({
   tenantName,
   userName,
   userNameEn,
-  userImage = null,
+  userImage,
   headerText,
   textColor = '#FFFFFF',
   snsIconColor = '#333333',
-  bio = '自己紹介文',
+  bio,
   bioBackgroundColor = '#FFFFFF',
   bioTextColor = '#333333',
   corporateSnsLinks = [],
   personalSnsLinks = [],
-  department = '営業部',
+  department = '', // デフォルト値を'営業部'から空に変更
   position,
   highlightSns = false,
   highlightBio = false,
@@ -168,14 +168,14 @@ export function BrandingPreview({
               <Image
                 src={logoUrl}
                 alt={`${tenantName}のロゴ`}
-                width={logoWidth || 400}
-                height={logoHeight || 400}
+                width={logoWidth}
+                height={logoHeight}
                 className="object-contain"
                 style={{
-                  width: 'auto',
-                  height: 'auto',
+                  width: logoWidth ? `${logoWidth}px` : 'auto', // 実際のサイズを指定
+                  height: logoHeight ? `${logoHeight}px` : 'auto', // 実際のサイズを指定
                   maxWidth: '100%',
-                  maxHeight: '100%',
+                  maxHeight: '80px', // コンテナの高さに合わせて調整
                 }}
                 priority
               />
