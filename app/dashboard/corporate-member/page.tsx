@@ -227,9 +227,13 @@ export default function CorporateMemberPage() {
                 <Image
                   src={tenantData.logoUrl}
                   alt={tenantData.name}
-                  width={56}
-                  height={56}
-                  className="object-contain"
+                  width={40} // サイズを縮小
+                  height={40} // サイズを縮小
+                  className="object-contain w-10 h-10" // 明示的にサイズを制限
+                  style={{
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                  }}
                 />
               </div>
             ) : (

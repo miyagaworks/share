@@ -361,13 +361,20 @@ export default function CorporateDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center">
             <div className="flex items-center mb-2 sm:mb-0">
               {displayTenant.logoUrl ? (
-                <div className="rounded-full p-2 bg-gray-50 mr-3">
+                <div
+                  className="rounded-full p-2 bg-gray-50 mr-3 flex items-center justify-center"
+                  style={{ width: '48px', height: '48px' }}
+                >
                   <Image
                     src={displayTenant.logoUrl}
                     alt={`${displayTenant.name}のロゴ`}
-                    width={48}
-                    height={48}
-                    className="h-10 w-10 sm:h-12 sm:w-12 rounded-full object-contain"
+                    width={36} // サイズを縮小
+                    height={36} // サイズを縮小
+                    className="rounded-full object-contain w-8 h-8" // サイズを明示的に制限
+                    style={{
+                      maxWidth: '100%',
+                      maxHeight: '100%',
+                    }}
                   />
                 </div>
               ) : (

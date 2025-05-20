@@ -486,13 +486,24 @@ export const checkCorporateAccess = async (force = false) => {
       }
 
       // 状態更新
+      // userRoleが'member'の場合はhasAccessをtrueに設定する
+      const userRole = data.userRole || data.role || null;
+      let hasAccess = accessResult;
+
+      // 一般メンバー（member）の場合もアクセス権をtrueに設定
+      if (userRole === 'member' && hasAccess === null) {
+        hasAccess = true;
+        logDebug('メンバーロールを検出、法人アクセス権を付与', { userRole });
+      }
+
+      // 状態更新
       updateCorporateAccessState({
-        hasAccess: accessResult,
+        hasAccess: hasAccess, // 修正：メンバーロールの場合に強制的にtrueにする
         isAdmin: data.isAdmin === true,
-        isSuperAdmin: isSuperAdmin, // 修正: スーパー管理者状態を適切に設定
+        isSuperAdmin: isSuperAdmin,
         isPermanentUser: permanent,
         tenantId: finalTenantId,
-        userRole: data.userRole || data.role || null,
+        userRole: userRole,
         error: null,
         lastChecked: now,
       });

@@ -97,41 +97,54 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       label: '概要',
       href: '/dashboard/corporate-member',
       icon: <HiUser className="w-5 h-5 text-corporate-primary" />,
+      adminOnly: false, // すべてのユーザーがアクセス可能
     },
     {
       label: 'プロフィール編集',
       href: '/dashboard/corporate-member/profile',
       icon: <HiUser className="w-5 h-5 text-corporate-primary" />,
+      adminOnly: false, // すべてのユーザーがアクセス可能
     },
     {
       label: 'SNS・リンク管理',
       href: '/dashboard/corporate-member/links',
       icon: <HiLink className="w-5 h-5 text-corporate-primary" />,
+      adminOnly: false, // すべてのユーザーがアクセス可能
     },
     {
       label: 'デザイン設定',
       href: '/dashboard/corporate-member/design',
       icon: <HiColorSwatch className="w-5 h-5 text-corporate-primary" />,
+      adminOnly: false, // すべてのユーザーがアクセス可能
     },
     {
       label: '共有設定',
       href: '/dashboard/corporate-member/share',
       icon: <HiShare className="w-5 h-5 text-corporate-primary" />,
+      adminOnly: false, // すべてのユーザーがアクセス可能
     },
     {
       label: '法人ダッシュボード',
       href: '/dashboard/corporate',
       icon: <HiOfficeBuilding className="w-5 h-5 text-corporate-primary" />,
-      // 管理者のみに表示する場合は条件付きで表示
-      adminOnly: true,
+      adminOnly: true, // 管理者のみアクセス可能
     },
   ];
 
-  // 管理者権限に基づいてフィルタリング
-  const filteredNavItems = navItems.filter(
-    (item) => !item.adminOnly || corporateAccessState.isAdmin,
-  );
+  console.log('corporateAccessState:', corporateAccessState);
+  console.log('フィルタリング前のnavItems:', navItems);
 
+  // 管理者権限に基づいてフィルタリング
+  const filteredNavItems = navItems.filter((item) => {
+    // adminOnlyフラグがない項目はすべて表示
+    if (!item.adminOnly) return true;
+
+    // adminOnlyがあり、かつユーザーが管理者の場合のみ表示
+    return item.adminOnly && corporateAccessState.isAdmin;
+  });
+
+  console.log('フィルタリング後のfilteredNavItems:', filteredNavItems);
+  
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
