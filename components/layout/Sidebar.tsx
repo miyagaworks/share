@@ -4,7 +4,16 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { HiChevronLeft, HiChevronRight, HiHome, HiOfficeBuilding, HiUser } from 'react-icons/hi';
+import {
+  HiChevronLeft,
+  HiChevronRight,
+  HiHome,
+  HiOfficeBuilding,
+  HiUser,
+  HiLink,
+  HiColorSwatch,
+  HiShare,
+} from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { corporateAccessState } from '@/lib/corporateAccessState';
@@ -28,6 +37,9 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   const [isMounted, setIsMounted] = useState(false);
   // 永久利用権ユーザー状態
   const [isPermanentUser, setIsPermanentUser] = useState(false);
+  // 招待メンバーかどうか
+  const isInvitedMember =
+    corporateAccessState.userRole === 'member' && !corporateAccessState.isAdmin;
 
   // 現在の URL パスをチェック
   const isCorporateSection = pathname?.startsWith('/dashboard/corporate');
@@ -68,6 +80,164 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     );
   }
 
+  // 法人メンバーセクションにいて、招待メンバーの場合は専用のメニューを表示
+  if (isCorporateMemberSection && isInvitedMember) {
+    // 招待メンバー向けの専用メニュー（上部メニューと同じ項目）
+    const memberMenuItems: SidebarItem[] = [
+      {
+        title: '概要',
+        href: '/dashboard/corporate-member',
+        icon: <HiUser className="h-5 w-5 text-corporate-primary" />,
+      },
+      {
+        title: 'プロフィール編集',
+        href: '/dashboard/corporate-member/profile',
+        icon: <HiUser className="h-5 w-5 text-corporate-primary" />,
+      },
+      {
+        title: 'SNS・リンク管理',
+        href: '/dashboard/corporate-member/links',
+        icon: <HiLink className="h-5 w-5 text-corporate-primary" />,
+      },
+      {
+        title: 'デザイン設定',
+        href: '/dashboard/corporate-member/design',
+        icon: <HiColorSwatch className="h-5 w-5 text-corporate-primary" />,
+      },
+      {
+        title: '共有設定',
+        href: '/dashboard/corporate-member/share',
+        icon: <HiShare className="h-5 w-5 text-corporate-primary" />,
+      },
+    ];
+
+    // 招待メンバー向けのサイドバーを表示
+    return (
+      <motion.div
+        initial={false}
+        animate={{ width: collapsed ? 64 : 256 }}
+        transition={{ duration: 0.3 }}
+        className="fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-20 pt-16"
+      >
+        <div className="h-full overflow-y-auto overflow-x-hidden">
+          <div className="flex items-center justify-between p-4 mb-2">
+            <h2
+              className={cn(
+                'text-sm font-semibold text-gray-600 uppercase transition-opacity',
+                collapsed ? 'opacity-0' : 'opacity-100',
+              )}
+            >
+              メニュー
+            </h2>
+            <button
+              onClick={toggleCollapse}
+              className="p-1 rounded-md hover:bg-blue-100 transition-colors focus:outline-none"
+              aria-label={collapsed ? 'サイドバーを展開' : 'サイドバーを折りたたむ'}
+            >
+              {collapsed ? (
+                <HiChevronRight className="h-5 w-5 text-gray-600" />
+              ) : (
+                <HiChevronLeft className="h-5 w-5 text-gray-600" />
+              )}
+            </button>
+          </div>
+
+          {/* 招待メンバー向けのメニュー項目 */}
+          <nav className="space-y-1 px-2">
+            {memberMenuItems.map((item, index) => {
+              // 区切り線の場合は特別な表示を行う
+              if (item.isDivider) {
+                return (
+                  <div key={`divider-${item.title}-${index}`} className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div
+                        className={cn(
+                          'border-t border-gray-200',
+                          collapsed ? 'w-10 mx-auto' : 'w-full',
+                        )}
+                      ></div>
+                    </div>
+                    {!collapsed && (
+                      <div className="relative flex justify-center">
+                        <span className="px-2 bg-white text-xs font-semibold uppercase text-gray-500">
+                          {item.title}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // アクティブなリンクかどうか
+              const isActive = pathname === item.href;
+              // 法人関連のリンクかどうか
+              const isCorporateLink = item.href.includes('/corporate');
+              // 特別処理が必要なリンク（ご利用プランと個人ダッシュボード）
+              const isSpecialLink =
+                item.href === '/dashboard/subscription' || item.href === '/dashboard';
+
+              // 条件に応じたクラス生成
+              let itemClass = '';
+              let iconClass = '';
+
+              if (isActive) {
+                if (isCorporateRelated || isCorporateLink) {
+                  // 法人セクションまたは法人関連リンクのアクティブスタイル
+                  itemClass = 'corporate-menu-active';
+                  iconClass = 'corporate-icon-active';
+                } else {
+                  // 通常セクションのアクティブスタイル
+                  itemClass = 'bg-blue-50 text-blue-700';
+                  iconClass = 'text-blue-700';
+                }
+              } else {
+                // 非アクティブスタイル
+                if (isCorporateRelated || isCorporateLink) {
+                  if (isSpecialLink) {
+                    // 法人セクション内での特別リンク（ご利用プランと個人ダッシュボード）
+                    itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
+                    iconClass = 'text-gray-600 group-hover:text-blue-700';
+                  } else {
+                    // 法人セクションでの通常の非アクティブ（hover含む）
+                    itemClass = 'text-gray-600 hover:corporate-menu-active';
+                    iconClass = 'text-gray-600 group-hover:corporate-icon-active';
+                  }
+                } else {
+                  // 通常セクションでの非アクティブ
+                  itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
+                  iconClass = 'text-gray-600 group-hover:text-blue-700';
+                }
+              }
+
+              return (
+                <Link
+                  key={`${item.href}-${index}`}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors group',
+                    itemClass,
+                    collapsed ? 'justify-center' : 'justify-start',
+                  )}
+                >
+                  <div className={cn('flex-shrink-0', iconClass)}>{item.icon}</div>
+                  <span
+                    className={cn(
+                      'ml-3 transition-opacity duration-200',
+                      collapsed ? 'opacity-0 hidden' : 'opacity-100',
+                    )}
+                  >
+                    {item.title}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </motion.div>
+    );
+  }
+
+  // 通常のユーザー向け表示（以下は既存コードと同じ）
   // メインメニュー項目
   const mainMenuItems = [...items];
 
