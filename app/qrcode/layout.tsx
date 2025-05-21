@@ -46,30 +46,30 @@ export default function QrCodeLayout({ children }: { children: React.ReactNode }
       {/* PWA制御用スクリプト */}
       <Script id="pwa-control-script" strategy="beforeInteractive">
         {`
-        if ('serviceWorker' in navigator) {
-          window.addEventListener('load', function() {
-            navigator.serviceWorker.register('/qr-sw.js')
-              .then(function(registration) {
-                console.log('QR ServiceWorker registration successful');
-                
-                // スタンドアロンモードで実行されているか確認
-                if (window.matchMedia('(display-mode: standalone)').matches || 
-                    navigator.standalone === true) {
-                  // PWAモードで実行中
-                  console.log('Running as PWA');
+          if ('serviceWorker' in navigator) {
+            window.addEventListener('load', function() {
+              navigator.serviceWorker.register('/sw.js') // qr-sw.js から sw.js に修正
+                .then(function(registration) {
+                  console.log('QR ServiceWorker registration successful');
                   
-                  // 現在のURLパスが/qrではない場合は/qrにリダイレクト
-                  if (window.location.pathname !== '/qr') {
-                    window.location.href = '/qr';
+                  // スタンドアロンモードで実行されているか確認
+                  if (window.matchMedia('(display-mode: standalone)').matches || 
+                      navigator.standalone === true) {
+                    // PWAモードで実行中
+                    console.log('Running as PWA');
+                    
+                    // 現在のURLパスが/qrではない場合は/qrにリダイレクト
+                    if (window.location.pathname !== '/qr') {
+                      window.location.href = '/qr';
+                    }
                   }
-                }
-              })
-              .catch(function(err) {
-                console.log('QR ServiceWorker registration failed', err);
-              });
-          });
-        }
-      `}
+                })
+                .catch(function(err) {
+                  console.log('QR ServiceWorker registration failed', err);
+                });
+            });
+          }
+        `}
       </Script>
 
       {children}

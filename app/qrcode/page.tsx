@@ -185,6 +185,16 @@ export default function QrCodePage() {
     // Service Worker の登録 (PWA対応)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
+        // マニフェストのパスを確認
+        const link = document.querySelector('link[rel="manifest"]');
+        if (!link) {
+          // マニフェストリンクがない場合は追加
+          const manifestLink = document.createElement('link');
+          manifestLink.rel = 'manifest';
+          manifestLink.href = '/manifest.json'; // 正しいパスを指定
+          document.head.appendChild(manifestLink);
+        }
+
         navigator.serviceWorker
           .register('/sw.js')
           .then((registration) => {
@@ -291,7 +301,7 @@ export default function QrCodePage() {
       <div className="mb-6">
         <Link
           href={getBackToShareUrl()}
-          className="flex items-center text-blue-600 hover:text-blue-800"
+          className="flex items-center text-blue-600 hover:text-blue-800 font-medium"
           style={{
             color: isCorporateMember ? corporateData?.primaryColor || '#1E3A8A' : undefined,
           }}

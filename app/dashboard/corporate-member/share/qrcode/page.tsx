@@ -126,7 +126,10 @@ export default function CorporateMemberQrcodePage() {
           </div>
           <Link
             href="/dashboard/corporate-member/share"
-            className="text-sm flex items-center text-gray-600 hover:text-gray-900"
+            className="text-sm flex items-center font-medium text-blue-600 hover:text-blue-800"
+            style={{
+              color: tenantData?.primaryColor || '#1E3A8A',
+            }}
           >
             <HiArrowLeft className="mr-1 h-4 w-4" />
             共有設定に戻る
