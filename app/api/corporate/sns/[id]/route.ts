@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccessState';
+import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccess';
 // import type { CorporateSnsLink } from '@prisma/client';
 
 // 法人共通SNSリンクの取得

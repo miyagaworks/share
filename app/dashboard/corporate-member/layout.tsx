@@ -15,7 +15,7 @@ import {
 import { Spinner } from '@/components/ui/Spinner';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
+import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccess';
 
 interface CorporateMemberLayoutProps {
   children: ReactNode;

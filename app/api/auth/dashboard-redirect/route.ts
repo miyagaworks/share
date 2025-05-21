@@ -5,47 +5,45 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-export async function GET() {
-  const session = await auth();
-
-  if (!session?.user?.id) {
-    return NextResponse.redirect(new URL('/auth/signin', process.env.NEXTAUTH_URL as string));
-  }
-
-  const userId = session.user.id;
-
+export async function GET(req: Request) {
   try {
-    // ユーザー情報を取得
+    const session = await auth();
+
+    if (!session || !session.user) {
+      return NextResponse.redirect(new URL('/auth/signin', req.url));
+    }
+
+    // 管理者ユーザーの場合は管理者ダッシュボードへ
+    if (session.user.email === 'admin@sns-share.com') {
+      return NextResponse.redirect(new URL('/dashboard/admin', req.url));
+    }
+
+    // ユーザーのプロフィールを取得
     const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        tenant: true,
-        adminOfTenant: true,
+      where: { id: session.user.id },
+      select: {
+        id: true,
+        profile: true,
+        subscriptionStatus: true,
       },
     });
 
+    // ユーザーが見つからない場合
     if (!user) {
-      return NextResponse.redirect(new URL('/auth/signin', process.env.NEXTAUTH_URL as string));
+      return NextResponse.redirect(new URL('/auth/signin', req.url));
     }
 
-    // 法人テナント管理者の場合
-    if (user.adminOfTenant) {
-      return NextResponse.redirect(
-        new URL('/dashboard/corporate', process.env.NEXTAUTH_URL as string),
-      );
-    }
+    // ここが問題の原因: プロフィールが存在しなくても常にダッシュボードを表示するように修正
+    // if (!user.profile) {
+    //   console.log('プロフィールが未設定のため/dashboard/profileへリダイレクト');
+    //   return NextResponse.redirect(new URL('/dashboard/profile', req.url));
+    // }
 
-    // 法人テナントメンバーの場合
-    if (user.tenant) {
-      return NextResponse.redirect(
-        new URL('/dashboard/corporate-member', process.env.NEXTAUTH_URL as string),
-      );
-    }
-
-    // それ以外は個人ダッシュボード
-    return NextResponse.redirect(new URL('/dashboard/profile', process.env.NEXTAUTH_URL as string));
+    // 常にダッシュボードを表示
+    return NextResponse.next();
   } catch (error) {
-    console.error('ユーザー情報取得エラー:', error);
-    return NextResponse.redirect(new URL('/dashboard/profile', process.env.NEXTAUTH_URL as string));
+    console.error('ダッシュボードリダイレクトAPI エラー:', error);
+    // エラー時は通常通りダッシュボードを表示
+    return NextResponse.next();
   }
 }

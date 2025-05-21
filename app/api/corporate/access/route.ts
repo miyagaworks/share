@@ -24,12 +24,12 @@ export async function GET(request: Request) {
     const userId = session.user.id;
 
     try {
-      // subscriptionStatusフィールドを追加
+      // ユーザー情報を取得
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
           id: true,
-          email: true, // 管理者メールアドレスチェック用に追加
+          email: true,
           subscriptionStatus: true,
           adminOfTenant: {
             select: {
@@ -74,7 +74,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
           hasAccess: true,
           isAdmin: true,
-          isSuperAdmin: true, // 明示的にスーパー管理者として設定
+          isSuperAdmin: true,
           tenantId: user.adminOfTenant?.id || `admin-tenant-${userId}`,
           userRole: 'admin',
           error: null,
@@ -87,7 +87,7 @@ export async function GET(request: Request) {
         return NextResponse.json({
           hasAccess: true,
           isAdmin: true,
-          isSuperAdmin: false, // 明示的に非スーパー管理者として設定
+          isSuperAdmin: false,
           tenantId: `virtual-tenant-${userId}`,
           userRole: 'admin',
           error: null,
@@ -101,15 +101,27 @@ export async function GET(request: Request) {
       // テナントステータスの確認
       const isTenantSuspended = tenant?.accountStatus === 'suspended';
 
-      // 法人サブスクリプションのチェック
+      // 法人サブスクリプションのチェック - より厳密に判定
       const planLower = (user.subscription?.plan || '').toLowerCase();
+
+      // 完全一致の法人プラン判定（部分一致ではなく）
+      const corporatePlans = [
+        'business',
+        'business_plus',
+        'business_yearly',
+        'enterprise',
+        'enterprise_yearly',
+        'starter',
+        'starter_yearly',
+      ];
+
       const hasCorporateSubscription =
         user.subscription &&
-        (planLower.includes('business') ||
-          planLower.includes('corp') ||
-          planLower.includes('pro') ||
-          planLower.includes('enterprise')) && // エンタープライズプランを追加
-        user.subscription.status === 'active';
+        user.subscription.status === 'active' &&
+        (corporatePlans.includes(planLower) ||
+          // 互換性のための後方互換チェック
+          (planLower.includes('corp') && !planLower.includes('personal')) ||
+          planLower.includes('pro'));
 
       // アクセス権の判定
       const hasAccess = hasTenant && !isTenantSuspended && hasCorporateSubscription;
@@ -119,7 +131,7 @@ export async function GET(request: Request) {
 
       // ユーザーロールの決定
       const isAdmin = !!user.adminOfTenant;
-      const userRole = isAdmin ? 'admin' : 'member';
+      const userRole = isAdmin ? 'admin' : hasTenant ? 'member' : null;
 
       // メモリ使用量ログ（開発環境のみ）
       if (process.env.NODE_ENV === 'development') {
@@ -133,7 +145,7 @@ export async function GET(request: Request) {
       return NextResponse.json({
         hasAccess,
         isAdmin,
-        isSuperAdmin: isAdminEmail, // 管理者メールアドレスのみスーパー管理者
+        isSuperAdmin: isAdminEmail,
         tenantId,
         userRole,
         error: !hasAccess

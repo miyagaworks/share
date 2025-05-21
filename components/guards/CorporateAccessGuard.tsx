@@ -1,235 +1,114 @@
-// components/guards/CorporateAccessGuard.tsx
-'use client';
-
-import { ReactNode, useEffect, useState, useCallback } from 'react';
+// components/guards/CorporateMemberGuard.tsx
+import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Spinner } from '@/components/ui/Spinner';
-import { Button } from '@/components/ui/Button';
-import { HiOutlineExclamation } from 'react-icons/hi';
 import {
-  corporateAccessState,
   checkCorporateAccess,
+  PermanentPlanType,
   checkPermanentAccess,
-  initializeClientState,
-} from '@/lib/corporateAccessState';
+  fetchPermanentPlanType,
+} from '@/lib/corporateAccess';
+import { Spinner } from '@/components/ui/Spinner';
 
-interface CorporateAccessGuardProps {
-  children: ReactNode;
-  debugMode?: boolean;
-}
-
-export function CorporateAccessGuard({ children, debugMode = false }: CorporateAccessGuardProps) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+export function CorporateMemberGuard({ children }: { children: ReactNode }) {
+  const [isChecking, setIsChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [errorDetails, setErrorDetails] = useState<string | null>(null);
-  const [, setRenderKey] = useState(0);
-  const [bypassEnabled, setBypassEnabled] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
-  const [showDetailedError, setShowDetailedError] = useState(false);
+  const [hasAccess, setHasAccess] = useState(false); // hasAccess状態を追加
+  const router = useRouter();
+  const { status } = useSession();
 
-  // デバッグ用：アクセス状態を手動で更新
-  const forceEnableAccess = useCallback(() => {
-    console.log('[CorporateAccessGuard] デバッグモード: アクセス権を強制的に有効化');
-
-    // グローバル状態を直接更新
-    corporateAccessState.hasAccess = true;
-    corporateAccessState.isAdmin = true;
-    corporateAccessState.tenantId = 'debug-tenant-id';
-    corporateAccessState.userRole = 'admin';
-    corporateAccessState.lastChecked = Date.now();
-    corporateAccessState.error = null;
-
-    // イベントをディスパッチして他のコンポーネントに通知
-    if (typeof window !== 'undefined') {
-      window.dispatchEvent(
-        new CustomEvent('corporateAccessChanged', {
-          detail: { ...corporateAccessState },
-        }),
-      );
-    }
-
-    setBypassEnabled(true);
-    setError(null);
-    setErrorDetails(null);
-    setRenderKey((prev) => prev + 1);
-  }, []);
-
-  // 初期化処理
   useEffect(() => {
-    // クライアントサイドの状態を初期化
-    initializeClientState().catch(console.error);
-  }, []);
-
-  // メインの useEffect - 1番目
-  useEffect(() => {
+    // セッションがロード中なら待機
     if (status === 'loading') return;
 
-    const initAccess = async () => {
-      if (!session) {
-        console.log('[CorporateAccessGuard] セッションなし、サインインページへリダイレクト');
-        router.push('/auth/signin');
-        return;
-      }
-
+    const verifyAccess = async () => {
       try {
-        console.log('[CorporateAccessGuard] 法人アクセス権チェック開始');
-
-        // 永久利用権ユーザーのチェックを最初に行う
+        // まず永久利用権ユーザーかどうかを確認
         const isPermanent = checkPermanentAccess();
 
         if (isPermanent) {
-          console.log('[CorporateAccessGuard] 永久利用権ユーザーを検出');
-          setError(null);
-          setErrorDetails(null);
-          setIsLoading(false);
-          return;
+          // 永久利用権ユーザーの場合、プラン種別を取得
+          const planType = await fetchPermanentPlanType();
+
+          // 個人プランの場合はアクセス拒否
+          if (planType === PermanentPlanType.PERSONAL) {
+            console.log('個人プラン永久利用権ユーザーのため法人メンバーアクセス拒否');
+            setHasAccess(false);
+            setError('個人永久プランでは法人機能にアクセスできません');
+            // リダイレクト
+            setTimeout(() => {
+              router.push('/dashboard');
+            }, 1000);
+            setIsChecking(false);
+            return;
+          } else {
+            // 法人プランの永久利用権ユーザーはアクセス許可
+            console.log('法人プラン永久利用権ユーザーに法人メンバーアクセス権を付与');
+            setHasAccess(true);
+            setIsChecking(false);
+            return;
+          }
         }
 
-        // 通常の法人アクセス権チェック
-        const result = await checkCorporateAccess(true);
+        // APIを呼び出して最新の法人アクセス権を確認（キャッシュを使わない）
+        const result = await checkCorporateAccess({ force: true });
 
-        console.log('[CorporateAccessGuard] 法人アクセス権を設定:', {
-          hasAccess: result.hasAccess,
-          tenantId: result.tenantId,
-          isAdmin: result.isAdmin,
-        });
-
-        if (!result.hasAccess) {
-          const errorMessage = result.error || '法人プランにアクセスする権限がありません';
-          console.warn('[CorporateAccessGuard] アクセス権なし:', errorMessage);
-          setError(errorMessage);
-          setErrorDetails(JSON.stringify(result, null, 2));
+        // アクセス権があるかどうかを明示的に確認
+        if (result.hasAccess === true) {
+          console.log('法人メンバーアクセス権を確認しました');
+          setHasAccess(true);
+          setIsChecking(false);
         } else {
-          setError(null);
-          setErrorDetails(null);
+          // ここで重要な修正: userRoleがmemberでもアクセスを許可する
+          if (result.userRole === 'member' || result.userRole === 'admin') {
+            console.log('メンバーまたは管理者としてアクセス権を付与します');
+            setHasAccess(true);
+            setIsChecking(false);
+          } else {
+            console.log(
+              '個人プランユーザーを検出しました。個人ダッシュボードへリダイレクトします。',
+            );
+            setError('法人メンバー機能へのアクセス権がありません');
+            router.push('/dashboard');
+          }
         }
       } catch (error) {
-        console.error('[CorporateAccessGuard] エラー:', error);
-        const errorMessage = error instanceof Error ? error.message : String(error);
-        setError('法人アカウント情報の取得中にエラーが発生しました');
-        setErrorDetails(errorMessage);
+        console.error('アクセス権確認エラー:', error);
+        setError('法人メンバーアクセスの確認中にエラーが発生しました。');
+        setHasAccess(false);
+
+        // エラー発生時も個人ダッシュボードにリダイレクト
+        setTimeout(() => {
+          router.push('/dashboard');
+        }, 2000); // エラーメッセージを表示する時間を確保
       } finally {
-        setIsLoading(false);
-        // 状態更新を強制的に反映するために再レンダリング
-        setRenderKey((prev) => prev + 1);
-        console.log('[CorporateAccessGuard] チェック完了。状態:', {
-          hasAccess: corporateAccessState.hasAccess,
-          error: corporateAccessState.error,
-        });
+        setIsChecking(false);
       }
     };
 
-    initAccess();
+    verifyAccess();
+  }, [router, status]);
 
-    // corporateAccessChangedイベントリスナーを設定
-    const handleAccessChange = (event: CustomEvent<typeof corporateAccessState>) => {
-      console.log('[CorporateAccessGuard] アクセス状態変更を検知:', event.detail);
-      setRenderKey((prev) => prev + 1);
-
-      // エラーメッセージも更新
-      if (!event.detail.hasAccess) {
-        setError(event.detail.error || '法人プランにアクセスする権限がありません');
-      } else {
-        setError(null);
-      }
-    };
-
-    if (typeof window !== 'undefined') {
-      window.addEventListener('corporateAccessChanged', handleAccessChange as EventListener);
-    }
-
-    return () => {
-      if (typeof window !== 'undefined') {
-        window.removeEventListener('corporateAccessChanged', handleAccessChange as EventListener);
-      }
-    };
-  }, [session, status, router, retryCount]);
-
-  // デバッグモード用の useEffect - 2番目
-  useEffect(() => {
-    // 中で条件判定する
-    if (debugMode && process.env.NODE_ENV === 'development') {
-      console.log('[CorporateAccessGuard] デバッグモード：アクセスを自動的に許可します');
-      forceEnableAccess();
-    }
-  }, [debugMode, forceEnableAccess]);
-
-  // 永久利用権ユーザーの場合はアクセスを許可する条件を追加
-  if (isLoading) {
+  if (isChecking) {
     return (
-      <div className="flex justify-center items-center min-h-[300px]">
+      <div className="flex flex-col justify-center items-center p-8">
         <Spinner size="lg" />
+        <span className="ml-3 text-gray-500 mt-4">アクセス権を確認中...</span>
+        {error && <p className="text-red-500 mt-2">{error}</p>}
       </div>
     );
   }
 
-  // アクセス拒否画面の表示条件を修正 - corporateAccessStateから永久利用権情報を取得
-  if (
-    !bypassEnabled &&
-    !corporateAccessState.isPermanentUser &&
-    corporateAccessState.hasAccess !== true &&
-    !debugMode
-  ) {
-    console.log('[CorporateAccessGuard] アクセス拒否画面表示、エラー:', error);
-    return (
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
-        <div className="flex items-start">
-          <HiOutlineExclamation className="h-6 w-6 text-yellow-600 mr-3 flex-shrink-0" />
-          <div>
-            <h3 className="text-lg font-medium text-yellow-800 mb-2">
-              法人プランへのアクセス権がありません
-            </h3>
-            <p className="text-yellow-700 mb-4">
-              {error || 'この機能を利用するには法人プランへのアップグレードが必要です。'}
-              個人ダッシュボードに戻るか、利用プランページで法人プランにアップグレードしてください。
-            </p>
-
-            {/* エラー詳細（開閉可能） */}
-            {errorDetails && (
-              <div className="mb-4">
-                <button
-                  className="text-yellow-800 underline text-sm"
-                  onClick={() => setShowDetailedError(!showDetailedError)}
-                >
-                  {showDetailedError ? 'エラー詳細を隠す' : 'エラー詳細を表示する'}
-                </button>
-
-                {showDetailedError && (
-                  <pre className="mt-2 p-2 bg-yellow-100 rounded overflow-auto text-xs max-h-48">
-                    {errorDetails}
-                  </pre>
-                )}
-              </div>
-            )}
-
-            <div className="flex flex-wrap gap-3">
-              <Button onClick={() => router.push('/dashboard')}>個人ダッシュボードへ</Button>
-              <Button variant="outline" onClick={() => router.push('/dashboard/subscription')}>
-                利用プランを見る
-              </Button>
-              <Button
-                variant="outline"
-                onClick={async () => {
-                  // 強制的にアクセス権をリセットしてAPIを再度呼び出す
-                  setIsLoading(true);
-                  setRetryCount((prev) => prev + 1);
-                  await checkCorporateAccess(true); // forceCheck=true
-                  setIsLoading(false);
-                  setRenderKey((prev) => prev + 1);
-                }}
-              >
-                ステータスを再確認
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+  // アクセス権があれば子コンポーネントを表示
+  if (hasAccess) {
+    return <>{children}</>;
   }
 
-  // 通常表示時
-  return <>{children}</>;
+  // アクセス権がなければ何も表示せず、リダイレクト処理を待つ
+  return (
+    <div className="flex flex-col justify-center items-center p-8">
+      <p className="text-red-500">アクセス権がありません。リダイレクトします...</p>
+      {error && <p className="text-yellow-600 mt-2">{error}</p>}
+    </div>
+  );
 }

@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
-import { generateVirtualTenantData } from '@/lib/corporateAccessState';
+import { generateVirtualTenantData } from '@/lib/corporateAccess';
 
 // 法人アカウント設定の取得（GET）
 export async function GET() {

@@ -10,7 +10,7 @@ import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker';
 import { BrandingPreview } from '@/components/corporate/BrandingPreview';
 import { toast } from 'react-hot-toast';
 import { HiSave, HiRefresh, HiInformationCircle, HiUpload, HiX } from 'react-icons/hi';
-import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
+import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccess';
 import Image from 'next/image';
 import tinycolor from 'tinycolor2';
 
@@ -150,7 +150,7 @@ export default function ImprovedCorporateBrandingPage() {
         setIsLoading(true);
 
         // まずグローバル状態をチェック
-        await checkCorporateAccess(true); // 強制的に最新の状態を取得
+        await checkCorporateAccess({ force: true }); // 強制的に最新の状態を取得
 
         // テナント情報取得API
         const response = await fetch('/api/corporate/tenant');

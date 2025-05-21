@@ -2,7 +2,7 @@
 import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { checkCorporateAccess } from '@/lib/corporateAccessState';
+import { checkCorporateAccess } from '@/lib/corporateAccess';
 import { Spinner } from '@/components/ui/Spinner';
 
 export function CorporateMemberGuard({ children }: { children: ReactNode }) {
@@ -19,7 +19,8 @@ export function CorporateMemberGuard({ children }: { children: ReactNode }) {
     const verifyAccess = async () => {
       try {
         // APIを呼び出して最新の法人アクセス権を確認（キャッシュを使わない）
-        const result = await checkCorporateAccess(true);
+        // 修正: boolean 型から { force: boolean } 型へ変更
+        const result = await checkCorporateAccess({ force: true });
 
         // アクセス権があるかどうかを明示的に確認
         if (result.hasAccess === true) {

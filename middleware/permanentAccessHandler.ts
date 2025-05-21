@@ -6,7 +6,7 @@ import {
   getVirtualTenantData,
   VirtualTenantData,
   generateVirtualTenantData,
-} from '@/lib/corporateAccessState';
+} from '@/lib/corporateAccess';
 
 // ユーザーデータの型定義
 interface UserData {

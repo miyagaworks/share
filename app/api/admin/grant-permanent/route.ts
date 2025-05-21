@@ -5,6 +5,8 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma, disconnectPrisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
+import { isAdminUser } from '@/lib/corporateAccess';
+import { PermanentPlanType, PLAN_TYPE_DISPLAY_NAMES } from '@/lib/corporateAccess';
 
 export async function POST(request: Request) {
   try {
@@ -14,23 +16,30 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
-    // 管理者かどうかを確認する処理
-    const admin = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { email: true },
-    });
-
-    // 管理者以外はアクセス不可
-    if (!admin || admin.email !== 'admin@sns-share.com') {
+    // 管理者かどうかを確認（新しいAPIを使用）
+    const isAdmin = await isAdminUser(session.user.id);
+    if (!isAdmin) {
       return NextResponse.json({ success: false, error: 'Not authorized' }, { status: 403 });
     }
 
-    // リクエストボディからユーザーIDを取得
+    // リクエストボディからユーザーIDとプラン種別を取得
     const body = await request.json();
-    const { userId } = body;
+    const { userId, planType = PermanentPlanType.PERSONAL } = body;
 
     if (!userId) {
       return NextResponse.json({ success: false, error: 'User ID is required' }, { status: 400 });
+    }
+
+    // プラン種別の検証
+    if (planType && !Object.values(PermanentPlanType).includes(planType)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid plan type',
+          validPlanTypes: Object.values(PermanentPlanType),
+        },
+        { status: 400 },
+      );
     }
 
     // ユーザーが存在するか確認
@@ -40,6 +49,7 @@ export async function POST(request: Request) {
         tenant: true,
         adminOfTenant: true,
         subscription: true, // サブスクリプション情報も取得
+        metadata: true, // メタデータ情報も取得
       },
     });
 
@@ -57,57 +67,125 @@ export async function POST(request: Request) {
         },
       });
 
-      // 2. 仮想テナントがまだ存在しない場合は作成
-      let tenant = null;
+      // 2. ユーザーのメタデータにプラン種別を保存
+      let metadata = null;
 
-      // 既存のテナント関連付けがあるかチェック
-      if (user.tenant || user.adminOfTenant) {
-        // 既存のテナント関連を使用
-        tenant = user.adminOfTenant || user.tenant;
-        logger.info('既存テナント使用', { tenantId: tenant?.id || 'unknown' });
-      } else {
-        // 仮想テナントを新規作成
-        tenant = await tx.corporateTenant.create({
-          data: {
-            name: `${user.name || 'ユーザー'}の法人`,
-            maxUsers: 50, // business_plusの上限値
-            primaryColor: '#3B82F6',
-            secondaryColor: '#60A5FA',
-            admin: { connect: { id: userId } },
-            // デフォルト部署も作成
-            departments: {
-              create: {
-                name: '全社',
-                description: 'デフォルト部署',
-              },
-            },
-          },
-        });
-
-        logger.info('新規テナント作成', { tenantId: tenant.id });
-
-        // ユーザーを作成したテナントのメンバーにする
-        await tx.user.update({
-          where: { id: userId },
-          data: {
-            tenant: { connect: { id: tenant.id } },
-            corporateRole: 'admin',
-          },
-        });
-      }
-
-      // エラー回避：tenant が null の場合はここで処理を終了
-      if (!tenant) {
-        logger.error('テナント作成失敗', { userId });
-        return { user: updatedUser, tenant: null };
-      }
-
-      // サブスクリプション情報を更新（存在する場合）
-      if (user.subscription) {
-        await tx.subscription.update({
+      if (user.metadata) {
+        // 既存のメタデータを更新
+        metadata = await tx.userMetadata.update({
           where: { userId },
           data: {
-            plan: 'business_plus', // プランをbusiness_plusに変更
+            permanentPlanType: planType,
+          },
+        });
+      } else {
+        // メタデータを新規作成
+        metadata = await tx.userMetadata.create({
+          data: {
+            userId,
+            permanentPlanType: planType,
+          },
+        });
+      }
+
+      logger.info('永久利用権付与', { userId, planType });
+
+      // 3. 仮想テナントがまだ存在しない場合は作成
+      // プラン種別が法人向けの場合のみテナントを作成
+      let tenant = null;
+
+      const isCorporatePlan = [
+        PermanentPlanType.BUSINESS,
+        PermanentPlanType.BUSINESS_PLUS,
+        PermanentPlanType.ENTERPRISE,
+      ].includes(planType as PermanentPlanType);
+
+      // 法人向けプランの場合のみテナント作成処理
+      if (isCorporatePlan) {
+        // 既存のテナント関連付けがあるかチェック
+        if (user.tenant || user.adminOfTenant) {
+          // 既存のテナント関連を使用
+          tenant = user.adminOfTenant || user.tenant;
+          logger.info('既存テナント使用', { tenantId: tenant?.id || 'unknown' });
+        } else {
+          // プラン種別に応じたユーザー数上限を設定
+          let maxUsers = 10; // デフォルト
+          if (planType === PermanentPlanType.BUSINESS_PLUS) {
+            maxUsers = 30;
+          } else if (planType === PermanentPlanType.ENTERPRISE) {
+            maxUsers = 50;
+          }
+
+          // 仮想テナントを新規作成
+          tenant = await tx.corporateTenant.create({
+            data: {
+              name: `${user.name || 'ユーザー'}の法人`,
+              maxUsers: maxUsers,
+              primaryColor: '#3B82F6',
+              secondaryColor: '#60A5FA',
+              admin: { connect: { id: userId } },
+              // デフォルト部署も作成
+              departments: {
+                create: {
+                  name: '全社',
+                  description: 'デフォルト部署',
+                },
+              },
+            },
+          });
+
+          logger.info('新規テナント作成', { tenantId: tenant.id, planType, maxUsers });
+
+          // ユーザーを作成したテナントのメンバーにする
+          await tx.user.update({
+            where: { id: userId },
+            data: {
+              tenant: { connect: { id: tenant.id } },
+              corporateRole: 'admin',
+            },
+          });
+        }
+
+        // エラー回避：tenant が null の場合はここで処理を終了
+        if (!tenant) {
+          logger.error('テナント作成失敗', { userId, planType });
+          return { user: updatedUser, tenant: null, metadata };
+        }
+
+        // 3. デフォルトのSNSリンク設定を作成（まだ存在しない場合）
+        const existingSnsLinks = await tx.corporateSnsLink.findMany({
+          where: { tenantId: tenant.id },
+        });
+
+        // デフォルトSNSがまだない場合は作成
+        if (existingSnsLinks.length === 0) {
+          const defaultSnsLinks = [
+            { platform: 'line', url: 'https://line.me/ti/p/~', displayOrder: 1 },
+            { platform: 'instagram', url: 'https://www.instagram.com/', displayOrder: 2 },
+            { platform: 'youtube', url: 'https://www.youtube.com/c/', displayOrder: 3 },
+          ];
+
+          for (const snsLink of defaultSnsLinks) {
+            await tx.corporateSnsLink.create({
+              data: {
+                ...snsLink,
+                tenant: { connect: { id: tenant.id } },
+              },
+            });
+          }
+
+          logger.info('デフォルトSNSリンク作成', { tenantId: tenant.id });
+        }
+      }
+
+      // 4. サブスクリプション情報を更新（存在する場合）
+      let subscription = null;
+      if (user.subscription) {
+        subscription = await tx.subscription.update({
+          where: { userId },
+          data: {
+            plan: 'permanent', // プランを永久利用に変更
+            interval: 'permanent', // 更新間隔を永久に
           },
         });
       } else {
@@ -116,57 +194,38 @@ export async function POST(request: Request) {
         const endDate = new Date();
         endDate.setFullYear(endDate.getFullYear() + 100); // 100年後（実質永久）
 
-        await tx.subscription.create({
+        subscription = await tx.subscription.create({
           data: {
             userId,
             status: 'active',
-            plan: 'business_plus',
+            plan: 'permanent',
             priceId: 'price_permanent',
             subscriptionId: `permanent_${userId}`,
             currentPeriodStart: now,
             currentPeriodEnd: endDate,
             cancelAtPeriodEnd: false,
+            interval: 'permanent',
           },
         });
       }
 
-      // 3. デフォルトのSNSリンク設定を作成（まだ存在しない場合）
-      const existingSnsLinks = await tx.corporateSnsLink.findMany({
-        where: { tenantId: tenant.id },
-      });
-
-      // デフォルトSNSがまだない場合は作成
-      if (existingSnsLinks.length === 0) {
-        const defaultSnsLinks = [
-          { platform: 'line', url: 'https://line.me/ti/p/~', displayOrder: 1 },
-          { platform: 'instagram', url: 'https://www.instagram.com/', displayOrder: 2 },
-          { platform: 'youtube', url: 'https://www.youtube.com/c/', displayOrder: 3 },
-        ];
-
-        for (const snsLink of defaultSnsLinks) {
-          await tx.corporateSnsLink.create({
-            data: {
-              ...snsLink,
-              tenant: { connect: { id: tenant.id } },
-            },
-          });
-        }
-
-        logger.info('デフォルトSNSリンク作成', { tenantId: tenant.id });
-      }
-
-      return { user: updatedUser, tenant };
+      return { user: updatedUser, tenant, metadata, subscription };
     });
 
     // 成功レスポンス
     return NextResponse.json({
       success: true,
-      message: '永久利用権を付与し、法人データを設定しました',
+      message: '永久利用権を付与しました',
       user: {
         id: result.user.id,
         name: result.user.name,
         subscriptionStatus: result.user.subscriptionStatus,
       },
+      planType: result.metadata?.permanentPlanType || PermanentPlanType.PERSONAL,
+      planName:
+        PLAN_TYPE_DISPLAY_NAMES[
+          (result.metadata?.permanentPlanType as PermanentPlanType) || PermanentPlanType.PERSONAL
+        ],
       tenant: result.tenant
         ? {
             id: result.tenant.id,

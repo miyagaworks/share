@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
-import { checkPermanentAccess, generateVirtualTenantData } from '@/lib/corporateAccessState';
+import { checkPermanentAccess, generateVirtualTenantData } from '@/lib/corporateAccess';
 
 // 部署一覧取得（GET）
 export async function GET() {

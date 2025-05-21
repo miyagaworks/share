@@ -16,7 +16,7 @@ import {
 } from 'react-icons/hi';
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
-import { corporateAccessState } from '@/lib/corporateAccessState';
+import { corporateAccessState, PermanentPlanType } from '@/lib/corporateAccess';
 
 // サイドバー項目の型定義
 interface SidebarItem {
@@ -35,8 +35,11 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
-  // 永久利用権ユーザー状態
+
+  // 永久利用権関連の状態
   const [isPermanentUser, setIsPermanentUser] = useState(false);
+  const [permanentPlanType, setPermanentPlanType] = useState<string | null>(null);
+
   // 招待メンバーかどうか
   const isInvitedMember =
     corporateAccessState.userRole === 'member' && !corporateAccessState.isAdmin;
@@ -52,15 +55,35 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     // クライアントサイドでのみ永久利用権のチェック
     if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
       try {
+        // ユーザーデータからの永久利用権チェック
         const userDataStr = sessionStorage.getItem('userData');
         if (userDataStr) {
           const userData = JSON.parse(userDataStr);
           setIsPermanentUser(userData.subscriptionStatus === 'permanent');
         }
+
+        // corporateAccessStateからのプラン種別チェック
+        if (corporateAccessState.isPermanentUser) {
+          setPermanentPlanType(corporateAccessState.permanentPlanType);
+        }
       } catch (e) {
         console.error('永久利用権チェックエラー:', e);
       }
     }
+
+    // アクセス状態変更イベントのリスナー
+    const handleAccessChange = () => {
+      if (corporateAccessState.isPermanentUser) {
+        setIsPermanentUser(true);
+        setPermanentPlanType(corporateAccessState.permanentPlanType);
+      }
+    };
+
+    window.addEventListener('corporateAccessChanged', handleAccessChange);
+
+    return () => {
+      window.removeEventListener('corporateAccessChanged', handleAccessChange);
+    };
   }, []);
 
   const toggleCollapse = () => {
@@ -237,7 +260,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     );
   }
 
-  // 通常のユーザー向け表示（以下は既存コードと同じ）
+  // 通常のユーザー向け表示
   // メインメニュー項目
   const mainMenuItems = [...items];
 
@@ -252,6 +275,10 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   // 既存のメニューURLのセット
   const existingUrls = getItemUrls(mainMenuItems);
 
+  // 永久利用権ユーザーの法人アクセス判定
+  const isPermanentBusinessUser =
+    isPermanentUser && permanentPlanType && permanentPlanType !== PermanentPlanType.PERSONAL;
+
   // 法人セクションにいる場合
   if (isCorporateSection) {
     // 個人ダッシュボードへのリンクを追加（存在しない場合のみ）
@@ -265,7 +292,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
     // 法人管理者または永久利用権ユーザーの場合、法人メンバーダッシュボードも表示
     if (
-      (corporateAccessState.hasAccess || isPermanentUser) &&
+      (corporateAccessState.hasAccess || isPermanentBusinessUser) &&
       !existingUrls.has('/dashboard/corporate-member')
     ) {
       additionalLinks.push({
@@ -289,7 +316,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
     // 法人管理者または永久利用権ユーザーの場合、法人管理ダッシュボードも表示
     if (
-      (corporateAccessState.isAdmin || isPermanentUser) &&
+      (corporateAccessState.isAdmin || isPermanentBusinessUser) &&
       !existingUrls.has('/dashboard/corporate')
     ) {
       additionalLinks.push({
@@ -305,7 +332,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     !isCorporateSection &&
     !isCorporateMemberSection &&
     pathname?.startsWith('/dashboard') &&
-    (corporateAccessState.hasAccess || isPermanentUser)
+    (corporateAccessState.hasAccess || isPermanentBusinessUser)
   ) {
     // 法人メンバーダッシュボードへのリンクを追加（存在しない場合のみ）
     if (!existingUrls.has('/dashboard/corporate-member')) {
@@ -316,9 +343,9 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       });
     }
 
-    // 法人管理者または永久利用権ユーザーの場合、法人管理ダッシュボードも表示
+    // 法人管理者または法人プラン永久利用権ユーザーの場合、法人管理ダッシュボードも表示
     if (
-      (corporateAccessState.isAdmin || isPermanentUser) &&
+      (corporateAccessState.isAdmin || isPermanentBusinessUser) &&
       !existingUrls.has('/dashboard/corporate')
     ) {
       additionalLinks.push({

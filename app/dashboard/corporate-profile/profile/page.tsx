@@ -7,7 +7,7 @@ import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { HiUser } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
-import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
+import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccess';
 import { MemberProfileForm } from '@/components/corporate/MemberProfileForm';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { UserData, ProfileUpdateData } from '@/types/profiles';

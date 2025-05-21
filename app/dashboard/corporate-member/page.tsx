@@ -9,7 +9,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
 import { Spinner } from '@/components/ui/Spinner';
-import { corporateAccessState } from '@/lib/corporateAccessState';
+import { corporateAccessState } from '@/lib/corporateAccess';
 import {
   HiUser,
   HiOfficeBuilding,

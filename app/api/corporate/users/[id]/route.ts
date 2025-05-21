@@ -6,7 +6,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import { logUserActivity } from '@/lib/utils/activity-logger';
-import { checkPermanentAccess } from '@/lib/corporateAccessState';
+import { checkPermanentAccess } from '@/lib/corporateAccess';
 import { getInviteEmailTemplate } from '@/lib/email/templates/invite-email';
 
 // ユーザー情報を更新するAPI（役割と部署の変更）

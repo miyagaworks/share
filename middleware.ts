@@ -27,12 +27,12 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(new URL('/auth/signin', request.url));
     }
 
-    // トップレベルのダッシュボードアクセス時、ユーザータイプに応じてリダイレクト
-    if (pathname === '/dashboard') {
-      // ユーザータイプ判定用のAPI Routeにリダイレクト
-      // この方法ではミドルウェアでPrismaを使わず、代わりにAPI Routeで処理する
-      return NextResponse.rewrite(new URL('/api/auth/dashboard-redirect', request.url));
-    }
+    // このリダイレクトロジックが問題の原因 - 削除または変更する
+    // if (pathname === '/dashboard') {
+    //   // ユーザータイプ判定用のAPI Routeにリダイレクト
+    //   // この方法ではミドルウェアでPrismaを使わず、代わりにAPI Routeで処理する
+    //   return NextResponse.rewrite(new URL('/api/auth/dashboard-redirect', request.url));
+    // }
 
     console.log('認証済みユーザー: アクセス許可');
   }

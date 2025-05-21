@@ -8,7 +8,7 @@ import { z } from 'zod';
 import { SNS_PLATFORMS } from '@/types/sns';
 import type { CorporateSnsLink } from '@prisma/client';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
-import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccessState';
+import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccess';
 
 // 法人共通SNSリンクの取得
 export async function GET() {

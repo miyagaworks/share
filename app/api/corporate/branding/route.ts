@@ -5,7 +5,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
-import { generateVirtualTenantData } from '@/lib/corporateAccessState';
+import { generateVirtualTenantData } from '@/lib/corporateAccess';
 
 // ブランディング設定の取得（GET）
 export async function GET() {

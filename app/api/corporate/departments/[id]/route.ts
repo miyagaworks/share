@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccessState';
+import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccess';
 
 // 部署詳細取得（GET）
 export async function GET(req: Request, { params }: { params: { id: string } }) {

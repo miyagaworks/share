@@ -6,9 +6,16 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
-import { addDays } from 'date-fns'; // 既存のコードで使用されているので残す
-import { HiCheck, HiRefresh, HiXCircle, HiExclamation, HiClock } from 'react-icons/hi';
-import { checkCorporateAccess } from '@/lib/corporateAccessState'; // updateCorporateAccessStateは使わないので削除
+import { addDays } from 'date-fns';
+import { HiCheck, HiRefresh, HiXCircle, HiExclamation, HiClock, HiShieldCheck } from 'react-icons/hi';
+
+// 新APIをインポート
+import {
+  checkCorporateAccess,
+  fetchPermanentPlanType,
+  PermanentPlanType,
+  PLAN_TYPE_DISPLAY_NAMES,
+} from '@/lib/corporateAccess';
 
 // 型定義を修正
 interface SubscriptionData {
@@ -18,11 +25,8 @@ interface SubscriptionData {
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
   trialEnd?: string | null;
-  // 追加: 永久利用権ユーザーかどうかのフラグ
   isPermanentUser?: boolean;
-  // 追加: 表示用のステータス
   displayStatus?: string;
-  // 追加: プランの更新間隔
   interval?: string;
 }
 
@@ -34,7 +38,7 @@ interface SubscriptionStatusProps {
   } | null;
 }
 
-// GracePeriodInfo型を追加
+// GracePeriodInfo型
 interface GracePeriodInfo {
   isInGracePeriod?: boolean;
   isGracePeriodExpired?: boolean;
@@ -42,7 +46,7 @@ interface GracePeriodInfo {
   gracePeriodEndDate?: Date;
 }
 
-// StatusDisplay型を追加
+// StatusDisplay型
 interface StatusDisplay {
   text: string;
   className: string;
@@ -57,9 +61,12 @@ export default function SubscriptionStatus({
   const [error, setError] = useState<string | null>(null);
   const [reactivating, setReactivating] = useState(false);
   const [cancelling, setCancelling] = useState(false);
-  // 前回のプラン情報を保持するstate
   const [previousPlan, setPreviousPlan] = useState<string | null>(null);
   const [previousInterval, setPreviousInterval] = useState<string | null>(null);
+  
+  // 永久利用権関連の状態
+  const [permanentPlanType, setPermanentPlanType] = useState<PermanentPlanType | null>(null);
+  const [permanentPlanLoaded, setPermanentPlanLoaded] = useState(false);
 
   // onReloadSubscriptionの参照を保持するためのref
   const onReloadSubscriptionRef = useRef(onReloadSubscription);
@@ -68,6 +75,23 @@ export default function SubscriptionStatus({
   useEffect(() => {
     onReloadSubscriptionRef.current = onReloadSubscription;
   }, [onReloadSubscription]);
+
+  // 永久利用権プラン種別を取得
+  const loadPermanentPlanType = useCallback(async () => {
+    if (!userData?.subscriptionStatus || userData.subscriptionStatus !== 'permanent') {
+      setPermanentPlanLoaded(true);
+      return;
+    }
+
+    try {
+      const planType = await fetchPermanentPlanType();
+      setPermanentPlanType(planType);
+    } catch (error) {
+      console.error('永久利用権プラン種別取得エラー:', error);
+    } finally {
+      setPermanentPlanLoaded(true);
+    }
+  }, [userData]);
 
   // 日付のフォーマット関数
   const formatDate = (dateString: string) => {
@@ -88,7 +112,7 @@ export default function SubscriptionStatus({
   const refreshCorporateAccess = useCallback(async () => {
     try {
       console.log('法人アクセス権のリフレッシュを実行');
-      const result = await checkCorporateAccess(true); // 強制的にリフレッシュ
+      const result = await checkCorporateAccess({ force: true });
 
       // イベントをディスパッチして他のコンポーネントに通知
       if (typeof window !== 'undefined') {
@@ -143,7 +167,8 @@ export default function SubscriptionStatus({
   // 初回読み込み
   useEffect(() => {
     fetchSubscription();
-  }, [fetchSubscription]);
+    loadPermanentPlanType();
+  }, [fetchSubscription, loadPermanentPlanType]);
 
   // プラン変更を検知して法人アクセス権を更新
   useEffect(() => {
@@ -279,109 +304,132 @@ export default function SubscriptionStatus({
       }
     }
 
-    // その他のケース
-    switch (sub.status) {
-      case 'past_due':
-        return {
-          text: '支払い遅延中',
-          className: 'bg-yellow-100 text-yellow-800',
-        };
-      case 'canceled':
-        return {
-          text: 'キャンセル済み',
-          className: 'bg-red-100 text-red-800',
-        };
-      default:
-        return {
-          text: sub.displayStatus || '不明',
-          className: 'bg-gray-100 text-gray-800',
-        };
-    }
-  }, []);
+      // その他のケース
+      switch (sub.status) {
+        case 'past_due':
+          return {
+            text: '支払い遅延中',
+            className: 'bg-yellow-100 text-yellow-800',
+          };
+        case 'canceled':
+          return {
+            text: 'キャンセル済み',
+            className: 'bg-red-100 text-red-800',
+          };
+        default:
+          return {
+            text: sub.displayStatus || '不明',
+            className: 'bg-gray-100 text-gray-800',
+          };
+      }
+    }, []);
 
-  // ご利用プランを再アクティブ化
-  const handleReactivate = async () => {
-    if (!subscription) return;
-
-    try {
-      setReactivating(true);
-      const response = await fetch('/api/subscription/reactivate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({}),
-      });
-
-      if (!response.ok) {
-        const data = await response.json();
-        throw new Error(data.error || 'プランの再アクティブ化に失敗しました');
+    // ご利用プランを再アクティブ化
+    const handleReactivate = async () => {
+      // 永久利用権ユーザーはプラン変更不可
+      if (isPermanentUser()) {
+        toast.error('永久利用権ユーザーはプランを変更できません');
+        return;
       }
 
-      const data = await response.json();
-      console.log('再アクティブ化レスポンス:', data);
+      if (!subscription) return;
 
-      // 結果を反映
-      setSubscription(data.subscription);
-      toast.success('プランを再アクティブ化しました');
+      try {
+        setReactivating(true);
+        const response = await fetch('/api/subscription/reactivate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
 
-      // 法人アクセス権も更新
-      await refreshCorporateAccess();
+        if (!response.ok) {
+          const data = await response.json();
+          throw new Error(data.error || 'プランの再アクティブ化に失敗しました');
+        }
 
-      // 拡張された再読み込み処理を実行
-      enhancedReload();
-    } catch (err) {
-      console.error('再アクティブ化エラー:', err);
-      toast.error(err instanceof Error ? err.message : 'プランの再アクティブ化に失敗しました');
-    } finally {
-      setReactivating(false);
-    }
+        const data = await response.json();
+        console.log('再アクティブ化レスポンス:', data);
+
+        // 結果を反映
+        setSubscription(data.subscription);
+        toast.success('プランを再アクティブ化しました');
+
+        // 法人アクセス権も更新
+        await refreshCorporateAccess();
+
+        // 拡張された再読み込み処理を実行
+        enhancedReload();
+      } catch (err) {
+        console.error('再アクティブ化エラー:', err);
+        toast.error(err instanceof Error ? err.message : 'プランの再アクティブ化に失敗しました');
+      } finally {
+        setReactivating(false);
+      }
+    };
+
+    // ご利用プランをキャンセル
+    const handleCancel = async () => {
+      // 永久利用権ユーザーはプラン変更不可
+      if (userData?.subscriptionStatus === 'permanent') {
+        toast.error('永久利用権ユーザーはプランを変更できません');
+        return;
+      }
+
+      if (!subscription) return;
+
+      if (
+        !window.confirm(
+          'このプランをキャンセルしてもよろしいですか？\n\n現在の期間が終了するまではご利用いただけます。',
+        )
+      ) {
+        return;
+      }
+
+      try {
+        setCancelling(true);
+
+        const response = await fetch('/api/subscription/cancel', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            reason: 'User requested cancellation',
+          }),
+        });
+
+        if (!response.ok) {
+          const errorData = await response.json();
+          throw new Error(errorData.error || 'ご利用プランのキャンセルに失敗しました');
+        }
+
+        const data = await response.json();
+        console.log('キャンセルレスポンス:', data);
+
+        // 結果を反映
+        setSubscription(data.subscription);
+        toast.success('ご利用のプランをキャンセルしました');
+
+        // 法人アクセス権も更新
+  await refreshCorporateAccess();
+
+  // 拡張された再読み込み処理を実行
+  enhancedReload();
+  } catch (err) {
+    console.error('キャンセルエラー:', err);
+    toast.error(err instanceof Error ? err.message : 'ご利用プランのキャンセルに失敗しました');
+  } finally {
+    setCancelling(false);
+  }
   };
 
-  // ご利用プランをキャンセル
-  const handleCancel = async () => {
-    if (!subscription) return;
-
-    if (
-      !window.confirm(
-        'このプランをキャンセルしてもよろしいですか？\n\n現在の期間が終了するまではご利用いただけます。',
-      )
-    ) {
-      return;
+  // 永久利用権ユーザーかどうかを確認
+  const isPermanentUser = () => {
+    // サブスクリプションの状態から判定
+    if (subscription?.isPermanentUser) {
+      return true;
     }
-
-    try {
-      setCancelling(true);
-
-      const response = await fetch('/api/subscription/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reason: 'User requested cancellation',
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'ご利用プランのキャンセルに失敗しました');
-      }
-
-      const data = await response.json();
-      console.log('キャンセルレスポンス:', data);
-
-      // 結果を反映
-      setSubscription(data.subscription);
-      toast.success('ご利用のプランをキャンセルしました');
-
-      // 法人アクセス権も更新
-      await refreshCorporateAccess();
-
-      // 拡張された再読み込み処理を実行
-      enhancedReload();
-    } catch (err) {
-      console.error('キャンセルエラー:', err);
-      toast.error(err instanceof Error ? err.message : 'ご利用プランのキャンセルに失敗しました');
-    } finally {
-      setCancelling(false);
-    }
+    
+    // または、ユーザーデータから直接判定
+    return userData?.subscriptionStatus === 'permanent';
   };
 
   // 猶予期間の計算関数
@@ -426,13 +474,37 @@ export default function SubscriptionStatus({
     return null;
   }, [userData, subscription]);
 
+  // 永久利用権プラン情報表示コンポーネント
+  const PermanentPlanInfo = () => {
+    const displayName = permanentPlanType 
+      ? PLAN_TYPE_DISPLAY_NAMES[permanentPlanType]
+      : '永久利用権プラン';
+      
+    return (
+      <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
+        <div className="flex items-center mb-2">
+          <HiShieldCheck className="h-5 w-5 text-blue-700 mr-2" />
+          <h3 className="font-medium text-blue-800">{displayName}</h3>
+        </div>
+        <p className="text-sm text-blue-700">
+          特別会員ステータスです。料金を支払わずに永続的に全ての機能をご利用いただけます。
+        </p>
+        {permanentPlanType && (
+          <div className="mt-2 text-xs text-blue-600 bg-blue-100 p-2 rounded">
+            <strong>注意:</strong> 永久利用権のため、プランの変更やキャンセルはできません。ご不明点は管理者にお問い合わせください。
+          </div>
+        )}
+      </div>
+    );
+  };
+
   const gracePeriodInfo = getGracePeriodInfo();
   const statusDisplay = subscription
     ? getStatusDisplay(subscription)
     : { text: '読み込み中...', className: 'bg-gray-100 text-gray-800' };
 
   // 読み込み中
-  if (loading) {
+  if (loading || !permanentPlanLoaded) {
     return (
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex items-center justify-center min-h-[200px]">
         <div className="text-center">
@@ -515,6 +587,39 @@ export default function SubscriptionStatus({
             </div>
           </div>
         </div>
+      </div>
+    );
+  }
+
+  // 永久利用権ユーザーの場合は特別表示
+  if (isPermanentUser()) {
+    return (
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex items-start">
+            <div className="flex-shrink-0 mr-3">
+              <div className="bg-blue-100 p-2 rounded-full">
+                <HiShieldCheck className="h-5 w-5 text-blue-600" />
+              </div>
+            </div>
+
+            <div className="flex-1">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
+                <h3 className="text-lg font-medium mb-2 sm:mb-0">現在のプラン</h3>
+                <span className="text-sm font-medium px-2 py-1 rounded-full bg-blue-100 text-blue-800 inline-block">
+                  永久利用
+                </span>
+              </div>
+
+              {/* 永久利用権プラン情報 */}
+              <PermanentPlanInfo />
+            </div>
+          </div>
+        </motion.div>
       </div>
     );
   }
@@ -605,7 +710,7 @@ export default function SubscriptionStatus({
 
             <div className="mt-4 space-y-3">
               {/* 永久利用権ユーザーでない場合のみ次回更新日を表示 */}
-              {!(subscription?.isPermanentUser || userData?.subscriptionStatus === 'permanent') && (
+              {!isPermanentUser() && (
                 <div className="flex justify-between items-center">
                   <span className="text-sm text-gray-500">次回更新日</span>
                   <span className="text-sm font-medium">
@@ -616,69 +721,55 @@ export default function SubscriptionStatus({
                 </div>
               )}
 
-              {/* 永久利用権ユーザーの場合の表示 */}
-              {(subscription?.isPermanentUser || userData?.subscriptionStatus === 'permanent') && (
+              {subscription?.status === 'trialing' && !isPermanentUser() && (
                 <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
                   <p className="text-sm text-blue-800 text-justify">
-                    特別会員ステータスです。料金を支払わずに永続的に全ての機能をご利用いただけます。
+                    無料トライアル期間中です。
+                    <strong>
+                      {formatDate(subscription.trialEnd || subscription.currentPeriodEnd)}
+                    </strong>
+                    まで
+                    {subscription.plan === 'monthly'
+                      ? '月額'
+                      : subscription.plan === 'yearly'
+                        ? '年額'
+                        : ''}
+                    プランをお試しいただけます。
                   </p>
                 </div>
               )}
 
-              {subscription?.status === 'trialing' &&
-                !subscription?.isPermanentUser &&
-                userData?.subscriptionStatus !== 'permanent' && (
-                  <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
-                    <p className="text-sm text-blue-800 text-justify">
-                      無料トライアル期間中です。
-                      <strong>
-                        {formatDate(subscription.trialEnd || subscription.currentPeriodEnd)}
-                      </strong>
-                      まで
-                      {subscription.plan === 'monthly'
-                        ? '月額'
-                        : subscription.plan === 'yearly'
-                          ? '年額'
-                          : ''}
-                      プランをお試しいただけます。
-                    </p>
-                  </div>
-                )}
-
-              {subscription?.cancelAtPeriodEnd &&
-                !subscription?.isPermanentUser &&
-                userData?.subscriptionStatus !== 'permanent' && (
-                  <div className="bg-amber-50 border border-amber-100 rounded-md p-3 mt-4">
-                    <p className="text-sm text-amber-800">
-                      このプランは
-                      <strong>{formatDate(subscription.currentPeriodEnd)}</strong>
-                      にキャンセルされる予定です。それまではすべての機能をご利用いただけます。
-                    </p>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="mt-2"
-                      onClick={handleReactivate}
-                      disabled={reactivating}
-                    >
-                      {reactivating ? (
-                        <>
-                          <Spinner size="sm" className="mr-2" />
-                          処理中...
-                        </>
-                      ) : (
-                        <>
-                          <HiRefresh className="mr-2 h-4 w-4" />
-                          プランを継続する
-                        </>
-                      )}
-                    </Button>
-                  </div>
-                )}
+              {subscription?.cancelAtPeriodEnd && !isPermanentUser() && (
+                <div className="bg-amber-50 border border-amber-100 rounded-md p-3 mt-4">
+                  <p className="text-sm text-amber-800">
+                    このプランは
+                    <strong>{formatDate(subscription.currentPeriodEnd)}</strong>
+                    にキャンセルされる予定です。それまではすべての機能をご利用いただけます。
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="mt-2"
+                    onClick={handleReactivate}
+                    disabled={reactivating}
+                  >
+                    {reactivating ? (
+                      <>
+                        <Spinner size="sm" className="mr-2" />
+                        処理中...
+                      </>
+                    ) : (
+                      <>
+                        <HiRefresh className="mr-2 h-4 w-4" />
+                        プランを継続する
+                      </>
+                    )}
+                  </Button>
+                </div>
+              )}
             </div>
 
-            {!subscription?.isPermanentUser &&
-              userData?.subscriptionStatus !== 'permanent' &&
+            {!isPermanentUser() &&
               !subscription?.cancelAtPeriodEnd &&
               (subscription?.status === 'active' || subscription?.status === 'trialing') && (
                 <div className="mt-6">

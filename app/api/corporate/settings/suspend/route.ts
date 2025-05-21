@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { checkPermanentAccess } from '@/lib/corporateAccessState';
+import { checkPermanentAccess } from '@/lib/corporateAccess';
 
 export async function POST() {
   try {

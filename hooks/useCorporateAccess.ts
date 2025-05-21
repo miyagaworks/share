@@ -7,7 +7,7 @@ import {
   corporateAccessState,
   checkCorporateAccess,
   initializeClientState,
-} from '@/lib/corporateAccessState';
+} from '@/lib/corporateAccess';
 
 interface UseCorporateAccessOptions {
   redirectIfNoAccess?: boolean;
@@ -112,7 +112,8 @@ export function useCorporateAccess({
       }
 
       // APIを呼び出して状態を更新
-      const result = await checkCorporateAccess(forceCheck); // forceCheckを使用
+      // 修正: forceCheck を { force: forceCheck } に変更
+      const result = await checkCorporateAccess({ force: forceCheck });
       console.log('[useCorporateAccess] API結果:', result);
 
       // 結果を適用
@@ -142,8 +143,8 @@ export function useCorporateAccess({
         userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'SSR',
       });
 
-      // 強制的に再チェック (モバイルフラグを渡す)
-      const result = await checkCorporateAccess(true);
+      // 強制的に再チェック (修正: true を { force: true } に変更)
+      const result = await checkCorporateAccess({ force: true });
       console.log('[useCorporateAccess] 強制更新結果:', result);
 
       // テナントIDが取得できない場合にフォールバック

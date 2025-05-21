@@ -6,7 +6,7 @@ import { HiMenu, HiX, HiOfficeBuilding, HiHome, HiUser } from 'react-icons/hi';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccessState';
+import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccess';
 
 interface MenuItemType {
   title: string;

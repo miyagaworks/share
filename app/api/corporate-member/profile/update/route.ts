@@ -9,7 +9,7 @@ import {
   checkPermanentAccess,
   updateVirtualTenantData,
   getVirtualTenantData,
-} from '@/lib/corporateAccessState';
+} from '@/lib/corporateAccess';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
 
 // バリデーションスキーマ - 姓名を個別に管理するフィールドを追加

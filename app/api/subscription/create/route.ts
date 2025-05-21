@@ -5,6 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { isStripeAvailable } from '@/lib/stripe';
+import { checkPermanentAccess } from '@/lib/corporateAccess';
 
 // プランに基づいて適切な期間終了日を計算する関数
 function calculatePeriodEndDate(plan: string, interval: string, startDate: Date): Date {
@@ -36,6 +37,19 @@ export async function POST(req: NextRequest) {
     if (!session?.user?.id) {
       console.log('認証エラー: ユーザーIDが見つかりません');
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
+    }
+
+    // 永久利用権チェック（リファクタリング後のAPI使用）
+    // クライアントサイドで不可能にするだけでなく、サーバーサイドでも二重チェック
+    const isPermanent = checkPermanentAccess();
+    if (isPermanent) {
+      return NextResponse.json(
+        {
+          error: '永久利用権ユーザーはプランを変更できません',
+          code: 'permanent_user_restriction',
+        },
+        { status: 403 },
+      );
     }
 
     // 本番環境でStripeが利用可能かどうかをチェック
@@ -73,7 +87,6 @@ export async function POST(req: NextRequest) {
         { status: 400 },
       );
     }
-    // ========= ここまで追加 =========
 
     console.log('ユーザー情報取得開始:', session.user.id);
 
@@ -94,6 +107,17 @@ export async function POST(req: NextRequest) {
     if (!user) {
       console.log('ユーザーが見つかりません:', session.user.id);
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+    }
+
+    // 永久利用権チェック（データベースから直接チェック）
+    if (user.subscriptionStatus === 'permanent') {
+      return NextResponse.json(
+        {
+          error: '永久利用権ユーザーはプランを変更できません',
+          code: 'permanent_user_restriction',
+        },
+        { status: 403 },
+      );
     }
 
     console.log('ユーザー情報:', user);

@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import {
   checkPermanentAccess,
   getVirtualTenantData,
-} from '@/lib/corporateAccessState';
+} from '@/lib/corporateAccess';
 
 export function useCorporateData<T>(apiEndpoint: string, defaultData: T) {
   const [data, setData] = useState<T>(defaultData);
