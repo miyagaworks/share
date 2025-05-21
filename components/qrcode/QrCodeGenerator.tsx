@@ -2,12 +2,10 @@
 'use client';
 
 import { useState, useRef, useEffect } from 'react';
-const Link = dynamic(() => import('next/link'), { ssr: false });
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { FaMobile, FaLink, FaCopy } from 'react-icons/fa';
-import { HiColorSwatch, HiEye, HiArrowLeft } from 'react-icons/hi';
-import dynamic from 'next/dynamic';
+import { HiColorSwatch, HiEye } from 'react-icons/hi'; // HiArrowLeftを削除
 import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker';
 import { QrCodePreview } from './QrCodePreview';
 import { motion } from 'framer-motion';
@@ -31,11 +29,11 @@ interface UserProfile {
 interface QrCodeGeneratorProps {
   corporateBranding?: CorporateBranding;
   userProfile: UserProfile;
-  hideBackButton?: boolean;
+  hideBackButton?: boolean; // インターフェースとしては残す（他コンポーネントが使用）
   hideSlugInput?: boolean;
-  customBackUrl?: string;
+  customBackUrl?: string; // インターフェースとしては残す（他コンポーネントが使用）
   initialQrCodeSlug?: string;
-  hideTitleHeader?: boolean; // 追加: タイトルヘッダーを非表示にするオプション
+  hideTitleHeader?: boolean;
 }
 
 // ユーザー設定を保存するためのローカルストレージキー（ベストプラクティス：定数化）
@@ -45,20 +43,15 @@ const USER_TEXT_COLOR_KEY = 'userTextColor';
 export function QrCodeGenerator({
   corporateBranding,
   userProfile,
-  hideBackButton = false,
+  // コンポーネント内では使用しないが、型定義のためにpropsは残す
+  hideBackButton = false, // eslint-disable-line @typescript-eslint/no-unused-vars
   hideSlugInput = false,
-  customBackUrl,
+  customBackUrl, // eslint-disable-line @typescript-eslint/no-unused-vars
   initialQrCodeSlug,
   hideTitleHeader = false,
 }: QrCodeGeneratorProps) {
-  // ユーザーが法人メンバーかどうかを判断
-  const isCorporateMember = !!corporateBranding;
-
-  // 戻るボタンのリンク先を決定（関数として分離）
-  const getBackUrl = () => {
-    if (customBackUrl) return customBackUrl;
-    return isCorporateMember ? '/dashboard/corporate-member/share' : '/dashboard/share';
-  };
+  // isCorporateMemberは法人ブランディングの条件分岐で使用
+  const isCorporateMember = !!corporateBranding; // eslint-disable-line @typescript-eslint/no-unused-vars
 
   // 初期値の設定
   const initialPrimaryColor = corporateBranding?.primaryColor || '#3B82F6';
@@ -170,7 +163,7 @@ export function QrCodeGenerator({
     };
 
     loadQrCodeData();
-  }, [corporateBranding, initialQrCodeSlug]); // 依存配列に initialQrCodeSlug を追加
+  }, [corporateBranding, initialQrCodeSlug]);
 
   // カスタムURLスラグの利用可能性をチェック（APIリクエストをラップした関数）
   const checkSlugAvailability = async (slug: string) => {
@@ -351,19 +344,8 @@ export function QrCodeGenerator({
 
   return (
     <div className="space-y-6">
-      {/* 戻るボタンの条件を厳しくする - カスタムURLが無い場合のみ表示 */}
-      {!hideBackButton && !customBackUrl && (
-        <div className="flex items-center mb-4">
-          <Link
-            href={getBackUrl()}
-            className="text-sm flex items-center text-gray-600 hover:text-gray-900"
-          >
-            <HiArrowLeft className="mr-1 h-4 w-4" />
-            共有設定に戻る
-          </Link>
-        </div>
-      )}
-      
+      {/* 戻るボタンを完全に削除 */}
+
       {/* ヘッダー部分 - hideTitleHeaderがtrueの場合は非表示 */}
       {!hideTitleHeader && (
         <div className="flex items-center mb-6">
