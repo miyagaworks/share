@@ -40,9 +40,9 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   const [isPermanentUser, setIsPermanentUser] = useState(false);
   const [permanentPlanType, setPermanentPlanType] = useState<string | null>(null);
 
-  // 招待メンバーかどうか（corporateRoleがmemberかつ管理者でない）
-  const isInvitedMember =
-    corporateAccessState.userRole === 'member' && !corporateAccessState.isAdmin;
+  // 🔧 招待メンバー判定を状態管理に変更（重要な修正）
+  const [isInvitedMember, setIsInvitedMember] = useState(false);
+  const [isUserTypeResolved, setIsUserTypeResolved] = useState(false);
 
   // 現在の URL パスをチェック
   const isCorporateSection = pathname?.startsWith('/dashboard/corporate');
@@ -51,6 +51,41 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
   useEffect(() => {
     setIsMounted(true);
+
+    // 🔧 初期状態の設定とイベントリスナーを統合
+    const updateMemberStatus = () => {
+      // 招待メンバー判定（corporateAccessStateから）
+      const isInvited = corporateAccessState.userRole === 'member' && !corporateAccessState.isAdmin;
+
+      console.log('🔧 招待メンバー状態更新:', {
+        userRole: corporateAccessState.userRole,
+        isAdmin: corporateAccessState.isAdmin,
+        hasAccess: corporateAccessState.hasAccess,
+        isInvited,
+        lastChecked: corporateAccessState.lastChecked,
+      });
+
+      setIsInvitedMember(isInvited);
+
+      // ユーザータイプが解決されたかどうか判定
+      // userRoleがnullでない、またはhasAccessが明確に判定されている場合
+      const isResolved =
+        corporateAccessState.userRole !== null ||
+        corporateAccessState.hasAccess !== null ||
+        corporateAccessState.lastChecked > 0;
+
+      setIsUserTypeResolved(isResolved);
+
+      console.log('🔧 ユーザータイプ解決状態:', {
+        isResolved,
+        userRole: corporateAccessState.userRole,
+        hasAccess: corporateAccessState.hasAccess,
+        lastChecked: corporateAccessState.lastChecked,
+      });
+    };
+
+    // 初期状態をチェック
+    updateMemberStatus();
 
     // クライアントサイドでのみ永久利用権のチェック
     if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
@@ -71,12 +106,18 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       }
     }
 
-    // アクセス状態変更イベントのリスナー
+    // 🔧 アクセス状態変更イベントのリスナーを修正
     const handleAccessChange = () => {
+      console.log('🔧 corporateAccessChanged イベント受信');
+
+      // 永久利用権状態の更新
       if (corporateAccessState.isPermanentUser) {
         setIsPermanentUser(true);
         setPermanentPlanType(corporateAccessState.permanentPlanType);
       }
+
+      // 招待メンバー状態の更新
+      updateMemberStatus();
     };
 
     window.addEventListener('corporateAccessChanged', handleAccessChange);
@@ -103,8 +144,122 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     );
   }
 
+  // 🔧 ユーザータイプが解決されていない場合は最小限の表示
+  if (!isUserTypeResolved) {
+    console.log('🔧 ユーザータイプ未解決のため最小限表示');
+    return (
+      <motion.div
+        initial={false}
+        animate={{ width: collapsed ? 64 : 256 }}
+        transition={{ duration: 0.3 }}
+        className="fixed top-0 left-0 h-full bg-white border-r border-gray-200 z-20 pt-16"
+      >
+        <div className="h-full overflow-y-auto overflow-x-hidden">
+          <div className="flex items-center justify-between p-4 mb-2">
+            <h2
+              className={cn(
+                'text-sm font-semibold text-gray-600 uppercase transition-opacity',
+                collapsed ? 'opacity-0' : 'opacity-100',
+              )}
+            >
+              読み込み中...
+            </h2>
+            <button
+              onClick={toggleCollapse}
+              className="p-1 rounded-md hover:bg-blue-100 transition-colors focus:outline-none"
+              aria-label={collapsed ? 'サイドバーを展開' : 'サイドバーを折りたたむ'}
+            >
+              {collapsed ? (
+                <HiChevronRight className="h-5 w-5 text-gray-600" />
+              ) : (
+                <HiChevronLeft className="h-5 w-5 text-gray-600" />
+              )}
+            </button>
+          </div>
+
+          {/* メインメニュー項目のみ表示（追加リンクは表示しない） */}
+          <nav className="space-y-1 px-2">
+            {items.map((item) => {
+              // 区切り線の場合は特別な表示を行う
+              if (item.isDivider) {
+                return (
+                  <div key={`divider-${item.title}`} className="relative my-6">
+                    <div className="absolute inset-0 flex items-center">
+                      <div
+                        className={cn(
+                          'border-t border-gray-200',
+                          collapsed ? 'w-10 mx-auto' : 'w-full',
+                        )}
+                      ></div>
+                    </div>
+                    {!collapsed && (
+                      <div className="relative flex justify-center">
+                        <span className="px-2 bg-white text-xs font-semibold uppercase text-gray-500">
+                          {item.title}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                );
+              }
+
+              // アクティブなリンクかどうか
+              const isActive = pathname === item.href;
+              // 法人関連のリンクかどうか
+              const isCorporateLink = item.href.includes('/corporate');
+
+              // 条件に応じたクラス生成
+              let itemClass = '';
+              let iconClass = '';
+
+              if (isActive) {
+                if (isCorporateRelated || isCorporateLink) {
+                  // 法人セクションまたは法人関連リンクのアクティブスタイル
+                  itemClass = 'corporate-menu-active';
+                  iconClass = 'corporate-icon-active';
+                } else {
+                  // 通常セクションのアクティブスタイル
+                  itemClass = 'bg-blue-50 text-blue-700';
+                  iconClass = 'text-blue-700';
+                }
+              } else {
+                // 非アクティブスタイル
+                itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
+                iconClass = 'text-gray-600 group-hover:text-blue-700';
+              }
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={cn(
+                    'flex items-center px-3 py-2 text-sm font-medium rounded-md transition-colors group',
+                    itemClass,
+                    collapsed ? 'justify-center' : 'justify-start',
+                  )}
+                >
+                  <div className={cn('flex-shrink-0', iconClass)}>{item.icon}</div>
+                  <span
+                    className={cn(
+                      'ml-3 transition-opacity duration-200',
+                      collapsed ? 'opacity-0 hidden' : 'opacity-100',
+                    )}
+                  >
+                    {item.title}
+                  </span>
+                </Link>
+              );
+            })}
+          </nav>
+        </div>
+      </motion.div>
+    );
+  }
+
   // 法人メンバーセクションにいて、招待メンバーの場合は専用のメニューを表示
   if (isCorporateMemberSection && isInvitedMember) {
+    console.log('🔧 招待メンバー専用メニューを表示');
+
     // 招待メンバー向けの専用メニュー（上部メニューと同じ項目）
     const memberMenuItems: SidebarItem[] = [
       {
@@ -234,7 +389,14 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     );
   }
 
-  // 通常のユーザー向け表示（変更なし）
+  // 通常のユーザー向け表示
+  console.log('🔧 通常ユーザー向け表示', {
+    isInvitedMember,
+    isUserTypeResolved,
+    userRole: corporateAccessState.userRole,
+    hasAccess: corporateAccessState.hasAccess,
+  });
+
   // メインメニュー項目
   const mainMenuItems = [...items];
 
@@ -253,80 +415,83 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   const isPermanentBusinessUser =
     isPermanentUser && permanentPlanType && permanentPlanType !== PermanentPlanType.PERSONAL;
 
-  // 法人セクションにいる場合
-  if (isCorporateSection) {
-    // 個人ダッシュボードへのリンクを追加（存在しない場合のみ）
-    if (!existingUrls.has('/dashboard')) {
-      additionalLinks.push({
-        title: '個人ダッシュボード',
-        href: '/dashboard',
-        icon: <HiHome className="h-5 w-5" />,
-      });
+  // 🔧 追加リンクの生成を招待メンバーでない場合のみに制限
+  if (!isInvitedMember) {
+    // 法人セクションにいる場合
+    if (isCorporateSection) {
+      // 個人ダッシュボードへのリンクを追加（存在しない場合のみ）
+      if (!existingUrls.has('/dashboard')) {
+        additionalLinks.push({
+          title: '個人ダッシュボード',
+          href: '/dashboard',
+          icon: <HiHome className="h-5 w-5" />,
+        });
+      }
+
+      // 法人管理者または永久利用権ユーザーの場合、法人メンバーダッシュボードも表示
+      if (
+        (corporateAccessState.hasAccess || isPermanentBusinessUser) &&
+        !existingUrls.has('/dashboard/corporate-member')
+      ) {
+        additionalLinks.push({
+          title: '法人メンバープロフィール',
+          href: '/dashboard/corporate-member',
+          icon: <HiUser className="h-5 w-5" />,
+        });
+      }
     }
 
-    // 法人管理者または永久利用権ユーザーの場合、法人メンバーダッシュボードも表示
-    if (
-      (corporateAccessState.hasAccess || isPermanentBusinessUser) &&
-      !existingUrls.has('/dashboard/corporate-member')
+    // 法人メンバーセクションにいる場合
+    else if (isCorporateMemberSection) {
+      // 個人ダッシュボードリンクを表示
+      if (!existingUrls.has('/dashboard')) {
+        additionalLinks.push({
+          title: '個人ダッシュボード',
+          href: '/dashboard',
+          icon: <HiHome className="h-5 w-5" />,
+        });
+      }
+
+      // 法人管理者または永久利用権ユーザーの場合、法人管理ダッシュボードも表示
+      if (
+        (corporateAccessState.isAdmin || isPermanentBusinessUser) &&
+        !existingUrls.has('/dashboard/corporate')
+      ) {
+        additionalLinks.push({
+          title: '法人管理ダッシュボード',
+          href: '/dashboard/corporate',
+          icon: <HiOfficeBuilding className="h-5 w-5" />,
+        });
+      }
+    }
+
+    // 個人セクションにいて法人アクセス権がある場合
+    else if (
+      !isCorporateSection &&
+      !isCorporateMemberSection &&
+      pathname?.startsWith('/dashboard') &&
+      (corporateAccessState.hasAccess || isPermanentBusinessUser)
     ) {
-      additionalLinks.push({
-        title: '法人メンバープロフィール',
-        href: '/dashboard/corporate-member',
-        icon: <HiUser className="h-5 w-5" />,
-      });
-    }
-  }
+      // 法人メンバーダッシュボードへのリンクを追加（存在しない場合のみ）
+      if (!existingUrls.has('/dashboard/corporate-member')) {
+        additionalLinks.push({
+          title: '法人メンバープロフィール',
+          href: '/dashboard/corporate-member',
+          icon: <HiUser className="h-5 w-5" />,
+        });
+      }
 
-  // 法人メンバーセクションにいる場合
-  else if (isCorporateMemberSection) {
-    // 招待メンバーでない場合のみ個人ダッシュボードリンクを表示
-    if (!isInvitedMember && !existingUrls.has('/dashboard')) {
-      additionalLinks.push({
-        title: '個人ダッシュボード',
-        href: '/dashboard',
-        icon: <HiHome className="h-5 w-5" />,
-      });
-    }
-
-    // 法人管理者または永久利用権ユーザーの場合、法人管理ダッシュボードも表示
-    if (
-      (corporateAccessState.isAdmin || isPermanentBusinessUser) &&
-      !existingUrls.has('/dashboard/corporate')
-    ) {
-      additionalLinks.push({
-        title: '法人管理ダッシュボード',
-        href: '/dashboard/corporate',
-        icon: <HiOfficeBuilding className="h-5 w-5" />,
-      });
-    }
-  }
-
-  // 個人セクションにいて法人アクセス権がある場合
-  else if (
-    !isCorporateSection &&
-    !isCorporateMemberSection &&
-    pathname?.startsWith('/dashboard') &&
-    (corporateAccessState.hasAccess || isPermanentBusinessUser)
-  ) {
-    // 法人メンバーダッシュボードへのリンクを追加（存在しない場合のみ）
-    if (!existingUrls.has('/dashboard/corporate-member')) {
-      additionalLinks.push({
-        title: '法人メンバープロフィール',
-        href: '/dashboard/corporate-member',
-        icon: <HiUser className="h-5 w-5" />,
-      });
-    }
-
-    // 法人管理者または法人プラン永久利用権ユーザーの場合、法人管理ダッシュボードも表示
-    if (
-      (corporateAccessState.isAdmin || isPermanentBusinessUser) &&
-      !existingUrls.has('/dashboard/corporate')
-    ) {
-      additionalLinks.push({
-        title: '法人管理ダッシュボード',
-        href: '/dashboard/corporate',
-        icon: <HiOfficeBuilding className="h-5 w-5" />,
-      });
+      // 法人管理者または法人プラン永久利用権ユーザーの場合、法人管理ダッシュボードも表示
+      if (
+        (corporateAccessState.isAdmin || isPermanentBusinessUser) &&
+        !existingUrls.has('/dashboard/corporate')
+      ) {
+        additionalLinks.push({
+          title: '法人管理ダッシュボード',
+          href: '/dashboard/corporate',
+          icon: <HiOfficeBuilding className="h-5 w-5" />,
+        });
+      }
     }
   }
 
