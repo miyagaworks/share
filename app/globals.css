@@ -26,6 +26,49 @@
     }
 }
 
+/* iOS ダークモード対応 */
+@media (inverted-colors: inverted) {
+
+    /* 色反転時の対応 */
+    * {
+        -webkit-filter: invert(1) !important;
+        filter: invert(1) !important;
+    }
+
+    /* 画像とメディア要素は二重反転で元に戻す */
+    img,
+    video,
+    iframe,
+    svg,
+    canvas {
+        -webkit-filter: invert(1) !important;
+        filter: invert(1) !important;
+    }
+}
+
+/* スマートな色の反転対応 */
+html {
+    color-scheme: light dark;
+}
+
+/* 重要なテキスト要素の明示的な色設定 */
+.force-dark-text {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+}
+
+.force-light-text {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+/* フォームコントロールの対応 */
+input,
+textarea,
+select,
+button {
+    color-scheme: light dark; }
+
 body {
     background: var(--background);
     color: var(--foreground);
