@@ -25,12 +25,18 @@ export const metadata: Metadata = {
     shortcut: '/pwa/favicon.ico',
     apple: '/pwa/apple-touch-icon.png',
   },
+  // iOS ダークモード対応
+  other: {
+    'color-scheme': 'light dark',
+    'supported-color-schemes': 'light dark',
+  },
 };
 
 // ビューポート設定
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1.0,
+  colorScheme: 'light dark',
 };
 
 export default function RootLayout({
@@ -40,6 +46,10 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
+      <head>
+        <meta name="color-scheme" content="light dark" />
+        <meta name="supported-color-schemes" content="light dark" />
+      </head>
       <body className={`${inter.variable} ${robotoMono.variable} font-sans antialiased`}>
         <SessionProvider>
           <ToastProvider />
