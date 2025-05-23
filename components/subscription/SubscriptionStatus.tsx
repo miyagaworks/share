@@ -361,19 +361,19 @@ export default function SubscriptionStatus({
 
         if (sub.plan === 'starter') {
           planType = 'スタータープラン';
-          renewalInfo = interval === 'year' ? '(年間/10名まで)' : '(月額/10名まで)';
+          renewalInfo = interval === 'year' ? '（年間/10名）' : '（月額/10名）';
         } else if (sub.plan === 'business') {
           planType = 'ビジネスプラン';
-          renewalInfo = interval === 'year' ? '(年間/30名まで)' : '(月額/30名まで)';
+          renewalInfo = interval === 'year' ? '（年間/30名）' : '（月額/30名）';
         } else if (sub.plan === 'enterprise') {
           planType = 'エンタープライズプラン';
-          renewalInfo = interval === 'year' ? '(年間/50名まで)' : '(月額/50名まで)';
+          renewalInfo = interval === 'year' ? '（年間/50名）' : '（月額/50名）';
         } else if (sub.plan === 'business_legacy') {
           planType = 'スタータープラン';
-          renewalInfo = '(10名まで)';
+          renewalInfo = '（10名まで）';
         } else if (sub.plan === 'business-plus' || sub.plan === 'business_plus') {
           planType = 'ビジネスプラン';
-          renewalInfo = '(30名まで)';
+          renewalInfo = '（30名まで）';
         }
         planType = `法人${planType}`;
 
@@ -788,10 +788,11 @@ export default function SubscriptionStatus({
           </div>
 
           <div className="flex-1">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4">
-              <h3 className="text-lg font-medium mb-2 sm:mb-0">現在のプラン</h3>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+              <h3 className="text-lg font-medium leading-relaxed flex-1">現在のプラン</h3>
               <span
-                className={`text-sm font-medium px-2 py-1 rounded-full ${statusDisplay.className} inline-block`}
+                className={`text-sm sm:text-base font-medium px-2 py-2 rounded-lg text-justify leading-tight break-words max-w-[200px] sm:max-w-none inline-block ${statusDisplay.className}`}
+                style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
               >
                 {statusDisplay.text}
               </span>
