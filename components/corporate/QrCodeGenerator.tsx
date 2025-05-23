@@ -6,9 +6,15 @@ import { toast } from 'react-hot-toast';
 import { FaImage, FaCode } from 'react-icons/fa';
 import { HiEye } from 'react-icons/hi';
 
-// QRコードの色オプション
-const QR_COLOR_OPTIONS = [
-  { id: 'corporate', name: '法人カラー', value: 'CORPORATE_PLACEHOLDER' }, // プレースホルダー値に変更
+// 型定義
+interface QRColorOption {
+  id: string;
+  name: string;
+  value: string | null;
+}
+
+const QR_COLOR_OPTIONS: QRColorOption[] = [
+  { id: 'corporate', name: '法人カラー', value: null },
   { id: 'black', name: 'ブラック', value: '#000000' },
   { id: 'darkGray', name: 'ダークグレー', value: '#333333' },
 ];
@@ -34,7 +40,7 @@ export function QrCodeGenerator({
   hideSlugInput = false,
   hideGenerateButton = false,
 }: QrCodeGeneratorProps) {
-  const [size, setSize] = useState(200); // サイズを調整可能に
+  const [size, setSize] = useState(200);
   const [selectedColor, setSelectedColor] = useState('corporate');
   const qrRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
@@ -42,13 +48,30 @@ export function QrCodeGenerator({
   // 法人カラーを設定
   const corporateColor = corporatePrimaryColor || '#1E3A8A';
 
-  // 選択された色のオブジェクトを取得
+  const getButtonColor = (option: QRColorOption, corporateColor: string): string => {
+    console.log(
+      `getButtonColor: ${option.id} -> ${option.id === 'corporate' ? corporateColor : option.value}`,
+    ); // 一時的なログ
+
+    if (option.id === 'corporate') {
+      return corporateColor;
+    }
+    if (option.id === 'black') {
+      return '#000000';
+    }
+    if (option.id === 'darkGray') {
+      return '#333333';
+    }
+
+    return option.value || '#000000';
+  };
+
   const colorOption =
     QR_COLOR_OPTIONS.find((option) => option.id === selectedColor) || QR_COLOR_OPTIONS[0];
-  const qrColor = colorOption.id === 'corporate' ? corporateColor : colorOption.value;
+  const qrColor = getButtonColor(colorOption, corporateColor);
   const bgColor = 'white';
 
-  // 内部スラグ状態
+  // 残りの状態変数
   const [internalSlug, setInternalSlug] = useState(qrCodeSlug || '');
   const [isSlugAvailable, setIsSlugAvailable] = useState(false);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
@@ -61,6 +84,16 @@ export function QrCodeGenerator({
       checkSlugAvailability(qrCodeSlug);
     }
   }, [qrCodeSlug, internalSlug]);
+
+  // useEffect を追加してコンソールで確認
+  useEffect(() => {
+    console.log('QR_COLOR_OPTIONS:', QR_COLOR_OPTIONS);
+    console.log('corporateColor:', corporateColor);
+    console.log('selectedColor:', selectedColor);
+    console.log('colorOption:', colorOption);
+    console.log('qrColor:', qrColor);
+    console.log('getButtonColor result:', getButtonColor(colorOption, corporateColor));
+  }, [corporateColor, selectedColor, colorOption, qrColor]);
 
   // QRコードのスタイル
   const qrStyle = {
@@ -383,7 +416,7 @@ export function QrCodeGenerator({
                   selectedColor === option.id ? 'font-bold' : 'font-normal'
                 }`}
                 style={{
-                  backgroundColor: option.id === 'corporate' ? corporateColor : option.value,
+                  backgroundColor: getButtonColor(option, corporateColor), // これは正しい
                   color: 'white',
                   border: 'none',
                 }}
@@ -394,7 +427,7 @@ export function QrCodeGenerator({
                 <div
                   className="h-1 mt-1 rounded-full mx-auto"
                   style={{
-                    backgroundColor: option.id === 'corporate' ? corporateColor : option.value,
+                    backgroundColor: getButtonColor(option, corporateColor), // これも正しい
                     width: '50%',
                   }}
                 ></div>
@@ -439,7 +472,7 @@ export function QrCodeGenerator({
         >
           <FaImage className="h-4 w-4" />
           <span className="font-bold">PNG</span>
-          <span style={{ fontSize: '0.75rem', margin: '0 -6px' }}>（画像用）</span>
+          <span style={{ fontSize: '0.75rem', margin: '0 -6px' }}>(画像用)</span>
         </Button>
 
         <Button
@@ -449,7 +482,7 @@ export function QrCodeGenerator({
         >
           <FaCode className="h-4 w-4" />
           <span className="font-bold">SVG</span>
-          <span style={{ fontSize: '0.75rem', margin: '0 -6px' }}>（印刷用）</span>
+          <span style={{ fontSize: '0.75rem', margin: '0 -6px' }}>(印刷用)</span>
         </Button>
       </div>
 
