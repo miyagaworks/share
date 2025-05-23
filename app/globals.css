@@ -27,53 +27,80 @@
 }
 
 /* iOS ダークモード対応 */
-@media (inverted-colors: inverted) {
-
-    /* 色反転時の対応 */
-    * {
-        -webkit-filter: invert(1) !important;
-        filter: invert(1) !important;
-    }
-
-    /* 画像とメディア要素は二重反転で元に戻す */
-    img,
-    video,
-    iframe,
-    svg,
-    canvas {
-        -webkit-filter: invert(1) !important;
-        filter: invert(1) !important;
-    }
-}
-
-/* スマートな色の反転対応 */
+/* iOS ダークモード全体対応 */
 html {
     color-scheme: light dark;
 }
 
-/* 重要なテキスト要素の明示的な色設定 */
-.force-dark-text {
+/* 基本的なテキスト要素の色を強制 */
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p,
+span,
+div,
+a,
+li,
+td,
+th,
+label {
     color: #000000 !important;
     -webkit-text-fill-color: #000000 !important;
 }
 
-.force-light-text {
+/* 白いテキストが必要な要素（ボタンなど） */
+.bg-blue-600,
+.bg-blue-500,
+.bg-gray-800,
+.bg-black,
+[class*="bg-blue"],
+[class*="bg-gray-8"],
+[class*="bg-gray-9"] {
     color: #ffffff !important;
     -webkit-text-fill-color: #ffffff !important;
 }
 
-/* フォームコントロールの対応 */
+/* フォーム要素 */
 input,
 textarea,
-select,
-button {
-    color-scheme: light dark;
+select {
+    color: #000000 !important;
+    -webkit-text-fill-color: #000000 !important;
+    background-color: #ffffff !important;
 }
 
-/* QRコードなど重要な要素の保護 */
-.preserve-colors {
-    -webkit-filter: none !important;
-    filter: none !important; }
+/* ボタン要素 */
+button {
+    -webkit-text-fill-color: inherit !important;
+}
+
+/* 特定の背景色を持つ要素の文字色調整 */
+.text-white,
+[class*="text-white"] {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+}
+
+.text-gray-500,
+[class*="text-gray-5"] {
+    color: #6b7280 !important;
+    -webkit-text-fill-color: #6b7280 !important;
+}
+
+/* 色反転モード対応 */
+@media (inverted-colors: inverted) {
+
+    img,
+    video,
+    svg,
+    canvas {
+        -webkit-filter: invert(1);
+        filter: invert(1);
+    } }
 
 body {
     background: var(--background);
