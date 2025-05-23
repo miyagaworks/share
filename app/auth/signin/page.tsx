@@ -1,7 +1,8 @@
 // app/auth/signin/page.tsx
+
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -12,8 +13,8 @@ import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 
-// 既存のSigninPage関数の前に追加するコンポーネント
-function SessionTimeoutMessage() {
+// SessionTimeoutMessageの内部実装
+function SessionTimeoutMessageInner() {
   const searchParams = useSearchParams();
   const [message, setMessage] = useState<{
     title: string;
@@ -22,10 +23,11 @@ function SessionTimeoutMessage() {
   } | null>(null);
 
   useEffect(() => {
-    const timeoutReason = searchParams?.get('timeout') || 
-                         searchParams?.get('expired') || 
-                         searchParams?.get('inactive') ||
-                         searchParams?.get('security');
+    const timeoutReason =
+      searchParams?.get('timeout') ||
+      searchParams?.get('expired') ||
+      searchParams?.get('inactive') ||
+      searchParams?.get('security');
 
     if (!timeoutReason) return;
 
@@ -36,31 +38,31 @@ function SessionTimeoutMessage() {
           return {
             title: 'セッションタイムアウト',
             message: 'セッションがタイムアウトしました。再度ログインしてください。',
-            icon: '⏰'
+            icon: '⏰',
           };
         case 'expired':
           return {
             title: 'セッション期限切れ',
             message: 'セッションの有効期限が切れました。再度ログインしてください。',
-            icon: '⏰'
+            icon: '⏰',
           };
         case 'inactive':
           return {
             title: '非アクティブタイムアウト',
             message: '長時間非アクティブだったため、セキュリティ上の理由でログアウトしました。',
-            icon: '🔒'
+            icon: '🔒',
           };
         case 'security':
           return {
             title: 'セキュリティログアウト',
             message: 'セキュリティ上の理由でログアウトしました。再度ログインしてください。',
-            icon: '🔒'
+            icon: '🔒',
           };
         default:
           return {
             title: 'セッション終了',
             message: '再度ログインしてください。',
-            icon: 'ℹ️'
+            icon: 'ℹ️',
           };
       }
     };
@@ -79,9 +81,7 @@ function SessionTimeoutMessage() {
           </span>
         </div>
         <div className="ml-3">
-          <h3 className="text-sm font-medium text-yellow-800">
-            {message.title}
-          </h3>
+          <h3 className="text-sm font-medium text-yellow-800">{message.title}</h3>
           <div className="mt-1 text-sm text-yellow-700">
             <p>{message.message}</p>
           </div>
@@ -91,7 +91,17 @@ function SessionTimeoutMessage() {
   );
 }
 
+// Suspenseでラップしたコンポーネント
+function SessionTimeoutMessage() {
+  return (
+    <Suspense fallback={null}>
+      <SessionTimeoutMessageInner />
+    </Suspense>
+  );
+}
+
 export default function SigninPage() {
+  // 既存のコード（変更なし）
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
@@ -251,19 +261,32 @@ export default function SigninPage() {
   return (
     <div className="flex min-h-screen">
       {/* 左側：デコレーション部分 */}
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 flex-col justify-center items-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-blue-700 opacity-20">
+      <div
+        className="hidden md:flex md:w-1/2 flex-col justify-center items-center p-12 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+          color: '#ffffff',
+        }}
+      >
+        <div className="absolute inset-0 opacity-20" style={{ backgroundColor: '#1d4ed8' }}>
           <div className="absolute inset-0 bg-pattern opacity-10"></div>
         </div>
-        <div className="z-10 max-w-md text-center">
-          <h1 className="text-4xl font-bold text-white mb-6">Share</h1>
-          <p className="text-xl text-white/90 mb-8">シンプルにつながる、スマートにシェア。</p>
+        <div className="z-10 max-w-md text-center" style={{ color: '#ffffff' }}>
+          <h1 className="text-4xl font-bold mb-6" style={{ color: '#ffffff' }}>
+            Share
+          </h1>
+          <p className="text-xl mb-8" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            シンプルにつながる、スマートにシェア。
+          </p>
           <div className="flex flex-col space-y-4 mt-12">
-            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
-              <p className="text-white text-left mb-3">
+            <div
+              className="backdrop-blur-sm p-6 rounded-xl"
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+            >
+              <p className="text-left mb-3" style={{ color: '#ffffff' }}>
                 「Share」を使えば、あなたのSNSアカウントと連絡先情報をひとつにまとめて、簡単に共有できます。
               </p>
-              <p className="text-white/80 text-left">
+              <p className="text-left" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                 QRコードでシェアして、ビジネスでもプライベートでも人とのつながりをもっと簡単に。
               </p>
             </div>
@@ -282,6 +305,7 @@ export default function SigninPage() {
             <p className="mt-2 text-gray-600">ログインしてSNS情報を管理しましょう</p>
           </div>
 
+          {/* Suspenseでラップしたセッションタイムアウトメッセージ */}
           <SessionTimeoutMessage />
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
@@ -315,7 +339,7 @@ export default function SigninPage() {
                   error={errors.email?.message}
                   disabled={isPending}
                   className={`bg-white shadow-sm transition-colors ${isPasswordFilled && isPasswordValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
-                  autoComplete="email" // この行を追加
+                  autoComplete="email"
                 />
                 {isEmailFilled && !isEmailValid && !errors.email?.message && (
                   <p className="text-xs text-amber-600 mt-1">
@@ -334,7 +358,7 @@ export default function SigninPage() {
                     error={errors.password?.message}
                     disabled={isPending}
                     className={`bg-white shadow-sm transition-colors ${isPasswordFilled && isPasswordValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
-                    autoComplete="current-password" // この行を追加
+                    autoComplete="current-password"
                   />
                   <button
                     type="button"
@@ -344,7 +368,6 @@ export default function SigninPage() {
                     style={{ top: '50%', transform: 'translateY(-50%)', marginTop: '12px' }}
                   >
                     {showPassword ? (
-                      // 目を閉じるアイコン (パスワードが表示されている状態)
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="20"
@@ -360,7 +383,6 @@ export default function SigninPage() {
                         <line x1="1" y1="1" x2="23" y2="23"></line>
                       </svg>
                     ) : (
-                      // 目を開くアイコン (パスワードが非表示の状態)
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="20"
