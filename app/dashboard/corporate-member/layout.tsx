@@ -51,7 +51,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
     const fetchTenantData = async () => {
       try {
         // 法人アクセス権を確認
-        await checkCorporateAccess(true);
+        await checkCorporateAccess({ force: true });
 
         if (!corporateAccessState.hasAccess) {
           console.log('法人アクセス権がありません、個人ダッシュボードへリダイレクトします');

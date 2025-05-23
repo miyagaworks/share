@@ -37,7 +37,6 @@ export function QrCodeGenerator({
   const [size, setSize] = useState(200); // サイズを調整可能に
   const [selectedColor, setSelectedColor] = useState('corporate');
   const qrRef = useRef<HTMLDivElement>(null);
-  const [generatedUrl, setGeneratedUrl] = useState<string>('');
   const [isGenerating, setIsGenerating] = useState(false);
 
   // 法人カラーを設定
@@ -61,14 +60,7 @@ export function QrCodeGenerator({
       setInternalSlug(qrCodeSlug);
       checkSlugAvailability(qrCodeSlug);
     }
-  }, [qrCodeSlug, internalSlug]); // internalSlugを依存配列に追加
-
-  // 初期表示時に生成済みURLを設定（もし既に存在する場合）
-  useEffect(() => {
-    if (internalSlug && internalSlug.length >= 3) {
-      setGeneratedUrl(`${window.location.origin}/qr/${internalSlug}`);
-    }
-  }, [internalSlug]); // internalSlugを依存配列に追加
+  }, [qrCodeSlug, internalSlug]);
 
   // QRコードのスタイル
   const qrStyle = {
@@ -196,9 +188,7 @@ export function QrCodeGenerator({
         console.log('QRコード作成成功:', data);
       }
 
-      // 成功後の処理
-      const fullUrl = `${window.location.origin}/qr/${internalSlug}`;
-      setGeneratedUrl(fullUrl);
+      // 🔧 修正: 成功後もプロフィールURLを使用
       toast.success(isExistingQrCode ? 'QRコードを更新しました' : 'QRコードを作成しました');
     } catch (error) {
       console.error('QRコード生成エラー:', error);
@@ -351,12 +341,7 @@ export function QrCodeGenerator({
       <div ref={qrRef} className="flex justify-center">
         <div style={qrStyle}>
           <QRCodeSVG
-            value={
-              generatedUrl ||
-              (internalSlug.length >= 3
-                ? `${window.location.origin}/qr/${internalSlug}`
-                : profileUrl)
-            }
+            value={profileUrl} // 🔧 修正: 常にプロフィールURLを使用
             size={size - 32}
             fgColor={qrColor}
             bgColor={bgColor}

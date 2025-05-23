@@ -5,7 +5,6 @@
 ## 全ての状況を完璧に把握してから回答を出して下さい。
 
 share/
-├── README.md
 ├── actions
 │   ├── corporateSns.ts
 │   ├── jikogene.ts
@@ -18,6 +17,14 @@ share/
 │   ├── api
 │   │   ├── admin
 │   │   │   ├── access
+│   │   │   │   └── route.ts
+│   │   │   ├── email
+│   │   │   │   ├── history
+│   │   │   │   │   ├── [id]
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── fix-permanent-users
 │   │   │   │   └── route.ts
 │   │   │   ├── grant-permanent
 │   │   │   │   └── route.ts
@@ -34,7 +41,9 @@ share/
 │   │   │   └── users
 │   │   │       ├── delete
 │   │   │       │   └── route.ts
-│   │   │       └── route.ts
+│   │   │       ├── route.ts
+│   │   │       └── search
+│   │   │           └── route.ts
 │   │   ├── auth
 │   │   │   ├── [...nextauth]
 │   │   │   │   └── route.ts
@@ -42,6 +51,8 @@ share/
 │   │   │   │   └── google
 │   │   │   │       └── route.ts
 │   │   │   ├── change-password
+│   │   │   │   └── route.ts
+│   │   │   ├── dashboard-redirect
 │   │   │   │   └── route.ts
 │   │   │   ├── debug
 │   │   │   │   └── route.ts
@@ -130,6 +141,8 @@ share/
 │   │   │       └── route.ts
 │   │   ├── cron
 │   │   │   └── trial-notification
+│   │   │       ├── cleanup-idempotency
+│   │   │       │   └── route.ts
 │   │   │       └── route.ts
 │   │   ├── debug-auth
 │   │   │   └── route.ts
@@ -189,7 +202,9 @@ share/
 │   │   │   │       └── route.ts
 │   │   │   ├── check-password
 │   │   │   │   └── route.ts
-│   │   │   └── delete
+│   │   │   ├── delete
+│   │   │   │   └── route.ts
+│   │   │   └── permanent-plan-type
 │   │   │       └── route.ts
 │   │   ├── vcard
 │   │   │   └── [userId]
@@ -222,10 +237,13 @@ share/
 │   │   │   └── delete
 │   │   │       └── page.tsx
 │   │   ├── admin
+│   │   │   ├── email
+│   │   │   │   └── page.tsx
 │   │   │   ├── notifications
 │   │   │   │   └── page.tsx
 │   │   │   ├── page.tsx
 │   │   │   ├── permissions
+│   │   │   │   ├── fix-permanent-button.tsx
 │   │   │   │   └── page.tsx
 │   │   │   ├── subscriptions
 │   │   │   │   └── page.tsx
@@ -267,7 +285,9 @@ share/
 │   │   │   ├── profile
 │   │   │   │   └── page.tsx
 │   │   │   └── share
-│   │   │       └── page.tsx
+│   │   │       ├── page.tsx
+│   │   │       └── qrcode
+│   │   │           └── page.tsx
 │   │   ├── corporate-profile
 │   │   │   ├── design
 │   │   │   │   └── page.tsx
@@ -285,10 +305,10 @@ share/
 │   │   │   │   ├── ClientSnsForm.tsx
 │   │   │   │   ├── CustomLinkClient.tsx
 │   │   │   │   ├── CustomLinkEditForm.tsx
+│   │   │   │   ├── index.ts
 │   │   │   │   ├── SnsLinkClientWrapper.tsx
 │   │   │   │   ├── SnsLinkEditForm.tsx
-│   │   │   │   ├── SnsLinkManager.tsx
-│   │   │   │   └── index.ts
+│   │   │   │   └── SnsLinkManager.tsx
 │   │   │   └── page.tsx
 │   │   ├── page.tsx
 │   │   ├── profile
@@ -298,6 +318,7 @@ share/
 │   │   └── subscription
 │   │       └── page.tsx
 │   ├── error.tsx
+│   ├── favicon.ico
 │   ├── globals.css
 │   ├── jikogene
 │   │   ├── components
@@ -362,6 +383,7 @@ share/
 │   ├── dashboard
 │   │   ├── CustomLinkClient.tsx
 │   │   ├── CustomLinkList.tsx
+│   │   ├── ImprovedDashboardPage.tsx
 │   │   ├── ImprovedDesignPreview.tsx
 │   │   ├── ImprovedSnsLinkList.tsx
 │   │   ├── ProfileUrlDisplay.tsx
@@ -433,10 +455,10 @@ share/
 │   ├── progress-tracking.md
 │   ├── project-overview.md
 │   ├── security-privacy-plan.md
+│   ├── share_ディレクトリ構造.md
 │   ├── share-next-development-plan.md
 │   ├── share-project-plan.md
 │   ├── share-roadmap.md
-│   ├── share_ディレクトリ構造.md
 │   ├── sns-share-strategy-complete.md
 │   ├── treeコマンド.md
 │   ├── ui-design-plan.md
@@ -448,11 +470,21 @@ share/
 │   ├── useCorporateAccess.ts
 │   └── useCorporateData.ts
 ├── lib
-│   ├── corporateAccessState.ts
+│   ├── corporateAccess
+│   │   ├── adminAccess.ts
+│   │   ├── api.ts
+│   │   ├── index.ts
+│   │   ├── main.ts
+│   │   ├── permanentAccess.ts
+│   │   ├── state.ts
+│   │   ├── storage.ts
+│   │   └── virtualTenant.ts
 │   ├── db-manager.ts
 │   ├── email
 │   │   └── templates
+│   │       ├── admin-notification.ts
 │   │       ├── grace-period-expired.ts
+│   │       ├── invite-email.ts
 │   │       └── trial-ending.ts
 │   ├── email.ts
 │   ├── errorHandler.ts
@@ -471,10 +503,13 @@ share/
 │   │   ├── api.ts
 │   │   ├── auth.ts
 │   │   ├── corporate-access.ts
+│   │   ├── idempotency.ts
 │   │   ├── logger.ts
+│   │   ├── notification-helpers.ts
 │   │   ├── subscription.ts
 │   │   └── validation.ts
 │   └── utils.ts
+├── manifest.json
 ├── middleware
 │   ├── checkTenantStatus.ts
 │   ├── permanentAccessHandler.ts
@@ -567,8 +602,8 @@ share/
 │   │   │   ├── youtube-step3.png
 │   │   │   └── youtube-step4.png
 │   │   ├── icons
-│   │   │   ├── ogp.png
-│   │   │   └── ogp_line.png
+│   │   │   ├── ogp_line.png
+│   │   │   └── ogp.png
 │   │   └── usecase
 │   │       ├── business-scene.png
 │   │       ├── business-scene.webp
@@ -580,10 +615,10 @@ share/
 │   │       └── event-scene.webp
 │   ├── jikogene.svg
 │   ├── line.svg
-│   ├── logo.svg
 │   ├── logo_blue.svg
 │   ├── logo_share.svg
 │   ├── logo_white.svg
+│   ├── logo.svg
 │   ├── manifest.json
 │   ├── next.svg
 │   ├── note.svg
@@ -595,13 +630,16 @@ share/
 │   │   ├── apple-touch-icon-167x167.png
 │   │   ├── apple-touch-icon-180x180.png
 │   │   ├── apple-touch-icon.png
-│   │   ├── favicon.ico
 │   │   ├── favicon-16x16.png
 │   │   ├── favicon-32x32.png
 │   │   ├── favicon-48x48.png
-│   │   └── favicon-96x96.png
+│   │   ├── favicon-96x96.png
+│   │   └── favicon.ico
 │   ├── vercel.svg
 │   └── window.svg
+├── qr-sw.js
+├── qrcode-manifest.json
+├── README.md
 ├── schemas
 │   └── auth.ts
 ├── scripts
@@ -613,12 +651,16 @@ share/
 │   ├── fix-corporate-access.ts
 │   ├── fix-tenant-relations.ts
 │   ├── generate-prisma-migration.js
+│   ├── migrate-subscription-plans.ts
 │   ├── migrate-text-settings.ts
+│   ├── normalize-individual-plans.ts
 │   ├── set-trial-end-date.mjs
 │   ├── setup-guide-images.mjs
 │   ├── test-cron-fetch.mjs
+│   ├── test-email.js
 │   └── update-permanent-users-plan.ts
 ├── share_db_backup.sql
+├── sw.js
 ├── tailwind.config.js
 ├── tsconfig.json
 ├── types
