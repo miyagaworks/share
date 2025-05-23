@@ -1,4 +1,5 @@
 @import "tailwindcss";
+
 :root {
     /* 既存の変数 */
     --background: #E8EAEE;
@@ -20,57 +21,100 @@
 }
 
 @media (prefers-color-scheme: dark) {
-     :root {
+    :root {
         --background: #0a0a0a;
         --foreground: #ededed;
     }
 }
 
-/* iOS ダークモード対応 - 条件を限定 */
+/* iOS ダークモード対応 - ダーク化アプローチ */
 html {
     color-scheme: light dark;
 }
 
-/* iOS の色反転モードが有効な場合のみ適用 */
-@media (inverted-colors: inverted) {
-
-    /* テキストの色を調整（色反転時のみ） */
-    body,
-    h1,
-    h2,
-    h3,
-    h4,
-    h5,
-    h6,
-    p,
-    span,
-    div:not([style*="background"]),
-    a,
-    li,
-    td,
-    th,
-    label {
-        color: #1f2937 !important;
-        -webkit-text-fill-color: #1f2937 !important;
+/* 通常のダークモード対応 */
+@media (prefers-color-scheme: dark) {
+    body {
+        background-color: #1a1a1a !important;
+        color: #e5e5e5 !important;
     }
 
-    /* プレースホルダーは薄いグレー */
-    input::placeholder,
-    textarea::placeholder {
-        color: #9ca3af !important;
-        -webkit-text-fill-color: #9ca3af !important;
+    /* 白い背景をダークに */
+    .bg-white,
+    [class*="bg-white"] {
+        background-color: #2a2a2a !important;
+    }
+
+    /* グレー系背景の調整 */
+    .bg-gray-50 {
+        background-color: #1f1f1f !important;
+    }
+
+    .bg-gray-100 {
+        background-color: #2a2a2a !important;
+    }
+
+    /* テキスト色の調整 */
+    .text-gray-900,
+    .text-black {
+        color: #e5e5e5 !important;
+    }
+
+    .text-gray-800 {
+        color: #d1d1d1 !important;
+    }
+
+    .text-gray-700 {
+        color: #b8b8b8 !important;
+    }
+
+    .text-gray-600 {
+        color: #9a9a9a !important;
+    }
+
+    .text-gray-500 {
+        color: #7a7a7a !important;
     }
 
     /* フォーム要素 */
     input,
     textarea,
     select {
-        color: #1f2937 !important;
-        -webkit-text-fill-color: #1f2937 !important;
-        background-color: #ffffff !important;
+        background-color: #2a2a2a !important;
+        color: #e5e5e5 !important;
+        border-color: #4a4a4a !important;
     }
 
-    /* 画像とSVGは反転 */
+    input::placeholder,
+    textarea::placeholder {
+        color: #7a7a7a !important;
+    }
+
+    /* ボーダー色の調整 */
+    .border-gray-200,
+    .border-gray-300 {
+        border-color: #4a4a4a !important;
+    }
+
+    /* カード要素 */
+    .rounded-lg,
+    .rounded-md,
+    [class*="rounded"] {
+        border-color: #4a4a4a !important;
+    }
+
+    /* ボタンは元の色を維持（青系など） */
+    .bg-blue-600,
+    .bg-blue-500,
+    .btn-corporate {
+        /* 元の色を維持 */
+    }
+}
+
+/* iOS の色反転モード対応 */
+@media (inverted-colors: inverted) {
+
+    /* 画像とSVGのみ反転 */
     img,
     svg,
     canvas {
@@ -78,39 +122,21 @@ html {
         filter: invert(1);
     }
 
-    /* 背景が暗い要素は白文字 */
-    .bg-blue-600,
-    .bg-blue-500,
-    .bg-gray-800,
-    .bg-black,
-    [class*="bg-blue"],
-    [class*="bg-gray-8"],
-    [class*="bg-gray-9"] {
-        color: #ffffff !important;
-        -webkit-text-fill-color: #ffffff !important;
-    }
-
-    /* 背景色の強制リセット */
-    body,
-    html {
-        background-color: #ffffff !important;
+    /* QRコードは保護 */
+    .preserve-colors,
+    [class*="qr"] {
+        -webkit-filter: none !important;
+        filter: none !important;
     }
 }
 
-/* 通常モードでは何も変更しない */
-/* フォームコントロールのダークモード対応のみ残す */
+/* フォームコントロールのダークモード対応 */
 input,
 textarea,
 select,
 button {
     color-scheme: light dark;
 }
-
-/* QRコードなどは色を保持 */
-.preserve-colors,
-[class*="qr"] {
-    -webkit-filter: none !important;
-    filter: none !important; }
 
 body {
     background: var(--background);
@@ -171,6 +197,19 @@ body {
 
 .btn-corporate-outline:hover {
     background-color: rgba(30, 58, 138, 0.05) !important;
+}
+
+/* ダークモードでのボタンアウトライン調整 */
+@media (prefers-color-scheme: dark) {
+    .btn-corporate-outline {
+        background-color: #2a2a2a !important;
+        color: #60a5fa !important;
+        border: 1px solid #60a5fa !important;
+    }
+
+    .btn-corporate-outline:hover {
+        background-color: rgba(96, 165, 250, 0.1) !important;
+    }
 }
 
 [variant="corporate"] {
@@ -276,11 +315,39 @@ body {
     color: #1E3A8A;
 }
 
+/* ダークモードでのタブスタイル調整 */
+@media (prefers-color-scheme: dark) {
+    .active-tab {
+        color: #60a5fa;
+        background-color: rgba(96, 165, 250, 0.1);
+        border-left: 4px solid #60a5fa;
+    }
+
+    .inactive-tab {
+        color: #d1d1d1;
+    }
+
+    .inactive-tab:hover {
+        background-color: rgba(96, 165, 250, 0.1);
+        border-left: 4px solid #60a5fa;
+        color: #60a5fa;
+    }
+}
+
 /* ホバー時のアイコン色変更 - より具体的なセレクタ */
 .inactive-tab:hover svg,
 .inactive-tab:hover .h-5,
 .inactive-tab:hover .h-6 {
     color: #1E3A8A !important;
+}
+
+@media (prefers-color-scheme: dark) {
+
+    .inactive-tab:hover svg,
+    .inactive-tab:hover .h-5,
+    .inactive-tab:hover .h-6 {
+        color: #60a5fa !important;
+    }
 }
 
 /* レスポンシブ対応 */
@@ -313,6 +380,21 @@ body {
     color: #3B82F6;
 }
 
+/* ダークモードでの特別リンク調整 */
+@media (prefers-color-scheme: dark) {
+    .corporate-special-link {
+        background-color: rgba(96, 165, 250, 0.1);
+        color: #60a5fa;
+    }
+
+    .corporate-special-link:hover {
+        background-color: rgba(96, 165, 250, 0.2);
+    }
+
+    .corporate-special-icon {
+        color: #60a5fa;
+    }
+}
 
 /* QRスキャンページ用のスタイル */
 
@@ -324,6 +406,7 @@ body {
     0% {
         opacity: 0;
     }
+
     100% {
         opacity: 1;
     }
@@ -349,6 +432,7 @@ body {
         opacity: 0;
         transform: scale(0.9) translateY(20px);
     }
+
     100% {
         opacity: 1;
         transform: scale(1) translateY(0);
@@ -360,6 +444,7 @@ body {
         opacity: 1;
         transform: scale(1) translateY(0);
     }
+
     100% {
         opacity: 0;
         transform: scale(0.9) translateY(20px);
@@ -373,6 +458,7 @@ body {
     from {
         opacity: 0;
     }
+
     to {
         opacity: 1;
     }
@@ -390,6 +476,7 @@ body {
         transform: translateY(10px);
         opacity: 0;
     }
+
     to {
         transform: translateY(0);
         opacity: 1;
@@ -401,12 +488,12 @@ body {
 }
 
 .corporate-dashboard-wrapper {
-  width: 100% !important;
-  padding-right: 1rem !important;
-  padding-left: 0 !important;
-  margin-right: 0 !important;
-  margin-left: 0 !important;
-  box-sizing: border-box !important;
+    width: 100% !important;
+    padding-right: 1rem !important;
+    padding-left: 0 !important;
+    margin-right: 0 !important;
+    margin-left: 0 !important;
+    box-sizing: border-box !important;
 }
 
 /* フェードイン */
@@ -430,8 +517,16 @@ body {
 }
 
 .dropdown:hover .dropdown-content {
-    display: block; }
+    display: block;
+}
 
+/* ダークモードでのドロップダウン調整 */
+@media (prefers-color-scheme: dark) {
+    .dropdown-content {
+        background-color: #2a2a2a !important;
+        border-color: #4a4a4a !important;
+    }
+}
 
 /* モバイル表示用の特別なスタイル */
 
@@ -542,15 +637,18 @@ body {
 /* デスクトップでの調整 */
 
 @media (min-width: 768px) {
+
     /* デスクトップではサイドバーを表示 */
     .sidebar {
         display: flex !important;
     }
+
     /* メインコンテンツにマージンを追加 */
     .main-content {
         margin-left: 16rem !important;
         /* 256px (w-64) */
     }
+
     /* サイドバーが折りたたまれている場合 */
     .sidebar-collapsed+.main-content {
         margin-left: 4rem !important;
