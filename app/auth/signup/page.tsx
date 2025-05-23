@@ -208,19 +208,34 @@ export default function SignupPage() {
   return (
     <div className="flex min-h-screen">
       {/* 左側：デコレーション部分 */}
-      <div className="hidden md:flex md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 flex-col justify-center items-center p-12 relative overflow-hidden">
-        <div className="absolute inset-0 bg-blue-700 opacity-20">
+      <div
+        className="hidden md:flex md:w-1/2 flex-col justify-center items-center p-12 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #2563eb 0%, #1e40af 100%)',
+          color: '#ffffff',
+        }}
+      >
+        <div className="absolute inset-0 opacity-20" style={{ backgroundColor: '#1d4ed8' }}>
           <div className="absolute inset-0 bg-pattern opacity-10"></div>
         </div>
-        <div className="z-10 max-w-md text-center">
-          <h1 className="text-4xl font-bold text-white mb-6">Share</h1>
-          <p className="text-xl text-white/90 mb-8">シンプルにつながる、スマートにシェア。</p>
+
+        <div className="z-10 max-w-md text-center" style={{ color: '#ffffff' }}>
+          <h1 className="text-4xl font-bold mb-6" style={{ color: '#ffffff' }}>
+            Share
+          </h1>
+          <p className="text-xl mb-8" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
+            シンプルにつながる、スマートにシェア。
+          </p>
+
           <div className="flex flex-col space-y-4 mt-12">
-            <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
-              <p className="text-white text-left mb-3">
+            <div
+              className="backdrop-blur-sm p-6 rounded-xl"
+              style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)' }}
+            >
+              <p className="text-left mb-3" style={{ color: '#ffffff' }}>
                 「Share」を使えば、あなたのSNSアカウントと連絡先情報をひとつにまとめて、簡単に共有できます。
               </p>
-              <p className="text-white/80 text-left">
+              <p className="text-left" style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                 QRコードでシェアして、ビジネスでもプライベートでも人とのつながりをもっと簡単に。
               </p>
             </div>
@@ -228,13 +243,31 @@ export default function SignupPage() {
         </div>
 
         <div className="absolute bottom-6 right-6 flex space-x-2">
-          <span className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white">
+          <span
+            className="px-2 py-1 backdrop-blur-sm rounded-full text-xs"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              color: '#ffffff',
+            }}
+          >
             簡単設定
           </span>
-          <span className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white">
+          <span
+            className="px-2 py-1 backdrop-blur-sm rounded-full text-xs"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              color: '#ffffff',
+            }}
+          >
             QRコード共有
           </span>
-          <span className="px-2 py-1 bg-white/20 backdrop-blur-sm rounded-full text-xs text-white">
+          <span
+            className="px-2 py-1 backdrop-blur-sm rounded-full text-xs"
+            style={{
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              color: '#ffffff',
+            }}
+          >
             スマート連携
           </span>
         </div>

@@ -202,7 +202,7 @@ export default function HomePage() {
         </div>
 
         {/* 右側：デコレーション背景 */}
-        <div className="hidden md:block md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 relative overflow-hidden">
+        <div className="hidden md:block md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 blue-section-protection relative overflow-hidden">
           <div className="absolute inset-0 bg-blue-700 opacity-20">
             <div className="absolute inset-0 bg-pattern opacity-10"></div>
           </div>

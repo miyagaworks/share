@@ -4,13 +4,92 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@/schemas/auth';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+
+// 既存のSigninPage関数の前に追加するコンポーネント
+function SessionTimeoutMessage() {
+  const searchParams = useSearchParams();
+  const [message, setMessage] = useState<{
+    title: string;
+    message: string;
+    icon: string;
+  } | null>(null);
+
+  useEffect(() => {
+    const timeoutReason = searchParams?.get('timeout') || 
+                         searchParams?.get('expired') || 
+                         searchParams?.get('inactive') ||
+                         searchParams?.get('security');
+
+    if (!timeoutReason) return;
+
+    const getMessage = () => {
+      switch (timeoutReason) {
+        case '1':
+        case 'timeout':
+          return {
+            title: 'セッションタイムアウト',
+            message: 'セッションがタイムアウトしました。再度ログインしてください。',
+            icon: '⏰'
+          };
+        case 'expired':
+          return {
+            title: 'セッション期限切れ',
+            message: 'セッションの有効期限が切れました。再度ログインしてください。',
+            icon: '⏰'
+          };
+        case 'inactive':
+          return {
+            title: '非アクティブタイムアウト',
+            message: '長時間非アクティブだったため、セキュリティ上の理由でログアウトしました。',
+            icon: '🔒'
+          };
+        case 'security':
+          return {
+            title: 'セキュリティログアウト',
+            message: 'セキュリティ上の理由でログアウトしました。再度ログインしてください。',
+            icon: '🔒'
+          };
+        default:
+          return {
+            title: 'セッション終了',
+            message: '再度ログインしてください。',
+            icon: 'ℹ️'
+          };
+      }
+    };
+
+    setMessage(getMessage());
+  }, [searchParams]);
+
+  if (!message) return null;
+
+  return (
+    <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-4 mb-6 shadow-sm">
+      <div className="flex items-start">
+        <div className="flex-shrink-0">
+          <span className="text-xl" role="img" aria-label={message.title}>
+            {message.icon}
+          </span>
+        </div>
+        <div className="ml-3">
+          <h3 className="text-sm font-medium text-yellow-800">
+            {message.title}
+          </h3>
+          <div className="mt-1 text-sm text-yellow-700">
+            <p>{message.message}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 export default function SigninPage() {
   const router = useRouter();
@@ -202,6 +281,8 @@ export default function SigninPage() {
             <h2 className="text-3xl font-bold text-gray-900">ログイン</h2>
             <p className="mt-2 text-gray-600">ログインしてSNS情報を管理しましょう</p>
           </div>
+
+          <SessionTimeoutMessage />
 
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (

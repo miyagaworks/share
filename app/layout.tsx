@@ -37,6 +37,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+  // 環境に応じたセッションタイムアウト設定
+  const isDevelopment = process.env.NODE_ENV === 'development';
+
   return (
     <html lang="ja">
       <head>
@@ -44,10 +47,17 @@ export default function RootLayout({
         <meta name="supported-color-schemes" content="light dark" />
       </head>
       <body className={`${inter.variable} ${robotoMono.variable} font-sans antialiased`}>
-        <SessionProvider>
+        <SessionProvider
+          // セッションタイムアウト時間（分単位）
+          sessionTimeoutMinutes={isDevelopment ? 30 : 480} // 開発: 30分, 本番: 8時間
+          // 警告表示時間（ログアウト何分前に警告するか）
+          warningBeforeMinutes={isDevelopment ? 2 : 5} // 開発: 2分前, 本番: 5分前
+          // 自動ログアウト機能を有効にする
+          enableAutoLogout={true}
+        >
           <ToastProvider />
           {children}
-          {process.env.NODE_ENV === 'development' && <AuthDebugger />}
+          {isDevelopment && <AuthDebugger />}
         </SessionProvider>
       </body>
     </html>

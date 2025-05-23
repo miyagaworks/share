@@ -697,3 +697,89 @@ body {
 [class*="dashboard"] div:first-of-type+div.rounded-lg {
     display: none !important;
 }
+
+
+/* サインアップページのダークモード修正 - globals.cssに追加 */
+
+@media (prefers-color-scheme: dark) {
+
+    /* ブルーグラデーション背景内のすべての要素を白テキストで保護 */
+    .bg-gradient-to-br.from-blue-600.to-blue-800,
+    .bg-gradient-to-br.from-blue-600.to-blue-800 * {
+        color: #ffffff !important;
+    }
+
+    /* ブルー背景内の半透明白要素を保護 */
+    .bg-gradient-to-br .bg-white\/20,
+    .bg-gradient-to-br .bg-white\/10 {
+        background-color: rgba(255, 255, 255, 0.2) !important;
+        color: #ffffff !important;
+    }
+
+    /* ブルー背景内のspanタグを明示的に白に */
+    .bg-gradient-to-br span {
+        color: #ffffff !important;
+    }
+
+    /* ブルー背景内のすべてのテキスト要素 */
+    .bg-gradient-to-br h1,
+    .bg-gradient-to-br h2,
+    .bg-gradient-to-br h3,
+    .bg-gradient-to-br h4,
+    .bg-gradient-to-br h5,
+    .bg-gradient-to-br h6,
+    .bg-gradient-to-br p,
+    .bg-gradient-to-br span,
+    .bg-gradient-to-br div,
+    .bg-gradient-to-br .text-white,
+    .bg-gradient-to-br .text-white\/90,
+    .bg-gradient-to-br .text-white\/80 {
+        color: #ffffff !important;
+    }
+
+    /* backdrop-blurを持つ要素内のテキスト */
+    .bg-gradient-to-br .backdrop-blur-sm,
+    .bg-gradient-to-br .backdrop-blur-sm * {
+        color: #ffffff !important;
+    }
+
+    /* 右下のタグ部分を特別に保護 */
+    .bg-gradient-to-br .absolute.bottom-6.right-6 span {
+        color: #ffffff !important;
+        background-color: rgba(255, 255, 255, 0.2) !important;
+    }
+}
+
+/* ライトモードでも確実に表示されるように */
+.bg-gradient-to-br.from-blue-600.to-blue-800 {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
+}
+
+.bg-gradient-to-br.from-blue-600.to-blue-800 * {
+    color: #ffffff;
+}
+
+.bg-gradient-to-br .bg-white\/20 {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: #ffffff;
+}
+
+.bg-gradient-to-br .bg-white\/10 {
+    background-color: rgba(255, 255, 255, 0.1);
+    color: #ffffff;
+}
+
+/* 特定の要素を強制的に白テキストに */
+.blue-bg-protection {
+    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
+}
+
+.blue-bg-protection,
+.blue-bg-protection * {
+    color: #ffffff !important;
+}
+
+.blue-bg-protection .bg-white\/20,
+.blue-bg-protection .bg-white\/10 {
+    background-color: rgba(255, 255, 255, 0.2) !important;
+    color: #ffffff !important; }
