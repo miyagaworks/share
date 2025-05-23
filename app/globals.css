@@ -26,139 +26,28 @@
     }
 }
 
-/* iOS ダークモード自然な対応 */
+/* 最小限の iOS ダークモード対応 */
 html {
     color-scheme: light dark;
 }
 
-/* 基本的なテキストの色を適切に設定（完全な黒ではなく濃いグレー） */
-body {
-    color: #1f2937 !important;
-    /* gray-800 相当 */
-    -webkit-text-fill-color: #1f2937 !important;
-}
-
-/* 見出しは少し濃く */
-h1,
-h2,
-h3,
-h4,
-h5,
-h6 {
-    color: #111827 !important;
-    /* gray-900 相当 */
-    -webkit-text-fill-color: #111827 !important;
-}
-
-/* 通常のテキスト */
-p,
-span,
-div,
-a,
-li,
-td,
-th,
-label {
-    color: #374151 !important;
-    /* gray-700 相当 */
-    -webkit-text-fill-color: #374151 !important;
-}
-
-/* プレースホルダーは薄いグレーのまま */
-input::placeholder,
-textarea::placeholder {
-    color: #9ca3af !important;
-    /* gray-400 相当 */
-    -webkit-text-fill-color: #9ca3af !important;
-}
-
-/* 既に薄いグレーに設定されている要素はそのまま */
-.text-gray-400,
-.text-gray-500,
-.text-gray-600,
-[class*="text-gray-4"],
-[class*="text-gray-5"],
-[class*="text-gray-6"] {
-    /* 元の色を維持 */
-    -webkit-text-fill-color: inherit !important;
-}
-
-/* 白いテキストが意図されている要素 */
-.text-white,
-[class*="text-white"],
-.bg-blue-600 *,
-.bg-blue-500 *,
-.bg-gray-800 *,
-.bg-black *,
-[class*="bg-blue"] *,
-[class*="bg-gray-8"] *,
-[class*="bg-gray-9"] * {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-}
-
-/* フォーム要素 */
+/* フォームコントロールのみ対応 */
 input,
 textarea,
-select {
-    color: #1f2937 !important;
-    -webkit-text-fill-color: #1f2937 !important;
-    background-color: #ffffff !important;
-}
-
-/* ボタンの文字色はそのまま */
+select,
 button {
-    -webkit-text-fill-color: inherit !important;
+    color-scheme: light dark;
 }
 
-/* 背景が暗い要素の子要素は白文字 */
-.bg-gray-900,
-.bg-gray-800,
-.bg-black,
-[style*="background-color: rgb(0, 0, 0)"],
-[style*="background-color: #000"] {
-    color: #ffffff !important;
-}
-
-.bg-gray-900 *,
-.bg-gray-800 *,
-.bg-black *,
-[style*="background-color: rgb(0, 0, 0)"] *,
-[style*="background-color: #000"] * {
-    color: #ffffff !important;
-    -webkit-text-fill-color: #ffffff !important;
-}
-
-/* 色反転モード対応 */
+/* 色反転時の画像・SVG対応のみ */
 @media (inverted-colors: inverted) {
 
-    /* 画像とSVGのみ反転 */
     img,
     svg,
     canvas {
         -webkit-filter: invert(1);
         filter: invert(1);
-    }
-
-    /* 背景色の強制リセット */
-    body,
-    html {
-        background-color: #ffffff !important;
-    }
-}
-
-/* 公開プロフィールなど特定ページの背景保護 */
-[class*="bg-white"],
-.bg-gray-50,
-.bg-gray-100 {
-    background-color: #ffffff !important;
-}
-
-/* 重要: QRコードなどは色を保持 */
-.preserve-colors,
-[class*="qr"] {
-    -webkit-filter: none !important;
-    filter: none !important; }
+    } }
 
 body {
     background: var(--background);

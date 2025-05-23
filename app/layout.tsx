@@ -16,7 +16,6 @@ const robotoMono = Roboto_Mono({
   subsets: ['latin'],
 });
 
-// メタデータ定義
 export const metadata: Metadata = {
   title: 'Share',
   description: 'デジタル名刺サービス',
@@ -25,14 +24,8 @@ export const metadata: Metadata = {
     shortcut: '/pwa/favicon.ico',
     apple: '/pwa/apple-touch-icon.png',
   },
-  // iOS ダークモード対応
-  other: {
-    'color-scheme': 'light dark',
-    'supported-color-schemes': 'light dark',
-  },
 };
 
-// ビューポート設定
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1.0,
