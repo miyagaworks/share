@@ -67,20 +67,31 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
       setIsInvitedMember(isInvited);
 
-      // ユーザータイプが解決されたかどうか判定
-      // userRoleがnullでない、またはhasAccessが明確に判定されている場合
+      // 🔧 ユーザータイプ解決判定をより柔軟に
       const isResolved =
-        corporateAccessState.userRole !== null ||
-        corporateAccessState.hasAccess !== null ||
-        corporateAccessState.lastChecked > 0;
+        corporateAccessState.lastChecked > 0 || // APIが一度でも実行された
+        corporateAccessState.hasAccess === true || // 明確にアクセス権あり
+        corporateAccessState.hasAccess === false || // 明確にアクセス権なし
+        corporateAccessState.error !== null; // エラーが発生した場合も解決済み
 
       setIsUserTypeResolved(isResolved);
 
       console.log('🔧 ユーザータイプ解決状態:', {
         isResolved,
+        reason:
+          corporateAccessState.lastChecked > 0
+            ? 'API完了'
+            : corporateAccessState.hasAccess === true
+              ? 'アクセス権あり'
+              : corporateAccessState.hasAccess === false
+                ? 'アクセス権なし'
+                : corporateAccessState.error !== null
+                  ? 'エラー発生'
+                  : '未解決',
         userRole: corporateAccessState.userRole,
         hasAccess: corporateAccessState.hasAccess,
         lastChecked: corporateAccessState.lastChecked,
+        error: corporateAccessState.error,
       });
     };
 
@@ -106,7 +117,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       }
     }
 
-    // 🔧 アクセス状態変更イベントのリスナーを修正
+    // アクセス状態変更イベントのリスナー
     const handleAccessChange = () => {
       console.log('🔧 corporateAccessChanged イベント受信');
 
@@ -122,8 +133,15 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
     window.addEventListener('corporateAccessChanged', handleAccessChange);
 
+    // 🔧 安全措置: 5秒後に強制的に解決済みにする
+    const safetyTimer = setTimeout(() => {
+      console.log('🔧 安全措置: タイムアウトによりユーザータイプを解決済みに設定');
+      setIsUserTypeResolved(true);
+    }, 5000);
+
     return () => {
       window.removeEventListener('corporateAccessChanged', handleAccessChange);
+      clearTimeout(safetyTimer);
     };
   }, []);
 

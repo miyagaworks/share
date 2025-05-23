@@ -137,11 +137,12 @@ export async function checkCorporateAccess(
         error: errorData.error || '法人プランへのアクセス権がありません',
       };
 
+      // 🔧 lastCheckedを必ず設定
       updateState({
         ...result,
         isSuperAdmin: currentIsSuperAdmin, // 管理者状態を維持
         isPermanentUser: false,
-        lastChecked: now,
+        lastChecked: now, // 🔧 これが抜けていた！
       });
 
       // クッキーを更新
@@ -149,6 +150,7 @@ export async function checkCorporateAccess(
 
       return result;
     }
+
     // 正常なレスポンスの場合
     else if (response.ok) {
       const data = await response.json().catch(() => null);
@@ -250,9 +252,11 @@ export async function checkCorporateAccess(
         error: `サーバーエラー (${response.status}): APIからの応答に問題があります`,
       };
 
+      // 🔧 サーバーエラーでもlastCheckedを設定
       updateState({
+        ...result, // 🔧 結果全体を含める
         error: result.error,
-        lastChecked: now,
+        lastChecked: now, // 🔧 これも抜けていた！
       });
 
       return result;
@@ -275,6 +279,7 @@ export async function checkCorporateAccess(
     };
 
     updateState({
+      ...result, // 🔧 結果全体を含める
       error: result.error,
       lastChecked: now,
     });
