@@ -152,7 +152,10 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-  const [isLoading, setIsLoading] = useState(true);
+
+  // 🔧 初期状態を修正: ローディング状態を明確に管理
+  const [isInitializing, setIsInitializing] = useState(true);
+  const [isAuthCheckComplete, setIsAuthCheckComplete] = useState(false);
 
   // 権限状態
   const [isAdmin, setIsAdmin] = useState(false);
@@ -162,14 +165,17 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   const [permanentPlanType, setPermanentPlanType] = useState<PermanentPlanType | null>(null);
   const [isInvitedMember, setIsInvitedMember] = useState(false);
 
-  // 明示的にユーザータイプを追跡
+  // 🔧 ユーザータイプを初期状態nullに変更（個人ダッシュボード表示を防ぐ）
   const [userType, setUserType] = useState<
-    'admin' | 'corporate' | 'personal' | 'permanent' | 'invited-member'
-  >('personal');
+    'admin' | 'corporate' | 'personal' | 'permanent' | 'invited-member' | null
+  >(
+    null, // 🔧 'personal' から null に変更
+  );
 
   // 管理者またはメールアドレスによる早期チェック
   useEffect(() => {
     if (status === 'loading') return;
+
     if (!session) {
       router.push('/auth/signin');
       return;
@@ -180,7 +186,8 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       console.log('管理者メールアドレスを検出');
       setIsAdmin(true);
       setUserType('admin');
-      setIsLoading(false);
+      setIsAuthCheckComplete(true); // 🔧 認証チェック完了をマーク
+      setIsInitializing(false); // 🔧 初期化完了をマーク
 
       // 管理者は/dashboard/adminに直接移動
       if (pathname === '/dashboard') {
@@ -190,11 +197,15 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       return;
     }
 
-    setIsLoading(false);
+    // 管理者でない場合は次のステップへ
+    setIsAuthCheckComplete(true);
   }, [session, status, router, pathname]);
 
   // アクセス権チェック関数 - 管理者チェック後に実行
   useEffect(() => {
+    // 認証チェックが完了していない場合は実行しない
+    if (!isAuthCheckComplete) return;
+
     const checkAccessRights = async () => {
       if (status === 'loading') return;
       if (!session) {
@@ -208,6 +219,9 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       }
 
       try {
+        // 🔧 並行処理から直列処理に変更（競合状態を回避）
+        console.log('🔧 アクセス権チェック開始（直列処理）');
+
         // ステップ1: プロフィール情報取得とユーザータイプの判定
         const profileResponse = await fetch('/api/profile');
         if (profileResponse.ok) {
@@ -249,11 +263,15 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
               setHasCorpAccess(false);
               setIsCorpAdmin(false);
             }
+
+            // 🔧 永久利用権ユーザーの処理完了後に初期化完了をマーク
+            setIsInitializing(false);
             return;
           }
         }
 
-        // ステップ2: 法人アクセス権のチェック
+        // ステップ2: 法人アクセス権のチェック（永久利用権でない場合のみ）
+        console.log('🔧 法人アクセス権チェック開始');
         const corpResponse = await fetch('/api/corporate/access');
         if (corpResponse.ok) {
           const corpData = await corpResponse.json();
@@ -264,59 +282,67 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
           // 法人ユーザーロールを取得
           const role = corpData.userRole;
-          console.log('法人ユーザーロール:', role);
+          console.log('🔧 法人ユーザーロール:', role, 'hasAccess:', hasAccess);
 
-          // 招待メンバーの判定（重要な追加）
+          // 🔧 招待メンバーの判定（最優先）
           if (hasAccess && role === 'member') {
-            console.log('招待メンバーを検出しました');
+            console.log('🔧 招待メンバーを検出しました');
             setIsInvitedMember(true);
             setUserType('invited-member');
             setIsCorpAdmin(false);
 
             // 招待メンバーは法人メンバーページに強制リダイレクト
             if (pathname === '/dashboard') {
-              console.log('招待メンバーを法人メンバーページにリダイレクト');
+              console.log('🔧 招待メンバーを法人メンバーページにリダイレクト');
               router.push('/dashboard/corporate-member');
             }
+
+            // 🔧 招待メンバーの処理完了後に初期化完了をマーク
+            setIsInitializing(false);
             return;
           }
 
           // hasAccessがtrueかつroleがadminまたはcorporate-memberの場合にcorporateタイプに設定
           if (hasAccess && (role === 'admin' || role === 'corporate-member')) {
+            console.log('🔧 法人管理者またはメンバーを検出');
             setUserType('corporate');
             setIsCorpAdmin(role === 'admin');
           } else {
             // それ以外は個人ユーザー
+            console.log('🔧 個人ユーザーに設定');
             setUserType('personal');
             setHasCorpAccess(false);
             setIsCorpAdmin(false);
           }
         } else {
           // APIエラー時は安全側に倒して個人ユーザーとして扱う
-          console.log('法人アクセスAPI呼び出しエラー - 個人ユーザーと見なします');
+          console.log('🔧 法人アクセスAPI呼び出しエラー - 個人ユーザーと見なします');
           setUserType('personal');
           setHasCorpAccess(false);
           setIsCorpAdmin(false);
         }
       } catch (error) {
-        console.error('アクセスチェックエラー:', error);
+        console.error('🔧 アクセスチェックエラー:', error);
         // エラー時も個人ユーザーとして扱う
         setUserType('personal');
         setHasCorpAccess(false);
         setIsCorpAdmin(false);
+      } finally {
+        // 🔧 必ず初期化完了をマーク
+        setIsInitializing(false);
       }
     };
 
-    if (!isAdmin) {
-      // 管理者チェックが完了していない場合のみ
+    // 管理者チェックが完了していて、まだ初期化中の場合のみ実行
+    if (isAuthCheckComplete && isInitializing) {
       checkAccessRights();
     }
-  }, [session, status, router, isAdmin, pathname]);
+  }, [session, status, router, pathname, isAuthCheckComplete, isInitializing]);
 
   // 権限に基づく強制リダイレクト - ページロード時に一度だけ実行
   useEffect(() => {
-    // isLoadingがtrueの間は何もしない
-    if (isLoading || !pathname) return;
+    // 🔧 初期化が完了していない間は何もしない
+    if (isInitializing || !pathname) return;
 
     // 管理者ページへのアクセスチェック
     if (pathname.startsWith('/dashboard/admin') && !isAdmin) {
@@ -377,16 +403,29 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     userType,
     permanentPlanType,
     router,
-    isLoading,
+    isInitializing, // 🔧 isLoadingをisInitializingに変更
     isPermanentUser,
     isInvitedMember,
   ]);
 
-  // ローディング表示
-  if (status === 'loading') {
+  // 🔧 ローディング表示の条件を修正
+  if (status === 'loading' || isInitializing) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Spinner size="lg" />
+        <span className="ml-3 text-gray-500">
+          {status === 'loading' ? 'セッション確認中...' : 'アクセス権限確認中...'}
+        </span>
+      </div>
+    );
+  }
+
+  // 🔧 userTypeがnullの場合はローディングを表示（安全措置）
+  if (userType === null) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Spinner size="lg" />
+        <span className="ml-3 text-gray-500">ユーザータイプ判定中...</span>
       </div>
     );
   }
