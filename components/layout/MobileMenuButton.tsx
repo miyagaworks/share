@@ -26,6 +26,10 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
   // 強制再レンダリング用
   const [, setRenderKey] = useState(0);
 
+  // 🔧 招待メンバー判定の状態を追加
+  const [isInvitedMember, setIsInvitedMember] = useState(false);
+  const [isUserTypeResolved, setIsUserTypeResolved] = useState(false);
+
   // 法人アクセス権を確認
   useEffect(() => {
     const initAccess = async () => {
@@ -45,15 +49,52 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
 
     initAccess();
 
+    // 🔧 メンバー状態更新関数
+    const updateMemberStatus = () => {
+      // 招待メンバー判定（corporateAccessStateから）
+      const isInvited = corporateAccessState.userRole === 'member' && !corporateAccessState.isAdmin;
+
+      console.log('🔧 MobileMenu: 招待メンバー状態更新:', {
+        userRole: corporateAccessState.userRole,
+        isAdmin: corporateAccessState.isAdmin,
+        hasAccess: corporateAccessState.hasAccess,
+        isInvited,
+        lastChecked: corporateAccessState.lastChecked,
+      });
+
+      setIsInvitedMember(isInvited);
+
+      // ユーザータイプ解決判定
+      const isResolved =
+        corporateAccessState.lastChecked > 0 ||
+        corporateAccessState.hasAccess === true ||
+        corporateAccessState.hasAccess === false ||
+        corporateAccessState.error !== null;
+
+      setIsUserTypeResolved(isResolved);
+    };
+
+    // 初期状態をチェック
+    updateMemberStatus();
+
     // アクセス状態変更イベントのリスナー
     const handleAccessChange = () => {
+      console.log('🔧 MobileMenu: corporateAccessChanged イベント受信');
+      updateMemberStatus();
       setRenderKey((prev) => prev + 1);
     };
 
     window.addEventListener('corporateAccessChanged', handleAccessChange);
 
+    // 🔧 安全措置: 5秒後に強制的に解決済みにする
+    const safetyTimer = setTimeout(() => {
+      console.log('🔧 MobileMenu: 安全措置によりユーザータイプを解決済みに設定');
+      setIsUserTypeResolved(true);
+    }, 5000);
+
     return () => {
       window.removeEventListener('corporateAccessChanged', handleAccessChange);
+      clearTimeout(safetyTimer);
     };
   }, []);
 
@@ -78,63 +119,66 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
     }
   };
 
-  // 法人セクションにいる場合、個人ダッシュボードと法人メンバーダッシュボードへのリンクを追加
-  if (isCorporateSection) {
-    addLink({
-      title: '個人ダッシュボード',
-      href: '/dashboard',
-      icon: <HiHome className="h-5 w-5" />,
-    });
+  // 🔧 招待メンバーでない場合のみ追加リンクを生成
+  if (!isInvitedMember && isUserTypeResolved) {
+    // 法人セクションにいる場合、個人ダッシュボードと法人メンバーダッシュボードへのリンクを追加
+    if (isCorporateSection) {
+      addLink({
+        title: '個人ダッシュボード',
+        href: '/dashboard',
+        icon: <HiHome className="h-5 w-5" />,
+      });
 
-    // 法人管理者は法人メンバーダッシュボードも表示
-    if (corporateAccessState.hasAccess) {
+      // 法人管理者は法人メンバーダッシュボードも表示
+      if (corporateAccessState.hasAccess) {
+        addLink({
+          title: '法人メンバープロフィール',
+          href: '/dashboard/corporate-member',
+          icon: <HiUser className="h-5 w-5" />,
+        });
+      }
+    }
+
+    // 法人メンバーセクションにいる場合、個人ダッシュボードと法人ダッシュボードへのリンクを追加
+    else if (isCorporateMemberSection) {
+      addLink({
+        title: '個人ダッシュボード',
+        href: '/dashboard',
+        icon: <HiHome className="h-5 w-5" />,
+      });
+
+      // 法人管理者の場合は法人管理ダッシュボードへのリンクも表示
+      if (corporateAccessState.isAdmin) {
+        addLink({
+          title: '法人管理ダッシュボード',
+          href: '/dashboard/corporate',
+          icon: <HiOfficeBuilding className="h-5 w-5" />,
+        });
+      }
+    }
+
+    // 個人セクションにいて法人アクセス権がある場合、法人関連リンクを追加
+    else if (
+      !isCorporateSection &&
+      !isCorporateMemberSection &&
+      pathname?.startsWith('/dashboard') &&
+      corporateAccessState.hasAccess
+    ) {
+      // 法人メンバーダッシュボードへのリンクを追加
       addLink({
         title: '法人メンバープロフィール',
         href: '/dashboard/corporate-member',
         icon: <HiUser className="h-5 w-5" />,
       });
-    }
-  }
 
-  // 法人メンバーセクションにいる場合、個人ダッシュボードと法人ダッシュボードへのリンクを追加
-  else if (isCorporateMemberSection) {
-    addLink({
-      title: '個人ダッシュボード',
-      href: '/dashboard',
-      icon: <HiHome className="h-5 w-5" />,
-    });
-
-    // 法人管理者の場合は法人管理ダッシュボードへのリンクも表示
-    if (corporateAccessState.isAdmin) {
-      addLink({
-        title: '法人管理ダッシュボード',
-        href: '/dashboard/corporate',
-        icon: <HiOfficeBuilding className="h-5 w-5" />,
-      });
-    }
-  }
-
-  // 個人セクションにいて法人アクセス権がある場合、法人関連リンクを追加
-  else if (
-    !isCorporateSection &&
-    !isCorporateMemberSection &&
-    pathname?.startsWith('/dashboard') &&
-    corporateAccessState.hasAccess
-  ) {
-    // 法人メンバーダッシュボードへのリンクを追加
-    addLink({
-      title: '法人メンバープロフィール',
-      href: '/dashboard/corporate-member',
-      icon: <HiUser className="h-5 w-5" />,
-    });
-
-    // 法人管理者の場合は法人管理ダッシュボードへのリンクも追加
-    if (corporateAccessState.isAdmin) {
-      addLink({
-        title: '法人管理ダッシュボード',
-        href: '/dashboard/corporate',
-        icon: <HiOfficeBuilding className="h-5 w-5" />,
-      });
+      // 法人管理者の場合は法人管理ダッシュボードへのリンクも追加
+      if (corporateAccessState.isAdmin) {
+        addLink({
+          title: '法人管理ダッシュボード',
+          href: '/dashboard/corporate',
+          icon: <HiOfficeBuilding className="h-5 w-5" />,
+        });
+      }
     }
   }
 
@@ -182,7 +226,10 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
         <div className="flex flex-col h-full">
           {/* メニューヘッダー */}
           <div className="flex items-center justify-between p-5 border-b border-gray-200">
-            <h2 className="text-xl font-medium">メニュー</h2>
+            <h2 className="text-xl font-medium">
+              {/* 🔧 招待メンバーの場合は専用のタイトルを表示 */}
+              {isInvitedMember ? '法人メンバーメニュー' : 'メニュー'}
+            </h2>
             <button
               type="button"
               onClick={() => setIsOpen(false)}
@@ -261,8 +308,8 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
                 );
               })}
 
-              {/* 追加リンク */}
-              {additionalLinks.length > 0 && (
+              {/* 追加リンク - 招待メンバーでない場合のみ表示 */}
+              {!isInvitedMember && additionalLinks.length > 0 && (
                 <div className="pt-4">
                   {/* 区切り線 */}
                   <div className="relative my-6">

@@ -708,10 +708,11 @@ export default function SubscriptionStatus({
               </span>
             </div>
 
-            <div className="mt-4 space-y-3">
+            {/* 🔧 スマホでのパディング問題を修正 - mt-4 を mt-6 に変更し、space-y を増加 */}
+            <div className="mt-6 space-y-4">
               {/* 永久利用権ユーザーでない場合のみ次回更新日を表示 */}
               {!isPermanentUser() && (
-                <div className="flex justify-between items-center">
+                <div className="flex justify-between items-center py-2 border-b border-gray-100">
                   <span className="text-sm text-gray-500">次回更新日</span>
                   <span className="text-sm font-medium">
                     {subscription?.currentPeriodEnd
@@ -722,7 +723,7 @@ export default function SubscriptionStatus({
               )}
 
               {subscription?.status === 'trialing' && !isPermanentUser() && (
-                <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
+                <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mt-4">
                   <p className="text-sm text-blue-800 text-justify">
                     無料トライアル期間中です。
                     <strong>
@@ -740,8 +741,8 @@ export default function SubscriptionStatus({
               )}
 
               {subscription?.cancelAtPeriodEnd && !isPermanentUser() && (
-                <div className="bg-amber-50 border border-amber-100 rounded-md p-3 mt-4">
-                  <p className="text-sm text-amber-800">
+                <div className="bg-amber-50 border border-amber-100 rounded-md p-4 mt-4">
+                  <p className="text-sm text-amber-800 mb-3">
                     このプランは
                     <strong>{formatDate(subscription.currentPeriodEnd)}</strong>
                     にキャンセルされる予定です。それまではすべての機能をご利用いただけます。
@@ -769,10 +770,11 @@ export default function SubscriptionStatus({
               )}
             </div>
 
+            {/* 🔧 解約ボタンのマージンを増加 */}
             {!isPermanentUser() &&
               !subscription?.cancelAtPeriodEnd &&
               (subscription?.status === 'active' || subscription?.status === 'trialing') && (
-                <div className="mt-6">
+                <div className="mt-8 pt-4 border-t border-gray-100">
                   <Button
                     variant="outline"
                     size="sm"
