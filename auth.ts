@@ -1,4 +1,4 @@
-// auth.ts（修正版）
+// auth.ts
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -74,18 +74,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     // 既存のコールバックとマージ（必要なものだけ実装）
-    async jwt({ token, user, ...rest }) {
-      // 既存のjwtコールバックがあれば呼び出す
+    async jwt({ token, user, trigger, ...rest }) {
+      // 既存のコールバックとマージ（必要なものだけ実装）
       if (baseCallbacks?.jwt) {
-        token = await baseCallbacks.jwt({ token, user, ...rest });
+        token = await baseCallbacks.jwt({ token, user, trigger, ...rest });
       }
 
-      // 初回サインイン時にユーザー情報をトークンに追加
-      if (user) {
+      // 初回サインイン時または更新時にユーザー情報をトークンに追加
+      if (user || trigger === 'update') {
         try {
-          // Prisma使用はサーバーサイドのみで行う
+          // 最新のユーザー情報を取得（Prisma使用はサーバーサイドのみで行う）
+          const userId = user?.id || token.sub;
           const dbUser = await prisma.user.findUnique({
-            where: { id: user.id },
+            where: { id: userId },
             include: {
               tenant: true,
               adminOfTenant: true,
@@ -94,12 +95,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (dbUser) {
             token.isAdmin = !!dbUser.adminOfTenant;
-            token.tenantId = dbUser.tenant?.id || null;
-            token.role = dbUser.adminOfTenant
-              ? 'admin'
-              : dbUser.tenant
-                ? 'corporate-member'
-                : 'personal';
+            token.tenantId = dbUser.tenant?.id || dbUser.adminOfTenant?.id || null;
+
+            // ロールの決定ロジックを改善
+            if (dbUser.adminOfTenant) {
+              token.role = 'admin';
+            } else if (dbUser.tenant && dbUser.corporateRole === 'member') {
+              token.role = 'member'; // 重要：memberロールを明示的に設定
+            } else if (dbUser.tenant) {
+              token.role = 'corporate-member';
+            } else {
+              token.role = 'personal';
+            }
+
+            console.log('[Auth JWT] ユーザー情報更新:', {
+              userId: dbUser.id,
+              role: token.role,
+              tenantId: token.tenantId,
+              corporateRole: dbUser.corporateRole,
+            });
           }
         } catch (error) {
           console.error('JWTコールバックでのDB取得エラー:', error);

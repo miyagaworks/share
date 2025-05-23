@@ -40,7 +40,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   const [isPermanentUser, setIsPermanentUser] = useState(false);
   const [permanentPlanType, setPermanentPlanType] = useState<string | null>(null);
 
-  // 招待メンバーかどうか
+  // 招待メンバーかどうか（corporateRoleがmemberかつ管理者でない）
   const isInvitedMember =
     corporateAccessState.userRole === 'member' && !corporateAccessState.isAdmin;
 
@@ -134,7 +134,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       },
     ];
 
-    // 招待メンバー向けのサイドバーを表示
+    // 招待メンバー向けのサイドバーを表示（個人ダッシュボードリンクなし）
     return (
       <motion.div
         initial={false}
@@ -150,7 +150,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                 collapsed ? 'opacity-0' : 'opacity-100',
               )}
             >
-              メニュー
+              法人メンバーメニュー
             </h2>
             <button
               onClick={toggleCollapse}
@@ -165,7 +165,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
             </button>
           </div>
 
-          {/* 招待メンバー向けのメニュー項目 */}
+          {/* 招待メンバー向けのメニュー項目のみ（個人機能へのリンクなし） */}
           <nav className="space-y-1 px-2">
             {memberMenuItems.map((item, index) => {
               // 区切り線の場合は特別な表示を行う
@@ -193,43 +193,17 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
               // アクティブなリンクかどうか
               const isActive = pathname === item.href;
-              // 法人関連のリンクかどうか
-              const isCorporateLink = item.href.includes('/corporate');
-              // 特別処理が必要なリンク（ご利用プランと個人ダッシュボード）
-              const isSpecialLink =
-                item.href === '/dashboard/subscription' || item.href === '/dashboard';
 
-              // 条件に応じたクラス生成
+              // 法人メンバー専用のスタイル
               let itemClass = '';
               let iconClass = '';
 
               if (isActive) {
-                if (isCorporateRelated || isCorporateLink) {
-                  // 法人セクションまたは法人関連リンクのアクティブスタイル
-                  itemClass = 'corporate-menu-active';
-                  iconClass = 'corporate-icon-active';
-                } else {
-                  // 通常セクションのアクティブスタイル
-                  itemClass = 'bg-blue-50 text-blue-700';
-                  iconClass = 'text-blue-700';
-                }
+                itemClass = 'corporate-menu-active';
+                iconClass = 'corporate-icon-active';
               } else {
-                // 非アクティブスタイル
-                if (isCorporateRelated || isCorporateLink) {
-                  if (isSpecialLink) {
-                    // 法人セクション内での特別リンク（ご利用プランと個人ダッシュボード）
-                    itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
-                    iconClass = 'text-gray-600 group-hover:text-blue-700';
-                  } else {
-                    // 法人セクションでの通常の非アクティブ（hover含む）
-                    itemClass = 'text-gray-600 hover:corporate-menu-active';
-                    iconClass = 'text-gray-600 group-hover:corporate-icon-active';
-                  }
-                } else {
-                  // 通常セクションでの非アクティブ
-                  itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
-                  iconClass = 'text-gray-600 group-hover:text-blue-700';
-                }
+                itemClass = 'text-gray-600 hover:corporate-menu-active';
+                iconClass = 'text-gray-600 group-hover:corporate-icon-active';
               }
 
               return (
@@ -260,7 +234,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     );
   }
 
-  // 通常のユーザー向け表示
+  // 通常のユーザー向け表示（変更なし）
   // メインメニュー項目
   const mainMenuItems = [...items];
 
@@ -305,8 +279,8 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
   // 法人メンバーセクションにいる場合
   else if (isCorporateMemberSection) {
-    // 個人ダッシュボードへのリンクを追加（存在しない場合のみ）
-    if (!existingUrls.has('/dashboard')) {
+    // 招待メンバーでない場合のみ個人ダッシュボードリンクを表示
+    if (!isInvitedMember && !existingUrls.has('/dashboard')) {
       additionalLinks.push({
         title: '個人ダッシュボード',
         href: '/dashboard',

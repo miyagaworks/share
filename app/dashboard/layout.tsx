@@ -69,7 +69,7 @@ const personalSidebarItems: SidebarItem[] = [
   },
 ];
 
-// 法人プラン用サイドバー項目
+// 法人プラン用サイドバー項目（修正版）
 const corporateSidebarItems = [
   {
     title: '法人ダッシュボード',
@@ -100,6 +100,12 @@ const corporateSidebarItems = [
     title: 'アカウント設定',
     href: '/dashboard/corporate/settings',
     icon: <HiCog className="h-5 w-5" />,
+  },
+  // 🔧 法人メンバープロフィールメニューを追加
+  {
+    title: '法人メンバープロフィール',
+    href: '/dashboard/corporate-member',
+    icon: <HiUser className="h-5 w-5" />,
   },
   {
     title: 'ご利用プラン',
@@ -154,11 +160,12 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   const [isCorpAdmin, setIsCorpAdmin] = useState(false);
   const [isPermanentUser, setIsPermanentUser] = useState(false);
   const [permanentPlanType, setPermanentPlanType] = useState<PermanentPlanType | null>(null);
+  const [isInvitedMember, setIsInvitedMember] = useState(false);
 
   // 明示的にユーザータイプを追跡
-  const [userType, setUserType] = useState<'admin' | 'corporate' | 'personal' | 'permanent'>(
-    'personal',
-  );
+  const [userType, setUserType] = useState<
+    'admin' | 'corporate' | 'personal' | 'permanent' | 'invited-member'
+  >('personal');
 
   // 管理者またはメールアドレスによる早期チェック
   useEffect(() => {
@@ -185,15 +192,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
     setIsLoading(false);
   }, [session, status, router, pathname]);
-
-  // セッションとコーポレートアクセス状態をデバッグログ
-  useEffect(() => {
-    if (session && !isLoading) {
-      console.log('現在のセッション:', session);
-      console.log('現在のユーザータイプ:', userType);
-      console.log('現在のパス:', pathname);
-    }
-  }, [session, isLoading, userType, pathname]);
 
   // アクセス権チェック関数 - 管理者チェック後に実行
   useEffect(() => {
@@ -268,8 +266,23 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
           const role = corpData.userRole;
           console.log('法人ユーザーロール:', role);
 
-          // hasAccessがtrueかつroleがadminまたはmemberの場合にcorporateタイプに設定
-          if (hasAccess && (role === 'admin' || role === 'member')) {
+          // 招待メンバーの判定（重要な追加）
+          if (hasAccess && role === 'member') {
+            console.log('招待メンバーを検出しました');
+            setIsInvitedMember(true);
+            setUserType('invited-member');
+            setIsCorpAdmin(false);
+
+            // 招待メンバーは法人メンバーページに強制リダイレクト
+            if (pathname === '/dashboard') {
+              console.log('招待メンバーを法人メンバーページにリダイレクト');
+              router.push('/dashboard/corporate-member');
+            }
+            return;
+          }
+
+          // hasAccessがtrueかつroleがadminまたはcorporate-memberの場合にcorporateタイプに設定
+          if (hasAccess && (role === 'admin' || role === 'corporate-member')) {
             setUserType('corporate');
             setIsCorpAdmin(role === 'admin');
           } else {
@@ -298,7 +311,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       // 管理者チェックが完了していない場合のみ
       checkAccessRights();
     }
-  }, [session, status, router, isAdmin]);
+  }, [session, status, router, isAdmin, pathname]);
 
   // 権限に基づく強制リダイレクト - ページロード時に一度だけ実行
   useEffect(() => {
@@ -312,6 +325,35 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       return;
     }
 
+    // 🔧 法人管理者の場合、/dashboardアクセス時に法人ダッシュボードへリダイレクト
+    if (pathname === '/dashboard' && (isCorpAdmin || (userType === 'corporate' && isCorpAdmin))) {
+      console.log('法人管理者を法人ダッシュボードへリダイレクト');
+      router.push('/dashboard/corporate');
+      return;
+    }
+
+    // 🔧 永久利用権ユーザー（法人プラン）の場合も法人ダッシュボードへリダイレクト
+    if (
+      pathname === '/dashboard' &&
+      isPermanentUser &&
+      permanentPlanType &&
+      permanentPlanType !== 'personal'
+    ) {
+      console.log('法人プラン永久利用権ユーザーを法人ダッシュボードへリダイレクト');
+      router.push('/dashboard/corporate');
+      return;
+    }
+
+    // 招待メンバーの制限（重要な追加）
+    if (isInvitedMember) {
+      // 招待メンバーは法人メンバーページ以外にアクセス不可
+      if (!pathname.startsWith('/dashboard/corporate-member')) {
+        console.log('招待メンバーを法人メンバーページ以外からリダイレクト');
+        router.push('/dashboard/corporate-member');
+        return;
+      }
+    }
+
     // 法人ページへのアクセスチェック
     const isCorporateSection = pathname.startsWith('/dashboard/corporate');
     const isCorporateMemberSection = pathname.startsWith('/dashboard/corporate-member');
@@ -320,6 +362,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       (isCorporateSection || isCorporateMemberSection) &&
       !hasCorpAccess &&
       userType !== 'admin' &&
+      userType !== 'invited-member' &&
       !(isPermanentUser && permanentPlanType !== 'personal')
     ) {
       console.log('法人ページへのアクセス拒否 -> ダッシュボードへリダイレクト');
@@ -330,11 +373,13 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     pathname,
     isAdmin,
     hasCorpAccess,
+    isCorpAdmin,
     userType,
     permanentPlanType,
     router,
     isLoading,
     isPermanentUser,
+    isInvitedMember,
   ]);
 
   // ローディング表示
@@ -354,6 +399,37 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     case 'admin':
       // 管理者は管理者メニューのみ
       sidebarItems = [...adminSidebarItems];
+      break;
+
+    case 'invited-member':
+      // 招待メンバーは法人メンバーメニューのみ（個人機能なし）
+      sidebarItems = [
+        {
+          title: '概要',
+          href: '/dashboard/corporate-member',
+          icon: <HiOfficeBuilding className="h-5 w-5" />,
+        },
+        {
+          title: 'プロフィール編集',
+          href: '/dashboard/corporate-member/profile',
+          icon: <HiUser className="h-5 w-5" />,
+        },
+        {
+          title: 'SNS・リンク管理',
+          href: '/dashboard/corporate-member/links',
+          icon: <HiLink className="h-5 w-5" />,
+        },
+        {
+          title: 'デザイン設定',
+          href: '/dashboard/corporate-member/design',
+          icon: <HiColorSwatch className="h-5 w-5" />,
+        },
+        {
+          title: '共有設定',
+          href: '/dashboard/corporate-member/share',
+          icon: <HiShare className="h-5 w-5" />,
+        },
+      ];
       break;
 
     case 'permanent':
@@ -382,7 +458,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       // 法人所属ユーザー
       const isCorporateSection = pathname?.startsWith('/dashboard/corporate');
       if (isCorporateSection) {
-        // 法人管理画面は法人メニュー表示
+        // 🔧 法人管理画面では修正されたcorporateSidebarItems（法人メンバープロフィール含む）を使用
         sidebarItems = [...corporateSidebarItems];
       } else {
         // それ以外は個人メニュー＋法人リンク

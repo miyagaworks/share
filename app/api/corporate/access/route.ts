@@ -31,6 +31,7 @@ export async function GET(request: Request) {
           id: true,
           email: true,
           subscriptionStatus: true,
+          corporateRole: true, // 追加：法人ロール情報
           adminOfTenant: {
             select: {
               id: true,
@@ -98,6 +99,9 @@ export async function GET(request: Request) {
       const tenant = user.adminOfTenant || user.tenant;
       const hasTenant = !!tenant;
 
+      // テナントIDの取得（安全に）
+      const tenantId = tenant?.id || null;
+
       // テナントステータスの確認
       const isTenantSuspended = tenant?.accountStatus === 'suspended';
 
@@ -126,12 +130,32 @@ export async function GET(request: Request) {
       // アクセス権の判定
       const hasAccess = hasTenant && !isTenantSuspended && hasCorporateSubscription;
 
-      // テナントIDの取得（安全に）
-      const tenantId = hasTenant && tenant ? tenant.id : null;
-
-      // ユーザーロールの決定
+      // ユーザーロールの決定（より詳細に）
       const isAdmin = !!user.adminOfTenant;
-      const userRole = isAdmin ? 'admin' : hasTenant ? 'member' : null;
+      let userRole = null;
+
+      if (isAdmin) {
+        userRole = 'admin';
+      } else if (hasTenant && user.corporateRole === 'member') {
+        userRole = 'member'; // 明示的にmemberロールを設定
+      } else if (hasTenant) {
+        userRole = 'member'; // テナントがあればmemberとして扱う
+      }
+
+      // hasAccessの判定を拡張（memberロールでもアクセス許可）
+      const finalHasAccess =
+        hasAccess || (hasTenant && !isTenantSuspended && userRole === 'member');
+
+      console.log('[API:corporate/access] アクセス権判定結果:', {
+        userId,
+        hasTenant,
+        isTenantSuspended,
+        hasCorporateSubscription,
+        corporateRole: user.corporateRole,
+        userRole,
+        finalHasAccess,
+        tenantId,
+      });
 
       // メモリ使用量ログ（開発環境のみ）
       if (process.env.NODE_ENV === 'development') {
@@ -143,12 +167,12 @@ export async function GET(request: Request) {
       }
 
       return NextResponse.json({
-        hasAccess,
+        hasAccess: finalHasAccess,
         isAdmin,
         isSuperAdmin: isAdminEmail,
         tenantId,
         userRole,
-        error: !hasAccess
+        error: !finalHasAccess
           ? isTenantSuspended
             ? 'テナントが停止されています'
             : !hasTenant

@@ -135,12 +135,10 @@ function InvitePageContent() {
         body: JSON.stringify({
           token,
           password,
-          // 姓名とフリガナを個別に送信
           lastName,
           firstName,
           lastNameKana,
           firstNameKana,
-          // フルネームも念のため送信
           name: `${lastName} ${firstName}`.trim(),
         }),
       });
@@ -162,16 +160,24 @@ function InvitePageContent() {
         throw new Error('自動ログインに失敗しました');
       }
 
-      // ダッシュボードへリダイレクト - 法人メンバーダッシュボードにリダイレクト
-      router.push('/dashboard/corporate-member');
+      // 重要：セッションの更新を強制的に実行
+      // これにより最新のユーザー情報がセッションに反映される
+      setTimeout(async () => {
+        try {
+          // セッションの更新をトリガー
+          await fetch('/api/auth/session', {
+            method: 'GET',
+            headers: { 'Cache-Control': 'no-cache' },
+          });
 
-      // ログイン成功後、法人メンバーダッシュボードへリダイレクト
-      // テナント情報がある場合は法人メンバーダッシュボードへ、ない場合は通常ダッシュボードへ
-      if (data.hasTenanct) {
-        router.push('/dashboard/corporate-member');
-      } else {
-        router.push('/dashboard');
-      }
+          // 法人メンバーダッシュボードへリダイレクト
+          router.push('/dashboard/corporate-member');
+        } catch (sessionError) {
+          console.error('セッション更新エラー:', sessionError);
+          // エラーが発生してもリダイレクトは実行
+          router.push('/dashboard/corporate-member');
+        }
+      }, 500); // 500ms待機してからセッション更新
     } catch (error) {
       console.error('招待受け入れエラー:', error);
       setError(error instanceof Error ? error.message : '招待の受け入れに失敗しました');
