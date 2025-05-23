@@ -101,6 +101,76 @@ export default function SubscriptionPage() {
     setUserData(data);
   };
 
+  // 🔥 スクロール処理用の useEffect を独立させ、より精密に調整 🔥
+  useEffect(() => {
+    // マウント後にハッシュをチェック
+    if (!mounted) return;
+
+    const checkAndScroll = () => {
+      console.log('Checking hash:', window.location.hash);
+
+      if (window.location.hash === '#subscription-plans') {
+        console.log('Hash matches, looking for element...');
+
+        // まず subscription-plans 要素を探す
+        let targetElement = document.getElementById('subscription-plans');
+
+        // subscription-plans が見つからない場合、個人プラン・法人プランのタブを探す
+        if (!targetElement) {
+          // タブコンテナを探す（SubscriptionSettingsの最初の要素）
+          const tabContainer = document.querySelector(
+            '.bg-white.rounded-lg.border.border-gray-200.overflow-hidden.flex',
+          );
+          if (tabContainer) {
+            targetElement = tabContainer as HTMLElement;
+          }
+        }
+
+        console.log('Found element:', targetElement);
+
+        if (targetElement) {
+          console.log('Scrolling to element...');
+
+          // より精密なスクロール位置の計算
+          const elementRect = targetElement.getBoundingClientRect();
+          const absoluteElementTop = elementRect.top + window.pageYOffset;
+          const headerHeight = 80; // ヘッダーの高さを考慮
+          const offset = 30; // タブボタンがよく見えるように少し余裕を持たせる
+          const scrollPosition = absoluteElementTop - headerHeight - offset;
+
+          // スムーズスクロールを実行
+          window.scrollTo({
+            top: scrollPosition,
+            behavior: 'smooth',
+          });
+
+          console.log('Scroll executed to position:', scrollPosition);
+        } else {
+          console.log('Element not found, retrying...');
+          // 要素が見つからない場合、少し待ってからリトライ
+          setTimeout(checkAndScroll, 300);
+        }
+      }
+    };
+
+    // 初回チェック（遅延あり）
+    const initialTimer = setTimeout(checkAndScroll, 200);
+
+    // ハッシュ変更時の処理
+    const handleHashChange = () => {
+      console.log('Hash changed to:', window.location.hash);
+      setTimeout(checkAndScroll, 100);
+    };
+
+    window.addEventListener('hashchange', handleHashChange);
+
+    return () => {
+      window.removeEventListener('hashchange', handleHashChange);
+      clearTimeout(initialTimer);
+    };
+  }, [mounted]); // mounted が true になったら実行
+
+  // データ取得用の useEffect
   useEffect(() => {
     setMounted(true);
 
