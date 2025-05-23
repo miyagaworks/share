@@ -31,13 +31,43 @@ html {
     color-scheme: light dark;
 }
 
-/* フォームコントロールのみ対応 */
-input,
-textarea,
-select,
-button {
-    color-scheme: light dark;
-}
+/* iOS の色反転モードが有効な場合のみ適用 */
+@media (inverted-colors: inverted) {
+
+    /* テキストの色を調整（色反転時のみ） */
+    body,
+    h1,
+    h2,
+    h3,
+    h4,
+    h5,
+    h6,
+    p,
+    span,
+    div:not([style*="background"]),
+    a,
+    li,
+    td,
+    th,
+    label {
+        color: #1f2937 !important;
+        -webkit-text-fill-color: #1f2937 !important;
+    }
+
+    /* プレースホルダーは薄いグレー */
+    input::placeholder,
+    textarea::placeholder {
+        color: #9ca3af !important;
+        -webkit-text-fill-color: #9ca3af !important;
+    }
+
+    /* フォーム要素 */
+    input,
+    textarea,
+    select {
+        color: #1f2937 !important;
+        -webkit-text-fill-color: #1f2937 !important;
+        background-color: #ffffff !important; }
 
 /* 色反転時の画像・SVG対応のみ */
 @media (inverted-colors: inverted) {
