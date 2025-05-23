@@ -26,7 +26,7 @@
     }
 }
 
-/* 最小限の iOS ダークモード対応 */
+/* iOS ダークモード対応 - 条件を限定 */
 html {
     color-scheme: light dark;
 }
@@ -61,15 +61,56 @@ html {
         -webkit-text-fill-color: #9ca3af !important;
     }
 
-/* 色反転時の画像・SVG対応のみ */
-@media (inverted-colors: inverted) {
+    /* フォーム要素 */
+    input,
+    textarea,
+    select {
+        color: #1f2937 !important;
+        -webkit-text-fill-color: #1f2937 !important;
+        background-color: #ffffff !important;
+    }
 
+    /* 画像とSVGは反転 */
     img,
     svg,
     canvas {
         -webkit-filter: invert(1);
         filter: invert(1);
-    } }
+    }
+
+    /* 背景が暗い要素は白文字 */
+    .bg-blue-600,
+    .bg-blue-500,
+    .bg-gray-800,
+    .bg-black,
+    [class*="bg-blue"],
+    [class*="bg-gray-8"],
+    [class*="bg-gray-9"] {
+        color: #ffffff !important;
+        -webkit-text-fill-color: #ffffff !important;
+    }
+
+    /* 背景色の強制リセット */
+    body,
+    html {
+        background-color: #ffffff !important;
+    }
+}
+
+/* 通常モードでは何も変更しない */
+/* フォームコントロールのダークモード対応のみ残す */
+input,
+textarea,
+select,
+button {
+    color-scheme: light dark;
+}
+
+/* QRコードなどは色を保持 */
+.preserve-colors,
+[class*="qr"] {
+    -webkit-filter: none !important;
+    filter: none !important; }
 
 body {
     background: var(--background);
