@@ -8,7 +8,7 @@ import { HiEye } from 'react-icons/hi';
 
 // QRコードの色オプション
 const QR_COLOR_OPTIONS = [
-  { id: 'corporate', name: '法人カラー', value: '' }, // 法人プライマリーカラー（動的に設定）
+  { id: 'corporate', name: '法人カラー', value: '' }, // valueが空文字
   { id: 'black', name: 'ブラック', value: '#000000' },
   { id: 'darkGray', name: 'ダークグレー', value: '#333333' },
 ];
@@ -383,7 +383,13 @@ export function QrCodeGenerator({
                   selectedColor === option.id ? 'font-bold' : 'font-normal'
                 }`}
                 style={{
-                  backgroundColor: option.id === 'corporate' ? corporateColor : option.value,
+                  // ここを修正 ↓
+                  backgroundColor: (() => {
+                    if (option.id === 'corporate') return corporateColor;
+                    if (option.id === 'black') return '#000000';
+                    if (option.id === 'darkGray') return '#333333';
+                    return option.value || '#000000';
+                  })(),
                   color: 'white',
                   border: 'none',
                 }}
