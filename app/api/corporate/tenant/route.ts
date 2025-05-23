@@ -6,6 +6,34 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { generateVirtualTenantData } from '@/lib/corporateAccess';
 
+// プランに応じたmaxUsersを取得する関数
+function getMaxUsersByPlan(plan: string | null | undefined): number {
+  if (!plan) return 10; // デフォルト
+
+  const planLower = plan.toLowerCase();
+
+  // エンタープライズプラン: 50ユーザー
+  if (
+    planLower.includes('enterprise') ||
+    planLower.includes('business_plus') ||
+    planLower.includes('businessplus')
+  ) {
+    return 50;
+  }
+
+  // ビジネス/スタータープラン: 30ユーザー
+  if (
+    planLower.includes('business') ||
+    planLower.includes('starter') ||
+    planLower.includes('pro')
+  ) {
+    return 30;
+  }
+
+  // その他: 10ユーザー
+  return 10;
+}
+
 export async function GET() {
   try {
     console.log('[API] /api/corporate/tenant リクエスト受信');
@@ -43,7 +71,6 @@ export async function GET() {
         console.log('[API] 永久利用権ユーザー用仮想テナントデータを生成:', userId);
         const virtualTenant = generateVirtualTenantData(userId, user.name);
 
-        // 仮想テナントデータをレスポンス形式に変換
         const responseData = {
           tenant: {
             id: virtualTenant.id,
@@ -55,9 +82,9 @@ export async function GET() {
             secondaryColor: virtualTenant.settings.secondaryColor,
             headerText: null,
             textColor: null,
-            maxUsers: 50,
+            maxUsers: 50, // 永久利用権は50ユーザー
             accountStatus: 'active',
-            onboardingCompleted: true, // 永久利用権ユーザーは常にオンボーディング完了済みとする
+            onboardingCompleted: true,
             userCount: 1,
             departmentCount: virtualTenant.departments.length,
             users: [{ id: userId, name: user.name, role: 'admin' }],
@@ -70,7 +97,7 @@ export async function GET() {
         return NextResponse.json(responseData);
       }
 
-      // 管理者としてのテナントを検索 - 明示的にフィールドを指定
+      // 管理者としてのテナントを検索（サブスクリプション情報も含む）
       const adminTenant = await prisma.corporateTenant.findUnique({
         where: { adminId: userId },
         select: {
@@ -85,7 +112,13 @@ export async function GET() {
           textColor: true,
           maxUsers: true,
           accountStatus: true,
-          onboardingCompleted: true, // 必ず明示的に選択
+          onboardingCompleted: true,
+          subscription: {
+            select: {
+              plan: true,
+              status: true,
+            },
+          },
           _count: {
             select: {
               users: true,
@@ -117,7 +150,13 @@ export async function GET() {
               textColor: true,
               maxUsers: true,
               accountStatus: true,
-              onboardingCompleted: true, // 必ず明示的に選択
+              onboardingCompleted: true,
+              subscription: {
+                select: {
+                  plan: true,
+                  status: true,
+                },
+              },
               _count: {
                 select: {
                   users: true,
@@ -137,6 +176,29 @@ export async function GET() {
         return NextResponse.json({ error: 'No tenant associated with this user' }, { status: 404 });
       }
 
+      // プランに基づいてmaxUsersを動的に計算
+      const correctMaxUsers = getMaxUsersByPlan(tenant.subscription?.plan ?? null);
+
+      // データベースのmaxUsersが間違っている場合は修正
+      if (tenant.maxUsers !== correctMaxUsers) {
+        console.log(
+          `[API] maxUsersを修正: ${tenant.maxUsers} → ${correctMaxUsers} (プラン: ${tenant.subscription?.plan})`,
+        );
+
+        try {
+          await prisma.corporateTenant.update({
+            where: { id: tenant.id },
+            data: { maxUsers: correctMaxUsers },
+          });
+
+          // レスポンス用に修正された値を使用
+          tenant.maxUsers = correctMaxUsers;
+        } catch (updateError) {
+          console.error('[API] maxUsers更新エラー:', updateError);
+          // エラーが発生しても処理を続行
+        }
+      }
+
       // 管理者権限の確認
       const isAdmin = !!adminTenant;
       const userRole = isAdmin ? 'admin' : 'member';
@@ -145,6 +207,8 @@ export async function GET() {
         tenantId: tenant.id,
         isAdmin,
         userRole,
+        maxUsers: tenant.maxUsers,
+        plan: tenant.subscription?.plan,
         onboardingCompleted: tenant.onboardingCompleted,
       });
 
@@ -167,7 +231,7 @@ export async function GET() {
         );
       }
 
-      // 必要なプロパティのみを選択してレスポンスを作成
+      // レスポンスデータを作成
       const responseData = {
         tenant: {
           id: tenant.id,
@@ -179,26 +243,20 @@ export async function GET() {
           secondaryColor: tenant.secondaryColor,
           headerText: tenant.headerText,
           textColor: tenant.textColor,
-          maxUsers: tenant.maxUsers,
+          maxUsers: tenant.maxUsers, // 修正された値を使用
           accountStatus: tenant.accountStatus,
           onboardingCompleted: tenant.onboardingCompleted || false,
           userCount: tenant._count?.users ?? 0,
           departmentCount: tenant._count?.departments ?? 0,
-          // 空の配列をフロントエンドの互換性のために提供
           users: [],
           departments: [],
+          // デバッグ情報を追加
+          subscriptionPlan: tenant.subscription?.plan,
         },
         isAdmin,
         userRole,
       };
 
-      // 追加: デバッグ用のログ出力
-      console.log(
-        '[API] テナントレスポンスのonboardingCompleted:',
-        responseData.tenant.onboardingCompleted,
-      );
-
-      // 正常レスポンス
       return NextResponse.json(responseData);
     } catch (dbError) {
       console.error('[API] データベースエラー:', dbError);
@@ -223,7 +281,6 @@ export async function GET() {
       { status: 500 },
     );
   } finally {
-    // 接続を必ず解放
     try {
       await prisma.$disconnect();
     } catch (e) {
