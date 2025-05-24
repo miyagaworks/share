@@ -1,72 +1,106 @@
-// app/dashboard/corporate/page.tsx
+// app/dashboard/corporate/page.tsx (修正版)
 'use client';
 
-import { CorporateBranding } from '@/components/ui/CorporateBranding';
-import { useEffect, useState, useCallback } from 'react';
+import React, { memo, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
-import { useSession } from 'next-auth/react';
 import Image from 'next/image';
-import { Spinner } from '@/components/ui/Spinner';
-import { ActivityFeed } from '@/components/corporate/ActivityFeed';
-import {
-  HiOfficeBuilding,
-  HiUsers,
-  HiTemplate,
-  HiColorSwatch,
-  HiLink,
-  HiCog,
-  HiExclamation,
-} from 'react-icons/hi';
+import { CorporateBranding } from '@/components/ui/CorporateBranding';
+import { OptimizedMenuCard } from '@/components/ui/OptimizedMenuCard';
+import { OptimizedActivityFeed } from '@/components/corporate/OptimizedActivityFeed';
+import { useOptimizedTenant, useRefreshTenant } from '@/hooks/useOptimizedTenant';
+import { ErrorMessage } from '@/components/shared/ErrorMessage';
+// Lucide Reactアイコンを使用
+import { Building2, Users, Layout, Palette, Link, Settings, AlertTriangle } from 'lucide-react';
 
-// 企業テナント情報の型定義
-interface CorporateTenant {
-  id: string;
-  name: string;
-  logoUrl: string | null;
-  primaryColor: string | null;
-  secondaryColor: string | null;
-  maxUsers: number;
-  createdAt?: string;
-  updatedAt?: string;
-  userCount?: number;
-  departmentCount?: number;
-  headerText?: string | null; // 追加
-  textColor?: string | null; // 追加
-  users: {
-    id: string;
-    name: string;
-    email: string;
-    corporateRole: string | null;
-  }[];
-  departments: {
-    id: string;
-    name: string;
-    description: string | null;
-  }[];
+// デバッグ情報のプロパティ型定義
+interface DebugInfoProps {
+  data:
+    | {
+        tenant?: {
+          id: string;
+          name: string;
+          accountStatus?: string;
+        };
+        isAdmin?: boolean;
+        userRole?: string;
+      }
+    | null
+    | undefined;
+  isLoading: boolean;
+  error: Error | null;
 }
 
-// フォールバック用のデフォルトテナント情報
-const DEFAULT_TENANT: CorporateTenant = {
-  id: 'default',
-  name: '未登録',
-  logoUrl: null,
-  primaryColor: null,
-  secondaryColor: null,
-  headerText: null, // 追加
-  textColor: '#FFFFFF', // 追加 - デフォルト値は白色に
-  maxUsers: 10,
-  users: [],
-  departments: [],
-  userCount: 0,
-  departmentCount: 0,
-};
+// スケルトンUIコンポーネント
+const TenantSkeleton = memo(() => (
+  <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mb-4 sm:mb-5 mx-1 sm:mx-2 animate-pulse">
+    <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
+    <div className="flex items-center space-x-4">
+      <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
+      <div>
+        <div className="h-4 bg-gray-200 rounded w-32"></div>
+        <div className="h-3 bg-gray-200 rounded w-24 mt-2"></div>
+      </div>
+    </div>
+  </div>
+));
 
-// リトライボタン付きの警告バナー
-const RetryableWarningBanner = ({ message, onRetry }: { message: string; onRetry: () => void }) => (
+TenantSkeleton.displayName = 'TenantSkeleton';
+
+const MenuSkeleton = memo(() => (
+  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mx-1 sm:mx-2 mb-4 sm:mb-5">
+    {Array.from({ length: 5 }, (_, i) => (
+      <div
+        key={i}
+        className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 animate-pulse"
+      >
+        <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
+        <div className="flex justify-center mb-3">
+          <div className="h-16 w-16 bg-gray-200 rounded-full"></div>
+        </div>
+        <div className="h-4 bg-gray-200 rounded w-2/3 mx-auto"></div>
+      </div>
+    ))}
+  </div>
+));
+
+MenuSkeleton.displayName = 'MenuSkeleton';
+
+// デバッグ情報表示コンポーネント（開発環境のみ）
+const DebugInfo = memo<DebugInfoProps>(({ data, isLoading, error }) => {
+  if (process.env.NODE_ENV !== 'development') return null;
+
+  return (
+    <div className="mx-1 sm:mx-2 mb-4 p-3 bg-gray-100 rounded-lg text-xs">
+      <h3 className="font-semibold mb-2">デバッグ情報:</h3>
+      <div className="space-y-1">
+        <div>Loading: {isLoading ? 'true' : 'false'}</div>
+        <div>Error: {error ? error.message : 'none'}</div>
+        <div>Data: {data ? 'available' : 'none'}</div>
+        {data?.tenant && (
+          <div className="mt-2">
+            <div>Tenant ID: {data.tenant.id}</div>
+            <div>Tenant Name: {data.tenant.name}</div>
+            <div>Account Status: {data.tenant.accountStatus || 'unknown'}</div>
+            <div>User Role: {data.userRole || 'unknown'}</div>
+            <div>Is Admin: {data.isAdmin ? 'true' : 'false'}</div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+});
+
+DebugInfo.displayName = 'DebugInfo';
+
+// 警告バナーコンポーネント
+const RetryableWarningBanner = memo<{
+  message: string;
+  onRetry: () => void;
+}>(({ message, onRetry }) => (
   <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 mb-4 mx-2">
     <div className="flex items-start justify-between">
       <div className="flex items-start">
-        <HiExclamation className="h-5 w-5 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" />
+        <AlertTriangle className="h-5 w-5 text-yellow-600 mr-3 flex-shrink-0 mt-0.5" />
         <p className="text-sm text-yellow-700">{message}</p>
       </div>
       <button
@@ -77,315 +111,107 @@ const RetryableWarningBanner = ({ message, onRetry }: { message: string; onRetry
       </button>
     </div>
   </div>
-);
+));
 
-// カードのカラー定義
-type CardColor = 'blue' | 'green' | 'indigo' | 'purple' | 'gray';
+RetryableWarningBanner.displayName = 'RetryableWarningBanner';
 
-// カラーマップの定義
-const colorMap = {
-  blue: {
-    bg: 'bg-blue-100',
-    text: 'text-blue-600',
-    iconBg: 'bg-blue-50',
-  },
-  green: {
-    bg: 'bg-green-100',
-    text: 'text-green-600',
-    iconBg: 'bg-green-50',
-  },
-  indigo: {
-    bg: 'bg-indigo-100',
-    text: 'text-indigo-600',
-    iconBg: 'bg-indigo-50',
-  },
-  purple: {
-    bg: 'bg-purple-100',
-    text: 'text-purple-600',
-    iconBg: 'bg-purple-50',
-  },
-  gray: {
-    bg: 'bg-gray-100',
-    text: 'text-gray-600',
-    iconBg: 'bg-gray-50',
-  },
-};
-
-// メニューカードコンポーネント
-const MenuCard = ({
-  icon,
-  title,
-  content,
-  onClick,
-  color = 'blue',
-}: {
-  icon: React.ReactNode;
-  title: string;
-  content: string | number | React.ReactNode;
-  onClick: () => void;
-  color?: CardColor;
-}) => {
-  return (
-    <div
-      className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden cursor-pointer transform transition-all duration-200 hover:-translate-y-1 hover:shadow-md"
-      onClick={onClick}
-    >
-      <div
-        className={`border-b border-gray-200 px-2 sm:px-4 py-2 sm:py-3 ${colorMap[color].bg} bg-opacity-30`}
-      >
-        <div className="flex items-center">
-          <div className={`${colorMap[color].text}`}>{icon}</div>
-          <h2 className="ml-2 text-sm sm:text-base font-semibold truncate">{title}</h2>
-        </div>
-      </div>
-      <div className="p-2 sm:p-4">
-        <div className="flex flex-col items-center">
-          <div
-            className={`${colorMap[color].bg} p-2 sm:p-3 rounded-full mb-2 sm:mb-3 flex items-center justify-center`}
-          >
-            <div
-              className={`h-5 w-5 sm:h-6 sm:w-6 ${colorMap[color].text} flex items-center justify-center`}
-            >
-              {icon}
-            </div>
-          </div>
-          <p className="text-xs sm:text-sm text-gray-500 text-center">{content}</p>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-export default function CorporateDashboardPage() {
-  const { data: session } = useSession();
+// メインダッシュボードコンポーネント
+export default function OptimizedCorporateDashboardPage() {
   const router = useRouter();
-  const [tenantData, setTenantData] = useState<CorporateTenant | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [usingFallback, setUsingFallback] = useState(false);
-  const [isPermanentUser, setIsPermanentUser] = useState(false); // 永久利用権ユーザー状態
+  const { data: tenantResponse, isLoading, error } = useOptimizedTenant();
+  const refreshTenant = useRefreshTenant();
 
-  // 段階的読み込みの状態
-  const [loadingStage, setLoadingStage] = useState<'initial' | 'tenant' | 'complete'>('initial');
+  // メニューアクション（メモ化）
+  const menuActions = useMemo(
+    () => ({
+      users: () => router.push('/dashboard/corporate/users'),
+      departments: () => router.push('/dashboard/corporate/departments'),
+      sns: () => router.push('/dashboard/corporate/sns'),
+      branding: () => router.push('/dashboard/corporate/branding'),
+      settings: () => router.push('/dashboard/corporate/settings'),
+    }),
+    [router],
+  );
 
-  // 永久利用権ユーザーチェックとリダイレクト
-  useEffect(() => {
-    if (typeof window === 'undefined' || typeof sessionStorage === 'undefined') return;
+  // テナントデータの取得
+  const tenant = useMemo(() => tenantResponse?.tenant || null, [tenantResponse?.tenant]);
 
-    try {
-      const userDataStr = sessionStorage.getItem('userData');
-      if (userDataStr) {
-        const userData = JSON.parse(userDataStr);
+  console.log('CorporateDashboard - レンダリング:', {
+    isLoading,
+    hasError: !!error,
+    hasTenant: !!tenant,
+    tenantId: tenant?.id,
+  });
 
-        // 状態を更新
-        const isPermanent = userData.subscriptionStatus === 'permanent';
-        setIsPermanentUser(isPermanent);
-
-        // 永久利用権ユーザーは自動的にonboardingページに移動
-        if (isPermanent) {
-          console.log('永久利用権ユーザーをonboardingページにリダイレクトします');
-          router.push('/dashboard/corporate/onboarding');
-          return; // 以降の処理をスキップ
-        }
-      }
-    } catch (e) {
-      console.error('永久利用権チェックエラー:', e);
-    }
-  }, [router]);
-
-  // テナント情報取得
-  const fetchTenantData = useCallback(async () => {
-    if (!session?.user?.id) {
-      return;
-    }
-
-    try {
-      setLoadingStage('tenant');
-
-      // タイムアウト処理
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 8000);
-
-      try {
-        console.log('テナントデータ取得開始');
-
-        const response = await fetch('/api/corporate/tenant', {
-          headers: {
-            'Cache-Control': 'no-cache, no-store, must-revalidate',
-            Pragma: 'no-cache',
-          },
-          signal: controller.signal,
-        }).finally(() => clearTimeout(timeoutId));
-
-        if (response.ok) {
-          const data = await response.json();
-          setTenantData(data.tenant);
-          setError(null);
-          setUsingFallback(false);
-        } else if (response.status === 404) {
-          setError('テナント情報が見つかりません。');
-          setUsingFallback(true);
-          setTenantData({
-            ...DEFAULT_TENANT,
-            id: 'unknown-tenant',
-          });
-        } else if (response.status === 403) {
-          setError('テナントへのアクセス権限がありません。');
-
-          try {
-            const errorData = await response.json();
-            if (errorData && errorData.tenant) {
-              setTenantData(errorData.tenant);
-              setUsingFallback(false);
-            }
-          } catch (e) {
-            console.error('エラーレスポンスの解析に失敗:', e);
-          }
-        } else {
-          throw new Error(`APIエラー: ${response.status}`);
-        }
-      } catch (apiError) {
-        console.error('API接続エラー:', apiError);
-
-        setTenantData({
-          ...DEFAULT_TENANT,
-          id: 'error-fallback-tenant',
-          name: '接続エラー - 基本情報のみ',
-        });
-        setUsingFallback(true);
-        setError('サーバー接続エラー - 簡易表示モードを使用します');
-      }
-    } catch (error) {
-      console.error('テナント情報取得エラー:', error);
-      setTenantData({
-        ...DEFAULT_TENANT,
-        id: 'error-tenant',
-      });
-      setError('データ取得中にエラーが発生しました。');
-      setUsingFallback(true);
-    } finally {
-      // isLoadingDataの代わりにloadingStageを使用
-      setLoadingStage('complete');
-    }
-  }, [session]);
-
-  // テナント情報を再取得する関数
-  const reloadTenantData = useCallback(() => {
-    // 読み込み状態をリセット
-    setLoadingStage('initial');
-    // 少し遅延させてからデータ取得を開始
-    setTimeout(() => {
-      fetchTenantData();
-    }, 100);
-  }, [fetchTenantData]);
-
-  // 初回マウント時の実装
-  useEffect(() => {
-    if (session?.user?.id) {
-      fetchTenantData();
-    }
-  }, [session, fetchTenantData]);
-
-  // 段階的な読み込み表示
-  if (loadingStage === 'initial') {
-    return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <div className="text-center">
-          <Spinner size="lg" />
-          <p className="mt-2 text-gray-500">基本情報を読み込み中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // テナント情報読み込み中（スケルトンUI表示）
-  if (loadingStage === 'tenant' && !tenantData) {
+  // ローディング中の表示
+  if (isLoading) {
     return (
       <div className="max-w-full px-1 sm:px-0">
-        {/* テナント情報のスケルトンUI */}
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mb-4 sm:mb-5 mx-1 sm:mx-2 animate-pulse">
-          <div className="h-8 bg-gray-200 rounded w-1/3 mb-4"></div>
-          <div className="flex items-center space-x-4">
-            <div className="h-12 w-12 bg-gray-200 rounded-full"></div>
-            <div>
-              <div className="h-4 bg-gray-200 rounded w-32"></div>
-              <div className="h-3 bg-gray-200 rounded w-24 mt-2"></div>
-            </div>
-          </div>
-        </div>
-
-        {/* メニューグリッドのスケルトンUI */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mx-1 sm:mx-2 mb-4 sm:mb-5">
-          {[1, 2, 3, 4].map((i) => (
-            <div
-              key={i}
-              className="bg-white rounded-lg border border-gray-200 shadow-sm p-4 animate-pulse"
-            >
-              <div className="h-6 bg-gray-200 rounded w-1/2 mb-4"></div>
-              <div className="flex justify-center mb-3">
-                <div className="h-16 w-16 bg-gray-200 rounded-full"></div>
-              </div>
-              <div className="h-4 bg-gray-200 rounded w-2/3 mx-auto"></div>
-            </div>
-          ))}
-        </div>
+        <DebugInfo data={tenantResponse || null} isLoading={isLoading} error={error} />
+        <TenantSkeleton />
+        <MenuSkeleton />
       </div>
     );
   }
 
-  // 読み込み完了 - 通常表示
-  const displayTenant = tenantData || DEFAULT_TENANT;
+  // エラー時の表示
+  if (error || !tenant) {
+    return (
+      <div className="max-w-full px-1 sm:px-0">
+        <DebugInfo data={tenantResponse || null} isLoading={isLoading} error={error} />
+        <ErrorMessage
+          message={error?.message || 'テナント情報を取得できませんでした。'}
+          details={error ? `エラーの詳細: ${error.message}` : undefined}
+          severity="error"
+          onRetry={refreshTenant}
+          className="mx-1 sm:mx-2 mb-4"
+        />
+      </div>
+    );
+  }
 
   return (
     <div className="max-w-full px-1 sm:px-0">
-      {/* フォールバック使用時の警告バナー（再試行ボタン付き） - 永久利用権ユーザーの場合は表示しない */}
-      {usingFallback && !isPermanentUser && (
-        <RetryableWarningBanner
-          message={error || 'テナント情報を取得できませんでした。基本機能のみ表示しています。'}
-          onRetry={reloadTenantData}
-        />
-      )}
+      <DebugInfo data={tenantResponse || null} isLoading={isLoading} error={error} />
 
       {/* テナント概要 */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mb-4 sm:mb-5 mx-1 sm:mx-2">
         <CorporateBranding
-          primaryColor={displayTenant.primaryColor || undefined}
-          secondaryColor={displayTenant.secondaryColor || undefined}
-          logoUrl={displayTenant.logoUrl}
-          tenantName={displayTenant.name}
-          headerText={`${displayTenant.name} ダッシュボード`}
-          textColor={displayTenant.textColor || '#FFFFFF'} // オプションのプロパティとして扱う
+          primaryColor={tenant.primaryColor || undefined}
+          secondaryColor={tenant.secondaryColor || undefined}
+          logoUrl={tenant.logoUrl}
+          tenantName={tenant.name}
+          headerText={`${tenant.name} ダッシュボード`}
+          textColor="#FFFFFF"
           shadow={false}
           border={false}
           showLogo={false}
         >
           <div className="flex flex-col sm:flex-row sm:items-center">
             <div className="flex items-center mb-2 sm:mb-0">
-              {displayTenant.logoUrl ? (
-                <div
-                  className="rounded-full p-2 bg-gray-50 mr-3 flex items-center justify-center"
-                  style={{ width: '48px', height: '48px' }}
-                >
+              {tenant.logoUrl ? (
+                <div className="rounded-full p-2 bg-gray-50 mr-3 flex items-center justify-center w-12 h-12">
                   <Image
-                    src={displayTenant.logoUrl}
-                    alt={`${displayTenant.name}のロゴ`}
-                    width={36} // サイズを縮小
-                    height={36} // サイズを縮小
-                    className="rounded-full object-contain w-8 h-8" // サイズを明示的に制限
-                    style={{
-                      maxWidth: '100%',
-                      maxHeight: '100%',
-                    }}
+                    src={tenant.logoUrl}
+                    alt={`${tenant.name}のロゴ`}
+                    width={32}
+                    height={32}
+                    className="rounded-full object-contain"
+                    priority
                   />
                 </div>
               ) : (
                 <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-full bg-blue-100 flex items-center justify-center mr-3 p-2">
-                  <HiOfficeBuilding className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
+                  <Building2 className="h-5 w-5 sm:h-6 sm:w-6 text-blue-600" />
                 </div>
               )}
               <div>
-                <h1 className="text-lg sm:text-xl font-bold break-words">{displayTenant.name}</h1>
+                <h1 className="text-lg sm:text-xl font-bold break-words">{tenant.name}</h1>
                 <p className="text-xs sm:text-sm text-gray-500">
-                  法人プラン: 最大{displayTenant.maxUsers}ユーザー
+                  法人プラン: 最大{tenant.maxUsers}ユーザー
+                  {tenant.subscriptionPlan && (
+                    <span className="ml-2 text-blue-600">({tenant.subscriptionPlan})</span>
+                  )}
                 </p>
               </div>
             </div>
@@ -395,58 +221,50 @@ export default function CorporateDashboardPage() {
 
       {/* メニューグリッド */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mx-1 sm:mx-2 mb-4 sm:mb-5">
-        {/* ユーザー管理 */}
-        <MenuCard
-          icon={<HiUsers className="h-5 w-5" />}
+        <OptimizedMenuCard
+          icon={<Users className="h-5 w-5" />}
           title="ユーザー管理"
-          content={`${displayTenant.userCount ?? displayTenant.users?.length ?? 0}/${displayTenant.maxUsers} ユーザー`}
-          onClick={() => router.push('/dashboard/corporate/users')}
+          content={`${tenant.userCount}/${tenant.maxUsers} ユーザー`}
+          onClick={menuActions.users}
           color="blue"
         />
 
-        {/* 部署管理 */}
-        <MenuCard
-          icon={<HiTemplate className="h-5 w-5" />}
+        <OptimizedMenuCard
+          icon={<Layout className="h-5 w-5" />}
           title="部署管理"
-          content={`${displayTenant.departmentCount ?? displayTenant.departments?.length ?? 0} 部署`}
-          onClick={() => router.push('/dashboard/corporate/departments')}
+          content={`${tenant.departmentCount} 部署`}
+          onClick={menuActions.departments}
           color="green"
         />
 
-        {/* 共通SNS設定 */}
-        <MenuCard
-          icon={<HiLink className="h-5 w-5" />}
+        <OptimizedMenuCard
+          icon={<Link className="h-5 w-5" />}
           title="共通SNS設定"
           content="全社員共通のSNSリンク"
-          onClick={() => router.push('/dashboard/corporate/sns')}
+          onClick={menuActions.sns}
           color="indigo"
         />
 
-        {/* ブランディング設定 */}
-        <MenuCard
-          icon={<HiColorSwatch className="h-5 w-5" />}
+        <OptimizedMenuCard
+          icon={<Palette className="h-5 w-5" />}
           title="ブランディング設定"
           content="ロゴと企業カラーの設定"
-          onClick={() => router.push('/dashboard/corporate/branding')}
+          onClick={menuActions.branding}
           color="purple"
         />
 
-        {/* 設定 */}
-        <MenuCard
-          icon={<HiCog className="h-5 w-5" />}
+        <OptimizedMenuCard
+          icon={<Settings className="h-5 w-5" />}
           title="設定"
           content="法人アカウント設定"
-          onClick={() => router.push('/dashboard/corporate/settings')}
+          onClick={menuActions.settings}
           color="gray"
         />
       </div>
 
       {/* 最近の活動 */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mx-1 sm:mx-2">
-        <h2 className="text-base sm:text-lg font-medium mb-2 sm:mb-3">最近の活動</h2>
-        <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mx-1 sm:mx-2">
-          <ActivityFeed limit={5} className="w-full" autoRefresh={true} />
-        </div>
+        <OptimizedActivityFeed limit={5} autoRefresh={false} />
       </div>
     </div>
   );

@@ -1,6 +1,6 @@
 // components/shared/ErrorMessage.tsx
 import React from 'react';
-import { HiExclamation, HiInformationCircle, HiRefresh } from 'react-icons/hi';
+import { AlertCircle, Info, RefreshCw } from 'lucide-react';
 
 type ErrorSeverity = 'error' | 'warning' | 'info';
 
@@ -24,19 +24,19 @@ export function ErrorMessage({
     error: {
       bg: 'bg-red-50',
       border: 'border-red-200',
-      icon: <HiExclamation className="h-5 w-5 text-red-600" />,
+      icon: <AlertCircle className="h-5 w-5 text-red-600" />,
       text: 'text-red-700',
     },
     warning: {
       bg: 'bg-yellow-50',
       border: 'border-yellow-200',
-      icon: <HiExclamation className="h-5 w-5 text-yellow-600" />,
+      icon: <AlertCircle className="h-5 w-5 text-yellow-600" />,
       text: 'text-yellow-700',
     },
     info: {
       bg: 'bg-blue-50',
       border: 'border-blue-200',
-      icon: <HiInformationCircle className="h-5 w-5 text-blue-600" />,
+      icon: <Info className="h-5 w-5 text-blue-600" />,
       text: 'text-blue-700',
     },
   };
@@ -66,7 +66,7 @@ export function ErrorMessage({
             aria-label="再試行"
             title="再試行"
           >
-            <HiRefresh className="h-4 w-4" />
+            <RefreshCw className="h-4 w-4" />
           </button>
         )}
       </div>

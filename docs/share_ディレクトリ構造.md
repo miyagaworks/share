@@ -378,6 +378,7 @@ share/
 │   │   ├── MemberProfileForm.tsx
 │   │   ├── MemberShareSettings.tsx
 │   │   ├── MemberSnsManager.tsx
+│   │   ├── OptimizedActivityFeed.tsx
 │   │   ├── QrCodeGenerator.tsx
 │   │   └── SuspendedBanner.tsx
 │   ├── dashboard
@@ -412,6 +413,7 @@ share/
 │   │   ├── ProfileCustomLink.tsx
 │   │   └── ProfileSnsLink.tsx
 │   ├── providers
+│   │   ├── QueryProvider.tsx
 │   │   ├── SessionProvider.tsx
 │   │   └── ToastProvider.tsx
 │   ├── qrcode
@@ -442,6 +444,7 @@ share/
 │       ├── EnhancedColorPicker.tsx
 │       ├── ImageUpload.tsx
 │       ├── Input.tsx
+│       ├── OptimizedMenuCard.tsx
 │       ├── QuickIntroButton.tsx
 │       ├── SimpleFooter.tsx
 │       ├── Spinner.tsx
@@ -468,7 +471,10 @@ share/
 ├── hooks
 │   ├── useActivityFeed.ts
 │   ├── useCorporateAccess.ts
-│   └── useCorporateData.ts
+│   ├── useCorporateData.ts
+│   ├── useOptimizedActivity.ts
+│   ├── useOptimizedProfile.ts
+│   └── useOptimizedTenant.ts
 ├── lib
 │   ├── corporateAccess
 │   │   ├── adminAccess.ts
@@ -495,6 +501,7 @@ share/
 │   │   ├── prompt-builder.ts
 │   │   └── validator.ts
 │   ├── prisma.ts
+│   ├── react-query.ts
 │   ├── stripe.ts
 │   ├── stripeClient.ts
 │   ├── utils

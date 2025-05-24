@@ -1,10 +1,19 @@
-// next.config.mjs
+// next.config.mjs (修正版)
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 基本設定（既存）
+  // 基本設定
   reactStrictMode: true,
 
-  // TypeScript と ESLint エラーを無視（既存）
+  // 実験的機能
+  experimental: {
+    // CSS最適化
+    optimizeCss: true,
+    // パッケージインポート最適化
+    optimizePackageImports: ['react-icons', 'lucide-react', '@heroicons/react', 'react-hook-form'],
+    // serverActionsは削除（デフォルトで有効になっているため）
+  },
+
+  // TypeScript と ESLint 設定
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -12,39 +21,140 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // 画像最適化設定（既存）
+  // 画像最適化設定
   images: {
     domains: ['lh3.googleusercontent.com', 'res.cloudinary.com'],
     formats: ['image/avif', 'image/webp'],
+    minimumCacheTTL: 31536000, // 1年間キャッシュ
+    deviceSizes: [640, 750, 828, 1080, 1200, 1920],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256],
+    dangerouslyAllowSVG: true,
+    contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
-  // サーバーランタイム設定を追加（新規）
-  serverRuntimeConfig: {
-    // データベース接続プールの設定
-    prisma: {
-      // 同時接続数の制限（supabaseの接続上限を考慮）
-      connectionLimit: process.env.PRISMA_CONNECTION_LIMIT || 10,
-      // 接続タイムアウト
-      connectionTimeout: process.env.PRISMA_CONNECTION_TIMEOUT || 5000,
-      // 接続リトライ回数
-      connectionRetryCount: 3,
-    },
+  // バンドル最適化
+  webpack: (config, { isServer, dev }) => {
+    // プロダクションビルドでの最適化
+    if (!dev && !isServer) {
+      // チャンク分割の最適化
+      config.optimization.splitChunks = {
+        chunks: 'all',
+        cacheGroups: {
+          // フレームワークチャンク
+          framework: {
+            chunks: 'all',
+            name: 'framework',
+            test: /(?<!node_modules.*)[\\/]node_modules[\\/](react|react-dom|scheduler|prop-types|use-subscription)[\\/]/,
+            priority: 40,
+            enforce: true,
+          },
+          // ライブラリチャンク
+          lib: {
+            test(module) {
+              return module.size() > 160000 && /node_modules[/\\]/.test(module.identifier());
+            },
+            name(module) {
+              const packageNameMatch = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/);
+              const packageName = packageNameMatch ? packageNameMatch[1] : '';
+              return `npm.${packageName.replace('@', '')}`;
+            },
+            priority: 30,
+            minChunks: 1,
+            reuseExistingChunk: true,
+          },
+          // コモンチャンク
+          commons: {
+            name: 'commons',
+            minChunks: 2,
+            priority: 20,
+            reuseExistingChunk: true,
+          },
+          // デフォルト
+          default: {
+            minChunks: 2,
+            priority: 10,
+            reuseExistingChunk: true,
+          },
+        },
+      };
+    }
+
+    return config;
   },
 
-  // 環境変数の設定（修正）
+  // 圧縮とキャッシュ設定
+  compress: true,
+  poweredByHeader: false,
+
+  // 環境変数
   env: {
-    DEBUG: 'next-auth:*,next-auth:core,next-auth:jwt',
-    // Prisma接続管理の環境変数を文字列として設定（修正）
+    DEBUG: process.env.NODE_ENV === 'development' ? 'next-auth:*' : '',
     PRISMA_CONNECTION_LIMIT: '10',
     PRISMA_CONNECTION_TIMEOUT: '5000',
   },
 
-  // その他の設定（既存）
-  transpilePackages: ['styled-jsx'],
+  // ヘッダー設定（セキュリティとキャッシュ）
+  async headers() {
+    return [
+      {
+        source: '/_next/static/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+      {
+        source: '/api/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=300, s-maxage=300',
+          },
+        ],
+      },
+      {
+        source: '/(.*)',
+        headers: [
+          {
+            key: 'X-Frame-Options',
+            value: 'DENY',
+          },
+          {
+            key: 'X-Content-Type-Options',
+            value: 'nosniff',
+          },
+          {
+            key: 'Referrer-Policy',
+            value: 'origin-when-cross-origin',
+          },
+        ],
+      },
+    ];
+  },
 
-  // エラー表示の改善（既存）
+  // リダイレクト設定を修正
+  async redirects() {
+    return [
+      // 無限リダイレクトを避けるため削除
+    ];
+  },
+
+  // サーバーランタイム設定
+  serverRuntimeConfig: {
+    prisma: {
+      connectionLimit: process.env.PRISMA_CONNECTION_LIMIT || 10,
+      connectionTimeout: process.env.PRISMA_CONNECTION_TIMEOUT || 5000,
+      connectionRetryCount: 3,
+    },
+  },
+
+  // その他の最適化
+  transpilePackages: ['styled-jsx'],
   onDemandEntries: {
     maxInactiveAge: 60 * 1000,
+    pagesBufferLength: 2,
   },
 };
 

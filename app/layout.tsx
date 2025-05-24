@@ -1,19 +1,22 @@
-// app/layout.tsx
+// app/layout.tsx (QueryProvider追加版)
 import type { Metadata, Viewport } from 'next';
 import { Inter, Roboto_Mono } from 'next/font/google';
 import { ToastProvider } from '@/components/providers/ToastProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
+import { QueryProvider } from '@/components/providers/QueryProvider';
 import { AuthDebugger } from '@/components/shared/AuthDebugger';
 import './globals.css';
 
 const inter = Inter({
   variable: '--font-geist-sans',
   subsets: ['latin'],
+  display: 'swap', // フォント読み込み最適化
 });
 
 const robotoMono = Roboto_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
+  display: 'swap', // フォント読み込み最適化
 });
 
 export const metadata: Metadata = {
@@ -45,20 +48,22 @@ export default function RootLayout({
       <head>
         <meta name="color-scheme" content="light dark" />
         <meta name="supported-color-schemes" content="light dark" />
+        {/* リソースヒント */}
+        <link rel="dns-prefetch" href="//fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
       <body className={`${inter.variable} ${robotoMono.variable} font-sans antialiased`}>
-        <SessionProvider
-          // セッションタイムアウト時間（分単位）
-          sessionTimeoutMinutes={isDevelopment ? 30 : 480} // 開発: 30分, 本番: 8時間
-          // 警告表示時間（ログアウト何分前に警告するか）
-          warningBeforeMinutes={isDevelopment ? 2 : 5} // 開発: 2分前, 本番: 5分前
-          // 自動ログアウト機能を有効にする
-          enableAutoLogout={true}
-        >
-          <ToastProvider />
-          {children}
-          {isDevelopment && <AuthDebugger />}
-        </SessionProvider>
+        <QueryProvider>
+          <SessionProvider
+            sessionTimeoutMinutes={isDevelopment ? 30 : 480}
+            warningBeforeMinutes={isDevelopment ? 2 : 5}
+            enableAutoLogout={true}
+          >
+            <ToastProvider />
+            {children}
+            {isDevelopment && <AuthDebugger />}
+          </SessionProvider>
+        </QueryProvider>
       </body>
     </html>
   );
