@@ -1,4 +1,4 @@
-// app/dashboard/corporate/page.tsx (修正版)
+// app/dashboard/corporate/page.tsx (プラン名修正版)
 'use client';
 
 import React, { memo, useMemo } from 'react';
@@ -11,6 +11,31 @@ import { useOptimizedTenant, useRefreshTenant } from '@/hooks/useOptimizedTenant
 import { ErrorMessage } from '@/components/shared/ErrorMessage';
 // Lucide Reactアイコンを使用
 import { Building2, Users, Layout, Palette, Link, Settings, AlertTriangle } from 'lucide-react';
+
+// プラン名を日本語に変換する関数
+const getPlanDisplayName = (planId: string | undefined): string => {
+  if (!planId) return '';
+
+  const plan = planId.toLowerCase();
+
+  if (plan.includes('starter')) {
+    return 'スタータープラン';
+  } else if (plan.includes('business') && !plan.includes('enterprise')) {
+    return 'ビジネスプラン';
+  } else if (plan.includes('enterprise')) {
+    return 'エンタープライズプラン';
+  }
+
+  // 古いプランIDとの互換性
+  if (plan === 'business_legacy') {
+    return 'スタータープラン';
+  } else if (plan === 'business_plus' || plan === 'business-plus') {
+    return 'ビジネスプラン';
+  }
+
+  // デフォルト
+  return planId;
+};
 
 // デバッグ情報のプロパティ型定義
 interface DebugInfoProps {
@@ -136,11 +161,18 @@ export default function OptimizedCorporateDashboardPage() {
   // テナントデータの取得
   const tenant = useMemo(() => tenantResponse?.tenant || null, [tenantResponse?.tenant]);
 
+  // プラン表示名の計算（メモ化）
+  const planDisplayName = useMemo(() => {
+    return getPlanDisplayName(tenant?.subscriptionPlan);
+  }, [tenant?.subscriptionPlan]);
+
   console.log('CorporateDashboard - レンダリング:', {
     isLoading,
     hasError: !!error,
     hasTenant: !!tenant,
     tenantId: tenant?.id,
+    subscriptionPlan: tenant?.subscriptionPlan,
+    planDisplayName,
   });
 
   // ローディング中の表示
@@ -209,8 +241,8 @@ export default function OptimizedCorporateDashboardPage() {
                 <h1 className="text-lg sm:text-xl font-bold break-words">{tenant.name}</h1>
                 <p className="text-xs sm:text-sm text-gray-500">
                   法人プラン: 最大{tenant.maxUsers}ユーザー
-                  {tenant.subscriptionPlan && (
-                    <span className="ml-2 text-blue-600">({tenant.subscriptionPlan})</span>
+                  {planDisplayName && (
+                    <span className="ml-2 text-blue-600">({planDisplayName})</span>
                   )}
                 </p>
               </div>
