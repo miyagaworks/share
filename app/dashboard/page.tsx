@@ -4,9 +4,9 @@
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-// import ImprovedDashboardPage from '@/components/dashboard/ImprovedDashboardPage';
 import { Spinner } from '@/components/ui/Spinner';
 import Link from 'next/link';
+import Image from 'next/image';
 import { HiUser, HiLink, HiColorSwatch, HiShare, HiQrcode } from 'react-icons/hi';
 
 export default function DashboardPage() {
@@ -14,6 +14,7 @@ export default function DashboardPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [redirectComplete, setRedirectComplete] = useState(false);
+
   // 型定義を追加
   interface UserData {
     id: string;
@@ -27,6 +28,7 @@ export default function DashboardPage() {
   }
 
   const [userData, setUserData] = useState<UserData | null>(null);
+  const [snsCount, setSnsCount] = useState(0);
 
   // ログイン状態と特別なユーザーのリダイレクト処理
   useEffect(() => {
@@ -52,13 +54,23 @@ export default function DashboardPage() {
 
       // ユーザープロフィール情報を取得
       try {
-        const response = await fetch('/api/profile');
-        if (response.ok) {
-          const data = await response.json();
-          setUserData(data.user);
+        const [profileResponse, linksResponse] = await Promise.all([
+          fetch('/api/profile'),
+          fetch('/api/links'),
+        ]);
+
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          setUserData(profileData.user);
+          console.log('プロフィールデータ取得:', profileData.user);
+        }
+
+        if (linksResponse.ok) {
+          const linksData = await linksResponse.json();
+          setSnsCount(linksData.snsLinks?.length || 0);
         }
       } catch (error) {
-        console.error('プロフィール取得エラー:', error);
+        console.error('データ取得エラー:', error);
       }
 
       // ダッシュボードの表示を許可
@@ -74,10 +86,11 @@ export default function DashboardPage() {
   useEffect(() => {
     if (session) {
       console.log('セッション情報:', session);
+      console.log('ユーザーデータ:', userData);
       console.log('ローディング状態:', isLoading);
       console.log('リダイレクト完了状態:', redirectComplete);
     }
-  }, [session, isLoading, redirectComplete]);
+  }, [session, userData, isLoading, redirectComplete]);
 
   // ページの内容
   if (status === 'loading' || isLoading) {
@@ -94,8 +107,6 @@ export default function DashboardPage() {
     return null; // useEffectでリダイレクト処理済み
   }
 
-  // ImprovedDashboardPageコンポーネントを使用せず、直接シンプルなダッシュボードを表示
-  // これにより、ImprovedDashboardPageからのリダイレクト問題を回避
   return (
     <div className="space-y-6">
       <div className="flex items-center mb-6">
@@ -116,11 +127,25 @@ export default function DashboardPage() {
           </div>
           <div className="p-6">
             <div className="flex items-center mb-6">
-              <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center">
-                <HiUser className="h-6 w-6" />
-              </div>
+              {userData?.image ? (
+                <Image
+                  src={userData.image}
+                  alt={userData.name || 'ユーザー'}
+                  width={48}
+                  height={48}
+                  className="w-12 h-12 rounded-full object-cover"
+                />
+              ) : (
+                <div className="w-12 h-12 rounded-full bg-blue-600 text-white flex items-center justify-center">
+                  <HiUser className="h-6 w-6" />
+                </div>
+              )}
               <div className="ml-4">
-                <h3 className="text-xl font-medium">{userData?.name || '未設定'}</h3>
+                <h3 className="text-xl font-medium">
+                  {/* 🚀 修正: APIから取得したnameを使用 */}
+                  {userData?.name || session?.user?.name || '名前未設定'}
+                </h3>
+                <p className="text-sm text-gray-500">{userData?.email || session?.user?.email}</p>
               </div>
             </div>
             <Link href="/dashboard/profile">
@@ -142,7 +167,7 @@ export default function DashboardPage() {
           <div className="p-6">
             <div className="flex items-center mb-6">
               <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
-                <span className="text-blue-700 font-medium">0</span>
+                <span className="text-blue-700 font-medium">{snsCount}</span>
               </div>
               <span className="ml-3 text-gray-600">/ 12 SNS設定済み</span>
             </div>
@@ -154,7 +179,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        {/* その他のカード */}
+        {/* デザイン設定カード */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center">
