@@ -349,37 +349,57 @@ export default function SubscriptionStatus({
       let planType = '';
       let renewalInfo = '';
 
-      // プランの種類を判定
+      // プランの種類を判定（修正版）
+      const planName = sub.plan.toLowerCase();
+      const interval = sub.interval || 'month';
+
+      // 法人プランの判定
+      if (planName.includes('starter') || planName === 'starter') {
+        planType = 'スタータープラン';
+        renewalInfo = interval === 'year' ? '（年間/10名）' : '（月額/10名）';
+      } else if (planName.includes('business') && !planName.includes('enterprise')) {
+        planType = 'ビジネスプラン';
+        renewalInfo = interval === 'year' ? '（年間/30名）' : '（月額/30名）';
+      } else if (planName.includes('enterprise') || planName === 'enterprise') {
+        planType = 'エンタープライズプラン';
+        renewalInfo = interval === 'year' ? '（年間/50名）' : '（月額/50名）';
+      }
+      // 古いプランIDとの互換性
+      else if (planName === 'business_legacy') {
+        planType = 'スタータープラン';
+        renewalInfo = '（10名まで）';
+      } else if (planName === 'business_plus' || planName === 'business-plus') {
+        planType = 'ビジネスプラン';
+        renewalInfo = '（30名まで）';
+      }
+      // 個人プラン
+      else if (planName === 'monthly' || planName.includes('monthly')) {
+        planType = '個人プラン';
+        renewalInfo = '（月額）';
+      } else if (planName === 'yearly' || planName.includes('yearly')) {
+        planType = '個人プラン';
+        renewalInfo = '（年額）';
+      }
+
+      // 法人プランの場合は「法人」をプレフィックス
       if (
-        sub.plan.includes('business') ||
-        sub.plan === 'business_plus' ||
-        sub.plan === 'starter' ||
-        sub.plan === 'enterprise'
+        planName.includes('starter') ||
+        planName.includes('business') ||
+        planName.includes('enterprise')
       ) {
-        // 法人プラン
-        const interval = sub.interval || 'month'; // サブスクリプションから interval を取得
-
-        if (sub.plan === 'starter') {
-          planType = 'スタータープラン';
-          renewalInfo = interval === 'year' ? '（年間/10名）' : '（月額/10名）';
-        } else if (sub.plan === 'business') {
-          planType = 'ビジネスプラン';
-          renewalInfo = interval === 'year' ? '（年間/30名）' : '（月額/30名）';
-        } else if (sub.plan === 'enterprise') {
-          planType = 'エンタープライズプラン';
-          renewalInfo = interval === 'year' ? '（年間/50名）' : '（月額/50名）';
-        } else if (sub.plan === 'business_legacy') {
-          planType = 'スタータープラン';
-          renewalInfo = '（10名まで）';
-        } else if (sub.plan === 'business-plus' || sub.plan === 'business_plus') {
-          planType = 'ビジネスプラン';
-          renewalInfo = '（30名まで）';
-        }
         planType = `法人${planType}`;
+      }
 
+      // プラン名が決定できた場合
+      if (planType) {
         return {
           text: `${planType} ${renewalInfo}`,
-          className: 'bg-blue-100 text-blue-800', // 法人プランは青色
+          className:
+            planName.includes('starter') ||
+            planName.includes('business') ||
+            planName.includes('enterprise')
+              ? 'bg-blue-100 text-blue-800' // 法人プランは青色
+              : 'bg-green-100 text-green-800', // 個人プランは緑色
         };
       }
     }
