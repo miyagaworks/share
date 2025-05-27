@@ -1,4 +1,4 @@
-// app/api/corporate/tenant/route.ts
+// app/api/corporate/tenant/route.ts (修正版)
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -6,11 +6,16 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { generateVirtualTenantData } from '@/lib/corporateAccess';
 
-// プランに応じたmaxUsersを取得する関数
+// プランに応じたmaxUsersを取得する関数（修正版）
 function getMaxUsersByPlan(plan: string | null | undefined): number {
   if (!plan) return 10; // デフォルト
 
   const planLower = plan.toLowerCase();
+
+  // スタータープラン: 10ユーザー（最初に判定）
+  if (planLower.includes('starter') || planLower === 'business_legacy') {
+    return 10;
+  }
 
   // エンタープライズプラン: 50ユーザー
   if (
@@ -21,12 +26,13 @@ function getMaxUsersByPlan(plan: string | null | undefined): number {
     return 50;
   }
 
-  // ビジネス/スタータープラン: 30ユーザー
-  if (
-    planLower.includes('business') ||
-    planLower.includes('starter') ||
-    planLower.includes('pro')
-  ) {
+  // ビジネスプラン: 30ユーザー（starterを除外した後に判定）
+  if (planLower.includes('business')) {
+    return 30;
+  }
+
+  // プロプラン（旧称の場合）
+  if (planLower.includes('pro')) {
     return 30;
   }
 
@@ -89,6 +95,7 @@ export async function GET() {
             departmentCount: virtualTenant.departments.length,
             users: [{ id: userId, name: user.name, role: 'admin' }],
             departments: virtualTenant.departments,
+            subscriptionPlan: 'permanent', // 永久利用権を明示
           },
           isAdmin: true,
           userRole: 'admin',
@@ -179,6 +186,12 @@ export async function GET() {
       // プランに基づいてmaxUsersを動的に計算
       const correctMaxUsers = getMaxUsersByPlan(tenant.subscription?.plan ?? null);
 
+      console.log('[API] プラン解析:', {
+        originalPlan: tenant.subscription?.plan,
+        calculatedMaxUsers: correctMaxUsers,
+        currentMaxUsers: tenant.maxUsers,
+      });
+
       // データベースのmaxUsersが間違っている場合は修正
       if (tenant.maxUsers !== correctMaxUsers) {
         console.log(
@@ -193,6 +206,7 @@ export async function GET() {
 
           // レスポンス用に修正された値を使用
           tenant.maxUsers = correctMaxUsers;
+          console.log('[API] maxUsers更新完了');
         } catch (updateError) {
           console.error('[API] maxUsers更新エラー:', updateError);
           // エラーが発生しても処理を続行

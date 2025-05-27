@@ -37,6 +37,26 @@ const getPlanDisplayName = (planId: string | undefined): string => {
   return planId;
 };
 
+// プランIDからユーザー数を取得する関数
+const getMaxUsersByPlan = (planId: string | undefined): number => {
+  if (!planId) return 0;
+
+  const plan = planId.toLowerCase();
+
+  if (plan.includes('starter') || plan === 'business_legacy') {
+    return 10; // スタータープラン
+  } else if (plan.includes('business') && !plan.includes('enterprise')) {
+    return 30; // ビジネスプラン
+  } else if (plan.includes('enterprise')) {
+    return 50; // エンタープライズプラン
+  } else if (plan === 'business_plus' || plan === 'business-plus') {
+    return 30; // 旧ビジネスプラスは30名
+  }
+
+  // デフォルト
+  return 0;
+};
+
 // デバッグ情報のプロパティ型定義
 interface DebugInfoProps {
   data:
@@ -166,6 +186,11 @@ export default function OptimizedCorporateDashboardPage() {
     return getPlanDisplayName(tenant?.subscriptionPlan);
   }, [tenant?.subscriptionPlan]);
 
+  // 正しいユーザー数上限の計算（メモ化）
+  const correctMaxUsers = useMemo(() => {
+    return getMaxUsersByPlan(tenant?.subscriptionPlan);
+  }, [tenant?.subscriptionPlan]);
+
   console.log('CorporateDashboard - レンダリング:', {
     isLoading,
     hasError: !!error,
@@ -240,7 +265,7 @@ export default function OptimizedCorporateDashboardPage() {
               <div>
                 <h1 className="text-lg sm:text-xl font-bold break-words">{tenant.name}</h1>
                 <p className="text-xs sm:text-sm text-gray-500">
-                  法人プラン: 最大{tenant.maxUsers}ユーザー
+                  法人プラン: 最大{correctMaxUsers || tenant.maxUsers}ユーザー
                   {planDisplayName && (
                     <span className="ml-2 text-blue-600">({planDisplayName})</span>
                   )}
@@ -256,7 +281,7 @@ export default function OptimizedCorporateDashboardPage() {
         <OptimizedMenuCard
           icon={<Users className="h-5 w-5" />}
           title="ユーザー管理"
-          content={`${tenant.userCount}/${tenant.maxUsers} ユーザー`}
+          content={`${tenant.userCount}/${correctMaxUsers || tenant.maxUsers} ユーザー`}
           onClick={menuActions.users}
           color="blue"
         />
