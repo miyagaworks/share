@@ -66,7 +66,7 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
           <div className="flex items-center space-x-3 sm:space-x-4">
             {/* 🔧 修正：アイコンを確実に表示 */}
             <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 shadow-lg">
-              <HiClock className="h-8 w-8 sm:h-8 sm:w-8 text-blue-400 drop-shadow-md" />
+              <HiClock className="h-8 w-8 sm:h-8 sm:w-8 text-blue-50 drop-shadow-md" />
             </div>
 
             <div className="text-white">
