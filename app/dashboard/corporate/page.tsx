@@ -247,12 +247,12 @@ export default function OptimizedCorporateDashboardPage() {
           <div className="flex flex-col sm:flex-row sm:items-center">
             <div className="flex items-center mb-2 sm:mb-0">
               {tenant.logoUrl ? (
-                <div className="rounded-full p-2 bg-gray-50 mr-3 flex items-center justify-center w-12 h-12">
+                <div className="rounded-full p-2 bg-gray-100 mr-3 flex items-center justify-center w-12 h-12">
                   <Image
                     src={tenant.logoUrl}
                     alt={`${tenant.name}のロゴ`}
-                    width={32}
-                    height={32}
+                    width={30}
+                    height={30}
                     className="rounded-full object-contain"
                     priority
                   />
