@@ -215,7 +215,7 @@ export default function SubscriptionPage() {
 
       {/* 🚀 改善されたトライアルバナー（個人ユーザーのみ表示） */}
       {userData?.trialEndsAt && subscriptionState.isTrialActive && (
-        <div className="relative">
+        <div className="relative mb-4">
           <EnhancedTrialBanner trialEndDate={userData.trialEndsAt} />
         </div>
       )}
@@ -274,7 +274,7 @@ export default function SubscriptionPage() {
         variants={pageVariants}
         id="subscription-plans"
       >
-        <div className="flex items-center mb-6">
+        <div className="flex items-center mb-6 mt-4">
           <HiCreditCard className="h-8 w-8 text-gray-700 mr-3" />
           <div>
             <h1 className="text-3xl font-bold tracking-tight">ご利用プラン</h1>

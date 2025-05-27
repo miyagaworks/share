@@ -1,4 +1,4 @@
-// app/api/user/dashboard-info/route.ts (プラン表示修正版)
+// app/api/user/dashboard-info/route.ts (修正版)
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -13,6 +13,7 @@ interface UserData {
   image: string | null;
   subscriptionStatus: string | null;
   corporateRole: string | null;
+  trialEndsAt: string | Date | null; // トライアル終了日を追加
   adminOfTenant?: {
     id: string;
     name: string;
@@ -32,6 +33,7 @@ interface UserData {
   subscription?: {
     plan: string | null;
     status: string;
+    interval?: string; // 月額/年額の判定に必要
   } | null;
 }
 
@@ -120,6 +122,7 @@ export async function GET() {
           image: true,
           subscriptionStatus: true,
           corporateRole: true,
+          trialEndsAt: true, // トライアル期間の判定に必要
 
           adminOfTenant: {
             select: {
@@ -145,6 +148,7 @@ export async function GET() {
             select: {
               plan: true,
               status: true,
+              interval: true, // 月額/年額の判定に必要
             },
           },
         },
@@ -157,6 +161,7 @@ export async function GET() {
         hasTenant: !!userData?.tenant,
         subscriptionStatus: userData?.subscriptionStatus,
         corporateRole: userData?.corporateRole,
+        trialEndsAt: userData?.trialEndsAt,
       });
     } catch (dbError) {
       console.error('❌ データベースエラー詳細:', {
@@ -182,8 +187,8 @@ export async function GET() {
     }
 
     console.log('🚀 権限計算開始');
-    // 🚀 強化された権限計算
-    const permissions = calculatePermissionsEnhanced(userData);
+    // 🚀 修正された権限計算
+    const permissions = calculatePermissionsFixed(userData);
     console.log('✅ 権限計算完了:', permissions);
 
     console.log('🚀 ナビゲーション生成開始');
@@ -246,10 +251,19 @@ export async function GET() {
   }
 }
 
-// 🚀 強化された権限計算（プラン情報を含む）
-function calculatePermissionsEnhanced(userData: UserData): Permissions {
+// 🚀 修正された権限計算（プラン情報を含む）
+function calculatePermissionsFixed(userData: UserData): Permissions {
   const ADMIN_EMAILS = ['admin@sns-share.com'];
   const isAdminEmail = ADMIN_EMAILS.includes(userData.email.toLowerCase());
+
+  console.log('🔧 権限計算詳細デバッグ:', {
+    email: userData.email,
+    subscriptionStatus: userData.subscriptionStatus,
+    corporateRole: userData.corporateRole,
+    hasAdminTenant: !!userData.adminOfTenant,
+    hasTenant: !!userData.tenant,
+    isAdminEmail,
+  });
 
   // 管理者の早期リターン
   if (isAdminEmail) {
@@ -269,115 +283,160 @@ function calculatePermissionsEnhanced(userData: UserData): Permissions {
     };
   }
 
+  // 🚀 永久利用権ユーザーの判定
   const isPermanentUser = userData.subscriptionStatus === 'permanent';
+  if (isPermanentUser) {
+    console.log('✅ 永久利用権ユーザーを検出');
+    return {
+      userType: 'permanent',
+      isAdmin: true, // 永久利用権ユーザーは管理者権限
+      isSuperAdmin: false,
+      hasCorpAccess: true,
+      isCorpAdmin: true,
+      isPermanentUser: true,
+      permanentPlanType: 'business_plus',
+      userRole: 'admin',
+      hasActivePlan: true,
+      isTrialPeriod: false,
+      planType: 'permanent',
+      planDisplayName: '永久利用権',
+    };
+  }
+
+  // 🚀 法人テナント関連の判定
   const hasTenant = !!(userData.adminOfTenant || userData.tenant);
   const tenant = userData.adminOfTenant || userData.tenant;
   const isTenantActive = tenant?.accountStatus !== 'suspended';
-
-  // 法人サブスクリプションチェック
-  const hasCorporateSubscription = !!(
-    userData.subscription?.status === 'active' &&
-    userData.subscription.plan &&
-    ['business', 'business_plus', 'enterprise', 'starter'].some((plan) =>
-      userData.subscription!.plan!.toLowerCase().includes(plan),
-    )
-  );
-
-  // テナントに所属していてアクティブなら法人アクセス権あり
-  const hasCorpAccess = hasTenant && isTenantActive;
   const isCorpAdmin = !!userData.adminOfTenant;
 
-  // 🎯 ユーザータイプ判定の強化
-  let userType: Permissions['userType'];
-  let userRole: Permissions['userRole'];
-  let hasActivePlan: boolean;
-  let isTrialPeriod: boolean;
-  let planType: 'personal' | 'corporate' | 'permanent' | null;
-  let planDisplayName: string;
+  // 🚀【重要な修正】招待メンバーの厳格な判定
+  // tenantがあり、かつcorporateRoleが'member'で、管理者でない場合のみ招待メンバー
+  const isInvitedMember =
+    hasTenant && userData.corporateRole === 'member' && !isCorpAdmin && isTenantActive;
 
-  console.log('🔧 ユーザータイプ判定:', {
-    isPermanentUser,
-    hasCorpAccess,
-    isCorpAdmin,
-    corporateRole: userData.corporateRole,
+  console.log('🎯 招待メンバー判定:', {
     hasTenant,
+    corporateRole: userData.corporateRole,
+    isCorpAdmin,
     isTenantActive,
-    hasCorporateSubscription,
-    subscriptionStatus: userData.subscriptionStatus,
+    result: isInvitedMember,
   });
 
-  if (isPermanentUser) {
-    userType = 'permanent';
-    userRole = 'admin';
-    hasActivePlan = true;
-    isTrialPeriod = false;
-    planType = 'permanent';
-    planDisplayName = '永久利用権';
-  } else if (hasTenant && userData.corporateRole === 'member' && !isCorpAdmin) {
-    // 🎯 招待メンバーの厳格な判定
-    userType = 'invited-member';
-    userRole = 'member';
-    hasActivePlan = true; // 法人メンバーは法人プランの一部
-    isTrialPeriod = false; // 招待メンバーにトライアル表示なし
-    planType = 'corporate';
-    planDisplayName = '法人メンバー';
-    console.log('🎯 招待メンバーを検出:', userData.email);
-  } else if (hasCorpAccess && isCorpAdmin) {
-    userType = 'corporate';
-    userRole = 'admin';
-    // 🚀 法人管理者のプラン情報を正しく設定
-    hasActivePlan = true; // 法人管理者は常にアクティブプラン
-    isTrialPeriod = false; // 法人管理者にトライアル表示なし
-    planType = 'corporate';
-    planDisplayName = '法人エンタープライズプラン'; // 実際のプラン名に合わせて調整
-  } else if (hasCorpAccess && !isCorpAdmin && userData.corporateRole === 'member') {
-    // 招待メンバーの別パターン
-    userType = 'invited-member';
-    userRole = 'member';
-    hasActivePlan = true;
-    isTrialPeriod = false;
-    planType = 'corporate';
-    planDisplayName = '法人メンバー';
-  } else {
-    // 個人ユーザー
-    userType = 'personal';
-    userRole = 'personal';
+  // 🚀 法人管理者の判定
+  if (isCorpAdmin && isTenantActive) {
+    console.log('✅ 法人管理者を検出');
 
-    // 個人ユーザーのプラン判定
-    const hasPersonalPlan = userData.subscription?.status === 'active';
-    const isPersonalTrial =
-      userData.subscriptionStatus === 'trialing' || userData.subscription?.status === 'trialing';
+    // 実際のサブスクリプションプランに基づいて表示名を決定
+    let corporatePlanDisplayName = '法人プラン';
+    if (userData.subscription?.plan) {
+      const plan = userData.subscription.plan.toLowerCase();
+      const interval = userData.subscription.interval || 'month';
 
-    hasActivePlan = hasPersonalPlan || isPersonalTrial;
-    isTrialPeriod = isPersonalTrial;
-    planType = 'personal';
-    planDisplayName = hasPersonalPlan
-      ? '個人プラン'
-      : isPersonalTrial
-        ? '無料トライアル'
-        : '無料プラン';
+      if (plan.includes('starter')) {
+        corporatePlanDisplayName =
+          interval === 'year'
+            ? '法人スタータープラン(10名まで・年額)'
+            : '法人スタータープラン(10名まで・月額)';
+      } else if (plan.includes('business') && !plan.includes('enterprise')) {
+        corporatePlanDisplayName =
+          interval === 'year'
+            ? '法人ビジネスプラン(30名まで・年額)'
+            : '法人ビジネスプラン(30名まで・月額)';
+      } else if (plan.includes('enterprise')) {
+        corporatePlanDisplayName =
+          interval === 'year'
+            ? '法人エンタープライズプラン(50名まで・年額)'
+            : '法人エンタープライズプラン(50名まで・月額)';
+      }
+
+      // 古いプランIDとの互換性
+      if (plan.includes('business_legacy')) {
+        corporatePlanDisplayName = '法人スタータープラン(10名まで)';
+      } else if (plan.includes('business_plus') || plan.includes('business-plus')) {
+        corporatePlanDisplayName = '法人ビジネスプラン(30名まで)';
+      }
+    }
+
+    console.log('🔧 法人プラン判定:', {
+      subscriptionPlan: userData.subscription?.plan,
+      interval: userData.subscription?.interval,
+      displayName: corporatePlanDisplayName,
+    });
+
+    return {
+      userType: 'corporate',
+      isAdmin: true,
+      isSuperAdmin: false,
+      hasCorpAccess: true,
+      isCorpAdmin: true,
+      isPermanentUser: false,
+      permanentPlanType: null,
+      userRole: 'admin',
+      hasActivePlan: true,
+      isTrialPeriod: false,
+      planType: 'corporate',
+      planDisplayName: corporatePlanDisplayName,
+    };
   }
 
-  console.log('✅ 最終ユーザータイプ:', userType, 'プラン情報:', {
-    hasActivePlan,
-    isTrialPeriod,
-    planType,
-    planDisplayName,
+  // 🚀 招待メンバーの判定
+  if (isInvitedMember) {
+    console.log('✅ 招待メンバーを検出');
+    return {
+      userType: 'invited-member',
+      isAdmin: false,
+      isSuperAdmin: false,
+      hasCorpAccess: true,
+      isCorpAdmin: false,
+      isPermanentUser: false,
+      permanentPlanType: null,
+      userRole: 'member',
+      hasActivePlan: true,
+      isTrialPeriod: false,
+      planType: 'corporate',
+      planDisplayName: '法人メンバー',
+    };
+  }
+
+  // 🚀【修正の核心】個人ユーザーの判定
+  // 上記のどれにも該当しない場合は個人ユーザー
+  console.log('✅ 個人ユーザーとして判定');
+
+  // 個人プランのチェック
+  const hasPersonalPlan = userData.subscription?.status === 'active';
+
+  // トライアル期間の判定
+  const isTrialUser =
+    userData.subscriptionStatus === 'trialing' || userData.subscription?.status === 'trialing';
+
+  // トライアル期間が有効かどうかの判定
+  const isTrialActive =
+    isTrialUser && userData.trialEndsAt ? new Date(userData.trialEndsAt) > new Date() : false;
+
+  console.log('🔧 個人ユーザーのプラン判定:', {
+    hasPersonalPlan,
+    isTrialUser,
+    isTrialActive,
+    trialEndsAt: userData.trialEndsAt,
   });
 
   return {
-    userType,
-    isAdmin: isCorpAdmin,
+    userType: 'personal',
+    isAdmin: false,
     isSuperAdmin: false,
-    hasCorpAccess,
-    isCorpAdmin,
-    isPermanentUser,
-    permanentPlanType: isPermanentUser ? 'business_plus' : null,
-    userRole,
-    hasActivePlan,
-    isTrialPeriod,
-    planType,
-    planDisplayName,
+    hasCorpAccess: false,
+    isCorpAdmin: false,
+    isPermanentUser: false,
+    permanentPlanType: null,
+    userRole: 'personal',
+    hasActivePlan: hasPersonalPlan || isTrialActive,
+    isTrialPeriod: isTrialActive,
+    planType: 'personal',
+    planDisplayName: hasPersonalPlan
+      ? '個人プラン'
+      : isTrialActive
+        ? '無料トライアル'
+        : '無料プラン',
   };
 }
 

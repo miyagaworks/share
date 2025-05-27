@@ -53,7 +53,7 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
   if (!trialEndDate || daysRemaining <= 0) return null;
 
   return (
-    <div className="relative mb-6 overflow-hidden rounded-xl shadow-xl">
+    <div className="relative mb-10 sm:mb-12 overflow-hidden rounded-xl shadow-xl">
       {/* 🔧 修正：青系グラデーション背景に変更 */}
       <div
         className="relative px-4 sm:px-6 py-4 sm:py-6"
