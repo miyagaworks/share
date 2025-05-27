@@ -50,7 +50,7 @@ export default function CorporateMemberProfilePage() {
 
       try {
         // 法人アクセス権を確認
-        await checkCorporateAccess(true);
+        await checkCorporateAccess({ force: true });
 
         if (!corporateAccessState.hasAccess) {
           // アクセス権がない場合は通常ダッシュボードへリダイレクト

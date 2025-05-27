@@ -1,4 +1,4 @@
-// app/dashboard/layout.tsx (完全修正版)
+// app/dashboard/layout-optimized.tsx
 'use client';
 
 import React, { ReactNode, useEffect, useMemo } from 'react';
@@ -8,7 +8,7 @@ import { useDashboardInfo } from '@/hooks/useDashboardInfo';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Spinner } from '@/components/ui/Spinner';
 
-// 静的アイコンマッピング
+// 🚀 静的アイコンマッピング（動的インポート削除で高速化）
 import {
   HiHome,
   HiUser,
@@ -52,32 +52,14 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   const pathname = usePathname();
   const router = useRouter();
 
+  // 🚀 統合APIから全データを1回で取得
   const { data: dashboardInfo, isLoading, error } = useDashboardInfo();
 
-  // 🚀 Body要素にパス名属性を設定（CSSでの判定用）
-  useEffect(() => {
-    if (typeof document !== 'undefined' && pathname) {
-      document.body.setAttribute('data-pathname', pathname);
-
-      // クリーンアップ
-      return () => {
-        document.body.removeAttribute('data-pathname');
-      };
-    }
-  }, [pathname]);
-
-  // 🚀 メモ化されたアクセスチェック
+  // 🚀 メモ化されたアクセスチェック（再計算を最小化）
   const accessCheck = useMemo(() => {
     if (!dashboardInfo || !pathname) return { hasAccess: true };
 
     const { permissions } = dashboardInfo;
-
-    console.log('🔧 アクセスチェック:', {
-      userType: permissions.userType,
-      pathname,
-      hasCorpAccess: permissions.hasCorpAccess,
-      isInvitedMember: permissions.userType === 'invited-member',
-    });
 
     // 管理者ページチェック
     if (pathname.startsWith('/dashboard/admin') && !permissions.isSuperAdmin) {
@@ -93,41 +75,18 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       return { hasAccess: false, redirectTo: '/dashboard' };
     }
 
-    // 🎯 招待メンバーの厳格なチェック
-    if (permissions.userType === 'invited-member') {
-      // 招待メンバーは法人メンバーページ以外アクセス禁止
-      if (!pathname.startsWith('/dashboard/corporate-member')) {
-        console.log('🔧 招待メンバーを法人メンバーページにリダイレクト');
-        return { hasAccess: false, redirectTo: '/dashboard/corporate-member' };
-      }
+    // 🎯 招待メンバーの即座判定
+    if (
+      permissions.userType === 'invited-member' &&
+      !pathname.startsWith('/dashboard/corporate-member')
+    ) {
+      return { hasAccess: false, redirectTo: '/dashboard/corporate-member' };
     }
 
     return { hasAccess: true };
   }, [dashboardInfo, pathname]);
 
-  // 🚀 テーマクラスの決定
-  const themeClass = useMemo(() => {
-    if (!dashboardInfo) return '';
-
-    const { permissions } = dashboardInfo;
-    const isCorporateSection = pathname?.startsWith('/dashboard/corporate');
-    const isCorporateMemberSection = pathname?.startsWith('/dashboard/corporate-member');
-
-    // 法人関連セクションまたは法人ユーザータイプの場合
-    if (
-      isCorporateSection ||
-      isCorporateMemberSection ||
-      permissions.userType === 'corporate' ||
-      permissions.userType === 'invited-member' ||
-      permissions.hasCorpAccess
-    ) {
-      return 'corporate-theme';
-    }
-
-    return '';
-  }, [dashboardInfo, pathname]);
-
-  // 🚀 リダイレクト処理
+  // 🚀 効率的なリダイレクト処理
   useEffect(() => {
     if (status !== 'loading' && !session) {
       router.push('/auth/signin');
@@ -142,7 +101,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       dashboardInfo.navigation.redirectPath &&
       pathname === '/dashboard'
     ) {
-      console.log('🚀 初期リダイレクト実行:', dashboardInfo.navigation.redirectPath);
+      console.log('🚀 リダイレクト実行:', dashboardInfo.navigation.redirectPath);
       router.push(dashboardInfo.navigation.redirectPath);
       return;
     }
@@ -154,7 +113,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     }
   }, [session, status, dashboardInfo, pathname, accessCheck, router]);
 
-  // 🚀 早期リターン
+  // 🚀 早期リターンによる高速化
   if (status === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -198,7 +157,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     );
   }
 
-  // メニュー項目変換
+  // 🚀 静的マッピングによる高速アイコン変換
   const menuItems = dashboardInfo.navigation.menuItems.map((item) => ({
     ...item,
     icon: iconMap[item.icon] || iconMap.HiHome,
@@ -208,14 +167,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     userType: dashboardInfo.permissions.userType,
     menuCount: menuItems.length,
     hasAccess: accessCheck.hasAccess,
-    themeClass,
-    pathname,
   });
 
-  // 🚀 テーマクラスを動的に適用
-  return (
-    <div className={themeClass}>
-      <DashboardLayout items={menuItems}>{children}</DashboardLayout>
-    </div>
-  );
+  return <DashboardLayout items={menuItems}>{children}</DashboardLayout>;
 }

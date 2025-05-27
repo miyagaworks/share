@@ -190,9 +190,26 @@ export async function checkCorporateAccess(
       // ユーザーロールの決定
       const userRole = data.userRole || data.role || null;
 
+      // テナント情報の判定
+      const hasTenant =
+        !!finalTenantId &&
+        finalTenantId !== 'fallback-tenant-id' &&
+        finalTenantId !== 'mobile-fallback-tenant-id';
+
       // ユーザーのアクセス権を判定
       // userRoleが'member'または'admin'であれば、明示的にhasAccessをtrueに設定
       let hasAccess = accessResult;
+
+      // テナントに所属している場合は基本的にアクセス権を付与
+      if (hasTenant && finalTenantId) {
+        hasAccess = true;
+        logDebug('テナント所属によりアクセス権を付与', {
+          hasTenant,
+          finalTenantId,
+          userRole,
+        });
+      }
+
       if ((userRole === 'member' || userRole === 'admin') && hasAccess !== false) {
         hasAccess = true;
         logDebug('メンバーまたは管理者ロールを検出、法人アクセス権を付与', { userRole });

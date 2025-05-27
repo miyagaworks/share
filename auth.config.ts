@@ -1,4 +1,4 @@
-// auth.config.ts
+// auth.config.ts (緊急修正版)
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
@@ -27,7 +27,7 @@ export default {
       },
       async authorize(credentials) {
         if (!credentials) {
-          console.log('認証失敗: credentials が存在しません');
+          console.log('❌ [Auth] credentials が存在しません');
           return null;
         }
 
@@ -35,14 +35,13 @@ export default {
           const validatedFields = LoginSchema.safeParse(credentials);
 
           if (!validatedFields.success) {
-            console.log('認証失敗: バリデーションエラー', validatedFields.error);
+            console.log('❌ [Auth] バリデーションエラー', validatedFields.error);
             return null;
           }
 
           const { email, password } = validatedFields.data;
-          console.log('認証試行:', email);
+          console.log('🔧 [Auth] 認証試行:', email);
 
-          // メールアドレスを小文字に正規化
           const normalizedEmail = email.toLowerCase();
 
           const user = await prisma.user.findUnique({
@@ -57,28 +56,33 @@ export default {
           });
 
           if (!user || !user.password) {
-            console.log('認証失敗: ユーザーが見つかりません');
+            console.log('❌ [Auth] ユーザーが見つかりません');
             return null;
           }
 
           const passwordsMatch = await bcrypt.compare(password, user.password);
 
           if (!passwordsMatch) {
-            console.log('認証失敗: パスワードが一致しません');
+            console.log('❌ [Auth] パスワードが一致しません');
             return null;
           }
 
-          console.log('認証成功:', user.id);
-
-          // User 型に合わせる
-          return {
+          console.log('✅ [Auth] 認証成功:', {
             id: user.id,
             name: user.name,
+            email: user.email,
+            role: user.corporateRole,
+          });
+
+          // 🚨 重要：完全なユーザーオブジェクトを返す
+          return {
+            id: user.id,
+            name: user.name || '',
             email: user.email,
             role: user.corporateRole || undefined,
           };
         } catch (error) {
-          console.error('認証中のエラー:', error);
+          console.error('❌ [Auth] 認証中のエラー:', error);
           return null;
         }
       },
@@ -86,82 +90,97 @@ export default {
   ],
 
   callbacks: {
-    async signIn({ user, account: authAccount, profile }) {
-      console.log('サインインコールバック詳細:', {
+    async signIn({ user, account }) {
+      console.log('🔧 [Auth] SignIn callback:', {
         userId: user?.id,
+        userName: user?.name,
         userEmail: user?.email,
-        provider: authAccount?.provider,
-        profileData: !!profile,
-        timestamp: Date.now()
+        provider: account?.provider,
       });
 
-      // Googleログイン時の追加処理
-      if (authAccount?.provider === 'google' && user?.email) {
+      if (account?.provider === 'google' && user?.email) {
         const normalizedEmail = user.email.toLowerCase();
-        
+
         try {
-          // メールアドレスでユーザーを検索
           const existingUser = await prisma.user.findUnique({
             where: { email: normalizedEmail },
+            select: {
+              id: true,
+              name: true,
+              email: true,
+            },
           });
 
-          if (!existingUser) {
-            console.log('Google認証: 新規ユーザー', { email: normalizedEmail });
-            // 新規ユーザーの場合の処理はadapterが行う
-          } else {
-            console.log('Google認証: 既存ユーザー', { 
-              userId: existingUser.id, 
-              email: existingUser.email 
-            });
+          if (existingUser) {
+            console.log('✅ [Auth] Google認証: 既存ユーザー', existingUser);
+            // 🚨 重要：userオブジェクトを更新
+            user.id = existingUser.id;
+            user.name = existingUser.name;
+            user.email = existingUser.email;
           }
-          
-          return true;  // サインイン成功
+
+          return true;
         } catch (error) {
-          console.error('Google認証処理エラー:', error);
-          return false;  // サインイン失敗
+          console.error('❌ [Auth] Google認証処理エラー:', error);
+          return false;
         }
       }
-      
-      return true;  // その他のプロバイダーはそのまま処理
+
+      return true;
     },
-    
+
     async jwt({ token, user, trigger }) {
-      // トリガーとタイムスタンプをログに出力
-      console.log('JWT生成:', { 
+      console.log('🔧 [Auth] JWT callback開始:', {
         trigger,
-        userId: user?.id || token.sub,
-        timestamp: Date.now()
+        hasUser: !!user,
+        userId: user?.id,
+        userName: user?.name,
+        tokenSub: token.sub,
+        tokenName: token.name,
       });
-      
-      // ユーザー情報がある場合はトークンに追加
+
+      // 🚨 重要：ユーザー情報がある場合は必ずトークンを更新
       if (user) {
-        token.role = user.role;
-        // 明示的にユーザー情報を更新
+        token.sub = user.id;
         token.name = user.name;
         token.email = user.email;
-      }
-      
-      return token;
-    },
-    
-    async session({ session, token }) {
-      // セッション更新時にユーザーIDを必ず設定
-      if (token.sub && session.user) {
-        session.user.id = token.sub;
+        token.role = user.role;
+
+        console.log('✅ [Auth] JWTトークン更新完了:', {
+          sub: token.sub,
+          name: token.name,
+          email: token.email,
+          role: token.role,
+        });
       }
 
-      // ロール情報も設定
-      if (token.role && session.user) {
-        session.user.role = token.role;
-      }
-      
-      console.log('セッション更新:', {
-        userId: session.user?.id,
-        userEmail: session.user?.email,
-        timestamp: Date.now(),
-        expires: session.expires
+      return token;
+    },
+
+    async session({ session, token }) {
+      console.log('🔧 [Auth] Session callback開始:', {
+        hasToken: !!token,
+        tokenSub: token.sub,
+        tokenName: token.name,
+        tokenEmail: token.email,
+        sessionUserBefore: session.user,
       });
-      
+
+      // 🚨 重要：セッションユーザー情報を確実に設定
+      if (token && session.user) {
+        session.user.id = token.sub as string;
+        session.user.name = (token.name as string) || '';
+        session.user.email = (token.email as string) || '';
+        session.user.role = token.role as string;
+
+        console.log('✅ [Auth] Session更新完了:', session.user);
+      } else {
+        console.error('❌ [Auth] トークンまたはセッションユーザーが存在しません:', {
+          hasToken: !!token,
+          hasSessionUser: !!session.user,
+        });
+      }
+
       return session;
     },
   },

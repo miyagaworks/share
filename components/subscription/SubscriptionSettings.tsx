@@ -2,7 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import PaymentMethodForm from '@/components/subscription/PaymentMethodForm';
 import { toast } from 'react-hot-toast';
@@ -316,29 +315,31 @@ export default function SubscriptionSettings() {
       <div className="space-y-6">
         {/* タブスタイルの切り替え */}
         <div className="mb-6">
-          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex">
-            <Button
-              className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex shadow-sm">
+            <button
+              data-plan-type="individual"
+              className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium transition-all duration-300 transform ${
                 !showCorporatePlans
-                  ? 'bg-blue-600 text-white'
-                  : 'bg-white text-blue-600 hover:bg-blue-600 hover:text-white'
+                  ? 'bg-blue-600 text-white shadow-md scale-105 active'
+                  : 'bg-white text-blue-600 hover:bg-blue-700 hover:text-white hover:shadow-md hover:scale-105'
               }`}
               onClick={() => setShowCorporatePlans(false)}
             >
               <HiUser className="h-5 w-5" />
               個人プラン
-            </Button>
-            <Button
-              className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium transition-colors ${
+            </button>
+            <button
+              data-plan-type="corporate"
+              className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium transition-all duration-300 transform ${
                 showCorporatePlans
-                  ? 'bg-[#1E3A8A] text-white'
-                  : 'bg-white text-[#1E3A8A] hover:bg-[#1E3A8A] hover:text-white'
+                  ? 'bg-blue-900 text-white shadow-md scale-105 active'
+                  : 'bg-white text-blue-900 hover:bg-blue-800 hover:text-white hover:shadow-md hover:scale-105'
               }`}
               onClick={() => setShowCorporatePlans(true)}
             >
               <HiOfficeBuilding className="h-5 w-5" />
               法人プラン
-            </Button>
+            </button>
           </div>
         </div>
 
@@ -437,20 +438,20 @@ export default function SubscriptionSettings() {
 
             {/* 登録/変更ボタン */}
             <div className="mt-6 flex justify-end">
-              <Button
+              <button
                 onClick={handleSubscribe}
                 disabled={!paymentMethodId || processing}
-                className="px-8"
+                className="px-8 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {processing ? (
-                  <>
+                  <div className="flex items-center">
                     <Spinner size="sm" className="mr-2" />
                     処理中...
-                  </>
+                  </div>
                 ) : (
                   '登録する'
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         )}
@@ -531,21 +532,20 @@ export default function SubscriptionSettings() {
 
                     {/* 登録ボタン */}
                     <div className="mt-4">
-                      <Button
+                      <button
                         onClick={handleCorporateSubscribe}
                         disabled={!paymentMethodId || processing || selectedPlan !== 'starter'}
-                        className="w-full bg-[#1E3A8A] hover:bg-[#122153]"
-                        size="sm"
+                        className="w-full bg-blue-900 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-800 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200"
                       >
                         {processing && selectedPlan === 'starter' ? (
-                          <>
+                          <div className="flex items-center justify-center">
                             <Spinner size="sm" className="mr-2" />
                             処理中...
-                          </>
+                          </div>
                         ) : (
                           '選択して申し込む'
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
                   {selectedPlan === 'starter' && (
@@ -628,21 +628,20 @@ export default function SubscriptionSettings() {
 
                     {/* 登録ボタン */}
                     <div className="mt-4">
-                      <Button
+                      <button
                         onClick={handleCorporateSubscribe}
-                        disabled={!paymentMethodId || processing || selectedPlan !== 'business'}
-                        className="w-full bg-[#1E3A8A] hover:bg-[#122153]"
-                        size="sm"
+                        disabled={!paymentMethodId || processing || selectedPlan !== 'starter'}
+                        className="w-full bg-blue-900 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-800 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200"
                       >
-                        {processing && selectedPlan === 'business' ? (
-                          <>
+                        {processing && selectedPlan === 'starter' ? (
+                          <div className="flex items-center justify-center">
                             <Spinner size="sm" className="mr-2" />
                             処理中...
-                          </>
+                          </div>
                         ) : (
                           '選択して申し込む'
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
                   {selectedPlan === 'business' && (
@@ -683,8 +682,8 @@ export default function SubscriptionSettings() {
                         type="button"
                         className={`text-xs px-2 py-1 rounded-full transition-colors ${
                           selectedInterval === 'month'
-                            ? 'bg-[#1E3A8A] text-white'
-                            : 'bg-gray-100 text-gray-700'
+                            ? 'bg-blue-900 text-white'
+                            : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                         onClick={(e) => {
                           e.stopPropagation(); // 親要素のクリックイベントを防止
@@ -725,21 +724,20 @@ export default function SubscriptionSettings() {
 
                     {/* 登録ボタン */}
                     <div className="mt-4">
-                      <Button
+                      <button
                         onClick={handleCorporateSubscribe}
-                        disabled={!paymentMethodId || processing || selectedPlan !== 'enterprise'}
-                        className="w-full bg-[#1E3A8A] hover:bg-[#122153]"
-                        size="sm"
+                        disabled={!paymentMethodId || processing || selectedPlan !== 'starter'}
+                        className="w-full bg-blue-900 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-800 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200"
                       >
-                        {processing && selectedPlan === 'enterprise' ? (
-                          <>
+                        {processing && selectedPlan === 'starter' ? (
+                          <div className="flex items-center justify-center">
                             <Spinner size="sm" className="mr-2" />
                             処理中...
-                          </>
+                          </div>
                         ) : (
                           '選択して申し込む'
                         )}
-                      </Button>
+                      </button>
                     </div>
                   </div>
                   {selectedPlan === 'enterprise' && (
@@ -788,20 +786,20 @@ export default function SubscriptionSettings() {
 
             {/* 登録/変更ボタン */}
             <div className="mt-6 flex justify-end">
-              <Button
+              <button
                 onClick={handleCorporateSubscribe}
                 disabled={!paymentMethodId || processing}
-                className="px-8 bg-[#1E3A8A] hover:bg-[#122153]"
+                className="px-8 py-2 bg-blue-900 text-white font-medium rounded-md hover:bg-blue-800 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200"
               >
                 {processing ? (
-                  <>
+                  <div className="flex items-center">
                     <Spinner size="sm" className="mr-2" />
                     処理中...
-                  </>
+                  </div>
                 ) : (
                   '申し込む'
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         )}

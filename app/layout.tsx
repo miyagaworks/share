@@ -1,22 +1,21 @@
-// app/layout.tsx (QueryProvider追加版)
+// app/layout.tsx (元の状態)
 import type { Metadata, Viewport } from 'next';
 import { Inter, Roboto_Mono } from 'next/font/google';
 import { ToastProvider } from '@/components/providers/ToastProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
-import { AuthDebugger } from '@/components/shared/AuthDebugger';
 import './globals.css';
 
 const inter = Inter({
   variable: '--font-geist-sans',
   subsets: ['latin'],
-  display: 'swap', // フォント読み込み最適化
+  display: 'swap',
 });
 
 const robotoMono = Roboto_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
-  display: 'swap', // フォント読み込み最適化
+  display: 'swap',
 });
 
 export const metadata: Metadata = {
@@ -40,7 +39,6 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  // 環境に応じたセッションタイムアウト設定
   const isDevelopment = process.env.NODE_ENV === 'development';
 
   return (
@@ -48,7 +46,6 @@ export default function RootLayout({
       <head>
         <meta name="color-scheme" content="light dark" />
         <meta name="supported-color-schemes" content="light dark" />
-        {/* リソースヒント */}
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
       </head>
@@ -61,7 +58,8 @@ export default function RootLayout({
           >
             <ToastProvider />
             {children}
-            {isDevelopment && <AuthDebugger />}
+            {/* 🔧 AuthDebuggerは一時的に無効化 */}
+            {/* {isDevelopment && <AuthDebugger />} */}
           </SessionProvider>
         </QueryProvider>
       </body>

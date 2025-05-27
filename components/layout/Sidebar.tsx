@@ -184,7 +184,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
             </h2>
             <button
               onClick={toggleCollapse}
-              className="p-1 rounded-md hover:bg-blue-100 transition-colors focus:outline-none"
+              className="p-1 rounded-md hover:bg-gray-100 transition-colors focus:outline-none"
               aria-label={collapsed ? 'サイドバーを展開' : 'サイドバーを折りたたむ'}
             >
               {collapsed ? (

@@ -1,4 +1,4 @@
-// auth.ts
+// auth.ts (元の状態)
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';

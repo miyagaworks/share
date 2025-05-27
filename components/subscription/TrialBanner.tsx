@@ -1,4 +1,4 @@
-// components/subscription/TrialBanner.tsx
+// components/subscription/TrialBanner.tsx - アイコン修正版
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -78,12 +78,15 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
     >
       <div
         style={{
-          background: 'linear-gradient(to right, rgb(59, 130, 246), rgb(79, 70, 229))',
+          background:
+            'linear-gradient(135deg, rgb(59, 130, 246), rgb(147, 51, 234), rgb(236, 72, 153))',
           color: 'white',
           borderRadius: '0.375rem',
           position: 'relative',
           overflow: 'hidden',
           marginBottom: 0,
+          boxShadow:
+            '0 10px 25px -5px rgba(59, 130, 246, 0.4), 0 4px 6px -2px rgba(59, 130, 246, 0.2)',
         }}
       >
         {/* モバイル表示 */}
@@ -91,8 +94,9 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
           <div className="p-4">
             <div className="flex items-center justify-between mb-3">
               <div className="flex items-center">
-                <div className="bg-white/20 rounded-full p-2 mr-3">
-                  <HiClock className="h-5 w-5" />
+                {/* 🔧 修正：時計アイコンを表示 */}
+                <div className="bg-white/20 rounded-full p-2 mr-3 flex items-center justify-center flex-shrink-0">
+                  <HiClock className="h-5 w-5 text-white" />
                 </div>
                 <div>
                   <p className="font-bold text-sm">無料トライアル期間中</p>
@@ -107,7 +111,7 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
                 className="text-white/70 hover:text-white ml-2"
                 aria-label="閉じる"
               >
-                &times;
+                ×
               </button>
             </div>
 
@@ -127,8 +131,9 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
           style={{ fontSize: '16px', lineHeight: 'normal' }}
         >
           <div className="flex items-center">
-            <div className="bg-white/20 rounded-full p-2 mr-4">
-              <HiClock className="h-6 w-6" />
+            {/* 🔧 修正：時計アイコンを表示 */}
+            <div className="bg-white/20 rounded-full p-2 mr-4 flex items-center justify-center flex-shrink-0">
+              <HiClock className="h-6 w-6 text-white" />
             </div>
             <div>
               <p className="font-bold">無料トライアル期間中</p>
@@ -152,7 +157,7 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
               className="text-white/70 hover:text-white p-1"
               aria-label="閉じる"
             >
-              &times;
+              ×
             </button>
           </div>
         </div>
@@ -195,7 +200,7 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
           bottom: 0,
           left: 0,
           width: '100%',
-          height: '2px', // 高さを2pxに増やす
+          height: '2px',
           background: 'linear-gradient(to right, rgb(59, 130, 246), rgb(79, 70, 229))',
           zIndex: 0,
         }}

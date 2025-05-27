@@ -62,12 +62,24 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
         // 以下は通常の法人テナント情報取得処理...
         const response = await fetch('/api/corporate-profile');
         if (!response.ok) {
-          throw new Error('法人テナント情報の取得に失敗しました');
+          const errorData = await response.json().catch(() => ({ error: '不明なエラー' }));
+          console.error('法人プロフィールAPI エラー:', response.status, errorData);
+          throw new Error(errorData.error || '法人テナント情報の取得に失敗しました');
         }
 
         const data = await response.json();
-        setTenantData(data.tenant);
-        setError(null);
+        console.log('法人プロフィールデータ取得成功:', {
+          hasUser: !!data.user,
+          hasTenant: !!data.tenant,
+          tenantId: data.tenant?.id,
+        });
+
+        if (data.tenant) {
+          setTenantData(data.tenant);
+          setError(null);
+        } else {
+          throw new Error('テナント情報が含まれていません');
+        }
       } catch (error) {
         console.error('法人テナント情報取得エラー:', error);
         setError('法人テナント情報の取得に失敗しました');

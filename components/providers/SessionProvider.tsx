@@ -1,4 +1,4 @@
-// components/providers/SessionProvider.tsx
+// components/providers/SessionProvider.tsx (元の状態)
 'use client';
 
 import { SessionProvider as NextAuthSessionProvider, signOut } from 'next-auth/react';

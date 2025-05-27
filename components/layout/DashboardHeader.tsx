@@ -1,4 +1,4 @@
-// components/layout/DashboardHeader.tsx
+// components/layout/DashboardHeader.tsx (元の状態)
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -6,6 +6,7 @@ import { signOut, useSession } from 'next-auth/react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useRouter } from 'next/navigation';
+import { useDashboardInfo } from '@/hooks/useDashboardInfo';
 import NotificationBell from './NotificationBell';
 
 export function DashboardHeader() {
@@ -15,38 +16,14 @@ export function DashboardHeader() {
   const buttonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
 
-  // プロフィール情報を保持するためのstate
-  const [profileData, setProfileData] = useState<{
-    name: string;
-    image: string | null;
-  }>({
-    name: session?.user?.name || 'ユーザー',
-    image: session?.user?.image || null,
-  });
+  // 🚀 統合APIからユーザー情報を取得
+  const { data: dashboardInfo } = useDashboardInfo();
 
-  // APIからプロフィール情報を取得
-  useEffect(() => {
-    if (session?.user?.id) {
-      const fetchProfileData = async () => {
-        try {
-          const response = await fetch('/api/profile');
-          if (response.ok) {
-            const data = await response.json();
-            if (data.user) {
-              setProfileData({
-                name: data.user.name || session?.user?.name || 'ユーザー',
-                image: data.user.image || null,
-              });
-            }
-          }
-        } catch (error) {
-          console.error('プロフィール情報取得エラー:', error);
-        }
-      };
-
-      fetchProfileData();
-    }
-  }, [session]);
+  // 🚀 統合されたプロフィール情報（APIを優先、フォールバックはセッション）
+  const profileData = {
+    name: dashboardInfo?.user.name || session?.user?.name || 'ユーザー',
+    image: dashboardInfo?.user.image || session?.user?.image || null,
+  };
 
   // クリックイベントハンドラを設定して、メニュー外のクリックを検知
   useEffect(() => {
@@ -61,10 +38,7 @@ export function DashboardHeader() {
       }
     };
 
-    // イベントリスナーを追加
     document.addEventListener('mousedown', handleClickOutside);
-
-    // クリーンアップ
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
@@ -80,7 +54,7 @@ export function DashboardHeader() {
     await signOut({ callbackUrl: '/' });
   };
 
-  // アカウント削除処理 - 専用ページに遷移
+  // アカウント削除処理
   const handleDeleteAccount = () => {
     setIsMenuOpen(false);
     router.push('/dashboard/account/delete');
@@ -90,18 +64,15 @@ export function DashboardHeader() {
     <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
       <div className="mx-auto flex h-16 items-center justify-between px-2 sm:px-6 lg:px-8">
         <div className="flex items-center">
-          {/* ロゴ */}
           <Link href="/dashboard" className="flex items-center px-2">
             <Image src="/logo.svg" alt="Share Logo" width={145} height={42} priority />
           </Link>
         </div>
 
         <div className="flex items-center space-x-4 mt-1">
-          {' '}
-          {/* space-x-4を追加 */}
-          {/* お知らせベル */}
           <NotificationBell />
-          {/* ユーザーアイコン */}
+
+          {/* 🚀 統合されたユーザーアイコン */}
           <div className="relative">
             <button
               ref={buttonRef}
@@ -109,7 +80,6 @@ export function DashboardHeader() {
               className="flex items-center space-x-2 rounded-full focus:outline-none mb-1"
             >
               {profileData.image ? (
-                // 画像がある場合
                 <div className="overflow-hidden rounded-full border-2 border-transparent hover:border-blue-500 transition-colors">
                   <Image
                     src={profileData.image}
@@ -125,7 +95,6 @@ export function DashboardHeader() {
                   />
                 </div>
               ) : (
-                // デフォルトのユーザーアイコン（人間アイコン）
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-800 transition-colors">
                   <svg
                     xmlns="http://www.w3.org/2000/svg"

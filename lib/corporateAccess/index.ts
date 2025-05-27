@@ -1,5 +1,12 @@
 // lib/corporateAccess/index.ts
 
+// グローバル型定義
+declare global {
+  interface Window {
+    _corporateAccessState?: typeof corporateAccessState;
+  }
+}
+
 // タイプと基本状態
 export * from './state';
 
@@ -51,6 +58,7 @@ export {
 // API通信
 export type { ApiResult } from './api';
 export { checkCorporateAccess, isUserCorporateAdmin } from './api';
+
 /**
  * クライアントサイドの状態を初期化するメイン関数
  * アプリケーション起動時に一度だけ呼び出す
@@ -61,6 +69,15 @@ import { checkPermanentAccess, fetchPermanentPlanType } from './permanentAccess'
 
 // 遅延初期化処理 - クライアントサイドのみ
 let initializePromise: Promise<void> | null = null;
+
+// 安全なグローバル状態アクセス（修正版）
+const getGlobalState = (): unknown => {
+  return (window as unknown as Record<string, unknown>)._corporateAccessState;
+};
+
+const setGlobalState = (state: unknown): void => {
+  (window as unknown as Record<string, unknown>)._corporateAccessState = state;
+};
 
 export function initializeClientState(): Promise<void> {
   // すでに初期化中か初期化済みの場合は既存のPromiseを返す
@@ -75,14 +92,15 @@ export function initializeClientState(): Promise<void> {
   initializePromise = new Promise<void>((resolve) => {
     try {
       // 既存の状態があれば復元
-      if (window._corporateAccessState) {
-        Object.assign(corporateAccessState, window._corporateAccessState);
+      const existingState = getGlobalState();
+      if (existingState) {
+        Object.assign(corporateAccessState, existingState);
         resolve();
         return;
       }
 
       // 新規初期化
-      window._corporateAccessState = corporateAccessState;
+      setGlobalState(corporateAccessState);
 
       // Promise全体を作成して順次実行
       Promise.all([

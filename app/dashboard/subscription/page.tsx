@@ -6,7 +6,7 @@ import { redirect } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import SubscriptionSettings from '@/components/subscription/SubscriptionSettings';
 import SubscriptionStatus from '@/components/subscription/SubscriptionStatus';
-import TrialBanner from '@/components/subscription/TrialBanner';
+import EnhancedTrialBanner from '@/components/subscription/EnhancedTrialBanner';
 import { Spinner } from '@/components/ui/Spinner';
 import { HiCreditCard, HiExclamation } from 'react-icons/hi';
 import { motion } from 'framer-motion';
@@ -210,10 +210,13 @@ export default function SubscriptionPage() {
 
   return (
     <div className="w-full" style={{ backgroundColor: 'rgb(249, 250, 251)' }}>
-      {/* トライアルバナー */}
+      {/* 🔧 修正：PlanBannerを一時的に無効化（重複を避けるため） */}
+      {/* <PlanBanner className="mb-6" /> */}
+
+      {/* 🚀 改善されたトライアルバナー（個人ユーザーのみ表示） */}
       {userData?.trialEndsAt && subscriptionState.isTrialActive && (
         <div className="relative">
-          <TrialBanner trialEndDate={userData.trialEndsAt} />
+          <EnhancedTrialBanner trialEndDate={userData.trialEndsAt} />
         </div>
       )}
 

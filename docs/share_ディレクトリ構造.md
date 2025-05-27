@@ -192,6 +192,8 @@ share/
 │   │   ├── system
 │   │   │   └── connection-status
 │   │   │       └── route.ts
+│   │   ├── test
+│   │   │   └── route.ts
 │   │   ├── test-db
 │   │   │   └── route.ts
 │   │   ├── test-email
@@ -201,6 +203,8 @@ share/
 │   │   │   │   └── profile
 │   │   │   │       └── route.ts
 │   │   │   ├── check-password
+│   │   │   │   └── route.ts
+│   │   │   ├── dashboard-info
 │   │   │   │   └── route.ts
 │   │   │   ├── delete
 │   │   │   │   └── route.ts
@@ -297,6 +301,7 @@ share/
 │   │   │       └── page.tsx
 │   │   ├── design
 │   │   │   └── page.tsx
+│   │   ├── layout-optimized.tsx
 │   │   ├── layout.tsx
 │   │   ├── links
 │   │   │   ├── components
@@ -315,8 +320,13 @@ share/
 │   │   │   └── page.tsx
 │   │   ├── share
 │   │   │   └── page.tsx
-│   │   └── subscription
+│   │   ├── subscription
+│   │   │   └── page.tsx
+│   │   └── test-optimization
 │   │       └── page.tsx
+│   ├── debug
+│   │   └── session
+│   │       └── route.ts
 │   ├── error.tsx
 │   ├── favicon.ico
 │   ├── globals.css
@@ -422,6 +432,7 @@ share/
 │   ├── shared
 │   │   ├── AuthDebugger.tsx
 │   │   ├── Breadcrumb.tsx
+│   │   ├── ErrorBoundary.tsx
 │   │   ├── ErrorMessage.tsx
 │   │   ├── FaqItem.tsx
 │   │   ├── FaqSection.tsx
@@ -431,6 +442,7 @@ share/
 │   ├── subscription
 │   │   ├── CorporateSubscriptionRedirect.tsx
 │   │   ├── PaymentMethodForm.tsx
+│   │   ├── PlanBanner.tsx
 │   │   ├── SubscriptionSettings.tsx
 │   │   ├── SubscriptionStatus.tsx
 │   │   └── TrialBanner.tsx
@@ -472,9 +484,12 @@ share/
 │   ├── useActivityFeed.ts
 │   ├── useCorporateAccess.ts
 │   ├── useCorporateData.ts
+│   ├── useDashboardInfo.ts
 │   ├── useOptimizedActivity.ts
 │   ├── useOptimizedProfile.ts
-│   └── useOptimizedTenant.ts
+│   ├── useOptimizedTenant.ts
+│   ├── usePlanInfo.ts
+│   └── useTestDashboardInfo.ts
 ├── lib
 │   ├── corporateAccess
 │   │   ├── adminAccess.ts
@@ -513,6 +528,7 @@ share/
 │   │   ├── idempotency.ts
 │   │   ├── logger.ts
 │   │   ├── notification-helpers.ts
+│   │   ├── performance-monitor.ts
 │   │   ├── subscription.ts
 │   │   └── validation.ts
 │   └── utils.ts
@@ -661,10 +677,12 @@ share/
 │   ├── migrate-subscription-plans.ts
 │   ├── migrate-text-settings.ts
 │   ├── normalize-individual-plans.ts
+│   ├── rollback-optimization.sh
 │   ├── set-trial-end-date.mjs
 │   ├── setup-guide-images.mjs
 │   ├── test-cron-fetch.mjs
 │   ├── test-email.js
+│   ├── test-optimization.sh
 │   └── update-permanent-users-plan.ts
 ├── share_db_backup.sql
 ├── sw.js

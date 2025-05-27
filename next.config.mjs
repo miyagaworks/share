@@ -1,4 +1,4 @@
-// next.config.mjs (修正版)
+// next.config.mjs (修正版) - 既存の設定を保持しつつ追加
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // 基本設定
@@ -10,7 +10,8 @@ const nextConfig = {
     optimizeCss: true,
     // パッケージインポート最適化
     optimizePackageImports: ['react-icons', 'lucide-react', '@heroicons/react', 'react-hook-form'],
-    // serverActionsは削除（デフォルトで有効になっているため）
+    // 🔧 Stripe関連パッケージの外部化
+    serverComponentsExternalPackages: ['stripe'],
   },
 
   // TypeScript と ESLint 設定
@@ -21,9 +22,22 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // 画像最適化設定
+  // 🔧 修正：画像最適化設定（remotePatterns使用）
   images: {
-    domains: ['lh3.googleusercontent.com', 'res.cloudinary.com'],
+    remotePatterns: [
+      {
+        protocol: 'https',
+        hostname: 'lh3.googleusercontent.com',
+      },
+      {
+        protocol: 'https',
+        hostname: 'res.cloudinary.com',
+      },
+      {
+        protocol: 'https',
+        hostname: '**', // その他のドメイン
+      },
+    ],
     formats: ['image/avif', 'image/webp'],
     minimumCacheTTL: 31536000, // 1年間キャッシュ
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
@@ -32,8 +46,18 @@ const nextConfig = {
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
-  // バンドル最適化
+  // 🔧 バンドル最適化（Stripe警告対応）
   webpack: (config, { isServer, dev }) => {
+    // 🔧 Stripe関連の警告を抑制
+    if (dev) {
+      config.resolve.fallback = {
+        ...config.resolve.fallback,
+        fs: false,
+        net: false,
+        tls: false,
+      };
+    }
+
     // プロダクションビルドでの最適化
     if (!dev && !isServer) {
       // チャンク分割の最適化
@@ -86,9 +110,9 @@ const nextConfig = {
   compress: true,
   poweredByHeader: false,
 
-  // 環境変数
+  // 🔧 環境変数（デバッグモード制御）
   env: {
-    DEBUG: process.env.NODE_ENV === 'development' ? 'next-auth:*' : '',
+    DEBUG: process.env.NODE_ENV === 'development' ? '' : '', // デバッグログを抑制
     PRISMA_CONNECTION_LIMIT: '10',
     PRISMA_CONNECTION_TIMEOUT: '5000',
   },
