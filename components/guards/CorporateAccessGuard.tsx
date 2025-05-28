@@ -7,13 +7,14 @@ import {
   PermanentPlanType,
   checkPermanentAccess,
   fetchPermanentPlanType,
+  updateState,
 } from '@/lib/corporateAccess';
 import { Spinner } from '@/components/ui/Spinner';
 
 export function CorporateMemberGuard({ children }: { children: ReactNode }) {
   const [isChecking, setIsChecking] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasAccess, setHasAccess] = useState(false); // hasAccess状態を追加
+  const [hasAccess, setHasAccess] = useState(false);
   const router = useRouter();
   const { status } = useSession();
 
@@ -23,64 +24,67 @@ export function CorporateMemberGuard({ children }: { children: ReactNode }) {
 
     const verifyAccess = async () => {
       try {
+        console.log('[CorporateMemberGuard] アクセス権検証開始');
+
         // まず永久利用権ユーザーかどうかを確認
         const isPermanent = checkPermanentAccess();
 
         if (isPermanent) {
+          console.log('[CorporateMemberGuard] 永久利用権ユーザーを検出');
           // 永久利用権ユーザーの場合、プラン種別を取得
           const planType = await fetchPermanentPlanType();
 
           // 個人プランの場合はアクセス拒否
           if (planType === PermanentPlanType.PERSONAL) {
-            console.log('個人プラン永久利用権ユーザーのため法人メンバーアクセス拒否');
+            console.log('[CorporateMemberGuard] 個人プラン - アクセス拒否');
             setHasAccess(false);
             setError('個人永久プランでは法人機能にアクセスできません');
-            // リダイレクト
-            setTimeout(() => {
-              router.push('/dashboard');
-            }, 1000);
+            setTimeout(() => router.push('/dashboard'), 1000);
             setIsChecking(false);
             return;
           } else {
+            console.log('[CorporateMemberGuard] 法人プラン - アクセス許可');
             // 法人プランの永久利用権ユーザーはアクセス許可
-            console.log('法人プラン永久利用権ユーザーに法人メンバーアクセス権を付与');
+            // 状態も更新して他のコンポーネントでも使用可能に
+            updateState({
+              hasAccess: true,
+              isAdmin: true,
+              tenantId: `virtual-tenant-${Date.now()}`,
+              userRole: 'admin',
+              isPermanentUser: true,
+              permanentPlanType: planType,
+            });
             setHasAccess(true);
             setIsChecking(false);
             return;
           }
         }
 
-        // APIを呼び出して最新の法人アクセス権を確認（キャッシュを使わない）
+        // 通常ユーザーの場合：APIを呼び出して最新の法人アクセス権を確認
+        console.log('[CorporateMemberGuard] 通常ユーザー - API チェック');
         const result = await checkCorporateAccess({ force: true });
 
-        // アクセス権があるかどうかを明示的に確認
-        if (result.hasAccess === true) {
-          console.log('法人メンバーアクセス権を確認しました');
+        console.log('[CorporateMemberGuard] API結果:', result);
+
+        // アクセス権の判定（より柔軟に）
+        const shouldHaveAccess =
+          result.hasCorporateAccess === true ||
+          result.userRole === 'member' ||
+          result.userRole === 'admin';
+
+        if (shouldHaveAccess) {
+          console.log('[CorporateMemberGuard] アクセス権付与');
           setHasAccess(true);
-          setIsChecking(false);
         } else {
-          // ここで重要な修正: userRoleがmemberでもアクセスを許可する
-          if (result.userRole === 'member' || result.userRole === 'admin') {
-            console.log('メンバーまたは管理者としてアクセス権を付与します');
-            setHasAccess(true);
-            setIsChecking(false);
-          } else {
-            console.log(
-              '個人プランユーザーを検出しました。個人ダッシュボードへリダイレクトします。',
-            );
-            setError('法人メンバー機能へのアクセス権がありません');
-            router.push('/dashboard');
-          }
+          console.log('[CorporateMemberGuard] アクセス権なし - リダイレクト');
+          setError('法人メンバー機能へのアクセス権がありません');
+          router.push('/dashboard');
         }
       } catch (error) {
-        console.error('アクセス権確認エラー:', error);
+        console.error('[CorporateMemberGuard] エラー:', error);
         setError('法人メンバーアクセスの確認中にエラーが発生しました。');
         setHasAccess(false);
-
-        // エラー発生時も個人ダッシュボードにリダイレクト
-        setTimeout(() => {
-          router.push('/dashboard');
-        }, 2000); // エラーメッセージを表示する時間を確保
+        setTimeout(() => router.push('/dashboard'), 2000);
       } finally {
         setIsChecking(false);
       }

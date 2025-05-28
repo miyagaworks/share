@@ -2,12 +2,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { HiUser } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
-import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccess';
 import { MemberProfileForm } from '@/components/corporate/MemberProfileForm';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { UserData, ProfileUpdateData } from '@/types/profiles';
@@ -32,43 +30,19 @@ interface ComponentTenantData {
 
 export default function CorporateMemberProfilePage() {
   const { data: session, status } = useSession();
-  const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [userData, setUserData] = useState<UserData | null>(null);
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  // 法人アクセス権の確認
+  // ✅ CorporateMemberGuardがアクセス制御を行うため、ページレベルのアクセスチェックは削除
+  // プロフィールデータの取得のみを実行
   useEffect(() => {
-    const confirmAccess = async () => {
-      if (status === 'loading') return;
+    if (status === 'loading') return;
+    if (!session) return;
 
-      if (!session) {
-        router.push('/auth/signin');
-        return;
-      }
-
-      try {
-        // 法人アクセス権を確認
-        await checkCorporateAccess({ force: true });
-
-        if (!corporateAccessState.hasAccess) {
-          // アクセス権がない場合は通常ダッシュボードへリダイレクト
-          router.push('/dashboard');
-          return;
-        }
-
-        // データの取得
-        await fetchUserData();
-      } catch (error) {
-        console.error('アクセスチェックエラー:', error);
-        setError('法人アクセス権の確認に失敗しました');
-        setIsLoading(false);
-      }
-    };
-
-    confirmAccess();
-  }, [session, status, router]);
+    fetchUserData();
+  }, [session, status]);
 
   // プロフィールデータの取得
   const fetchUserData = async () => {
