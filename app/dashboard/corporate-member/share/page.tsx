@@ -307,12 +307,12 @@ export default function CorporateMemberSharePage() {
                     <div className="mb-6">
                       <Link
                         href={`/dashboard/corporate-member/share/qrcode?slug=${shareSettings?.slug || ''}`}
-                        className="inline-flex items-center justify-center w-full bg-[#1E3A8A] hover:bg-[#122153] text-white px-4 py-3 rounded-md transition-colors"
+                        className="inline-flex items-center justify-center w-full bg-[#1E3A8A] hover:bg-[#122153] text-white px-4 py-3 rounded-md transition-colors qr-designer-button"
                         aria-label="QRコードデザイナーを開く"
                       >
-                        <HiQrcode className="mr-2 h-5 w-5" />
-                        <span>QRコードデザイナーを使用する</span>
-                        <HiExternalLink className="ml-2 h-4 w-4" />
+                        <HiQrcode className="mr-2 h-5 w-5 text-white" />
+                        <span className="text-white">QRコードデザイナーを使用する</span>
+                        <HiExternalLink className="ml-2 h-4 w-4 text-white" />
                       </Link>
                     </div>
 

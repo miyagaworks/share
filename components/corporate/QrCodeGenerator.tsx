@@ -407,33 +407,75 @@ export function QrCodeGenerator({
       <div className="mt-4">
         <label className="text-sm font-medium block mb-2">QRコードの色</label>
         <div className="grid grid-cols-3 gap-2">
-          {QR_COLOR_OPTIONS.map((option) => (
-            <div key={option.id} className="flex flex-col">
-              <Button
-                type="button"
-                onClick={() => setSelectedColor(option.id)}
-                className={`h-16 flex items-center justify-center ${
-                  selectedColor === option.id ? 'font-bold' : 'font-normal'
-                }`}
-                style={{
-                  backgroundColor: getButtonColor(option, corporateColor), // これは正しい
-                  color: 'white',
-                  border: 'none',
-                }}
-              >
-                <span className="text-white text-center">{option.name}</span>
-              </Button>
-              {selectedColor === option.id && (
-                <div
-                  className="h-1 mt-1 rounded-full mx-auto"
+          {QR_COLOR_OPTIONS.map((option) => {
+            const buttonColor = getButtonColor(option, corporateColor);
+            const isSelected = selectedColor === option.id;
+
+            // 強制的な背景色設定
+            const forceBackgroundColor =
+              option.id === 'black'
+                ? '#000000'
+                : option.id === 'darkGray'
+                  ? '#333333'
+                  : buttonColor;
+
+            return (
+              <div key={option.id} className="flex flex-col">
+                <button
+                  type="button"
+                  onClick={() => setSelectedColor(option.id)}
+                  className={`h-16 flex items-center justify-center border-none outline-none ${
+                    isSelected ? 'font-bold ring-2 ring-offset-2 ring-blue-500' : 'font-normal'
+                  }`}
                   style={{
-                    backgroundColor: getButtonColor(option, corporateColor), // これも正しい
-                    width: '50%',
+                    backgroundColor: forceBackgroundColor,
+                    background: forceBackgroundColor,
+                    color: 'white',
+                    border: 'none',
+                    WebkitAppearance: 'none',
+                    appearance: 'none',
+                    borderRadius: '6px',
+                    transition: 'all 0.2s ease-in-out',
                   }}
-                ></div>
-              )}
-            </div>
-          ))}
+                  onMouseEnter={(e) => {
+                    const target = e.target as HTMLButtonElement;
+                    if (option.id === 'black') {
+                      target.style.backgroundColor = '#1f1f1f';
+                      target.style.background = '#1f1f1f';
+                    } else if (option.id === 'darkGray') {
+                      target.style.backgroundColor = '#4a4a4a';
+                      target.style.background = '#4a4a4a';
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    const target = e.target as HTMLButtonElement;
+                    target.style.backgroundColor = forceBackgroundColor;
+                    target.style.background = forceBackgroundColor;
+                  }}
+                >
+                  <span
+                    style={{
+                      color: 'white',
+                      WebkitTextFillColor: 'white',
+                      fontWeight: '500',
+                      textAlign: 'center',
+                    }}
+                  >
+                    {option.name}
+                  </span>
+                </button>
+                {isSelected && (
+                  <div
+                    className="h-1 mt-1 rounded-full mx-auto"
+                    style={{
+                      backgroundColor: forceBackgroundColor,
+                      width: '50%',
+                    }}
+                  ></div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </div>
 

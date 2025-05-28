@@ -1144,3 +1144,177 @@ button:hover,
     background-color: #f3f4f6 !important;
     background: #f3f4f6 !important;
 }
+
+/* QRコードボタンの最優先スタイル - ダークモードCSS対策 */
+.qr-color-button,
+.qr-download-black,
+.qr-download-dark-gray {
+    transition: all 0.2s ease-in-out !important;
+    border: none !important;
+    outline: none !important;
+}
+
+/* ブラックボタンの最優先背景色 */
+.qr-download-black,
+button.qr-download-black,
+.qr-download-black:not(:hover),
+.qr-download-black:not(:focus),
+.qr-download-black:not(:active) {
+    background: #000000 !important;
+    background-color: #000000 !important;
+    color: white !important;
+}
+
+.qr-download-black:hover,
+button.qr-download-black:hover {
+    background: #1f1f1f !important;
+    background-color: #1f1f1f !important;
+    color: white !important;
+}
+
+/* ダークグレーボタンの最優先背景色 */
+.qr-download-dark-gray,
+button.qr-download-dark-gray,
+.qr-download-dark-gray:not(:hover),
+.qr-download-dark-gray:not(:focus),
+.qr-download-dark-gray:not(:active) {
+    background: #333333 !important;
+    background-color: #333333 !important;
+    color: white !important;
+}
+
+.qr-download-dark-gray:hover,
+button.qr-download-dark-gray:hover {
+    background: #4a4a4a !important;
+    background-color: #4a4a4a !important;
+    color: white !important;
+}
+
+/* QRボタン内のテキストを強制的に白に */
+.qr-color-button span,
+.qr-download-black span,
+.qr-download-dark-gray span,
+button.qr-color-button span,
+button.qr-download-black span,
+button.qr-download-dark-gray span {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+/* ホバー時のテキストも白に */
+.qr-color-button:hover span,
+.qr-download-black:hover span,
+.qr-download-dark-gray:hover span,
+button.qr-color-button:hover span,
+button.qr-download-black:hover span,
+button.qr-download-dark-gray:hover span {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+/* ダークモードでも同じスタイルを強制適用 */
+@media (prefers-color-scheme: dark) {
+
+    .qr-download-black,
+    button.qr-download-black,
+    .qr-download-black:hover,
+    button.qr-download-black:hover {
+        background: #000000 !important;
+        background-color: #000000 !important;
+        color: white !important;
+    }
+
+    .qr-download-black:hover,
+    button.qr-download-black:hover {
+        background: #1f1f1f !important;
+        background-color: #1f1f1f !important;
+    }
+
+    .qr-download-dark-gray,
+    button.qr-download-dark-gray,
+    .qr-download-dark-gray:hover,
+    button.qr-download-dark-gray:hover {
+        background: #333333 !important;
+        background-color: #333333 !important;
+        color: white !important;
+    }
+
+    .qr-download-dark-gray:hover,
+    button.qr-download-dark-gray:hover {
+        background: #4a4a4a !important;
+        background-color: #4a4a4a !important;
+    }
+
+    .qr-color-button span,
+    .qr-download-black span,
+    .qr-download-dark-gray span,
+    .qr-color-button:hover span,
+    .qr-download-black:hover span,
+    .qr-download-dark-gray:hover span {
+        color: white !important;
+        -webkit-text-fill-color: white !important;
+    }
+}
+
+/* 既存のダークモード対応CSSをオーバーライド */
+@media (prefers-color-scheme: dark) {
+
+    .qr-download-black,
+    .qr-download-dark-gray {
+        background-color: unset !important;
+    }
+
+    .qr-download-black {
+        background: #000000 !important;
+    }
+
+    .qr-download-dark-gray {
+        background: #333333 !important;
+    }
+}
+
+/* QRデザイナーボタンも同様に修正 */
+.qr-designer-button,
+.qr-designer-button *,
+a.qr-designer-button,
+a.qr-designer-button * {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+.qr-designer-button:hover,
+.qr-designer-button:hover *,
+a.qr-designer-button:hover,
+a.qr-designer-button:hover * {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+/* より具体的なセレクタでダークモード対策 */
+@media (prefers-color-scheme: dark) {
+
+    .qr-designer-button,
+    .qr-designer-button span,
+    .qr-designer-button svg,
+    a.qr-designer-button,
+    a.qr-designer-button span,
+    a.qr-designer-button svg {
+        color: white !important;
+        -webkit-text-fill-color: white !important;
+    }
+}
+
+/* 法人テーマでの追加保護 */
+.corporate-theme .qr-download-black,
+.corporate-theme .qr-download-dark-gray,
+.corporate-theme .qr-designer-button {
+    color: white !important;
+}
+
+.corporate-theme .qr-download-black span,
+.corporate-theme .qr-download-dark-gray span,
+.corporate-theme .qr-designer-button span,
+.corporate-theme .qr-designer-button svg {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}

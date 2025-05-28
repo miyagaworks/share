@@ -123,10 +123,10 @@ export function ImprovedMemberDesignSettings({
         <div className="flex border-b border-gray-200 mb-4">
           <button
             type="button"
-            className={`py-3 px-6 text-sm font-medium flex items-center ${
+            className={`py-3 px-6 text-sm font-medium flex items-center relative transition-all duration-200 ${
               internalActiveTab === 'sns'
-                ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                ? 'text-white bg-[#1E3A8A] rounded-t-lg shadow-sm border-b-0 z-10'
+                : 'text-gray-500 bg-gray-100 hover:text-white hover:bg-[#1E3A8A] rounded-t-lg'
             }`}
             onClick={() => handleTabChange('sns')} // 修正したハンドラを使用
           >
@@ -142,10 +142,10 @@ export function ImprovedMemberDesignSettings({
           </button>
           <button
             type="button"
-            className={`py-3 px-6 text-sm font-medium flex items-center ${
+            className={`py-3 px-6 text-sm font-medium flex items-center relative transition-all duration-200 ${
               internalActiveTab === 'bio'
-                ? 'border-b-2 border-blue-600 text-blue-600 bg-blue-50'
-                : 'text-gray-500 hover:text-gray-700 hover:bg-gray-50'
+                ? 'text-white bg-[#1E3A8A] rounded-t-lg shadow-sm border-b-0 z-10'
+                : 'text-gray-500 bg-gray-100 hover:text-white hover:bg-[#1E3A8A] rounded-t-lg'
             }`}
             onClick={() => handleTabChange('bio')} // 修正したハンドラを使用
           >
@@ -164,7 +164,6 @@ export function ImprovedMemberDesignSettings({
             自己紹介ページ設定
           </button>
         </div>
-
         {/* SNSアイコン設定 */}
         {internalActiveTab === 'sns' && (
           <div className="space-y-2">

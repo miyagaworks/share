@@ -463,9 +463,9 @@ export function BrandingPreview({
 
                   {/* 自己紹介文 */}
                   <div className="px-8 w-full">
-                    <p className="text-base text-center whitespace-pre-wrap">
+                    <p className="text-base text-justify whitespace-pre-wrap">
                       {bio ||
-                        '自己紹介テスト。自己紹介テスト。自己紹介テスト。自己紹介テスト。自己紹介テスト。自己紹介テスト。'}
+                        '自己紹介文がここに入ります。'}
                     </p>
                   </div>
                 </div>
