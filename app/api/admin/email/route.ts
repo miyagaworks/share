@@ -2,7 +2,7 @@
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { isAdminUser } from '@/lib/utils/admin-access';
+import { isAdminUser } from '@/lib/utils/admin-access-server';
 import { sendEmail } from '@/lib/email';
 import { getAdminNotificationEmailTemplate } from '@/lib/email/templates/admin-notification';
 import { processWithIdempotency } from '@/lib/utils/idempotency';

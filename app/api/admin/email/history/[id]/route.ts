@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { isAdminUser } from '@/lib/utils/admin-access';
+import { isAdminUser } from '@/lib/utils/admin-access-server';
 
 // 送信履歴削除API
 export async function DELETE(request: Request, { params }: { params: { id: string } }) {

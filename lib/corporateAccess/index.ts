@@ -10,9 +10,8 @@ declare global {
 // タイプと基本状態
 export * from './state';
 
-// 管理者権限
+// 管理者権限 (クライアントサイド専用)
 export {
-  isAdminUser,
   initializeAdminStatus,
   loadAdminStatusFromStorage,
   persistAdminStatus,
@@ -55,7 +54,7 @@ export {
   getVirtualSettings,
 } from './virtualTenant';
 
-// API通信
+// API通信 - クライアントサイド専用関数のみエクスポート
 export type { ApiResult } from './api';
 export { checkCorporateAccess, isUserCorporateAdmin } from './api';
 
@@ -147,12 +146,9 @@ if (isClient()) {
   }
 }
 
-// 旧グローバル関数の互換性ラッパー
-// 既存のコードとの互換性を維持するためのレガシー関数
+// レガシーコードとの互換性維持のため、API通信のみ提供
 import { ApiResult, checkCorporateAccess } from './api';
 
-// レガシーコードとの互換性維持のためのエクスポート
-// 最終的には新しいAPIに移行して、これらは削除する
 export const corporateAccessLegacy = {
   checkCorporateAccess: async (force = false): Promise<ApiResult> => {
     return checkCorporateAccess({ force });

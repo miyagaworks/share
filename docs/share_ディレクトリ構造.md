@@ -495,7 +495,6 @@ share/
 │   │   ├── adminAccess.ts
 │   │   ├── api.ts
 │   │   ├── index.ts
-│   │   ├── main.ts
 │   │   ├── permanentAccess.ts
 │   │   ├── state.ts
 │   │   ├── storage.ts

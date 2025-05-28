@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { isAdminUser } from '@/lib/utils/admin-access';
+import { isAdminUser } from '@/lib/utils/admin-access-server';
 import { v4 as uuidv4 } from 'uuid';
 
 export async function POST(request: Request) {

@@ -21,11 +21,6 @@ export interface CorporateAccessState {
   error: string | null;
 }
 
-// グローバル変数の型拡張
-if (typeof window !== 'undefined') {
-  // ランタイム時のみ型を拡張
-}
-
 /**
  * グローバル状態オブジェクト
  * アプリケーション全体で共有される法人アクセス状態を保持
@@ -48,9 +43,6 @@ export const corporateAccessState: CorporateAccessState = {
   lastChecked: 0,
   error: null,
 };
-
-// デバッグ用にグローバル変数名を明示
-export const STATE_VAR_NAME = '_corporateAccessState';
 
 /**
  * サーバー/クライアント環境を判定する関数
@@ -84,12 +76,16 @@ export function updateState(
 
   // windowオブジェクトも更新
   if (isClient()) {
-    // 適切な型変換
-    const win = window as unknown as { [key: string]: unknown };
-    if (win[STATE_VAR_NAME]) {
-      Object.assign(win[STATE_VAR_NAME], newState);
-    } else {
-      win[STATE_VAR_NAME] = { ...corporateAccessState };
+    try {
+      // 安全な型変換
+      const win = window as typeof window & { _corporateAccessState?: CorporateAccessState };
+      if (win._corporateAccessState) {
+        Object.assign(win._corporateAccessState, newState);
+      } else {
+        win._corporateAccessState = { ...corporateAccessState };
+      }
+    } catch (error) {
+      logDebug('Window状態更新エラー', error);
     }
   }
 

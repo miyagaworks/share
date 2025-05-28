@@ -4,7 +4,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { isAdminUser } from '@/lib/utils/admin-access';
+import { isAdminUser } from '@/lib/utils/admin-access-server';
 
 // お知らせ更新API
 export async function PUT(request: Request, { params }: { params: { id: string } }) {
