@@ -165,7 +165,7 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
       </div>
       <span
         style={{
-          fontSize: '12px', // text-xs = 0.75rem = 12px
+          fontSize: '0.75rem', // text-xs相当（固定値から相対値に変更）
           color: '#4B5563', // text-gray-600
           marginTop: '4px', // mt-1 = 0.25rem = 4px
           textAlign: 'center',
@@ -177,6 +177,7 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
           WebkitLineClamp: 2,
           WebkitBoxOrient: 'vertical',
         }}
+        className="profile-text" // 拡大ツール対応のクラスを追加
       >
         {displayName}
       </span>
