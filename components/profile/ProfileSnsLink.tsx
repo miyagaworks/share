@@ -1,4 +1,4 @@
-// components/profile/ProfileSnsLink.tsx
+// components/profile/ProfileSnsLink.tsx (Android対応版)
 'use client';
 
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
@@ -37,11 +37,6 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
 
   // 正しい表示名を取得（SNS_METADATAから取得することが重要）
   const displayName = SNS_METADATA[normalizedPlatform]?.name || link.platform;
-
-  // デバッグ用（問題解決後に削除可能）
-  console.log(
-    `Platform: ${link.platform}, Normalized: ${normalizedPlatform}, Display: ${displayName}`,
-  );
 
   // ネイティブアプリ起動のために最適な形式でURLを生成
   const getOptimizedUrl = () => {
@@ -133,26 +128,58 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
   // snsIconColorに基づいてアイコンの色を設定
   const iconColor = snsIconColor === 'original' ? 'original' : snsIconColor || '#333333';
 
-  // URLが存在する場合は常にアイコンを表示する
+  // 🔥 Android対応: Tailwindクラスをインラインスタイルに変更
   return (
     <a
       href={link.url || '#'}
       target="_blank"
       rel="noopener noreferrer"
-      onClick={handleClick} // ここでhandleClickを使用
-      className="flex flex-col items-center"
+      onClick={handleClick}
+      style={{
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        width: '100%',
+        maxWidth: '80px',
+        margin: '0 auto',
+        textDecoration: 'none',
+        boxSizing: 'border-box',
+      }}
     >
       <div
-        className="w-16 h-16 rounded-2xl flex items-center justify-center mb-1 shadow-md"
-        style={{ backgroundColor: 'white' }}
+        style={{
+          width: '64px', // w-16 = 4rem = 64px
+          height: '64px', // h-16 = 4rem = 64px
+          borderRadius: '16px', // rounded-2xl = 1rem = 16px
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '4px', // mb-1 = 0.25rem = 4px
+          backgroundColor: 'white',
+          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)', // shadow-md
+          boxSizing: 'border-box',
+        }}
       >
-        <ImprovedSnsIcon
-          platform={normalizedPlatform} // 標準化されたプラットフォームを渡す
-          size={38}
-          color={iconColor}
-        />
+        <ImprovedSnsIcon platform={normalizedPlatform} size={38} color={iconColor} />
       </div>
-      <span className="text-xs text-gray-600 mt-1">{displayName}</span>
+      <span
+        style={{
+          fontSize: '12px', // text-xs = 0.75rem = 12px
+          color: '#4B5563', // text-gray-600
+          marginTop: '4px', // mt-1 = 0.25rem = 4px
+          textAlign: 'center',
+          lineHeight: '1.2',
+          maxWidth: '100%',
+          wordBreak: 'break-word',
+          overflow: 'hidden',
+          display: '-webkit-box',
+          WebkitLineClamp: 2,
+          WebkitBoxOrient: 'vertical',
+        }}
+      >
+        {displayName}
+      </span>
     </a>
   );
 }

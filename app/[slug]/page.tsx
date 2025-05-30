@@ -263,12 +263,34 @@ export default async function ProfilePage({ params }: { params: { slug: string }
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '1rem',
-              marginBottom: '2rem',
+              gap: '16px', // 1rem = 16px
+              marginBottom: '32px', // 2rem = 32px
+              width: '100%',
+              maxWidth: '100%',
+              padding: '0',
+              boxSizing: 'border-box',
+              justifyItems: 'center',
+              alignItems: 'start',
+              // Android Chrome対応
+              gridAutoRows: 'minmax(auto, auto)',
+              gridGap: '16px', // 古いブラウザ対応
             }}
           >
             {snsLinks.map((link) => (
-              <ProfileSnsLink key={link.id} link={link} snsIconColor={snsIconColor} />
+              <div
+                key={link.id}
+                style={{
+                  width: '100%',
+                  maxWidth: '80px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'flex-start',
+                  position: 'relative',
+                  boxSizing: 'border-box',
+                }}
+              >
+                <ProfileSnsLink link={link} snsIconColor={snsIconColor} />
+              </div>
             ))}
           </div>
 
