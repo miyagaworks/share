@@ -1382,3 +1382,185 @@ a.qr-designer-button:hover * {
         animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
     }
 }
+
+/* QRデザイナーボタンのホバー効果修正 - 最優先適用 */
+.qr-designer-button,
+a[href="/qrcode"],
+a.qr-designer-button,
+Link[href="/qrcode"] {
+    background-color: #2563eb !important;
+    /* bg-blue-600 */
+    color: white !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+.qr-designer-button:hover,
+a[href="/qrcode"]:hover,
+a.qr-designer-button:hover,
+Link[href="/qrcode"]:hover {
+    background-color: #1d4ed8 !important;
+    /* bg-blue-700 */
+    color: white !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* ボタン内のテキストとアイコンも白色に強制 */
+.qr-designer-button *,
+.qr-designer-button:hover *,
+a[href="/qrcode"] *,
+a[href="/qrcode"]:hover *,
+a.qr-designer-button *,
+a.qr-designer-button:hover * {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+/* ダークモードでも同じスタイルを強制適用 */
+@media (prefers-color-scheme: dark) {
+
+    .qr-designer-button,
+    a[href="/qrcode"],
+    a.qr-designer-button {
+        background-color: #2563eb !important;
+        color: white !important;
+    }
+
+    .qr-designer-button:hover,
+    a[href="/qrcode"]:hover,
+    a.qr-designer-button:hover {
+        background-color: #1d4ed8 !important;
+        color: white !important;
+        transform: scale(1.05) !important;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+    }
+
+    .qr-designer-button *,
+    .qr-designer-button:hover *,
+    a[href="/qrcode"] *,
+    a[href="/qrcode"]:hover *,
+    a.qr-designer-button *,
+    a.qr-designer-button:hover * {
+        color: white !important;
+        -webkit-text-fill-color: white !important;
+    }
+}
+
+/* 法人テーマでも同様に適用 */
+.corporate-theme .qr-designer-button,
+.corporate-theme a[href="/qrcode"] {
+    background-color: #2563eb !important;
+    color: white !important;
+}
+
+.corporate-theme .qr-designer-button:hover,
+.corporate-theme a[href="/qrcode"]:hover {
+    background-color: #1d4ed8 !important;
+    color: white !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 法人メンバーページの強制スタイル適用 */
+body[data-pathname*="/dashboard/corporate-member"] .bg-blue-600,
+body[data-pathname*="/dashboard/corporate-member"] .bg-blue-500,
+body[data-pathname*="/dashboard/corporate-member"] .bg-blue-700,
+[data-pathname*="/dashboard/corporate-member"] .bg-blue-600,
+[data-pathname*="/dashboard/corporate-member"] .bg-blue-500,
+[data-pathname*="/dashboard/corporate-member"] .bg-blue-700 {
+    background-color: #1E3A8A !important;
+    color: white !important;
+}
+
+body[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-700:hover,
+body[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-600:hover,
+body[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-800:hover,
+[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-700:hover,
+[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-600:hover,
+[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-800:hover {
+    background-color: #122153 !important;
+    color: white !important;
+}
+
+/* QRデザイナーボタンが既に正しい色の場合は保護 */
+body[data-pathname*="/dashboard/corporate-member"] .qr-designer-button {
+    background-color: #1E3A8A !important;
+    color: white !important;
+}
+
+body[data-pathname*="/dashboard/corporate-member"] .qr-designer-button:hover {
+    background-color: #122153 !important;
+    color: white !important;
+}
+
+/* 法人メンバーページのすべてのボタン内テキストを白に */
+body[data-pathname*="/dashboard/corporate-member"] .bg-blue-600 *,
+body[data-pathname*="/dashboard/corporate-member"] .bg-blue-500 *,
+body[data-pathname*="/dashboard/corporate-member"] .qr-designer-button *,
+[data-pathname*="/dashboard/corporate-member"] .bg-blue-600 *,
+[data-pathname*="/dashboard/corporate-member"] .bg-blue-500 *,
+[data-pathname*="/dashboard/corporate-member"] .qr-designer-button * {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+/* 個人プランページのQRデザイナーボタンのホバー効果修正 */
+body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button,
+body[data-pathname="/dashboard/share"] .qr-designer-button,
+[data-pathname="/dashboard/share"] .qr-designer-button {
+    background-color: #2563eb !important;
+    /* bg-blue-600 */
+    color: white !important;
+    transition: all 0.2s ease-in-out !important;
+}
+
+body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button:hover,
+body[data-pathname="/dashboard/share"] .qr-designer-button:hover,
+[data-pathname="/dashboard/share"] .qr-designer-button:hover {
+    background-color: #1d4ed8 !important;
+    /* bg-blue-700 */
+    color: white !important;
+    transform: scale(1.05) !important;
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
+}
+
+/* 個人プランページの青いボタン全般のホバー効果修正 */
+body:not([data-pathname*="/dashboard/corporate"]) .bg-blue-600:hover,
+body[data-pathname="/dashboard/share"] .bg-blue-600:hover {
+    background-color: #1d4ed8 !important;
+    /* bg-blue-700 */
+    color: white !important;
+}
+
+/* ボタン内のテキストとアイコンも白色に */
+body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button *,
+body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button:hover *,
+body[data-pathname="/dashboard/share"] .qr-designer-button *,
+body[data-pathname="/dashboard/share"] .qr-designer-button:hover * {
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+/* ダークモードでも同じ効果を適用 */
+@media (prefers-color-scheme: dark) {
+
+    body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button,
+    body[data-pathname="/dashboard/share"] .qr-designer-button {
+        background-color: #2563eb !important;
+        color: white !important;
+    }
+
+    body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button:hover,
+    body[data-pathname="/dashboard/share"] .qr-designer-button:hover {
+        background-color: #1d4ed8 !important;
+        color: white !important;
+    }
+
+    body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button *,
+    body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button:hover *,
+    body[data-pathname="/dashboard/share"] .qr-designer-button *,
+    body[data-pathname="/dashboard/share"] .qr-designer-button:hover * {
+        color: white !important;
+        -webkit-text-fill-color: white !important;
+    }
+}

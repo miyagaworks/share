@@ -208,7 +208,7 @@ export default function CorporateMemberSharePage() {
             <p className="text-red-700">{error}</p>
             <button
               onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-corporate-primary text-white rounded-md"
+              className="mt-4 px-4 py-2 bg-[#1E3A8A] hover:bg-[#122153] text-white rounded-md transition-colors"
             >
               再読み込み
             </button>
@@ -307,7 +307,7 @@ export default function CorporateMemberSharePage() {
                     <div className="mb-6">
                       <Link
                         href={`/dashboard/corporate-member/share/qrcode?slug=${shareSettings?.slug || ''}`}
-                        className="inline-flex items-center justify-center w-full bg-[#1E3A8A] hover:bg-[#122153] text-white px-4 py-3 rounded-md transition-colors qr-designer-button"
+                        className="inline-flex items-center justify-center w-full bg-[#1E3A8A] hover:bg-[#122153] hover:shadow-lg text-white px-4 py-3 rounded-md transition-all duration-200 transform hover:scale-105 qr-designer-button"
                         aria-label="QRコードデザイナーを開く"
                       >
                         <HiQrcode className="mr-2 h-5 w-5 text-white" />
