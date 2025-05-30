@@ -2,7 +2,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { HiMenu, HiX, HiOfficeBuilding, HiHome, HiUser } from 'react-icons/hi';
+import { HiMenu, HiX, HiOfficeBuilding, HiUser } from 'react-icons/hi';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
@@ -121,13 +121,8 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
 
   // 🔧 招待メンバーでない場合のみ追加リンクを生成
   if (!isInvitedMember && isUserTypeResolved) {
-    // 法人セクションにいる場合、個人ダッシュボードと法人メンバーダッシュボードへのリンクを追加
+    // 法人セクションにいる場合、法人メンバーダッシュボードへのリンクを追加
     if (isCorporateSection) {
-      addLink({
-        title: '個人ダッシュボード',
-        href: '/dashboard',
-        icon: <HiHome className="h-5 w-5" />,
-      });
 
       // 法人管理者は法人メンバーダッシュボードも表示
       if (corporateAccessState.hasAccess) {
@@ -139,13 +134,8 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
       }
     }
 
-    // 法人メンバーセクションにいる場合、個人ダッシュボードと法人ダッシュボードへのリンクを追加
+    // 法人メンバーセクションにいる場合、法人ダッシュボードへのリンクを追加
     else if (isCorporateMemberSection) {
-      addLink({
-        title: '個人ダッシュボード',
-        href: '/dashboard',
-        icon: <HiHome className="h-5 w-5" />,
-      });
 
       // 法人管理者の場合は法人管理ダッシュボードへのリンクも表示
       if (corporateAccessState.isAdmin) {

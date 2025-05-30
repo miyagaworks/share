@@ -811,7 +811,7 @@ export default function SubscriptionStatus({
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
               <h3 className="text-lg font-medium leading-relaxed flex-1">現在のプラン</h3>
               <span
-                className={`text-sm sm:text-base font-medium px-2 py-2 rounded-lg text-justify leading-tight break-words max-w-[200px] sm:max-w-none inline-block ${statusDisplay.className}`}
+                className={`text-sm sm:text-base font-medium px-3 py-2 rounded-lg text-justify leading-tight break-words max-w-[220px] sm:max-w-none inline-block ${statusDisplay.className}`}
                 style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
               >
                 {statusDisplay.text}
@@ -888,7 +888,7 @@ export default function SubscriptionStatus({
                   <Button
                     variant="outline"
                     size="sm"
-                    className="text-gray-700"
+                    className="text-gray-400 hover:text-red-600 hover:bg-red-50"
                     onClick={handleCancel}
                     disabled={cancelling}
                   >
@@ -899,7 +899,7 @@ export default function SubscriptionStatus({
                       </>
                     ) : (
                       <>
-                        <HiXCircle className="mr-2 h-4 w-4 text-gray-500" />
+                        <HiXCircle className="mr-2 h-4 w-4" />
                         このプランを解約
                       </>
                     )}

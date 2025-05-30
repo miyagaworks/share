@@ -1,4 +1,4 @@
-// app/dashboard/layout.tsx (完全修正版)
+// app/dashboard/layout.tsx (修正版)
 'use client';
 
 import React, { ReactNode, useEffect, useMemo } from 'react';
@@ -66,7 +66,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     }
   }, [pathname]);
 
-  // 🚀 メモ化されたアクセスチェック
+  // 🚀 修正されたアクセスチェック
   const accessCheck = useMemo(() => {
     if (!dashboardInfo || !pathname) return { hasAccess: true };
 
@@ -77,6 +77,8 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       pathname,
       hasCorpAccess: permissions.hasCorpAccess,
       isInvitedMember: permissions.userType === 'invited-member',
+      isAdmin: permissions.isAdmin,
+      isSuperAdmin: permissions.isSuperAdmin,
     });
 
     // 管理者ページチェック
@@ -84,16 +86,38 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       return { hasAccess: false, redirectTo: '/dashboard' };
     }
 
-    // 法人ページチェック
+    // 🔥 修正: 法人ページのアクセス権チェックを改善
     if (
       pathname.startsWith('/dashboard/corporate') &&
-      !permissions.hasCorpAccess &&
-      !permissions.isSuperAdmin
+      !pathname.startsWith('/dashboard/corporate-member')
     ) {
-      return { hasAccess: false, redirectTo: '/dashboard' };
+      // 法人管理ページへのアクセス権チェック
+      if (!permissions.hasCorpAccess && !permissions.isSuperAdmin && !permissions.isAdmin) {
+        return { hasAccess: false, redirectTo: '/dashboard' };
+      }
     }
 
-    // 🎯 招待メンバーの厳格なチェック
+    // 🔥 修正: 法人メンバーページのアクセス権チェックを大幅に改善
+    if (pathname.startsWith('/dashboard/corporate-member')) {
+      // 法人アクセス権があるユーザーは全てアクセス可能（管理者・招待メンバー問わず）
+      if (!permissions.hasCorpAccess && !permissions.isSuperAdmin) {
+        console.log('🔧 法人メンバーページアクセス権なし:', {
+          hasCorpAccess: permissions.hasCorpAccess,
+          isSuperAdmin: permissions.isSuperAdmin,
+          userType: permissions.userType,
+        });
+        return { hasAccess: false, redirectTo: '/dashboard' };
+      }
+
+      // アクセス権がある場合は許可
+      console.log('🔧 法人メンバーページアクセス許可:', {
+        userType: permissions.userType,
+        hasCorpAccess: permissions.hasCorpAccess,
+        isAdmin: permissions.isAdmin,
+      });
+    }
+
+    // 🎯 招待メンバーの厳格なチェック（修正）
     if (permissions.userType === 'invited-member') {
       // 招待メンバーは法人メンバーページ以外アクセス禁止
       if (!pathname.startsWith('/dashboard/corporate-member')) {
@@ -127,7 +151,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     return '';
   }, [dashboardInfo, pathname]);
 
-  // 🚀 リダイレクト処理
+  // 🔥 大幅修正: リダイレクト処理を改善
   useEffect(() => {
     if (status !== 'loading' && !session) {
       router.push('/auth/signin');
@@ -136,21 +160,72 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
     if (!dashboardInfo) return;
 
-    // 初期リダイレクト（ダッシュボードルートのみ）
+    console.log('🔧 リダイレクト判定:', {
+      pathname,
+      shouldRedirect: dashboardInfo.navigation.shouldRedirect,
+      redirectPath: dashboardInfo.navigation.redirectPath,
+      userType: dashboardInfo.permissions.userType,
+      accessCheck: accessCheck,
+    });
+
+    // 🔥 修正: ダッシュボードルート（/dashboard）の場合のみ初期リダイレクト
     if (
+      pathname === '/dashboard' &&
       dashboardInfo.navigation.shouldRedirect &&
-      dashboardInfo.navigation.redirectPath &&
-      pathname === '/dashboard'
+      dashboardInfo.navigation.redirectPath
     ) {
-      console.log('🚀 初期リダイレクト実行:', dashboardInfo.navigation.redirectPath);
+      console.log(
+        '🚀 /dashboard からの初期リダイレクト実行:',
+        dashboardInfo.navigation.redirectPath,
+      );
       router.push(dashboardInfo.navigation.redirectPath);
       return;
     }
 
-    // アクセス権チェックによるリダイレクト
-    if (accessCheck.redirectTo) {
-      console.log('🚀 アクセス権リダイレクト:', accessCheck.redirectTo);
-      router.push(accessCheck.redirectTo);
+    // 🔥 修正: アクセス権チェックによるリダイレクト（法人メンバーページを除外）
+    if (!accessCheck.hasAccess && accessCheck.redirectTo && accessCheck.redirectTo !== pathname) {
+      // 法人メンバーページでのリダイレクトをより慎重に処理
+      if (pathname.startsWith('/dashboard/corporate-member')) {
+        console.log('🔧 法人メンバーページでのアクセス権チェック詳細:', {
+          pathname,
+          userType: dashboardInfo.permissions.userType,
+          hasCorpAccess: dashboardInfo.permissions.hasCorpAccess,
+          isAdmin: dashboardInfo.permissions.isAdmin,
+          accessCheck,
+        });
+
+        // 本当にアクセス権がない場合のみリダイレクト
+        if (!dashboardInfo.permissions.hasCorpAccess && !dashboardInfo.permissions.isSuperAdmin) {
+          console.log('🚀 法人メンバーページでのアクセス権リダイレクト:', {
+            from: pathname,
+            to: accessCheck.redirectTo,
+            reason: '法人アクセス権なし',
+          });
+          router.push(accessCheck.redirectTo);
+          return;
+        } else {
+          console.log('🔧 法人メンバーページアクセス許可（リダイレクトなし）');
+          return;
+        }
+      } else {
+        console.log('🚀 一般的なアクセス権によるリダイレクト:', {
+          from: pathname,
+          to: accessCheck.redirectTo,
+          reason: 'アクセス権なし',
+        });
+        router.push(accessCheck.redirectTo);
+        return;
+      }
+    }
+
+    // 🔥 追加: 法人メンバーページへのアクセス許可をログ出力
+    if (pathname.startsWith('/dashboard/corporate-member')) {
+      console.log('🔧 法人メンバーページアクセス許可確定:', {
+        pathname,
+        userType: dashboardInfo.permissions.userType,
+        hasCorpAccess: dashboardInfo.permissions.hasCorpAccess,
+        isAdmin: dashboardInfo.permissions.isAdmin,
+      });
     }
   }, [session, status, dashboardInfo, pathname, accessCheck, router]);
 

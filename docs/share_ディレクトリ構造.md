@@ -135,7 +135,6 @@ share/
 │   │   │       └── route.ts
 │   │   ├── corporate-profile
 │   │   │   ├── links
-│   │   │   │   └── route.ts
 │   │   │   ├── route.ts
 │   │   │   └── update
 │   │   │       └── route.ts
@@ -293,12 +292,6 @@ share/
 │   │   │       └── qrcode
 │   │   │           └── page.tsx
 │   │   ├── corporate-profile
-│   │   │   ├── design
-│   │   │   │   └── page.tsx
-│   │   │   ├── layout.tsx
-│   │   │   ├── page.tsx
-│   │   │   └── profile
-│   │   │       └── page.tsx
 │   │   ├── design
 │   │   │   └── page.tsx
 │   │   ├── layout-optimized.tsx
@@ -441,6 +434,7 @@ share/
 │   │   └── SnsGuideModalWithDescription.tsx
 │   ├── subscription
 │   │   ├── CorporateSubscriptionRedirect.tsx
+│   │   ├── EnhancedTrialBanner.tsx
 │   │   ├── PaymentMethodForm.tsx
 │   │   ├── PlanBanner.tsx
 │   │   ├── SubscriptionSettings.tsx
@@ -520,15 +514,20 @@ share/
 │   ├── stripeClient.ts
 │   ├── utils
 │   │   ├── activity-logger.ts
+│   │   ├── admin-access-server.ts
 │   │   ├── admin-access.ts
 │   │   ├── api.ts
 │   │   ├── auth.ts
+│   │   ├── corporate-access-server.ts
 │   │   ├── corporate-access.ts
+│   │   ├── corporate-access.ts.backup
 │   │   ├── idempotency.ts
 │   │   ├── logger.ts
 │   │   ├── notification-helpers.ts
 │   │   ├── performance-monitor.ts
+│   │   ├── subscription-server.ts
 │   │   ├── subscription.ts
+│   │   ├── subscription.ts.backup
 │   │   └── validation.ts
 │   └── utils.ts
 ├── manifest.json

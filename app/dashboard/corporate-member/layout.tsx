@@ -1,17 +1,10 @@
-// app/dashboard/corporate-member/layout.tsx
+// app/dashboard/corporate-member/layout.tsx (修正版)
 'use client';
 
 import React, { ReactNode, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import {
-  HiUser,
-  HiLink,
-  HiColorSwatch,
-  HiShare,
-  HiOfficeBuilding,
-  HiMenu,
-} from 'react-icons/hi';
+import { HiUser, HiLink, HiColorSwatch, HiShare, HiOfficeBuilding, HiMenu } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -53,7 +46,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
         // 法人アクセス権を確認
         await checkCorporateAccess({ force: true });
 
-        if (!corporateAccessState.hasAccess) {
+        if (!corporateAccessState.hasAccess && !corporateAccessState.isAdmin) {
           console.log('法人アクセス権がありません、個人ダッシュボードへリダイレクトします');
           router.push('/dashboard');
           return;
@@ -84,7 +77,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
         console.error('法人テナント情報取得エラー:', error);
         setError('法人テナント情報の取得に失敗しました');
         // エラー時は通常ダッシュボードへリダイレクト
-        router.push('/dashboard');
+        router.push('/dashboard/corporate');
       } finally {
         setIsLoading(false);
       }
@@ -103,7 +96,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
     };
   }, []);
 
-  // ナビゲーション項目の定義
+  // 🔥 修正: ナビゲーション項目の定義を改善
   const navItems = [
     {
       label: '概要',
@@ -135,6 +128,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       icon: <HiShare className="w-5 h-5 text-corporate-primary" />,
       adminOnly: false, // すべてのユーザーがアクセス可能
     },
+    // 🔥 修正: 法人ダッシュボードへのリンクを管理者のみに制限
     {
       label: '法人ダッシュボード',
       href: '/dashboard/corporate',
@@ -143,20 +137,43 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
     },
   ];
 
-  console.log('corporateAccessState:', corporateAccessState);
-  console.log('フィルタリング前のnavItems:', navItems);
+  console.log('🔧 Corporate Member Layout - 状態確認:', {
+    corporateAccessState: {
+      hasAccess: corporateAccessState.hasAccess,
+      isAdmin: corporateAccessState.isAdmin,
+      userRole: corporateAccessState.userRole,
+    },
+    pathname,
+  });
 
-  // 管理者権限に基づいてフィルタリング
+  // 🔥 修正: フィルタリングロジックの改善
   const filteredNavItems = navItems.filter((item) => {
     // adminOnlyフラグがない項目はすべて表示
     if (!item.adminOnly) return true;
 
-    // adminOnlyがあり、かつユーザーが管理者の場合のみ表示
-    return item.adminOnly && corporateAccessState.isAdmin;
+    // adminOnlyがある項目は、管理者権限をチェック
+    const isUserAdmin = corporateAccessState.isAdmin || corporateAccessState.userRole === 'admin';
+
+    console.log('🔧 管理者権限チェック:', {
+      itemLabel: item.label,
+      adminOnly: item.adminOnly,
+      isUserAdmin,
+      corporateAccessStateIsAdmin: corporateAccessState.isAdmin,
+      userRole: corporateAccessState.userRole,
+    });
+
+    return item.adminOnly && isUserAdmin;
   });
 
-  console.log('フィルタリング後のfilteredNavItems:', filteredNavItems);
-  
+  console.log('🔧 フィルタリング結果:', {
+    originalCount: navItems.length,
+    filteredCount: filteredNavItems.length,
+    filteredItems: filteredNavItems.map((item) => ({
+      label: item.label,
+      adminOnly: item.adminOnly,
+    })),
+  });
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-[400px]">
@@ -271,14 +288,14 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           </div>
         )}
 
-        {/* デスクトップ用タブナビゲーション - モバイルでは非表示 */}
+        {/* 🔥 修正: デスクトップ用タブナビゲーション - モバイルでは非表示 */}
         <div className="hidden md:block mb-6 overflow-x-auto">
           <div className="flex space-x-2 min-w-max pb-2">
             {filteredNavItems.map((item) => (
               <Link key={item.href} href={item.href}>
                 <Button
                   variant={pathname === item.href ? 'corporate' : 'ghost'}
-                  className="flex items-center"
+                  className="flex items-center whitespace-nowrap"
                 >
                   {item.icon}
                   <span className="ml-2">{item.label}</span>

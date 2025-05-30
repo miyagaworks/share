@@ -1,7 +1,7 @@
-// components/ui/Button.tsx
-import React from "react";
-import { cva, type VariantProps } from "class-variance-authority";
-import { cn } from "@/lib/utils";
+// components/ui/Button.tsx (修正版)
+import React from 'react';
+import { cva, type VariantProps } from 'class-variance-authority';
+import { cn } from '@/lib/utils';
 
 // ボタンバリエーション設定
 const buttonVariants = cva(
@@ -16,11 +16,11 @@ const buttonVariants = cva(
         secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-500',
         ghost: 'hover:bg-gray-100 text-gray-700 hover:text-gray-900 focus-visible:ring-gray-500',
         link: 'text-blue-600 underline-offset-4 hover:underline focus-visible:ring-blue-500 p-0 h-auto',
-        // 法人テーマ用のバリアントを追加
+        // 🔥 修正: 法人テーマ用のバリアントを修正（!importantを使わない）
         corporate:
-          'bg-corporate-primary text-white hover:bg-corporate-secondary focus-visible:ring-corporate-primary',
+          'bg-[#1E3A8A] text-white hover:bg-[#122153] focus-visible:ring-[#1E3A8A] transition-all duration-200',
         corporateOutline:
-          'border border-corporate-primary bg-white text-corporate-primary hover:bg-corporate-primary/10 focus-visible:ring-corporate-primary',
+          'border border-[#1E3A8A] bg-white text-[#1E3A8A] hover:bg-[#1E3A8A]/10 focus-visible:ring-[#1E3A8A] transition-all duration-200',
       },
       size: {
         default: 'h-10 px-4 py-2',
@@ -45,63 +45,88 @@ const buttonVariants = cva(
 );
 
 export interface ButtonProps
-    extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+  extends React.ButtonHTMLAttributes<HTMLButtonElement>,
     VariantProps<typeof buttonVariants> {
-    icon?: React.ReactNode;
-    loadingText?: string;
+  icon?: React.ReactNode;
+  loadingText?: string;
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
-    ({ className, variant, size, fullWidth, loading, children, icon, loadingText, ...props }, ref) => {
-        return (
-          <button
-            className={cn(
-              buttonVariants({ variant, size, fullWidth, loading, className }),
-              variant === 'corporate' ? 'btn-corporate' : '',
-              variant === 'corporateOutline' ? 'btn-corporate-outline' : '',
-            )}
-            ref={ref}
-            disabled={loading || props.disabled}
-            {...props}
-          >
-            {loading ? (
-              <>
-                <span className="absolute inset-0 flex items-center justify-center">
-                  <svg
-                    className="animate-spin -ml-1 mr-2 h-4 w-4 text-current"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                    ></path>
-                  </svg>
-                  <span>{loadingText || '読み込み中...'}</span>
-                </span>
-                <span className="opacity-0">{children}</span>
-              </>
-            ) : (
-              <>
-                {icon && <span className="mr-2 corporate-icon">{icon}</span>}
-                {children}
-              </>
-            )}
-          </button>
-        );
-    }
+  (
+    { className, variant, size, fullWidth, loading, children, icon, loadingText, ...props },
+    ref,
+  ) => {
+    // 🔥 修正: 法人バリアント用の追加スタイル処理
+    const getCorporateStyles = () => {
+      if (variant === 'corporate') {
+        return {
+          backgroundColor: '#1E3A8A',
+          color: 'white',
+          borderColor: '#1E3A8A',
+        };
+      }
+      if (variant === 'corporateOutline') {
+        return {
+          backgroundColor: 'white',
+          color: '#1E3A8A',
+          borderColor: '#1E3A8A',
+        };
+      }
+      return {};
+    };
+
+    return (
+      <button
+        className={cn(
+          buttonVariants({ variant, size, fullWidth, loading }),
+          // 🔥 修正: 法人テーマ用の追加クラス
+          variant === 'corporate' && 'btn-corporate',
+          variant === 'corporateOutline' && 'btn-corporate-outline',
+          className,
+        )}
+        style={getCorporateStyles()}
+        ref={ref}
+        disabled={loading || props.disabled}
+        {...props}
+      >
+        {loading ? (
+          <>
+            <span className="absolute inset-0 flex items-center justify-center">
+              <svg
+                className="animate-spin -ml-1 mr-2 h-4 w-4 text-current"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                ></path>
+              </svg>
+              <span>{loadingText || '読み込み中...'}</span>
+            </span>
+            <span className="opacity-0">{children}</span>
+          </>
+        ) : (
+          <>
+            {icon && <span className="mr-2 corporate-icon">{icon}</span>}
+            {children}
+          </>
+        )}
+      </button>
+    );
+  },
 );
 
-Button.displayName = "Button";
+Button.displayName = 'Button';
 
 export { Button, buttonVariants };

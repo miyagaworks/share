@@ -1,4 +1,4 @@
-// components/layout/Sidebar.tsx
+// components/layout/Sidebar.tsx (修正版)
 'use client';
 
 import React, { useState, useEffect } from 'react';
@@ -7,7 +7,6 @@ import { usePathname } from 'next/navigation';
 import {
   HiChevronLeft,
   HiChevronRight,
-  HiHome,
   HiOfficeBuilding,
   HiUser,
   HiLink,
@@ -307,7 +306,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       },
     ];
 
-    // 招待メンバー向けのサイドバーを表示（個人ダッシュボードリンクなし）
+    // 招待メンバー向けのサイドバーを表示
     return (
       <motion.div
         initial={false}
@@ -433,24 +432,24 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   const isPermanentBusinessUser =
     isPermanentUser && permanentPlanType && permanentPlanType !== PermanentPlanType.PERSONAL;
 
-  // 🔧 追加リンクの生成を招待メンバーでない場合のみに制限
+  // 🔧 修正: 追加リンクの生成を招待メンバーでない場合のみに制限し、順序を修正
   if (!isInvitedMember) {
     // 法人セクションにいる場合
     if (isCorporateSection) {
-      // 個人ダッシュボードへのリンクを追加（存在しない場合のみ）
-      if (!existingUrls.has('/dashboard')) {
-        additionalLinks.push({
-          title: '個人ダッシュボード',
-          href: '/dashboard',
-          icon: <HiHome className="h-5 w-5" />,
-        });
-      }
-
-      // 法人管理者または永久利用権ユーザーの場合、法人メンバーダッシュボードも表示
+      // 🔥 修正: 法人メンバープロフィールを区切り線の下に配置
       if (
         (corporateAccessState.hasAccess || isPermanentBusinessUser) &&
         !existingUrls.has('/dashboard/corporate-member')
       ) {
+        // 区切り線を追加
+        additionalLinks.push({
+          title: '法人メンバー機能',
+          href: '#member-divider',
+          icon: <></>,
+          isDivider: true,
+        });
+
+        // 法人メンバープロフィールを追加
         additionalLinks.push({
           title: '法人メンバープロフィール',
           href: '/dashboard/corporate-member',
@@ -461,15 +460,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
 
     // 法人メンバーセクションにいる場合
     else if (isCorporateMemberSection) {
-      // 個人ダッシュボードリンクを表示
-      if (!existingUrls.has('/dashboard')) {
-        additionalLinks.push({
-          title: '個人ダッシュボード',
-          href: '/dashboard',
-          icon: <HiHome className="h-5 w-5" />,
-        });
-      }
-
       // 法人管理者または永久利用権ユーザーの場合、法人管理ダッシュボードも表示
       if (
         (corporateAccessState.isAdmin || isPermanentBusinessUser) &&
@@ -574,7 +564,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
             // 法人関連のリンクかどうか
             const isCorporateLink = item.href.includes('/corporate');
 
-            // 特別処理が必要なリンク（ご利用プランと個人ダッシュボード）
+            // 特別処理が必要なリンク（ご利用プラン）
             const isSpecialLink =
               item.href === '/dashboard/subscription' || item.href === '/dashboard';
 
@@ -596,7 +586,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
               // 非アクティブスタイル
               if (isCorporateRelated || isCorporateLink) {
                 if (isSpecialLink) {
-                  // 法人セクション内での特別リンク（ご利用プランと個人ダッシュボード）
+                  // 法人セクション内での特別リンク（ご利用プラン）
                   itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
                   iconClass = 'text-gray-600 group-hover:text-blue-700';
                 } else {
@@ -638,20 +628,38 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
         {/* 区切り線と追加リンク */}
         {additionalLinks.length > 0 && (
           <div className="mt-4">
-            {/* 区切り線 */}
-            <div
-              className={cn('mx-2 border-t border-gray-200 my-4', collapsed ? 'mx-2' : 'mx-4')}
-            ></div>
-
             {/* 追加リンク */}
             <nav className="space-y-1 px-2">
               {additionalLinks.map((link, index) => {
+                // 区切り線の場合は特別な表示を行う
+                if (link.isDivider) {
+                  return (
+                    <div key={`add-divider-${link.title}-${index}`} className="relative my-6">
+                      <div className="absolute inset-0 flex items-center">
+                        <div
+                          className={cn(
+                            'border-t border-gray-200',
+                            collapsed ? 'w-10 mx-auto' : 'w-full',
+                          )}
+                        ></div>
+                      </div>
+                      {!collapsed && (
+                        <div className="relative flex justify-center">
+                          <span className="px-2 bg-white text-xs font-semibold uppercase text-gray-500">
+                            {link.title}
+                          </span>
+                        </div>
+                      )}
+                    </div>
+                  );
+                }
+
                 // アクティブなリンクかどうか
                 const isActive = pathname === link.href;
                 // 法人関連のリンクかどうか
                 const isCorporateLink = link.href.includes('/corporate');
 
-                // 特別処理が必要なリンク（ご利用プランと個人ダッシュボード）
+                // 特別処理が必要なリンク（ご利用プラン）
                 const isSpecialLink =
                   link.href === '/dashboard/subscription' || link.href === '/dashboard';
 
@@ -673,7 +681,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                   // 非アクティブスタイル
                   if (isCorporateRelated || isCorporateLink) {
                     if (isSpecialLink) {
-                      // 法人セクション内での特別リンク（ご利用プランと個人ダッシュボード）
+                      // 法人セクション内での特別リンク（ご利用プラン）
                       itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
                       iconClass = 'text-gray-600 group-hover:text-blue-700';
                     } else {
