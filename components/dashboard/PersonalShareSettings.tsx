@@ -72,42 +72,51 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
     setFormChanged(true);
   };
 
-  // 保存処理
+  // 保存処理の修正（デバッグログ追加）
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
+    console.log('🔧 [DEBUG] 保存処理開始:', { slug, isPublic, formChanged, slugError });
+
     // スラッグのバリデーション
     if (!validateSlug(slug)) {
+      console.log('❌ [DEBUG] バリデーションエラー:', slugError);
       return;
     }
 
     try {
       setIsSaving(true);
 
+      const requestData = { isPublic, slug };
+      console.log('🚀 [DEBUG] API送信データ:', requestData);
+
       const response = await fetch('/api/profile/share', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          isPublic,
-          slug,
-        }),
+        body: JSON.stringify(requestData),
       });
+
+      console.log('📡 [DEBUG] APIレスポンス:', response.status, response.ok);
 
       if (!response.ok) {
         const data = await response.json();
+        console.log('❌ [DEBUG] APIエラーレスポンス:', data);
         throw new Error(data.error || '共有設定の更新に失敗しました');
       }
 
-      await response.json();
+      const responseData = await response.json();
+      console.log('✅ [DEBUG] API成功レスポンス:', responseData);
+
       toast.success('共有設定を更新しました');
       setFormChanged(false);
 
       // 成功時にページをリフレッシュして最新データを取得
+      console.log('🔄 [DEBUG] ページリロード実行');
       window.location.reload();
     } catch (error) {
-      console.error('設定保存エラー:', error);
+      console.error('❌ [DEBUG] 設定保存エラー:', error);
 
       if (error instanceof Error && error.message.includes('既に使用されています')) {
         setSlugError('このURLスラッグは既に使用されています。別の値を入力してください。');

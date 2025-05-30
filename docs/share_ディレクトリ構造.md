@@ -36,6 +36,8 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── permissions
 │   │   │   │   └── route.ts
+│   │   │   ├── profiles
+│   │   │   │   └── route.ts
 │   │   │   ├── subscriptions
 │   │   │   │   └── route.ts
 │   │   │   └── users
@@ -161,6 +163,8 @@ share/
 │   │   │   └── route.ts
 │   │   ├── profile
 │   │   │   ├── route.ts
+│   │   │   ├── share
+│   │   │   │   └── route.ts
 │   │   │   └── update
 │   │   │       └── route.ts
 │   │   ├── qr-image
@@ -247,6 +251,8 @@ share/
 │   │   │   ├── page.tsx
 │   │   │   ├── permissions
 │   │   │   │   ├── fix-permanent-button.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── profiles
 │   │   │   │   └── page.tsx
 │   │   │   ├── subscriptions
 │   │   │   │   └── page.tsx
@@ -391,7 +397,7 @@ share/
 │   │   ├── ImprovedDashboardPage.tsx
 │   │   ├── ImprovedDesignPreview.tsx
 │   │   ├── ImprovedSnsLinkList.tsx
-│   │   ├── ProfileUrlDisplay.tsx
+│   │   ├── PersonalShareSettings.tsx
 │   │   ├── QrCodeClient.tsx
 │   │   ├── ShareOptionClient.tsx
 │   │   └── SubscriptionOverview.tsx
