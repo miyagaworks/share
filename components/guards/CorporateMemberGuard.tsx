@@ -68,10 +68,14 @@ export function CorporateMemberGuard({ children }: { children: ReactNode }) {
         } else {
           console.log('[CorporateMemberGuard] アクセス権なし:', result.error);
           setError(result.error || '法人メンバー機能へのアクセス権がありません');
-
+        
+          // 🔥 修正: 招待メンバーの場合はリダイレクトしない（既に正しいページにいるため）
           // 少し待ってからリダイレクト
           setTimeout(() => {
-            router.push('/dashboard/corporate');
+            // 現在のパスが既に /dashboard/corporate-member の場合はリダイレクトしない
+            if (!window.location.pathname.startsWith('/dashboard/corporate-member')) {
+              router.push('/dashboard/corporate-member');
+            }
           }, 2000);
         }
       } catch (error) {
@@ -106,9 +110,11 @@ export function CorporateMemberGuard({ children }: { children: ReactNode }) {
         // エラー後の処理
         setTimeout(() => {
           if (navigator.onLine) {
-            router.push('/dashboard/corporate');
+            // 🔥 修正: 現在のパスが既に /dashboard/corporate-member の場合はリダイレクトしない
+            if (!window.location.pathname.startsWith('/dashboard/corporate-member')) {
+              router.push('/dashboard/corporate-member');
+            }
           } else {
-            // オフラインの場合は再読み込みを促す
             setError('インターネット接続を確認して、ページを再読み込みしてください。');
           }
         }, 5000);

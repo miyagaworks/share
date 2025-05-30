@@ -46,13 +46,24 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
         // 法人アクセス権を確認
         await checkCorporateAccess({ force: true });
 
+        // 🔥 修正: アクセス権チェックをより柔軟に
         if (!corporateAccessState.hasAccess && !corporateAccessState.isAdmin) {
-          console.log('法人アクセス権がありません、個人ダッシュボードへリダイレクトします');
-          router.push('/dashboard');
-          return;
+          console.log('法人アクセス権がありません');
+
+          // 🔥 修正: 招待メンバーの場合は個人ダッシュボードではなく適切なページにリダイレクト
+          const userRole = corporateAccessState.userRole;
+          if (userRole === 'member') {
+            // 招待メンバーの場合は、エラーを表示するがリダイレクトしない
+            setError('法人メンバー機能へのアクセス権の確認中です。しばらくお待ちください。');
+            return;
+          } else {
+            // その他のユーザーは個人ダッシュボードにリダイレクト
+            router.push('/dashboard');
+            return;
+          }
         }
 
-        // 以下は通常の法人テナント情報取得処理...
+        // 法人テナント情報取得処理...
         const response = await fetch('/api/corporate-profile');
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({ error: '不明なエラー' }));
@@ -76,8 +87,13 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       } catch (error) {
         console.error('法人テナント情報取得エラー:', error);
         setError('法人テナント情報の取得に失敗しました');
-        // エラー時は通常ダッシュボードへリダイレクト
-        router.push('/dashboard/corporate');
+
+        // 🔥 修正: 招待メンバーの場合はリダイレクトしない
+        const userRole = corporateAccessState.userRole;
+        if (userRole !== 'member') {
+          // 招待メンバー以外の場合のみリダイレクト
+          router.push('/dashboard');
+        }
       } finally {
         setIsLoading(false);
       }

@@ -77,8 +77,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       pathname,
       hasCorpAccess: permissions.hasCorpAccess,
       isInvitedMember: permissions.userType === 'invited-member',
-      isAdmin: permissions.isAdmin,
-      isSuperAdmin: permissions.isSuperAdmin,
     });
 
     // 管理者ページチェック
@@ -86,20 +84,18 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       return { hasAccess: false, redirectTo: '/dashboard' };
     }
 
-    // 🔥 修正: 法人ページのアクセス権チェックを改善
+    // 法人ページチェック
     if (
       pathname.startsWith('/dashboard/corporate') &&
       !pathname.startsWith('/dashboard/corporate-member')
     ) {
-      // 法人管理ページへのアクセス権チェック
       if (!permissions.hasCorpAccess && !permissions.isSuperAdmin && !permissions.isAdmin) {
         return { hasAccess: false, redirectTo: '/dashboard' };
       }
     }
 
-    // 🔥 修正: 法人メンバーページのアクセス権チェックを大幅に改善
+    // 法人メンバーページのアクセス権チェック
     if (pathname.startsWith('/dashboard/corporate-member')) {
-      // 法人アクセス権があるユーザーは全てアクセス可能（管理者・招待メンバー問わず）
       if (!permissions.hasCorpAccess && !permissions.isSuperAdmin) {
         console.log('🔧 法人メンバーページアクセス権なし:', {
           hasCorpAccess: permissions.hasCorpAccess,
@@ -109,7 +105,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
         return { hasAccess: false, redirectTo: '/dashboard' };
       }
 
-      // アクセス権がある場合は許可
       console.log('🔧 法人メンバーページアクセス許可:', {
         userType: permissions.userType,
         hasCorpAccess: permissions.hasCorpAccess,
@@ -123,6 +118,11 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       if (!pathname.startsWith('/dashboard/corporate-member')) {
         console.log('🔧 招待メンバーを法人メンバーページにリダイレクト');
         return { hasAccess: false, redirectTo: '/dashboard/corporate-member' };
+      }
+      // 🔥 修正: 既に法人メンバーページにいる場合はアクセス許可
+      else {
+        console.log('🔧 招待メンバー: 法人メンバーページアクセス許可');
+        return { hasAccess: true }; // リダイレクトなし
       }
     }
 
