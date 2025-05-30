@@ -62,15 +62,22 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
 
         const accessResult = await accessResponse.json();
 
-        // 2. アクセス権限の検証
+        // 2. アクセス権限の検証（シンプル化）
         if (!accessResult.hasAccess) {
-          console.log('法人アクセス権限なし:', accessResult.error);
+          console.log('❌ 法人メンバーアクセス権限なし:', accessResult);
 
-          // 不完全な招待メンバーの場合は特別なエラーメッセージ
+          // 🔥 修正: 個人プランユーザーを個人ダッシュボードにリダイレクト
+          if (!accessResult.userRole || accessResult.userRole === null) {
+            console.log('🚀 個人プランユーザー → 個人ダッシュボード');
+            router.push('/dashboard');
+            return;
+          }
+
+          // 不完全な招待メンバーの場合
           if (accessResult.userRole === 'incomplete-member') {
             setError('招待の設定が完了していません。管理者にお問い合わせください。');
           } else {
-            setError(accessResult.error || 'アクセス権限がありません');
+            setError('法人メンバーとしてのアクセス権限がありません。');
           }
           setIsLoading(false);
           return;
@@ -78,7 +85,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
 
         setAccessData(accessResult);
 
-        // 3. テナント情報を取得（アクセス権限があることが確認された後）
+        // 3. テナント情報を取得
         try {
           const tenantResponse = await fetch('/api/corporate-profile');
           if (tenantResponse.ok) {
@@ -86,7 +93,6 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
             setTenantData(tenantResult.tenant);
           } else {
             console.warn('テナント情報の取得に失敗、デフォルト値を使用');
-            // デフォルトのテナント情報を設定
             setTenantData({
               id: accessResult.tenantId || 'default',
               name: '法人テナント',
@@ -97,7 +103,6 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           }
         } catch (tenantError) {
           console.warn('テナント情報取得エラー:', tenantError);
-          // エラーでもデフォルト値で継続
           setTenantData({
             id: accessResult.tenantId || 'default',
             name: '法人テナント',
@@ -107,7 +112,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           });
         }
       } catch (error) {
-        console.error('初期化エラー:', error);
+        console.error('❌ 初期化エラー:', error);
         setError('システムエラーが発生しました');
       } finally {
         setIsLoading(false);
@@ -200,20 +205,20 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           </div>
         </div>
         <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-          <h2 className="text-lg font-semibold text-red-700 mb-2">アクセスエラー</h2>
+          <h2 className="text-lg font-semibold text-red-700 mb-2">アクセス権限がありません</h2>
           <p className="text-red-600 mb-4">{error}</p>
           <div className="flex space-x-2">
             <button
-              onClick={() => window.location.reload()}
-              className="px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700"
+              onClick={() => router.push('/dashboard')}
+              className="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
             >
-              再読み込み
+              個人ダッシュボードへ
             </button>
             <button
-              onClick={() => router.push('/dashboard')}
+              onClick={() => window.location.reload()}
               className="px-4 py-2 bg-gray-600 text-white rounded-md hover:bg-gray-700"
             >
-              ダッシュボードへ戻る
+              再読み込み
             </button>
           </div>
         </div>
