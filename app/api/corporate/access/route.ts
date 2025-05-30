@@ -1,4 +1,4 @@
-// app/api/corporate/access/route.ts
+// app/api/corporate/access/route.ts (修正版)
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -31,16 +31,19 @@ export async function GET(request: Request) {
           id: true,
           email: true,
           subscriptionStatus: true,
-          corporateRole: true, // 追加：法人ロール情報
+          corporateRole: true,
+          tenantId: true, // 🔥 追加: tenantIdを明示的に取得
           adminOfTenant: {
             select: {
               id: true,
+              name: true,
               accountStatus: true,
             },
           },
           tenant: {
             select: {
               id: true,
+              name: true,
               accountStatus: true,
             },
           },
@@ -56,6 +59,7 @@ export async function GET(request: Request) {
       if (!user) {
         return NextResponse.json(
           {
+            hasCorporateAccess: false,
             hasAccess: false,
             error: 'User not found',
           },
@@ -73,6 +77,7 @@ export async function GET(request: Request) {
           `[API:corporate/access] 管理者メールユーザーにスーパー管理者権限を付与 (userId=${userId})`,
         );
         return NextResponse.json({
+          hasCorporateAccess: true,
           hasAccess: true,
           isAdmin: true,
           isSuperAdmin: true,
@@ -82,10 +87,11 @@ export async function GET(request: Request) {
         });
       }
 
-      // 永久利用権ユーザーの場合、即時アクセス権を付与（管理者権限なし）
+      // 永久利用権ユーザーの場合、即時アクセス権を付与
       if (user.subscriptionStatus === 'permanent') {
         console.log(`[API:corporate/access] 永久利用権ユーザーにアクセス権付与 (userId=${userId})`);
         return NextResponse.json({
+          hasCorporateAccess: true,
           hasAccess: true,
           isAdmin: true,
           isSuperAdmin: false,
@@ -95,20 +101,16 @@ export async function GET(request: Request) {
         });
       }
 
-      // テナント情報の取得と検証
+      // 🔥 修正: テナント情報の取得ロジックを改善
       const tenant = user.adminOfTenant || user.tenant;
-      const hasTenant = !!tenant;
-
-      // テナントIDの取得（安全に）
-      const tenantId = tenant?.id || null;
+      const tenantId = tenant?.id || user.tenantId; // フォールバック追加
+      const hasTenant = !!tenant || !!user.tenantId;
 
       // テナントステータスの確認
       const isTenantSuspended = tenant?.accountStatus === 'suspended';
 
-      // 法人サブスクリプションのチェック - より厳密に判定
+      // 法人サブスクリプションのチェック
       const planLower = (user.subscription?.plan || '').toLowerCase();
-
-      // 完全一致の法人プラン判定（部分一致ではなく）
       const corporatePlans = [
         'business',
         'business_plus',
@@ -123,50 +125,72 @@ export async function GET(request: Request) {
         user.subscription &&
         user.subscription.status === 'active' &&
         (corporatePlans.includes(planLower) ||
-          // 互換性のための後方互換チェック
           (planLower.includes('corp') && !planLower.includes('personal')) ||
           planLower.includes('pro'));
 
-      // アクセス権の判定
-      const hasAccess = hasTenant && !isTenantSuspended && hasCorporateSubscription;
-
-      // ユーザーロールの決定（より詳細に）
+      // 🔥 修正: ユーザーロールの判定を改善
       const isAdmin = !!user.adminOfTenant;
-      let userRole = null;
+      let userRole: string | null = null;
 
       if (isAdmin) {
         userRole = 'admin';
-      } else if (hasTenant && user.corporateRole === 'member') {
-        userRole = 'member'; // 明示的にmemberロールを設定
+      } else if (user.corporateRole === 'member' && hasTenant) {
+        userRole = 'member';
       } else if (hasTenant) {
-        userRole = 'member'; // テナントがあればmemberとして扱う
+        // テナントがあるが明示的なロールがない場合はmemberとして扱う
+        userRole = 'member';
       }
 
-      // hasAccessの判定を拡張（memberロールでもアクセス許可）
-      const finalHasAccess =
-        hasAccess || (hasTenant && !isTenantSuspended && userRole === 'member');
+      // 🔥 修正: アクセス権の判定ロジックを明確化
+      const hasBasicAccess = hasTenant && !isTenantSuspended;
+
+      // 管理者は常にアクセス可能
+      const adminAccess = isAdmin && hasBasicAccess;
+
+      // メンバーはテナントがあり停止されていない場合にアクセス可能
+      // サブスクリプションチェックは管理者レベルで行い、メンバーは影響を受けない
+      const memberAccess = userRole === 'member' && hasBasicAccess;
+
+      const finalHasAccess = adminAccess || memberAccess;
+
+      // 🔥 修正: 招待メンバーの不完全な状態を検出・警告
+      if (user.corporateRole === 'member' && !hasTenant) {
+        console.warn('⚠️  不完全な招待メンバーを検出:', {
+          userId,
+          email: user.email,
+          corporateRole: user.corporateRole,
+          tenantId: user.tenantId,
+          hasTenant,
+        });
+
+        return NextResponse.json({
+          hasCorporateAccess: false,
+          hasAccess: false,
+          isAdmin: false,
+          isSuperAdmin: false,
+          tenantId: null,
+          userRole: 'incomplete-member',
+          error: 'テナント関連付けが不完全です。管理者にお問い合わせください。',
+        });
+      }
 
       console.log('[API:corporate/access] アクセス権判定結果:', {
         userId,
+        email: user.email,
         hasTenant,
+        tenantId,
         isTenantSuspended,
         hasCorporateSubscription,
         corporateRole: user.corporateRole,
         userRole,
+        isAdmin,
+        adminAccess,
+        memberAccess,
         finalHasAccess,
-        tenantId,
       });
 
-      // メモリ使用量ログ（開発環境のみ）
-      if (process.env.NODE_ENV === 'development') {
-        const memoryUsage = process.memoryUsage();
-        console.log('[API:corporate/access] メモリ使用状況:', {
-          rss: `${Math.round(memoryUsage.rss / 1024 / 1024)}MB`,
-          heapUsed: `${Math.round(memoryUsage.heapUsed / 1024 / 1024)}MB`,
-        });
-      }
-
       return NextResponse.json({
+        hasCorporateAccess: finalHasAccess,
         hasAccess: finalHasAccess,
         isAdmin,
         isSuperAdmin: isAdminEmail,
@@ -177,13 +201,14 @@ export async function GET(request: Request) {
             ? 'テナントが停止されています'
             : !hasTenant
               ? 'テナントが関連付けられていません'
-              : '有効な法人契約がありません'
+              : 'アクセス権限がありません'
           : null,
       });
     } catch (dbError) {
       console.error('[API:corporate/access] データベースエラー:', dbError);
       return NextResponse.json(
         {
+          hasCorporateAccess: false,
           hasAccess: false,
           error: 'Database operation failed',
           details: dbError instanceof Error ? dbError.message : String(dbError),
@@ -196,6 +221,7 @@ export async function GET(request: Request) {
     console.error('[API:corporate/access] エラー:', error);
     return NextResponse.json(
       {
+        hasCorporateAccess: false,
         hasAccess: false,
         error: 'Internal server error',
         details: error instanceof Error ? error.message : String(error),
@@ -203,7 +229,6 @@ export async function GET(request: Request) {
       { status: 500 },
     );
   } finally {
-    // Prismaに接続していたらクリーンアップ
     try {
       await disconnectPrisma();
     } catch (cleanupError) {

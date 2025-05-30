@@ -16,7 +16,7 @@
         "fix-tenant-relations": "ts-node scripts/fix-tenant-relations.ts",
         "check-user": "ts-node scripts/check-user-relations.ts",
         "delete-user": "ts-node scripts/delete-user.ts",
-        "update-permanent-users": "NODE_OPTIONS=\"--loader ts-node/esm\" node scripts/update-permanent-users-plan.ts"
+        "fix-members": "ts-node scripts/fix-incomplete-corporate-members.ts"
     },
     "dependencies": {
         "@auth/prisma-adapter": "^2.9.0",

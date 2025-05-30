@@ -1,4 +1,4 @@
-// app/api/corporate/users/invite/accept/route.ts
+// app/api/corporate/users/invite/accept/route.ts (修正版)
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -11,7 +11,6 @@ export async function POST(request: Request) {
     const { token, password, lastName, firstName, lastNameKana, firstNameKana, name } =
       await request.json();
 
-    // デバッグログ
     console.log('招待受け入れリクエスト:', {
       token: token ? '存在します' : '存在しません',
       password: password ? 'セットされています' : 'セットされていません',
@@ -32,7 +31,7 @@ export async function POST(request: Request) {
       include: {
         user: {
           include: {
-            tenant: true, // テナント情報を取得
+            tenant: true,
           },
         },
       },
@@ -42,47 +41,95 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'トークンが無効または期限切れです' }, { status: 400 });
     }
 
-    // 関連するテナント情報を取得
-    const tenantInfo = await prisma.corporateTenant.findFirst({
-      where: {
-        users: {
-          some: {
-            id: resetToken.userId,
-          },
-        },
+    // 🔥 重要な修正: ユーザーが既にどのテナントに所属すべきかを確認
+    // まず現在のユーザーのテナント関連情報を取得
+    const currentUser = await prisma.user.findUnique({
+      where: { id: resetToken.userId },
+      include: {
+        tenant: true,
+        adminOfTenant: true,
       },
     });
 
-    if (!tenantInfo) {
-      console.log('警告: ユーザーに関連するテナントが見つかりません:', resetToken.userId);
+    if (!currentUser) {
+      return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
+    }
+
+    // 🔥 修正: テナント情報を正しく特定
+    let tenantInfo = null;
+
+    // 1. 既にテナントに関連付けられている場合はそれを使用
+    if (currentUser.tenant) {
+      tenantInfo = currentUser.tenant;
+      console.log('既存のテナント関連付けを使用:', tenantInfo.id);
+    }
+    // 2. 管理者権限がある場合（まれなケース）
+    else if (currentUser.adminOfTenant) {
+      tenantInfo = currentUser.adminOfTenant;
+      console.log('管理者テナントを使用:', tenantInfo.id);
+    }
+    // 3. どちらもない場合、招待時に設定されるべきテナントを検索
+    else {
+      // 招待時に設定されたcorporateRoleから推測してテナントを検索
+      // 通常の招待プロセスでは、ユーザー作成時にtenantIdが設定されるべき
+
+      // 最近の招待記録から関連テナントを検索（フォールバック）
+      const recentInvite = await prisma.corporateActivityLog.findFirst({
+        where: {
+          action: 'invite_user',
+          entityId: resetToken.userId,
+        },
+        include: {
+          tenant: true,
+        },
+        orderBy: {
+          createdAt: 'desc',
+        },
+      });
+
+      if (recentInvite?.tenant) {
+        tenantInfo = recentInvite.tenant;
+        console.log('招待記録からテナントを特定:', tenantInfo.id);
+      } else {
+        console.error('❌ テナント情報を特定できませんでした', {
+          userId: resetToken.userId,
+          hasCurrentTenant: !!currentUser.tenant,
+          hasAdminTenant: !!currentUser.adminOfTenant,
+          corporateRole: currentUser.corporateRole,
+        });
+        return NextResponse.json(
+          { error: 'テナント情報を特定できませんでした。管理者にお問い合わせください。' },
+          { status: 400 },
+        );
+      }
     }
 
     // パスワードをハッシュ化
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // 姓名を結合したname値の生成（必要な場合）
+    // 姓名を結合したname値の生成
     const fullName = name || `${lastName || ''} ${firstName || ''}`.trim();
 
-    // トランザクションでユーザー情報を更新
+    // 🔥 重要な修正: トランザクションでユーザー情報を確実に更新
     await prisma.$transaction(async (tx) => {
-      // ユーザー情報を更新
+      // ユーザー情報を更新（tenantIdを確実に設定）
       await tx.user.update({
-        // 変数に代入しない
         where: { id: resetToken.userId },
         data: {
-          // 必須フィールド
+          // 認証関連
           password: hashedPassword,
-          emailVerified: new Date(), // 認証済みにする
+          emailVerified: new Date(),
 
-          // 姓名と関連フィールド - 送信されていれば更新
+          // 姓名情報
           name: fullName || undefined,
           lastName: lastName || undefined,
           firstName: firstName || undefined,
           lastNameKana: lastNameKana || undefined,
           firstNameKana: firstNameKana || undefined,
 
-          // 法人メンバーとしての役割を設定
+          // 🔥 重要: テナント関連付けを確実に設定
           corporateRole: 'member',
+          tenantId: tenantInfo.id, // 明示的にtenantIdを設定
         },
       });
 
@@ -91,37 +138,46 @@ export async function POST(request: Request) {
         where: { id: resetToken.id },
       });
 
-      // テナントがある場合はアクティビティログを記録
-      if (tenantInfo) {
-        await logCorporateActivity({
-          tenantId: tenantInfo.id,
-          userId: resetToken.userId,
-          action: 'accept_invite',
-          entityType: 'user',
-          entityId: resetToken.userId,
-          description: `${fullName}さんが法人テナントに参加しました`,
-        });
-      }
+      // アクティビティログを記録
+      await logCorporateActivity({
+        tenantId: tenantInfo.id,
+        userId: resetToken.userId,
+        action: 'accept_invite',
+        entityType: 'user',
+        entityId: resetToken.userId,
+        description: `${fullName}さんが招待を受け入れ、法人テナントに参加しました`,
+        metadata: {
+          email: currentUser.email,
+          previousTenantId: currentUser.tenantId,
+          newTenantId: tenantInfo.id,
+        },
+      });
     });
 
-    // デバッグログ
-    console.log('ユーザー更新完了:', {
+    console.log('✅ 招待受け入れ完了:', {
       userId: resetToken.userId,
       name: fullName,
-      lastName,
-      firstName,
-      lastNameKana,
-      firstNameKana,
-      tenantId: tenantInfo?.id || 'なし',
+      tenantId: tenantInfo.id,
+      tenantName: tenantInfo.name,
+      corporateRole: 'member',
     });
 
     return NextResponse.json({
       success: true,
-      tenantId: tenantInfo?.id,
-      hasTenanct: !!tenantInfo,
+      tenantId: tenantInfo.id,
+      tenantName: tenantInfo.name,
+      hasTenanct: true, // typoを修正: hasTenant
+      hasTenant: true,
+      message: `${tenantInfo.name}への参加が完了しました`,
     });
   } catch (error) {
-    console.error('招待受け入れエラー:', error);
-    return NextResponse.json({ error: '招待の受け入れ中にエラーが発生しました' }, { status: 500 });
+    console.error('❌ 招待受け入れエラー:', error);
+    return NextResponse.json(
+      {
+        error: '招待の受け入れ中にエラーが発生しました',
+        details: error instanceof Error ? error.message : String(error),
+      },
+      { status: 500 },
+    );
   }
 }

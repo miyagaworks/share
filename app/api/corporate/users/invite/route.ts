@@ -1,4 +1,4 @@
-// app/api/corporate/users/invite/route.ts
+// app/api/corporate/users/invite/route.ts (修正版)
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -8,11 +8,9 @@ import { sendEmail } from '@/lib/email';
 import { logUserActivity } from '@/lib/utils/activity-logger';
 import { getInviteEmailTemplate } from '@/lib/email/templates/invite-email';
 
-// POSTリクエストでユーザー招待を処理
 export async function POST(request: Request) {
   try {
     console.log('[API] /api/corporate/users/invite POSTリクエスト受信');
-    console.log('リクエストボディ:', await request.clone().text());
 
     // セッション認証チェック
     const session = await auth();
@@ -66,7 +64,7 @@ export async function POST(request: Request) {
       department = await prisma.department.findUnique({
         where: {
           id: departmentId,
-          tenantId: corporateTenant.id, // 同じテナントに所属する部署であることを確認
+          tenantId: corporateTenant.id,
         },
       });
 
@@ -96,24 +94,24 @@ export async function POST(request: Request) {
         const expiresAt = new Date();
         expiresAt.setHours(expiresAt.getHours() + 72); // 72時間有効
 
-        // 新しいユーザーを作成または既存ユーザーを更新
+        // 🔥 重要な修正: ユーザー作成時に確実にテナントIDを設定
         const user = await prisma.user.upsert({
           where: { email },
           update: {
             corporateRole: role || 'member',
-            tenantId: corporateTenant.id,
+            tenantId: corporateTenant.id, // 🔥 確実に設定
             departmentId: departmentId || null,
           },
           create: {
             email,
-            name: email.split('@')[0], // 仮の名前としてメールアドレスの@前を使用
+            name: email.split('@')[0], // 仮の名前
             corporateRole: role || 'member',
-            tenantId: corporateTenant.id,
+            tenantId: corporateTenant.id, // 🔥 確実に設定
             departmentId: departmentId || null,
           },
         });
 
-        // トークンを別途保存
+        // トークンを保存
         await prisma.passwordResetToken.create({
           data: {
             token,
@@ -122,28 +120,19 @@ export async function POST(request: Request) {
           },
         });
 
-        // 招待メール送信部分の修正
-        // 環境変数から適切なベースURLを取得
+        // 招待リンクの生成
         const baseUrl =
           process.env.NEXT_PUBLIC_APP_URL ||
           process.env.NEXT_PUBLIC_BASE_URL ||
           process.env.NEXTAUTH_URL ||
           'https://app.sns-share.com';
 
-        // URLの正規化（末尾のスラッシュを削除）
         const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
-
-        // 招待リンクの生成
         const inviteUrl = `${normalizedBaseUrl}/auth/invite?token=${token}`;
 
         // メール送信
         const emailTemplate = getInviteEmailTemplate({
           companyName: corporateTenant.name,
-          inviteUrl: inviteUrl,
-        });
-
-        console.log('招待メールテンプレート生成:', {
-          subject: emailTemplate.subject,
           inviteUrl: inviteUrl,
         });
 
@@ -154,17 +143,21 @@ export async function POST(request: Request) {
           html: emailTemplate.html,
         });
 
-        // デバッグログ
-        console.log(`招待メール送信: ${email}、トークン: ${token.substring(0, 8)}...`);
+        console.log(`✅ 招待完了: ${email}、テナントID: ${corporateTenant.id}`);
 
-        inviteResults.push({ email, success: true, userId: user.id });
+        inviteResults.push({
+          email,
+          success: true,
+          userId: user.id,
+          tenantId: corporateTenant.id, // 🔥 デバッグ用に追加
+        });
       } catch (error) {
-        console.error(`招待エラー (${email}):`, error);
+        console.error(`❌ 招待エラー (${email}):`, error);
         errors.push(`${email}: 招待の処理中にエラーが発生しました`);
       }
     }
 
-    // 成功した招待ごとにアクティビティを記録
+    // アクティビティログ記録
     for (const result of inviteResults) {
       await logUserActivity(
         corporateTenant.id,
@@ -177,36 +170,23 @@ export async function POST(request: Request) {
           role: role || 'member',
           departmentId: departmentId || null,
           departmentName: department?.name || null,
+          tenantId: corporateTenant.id, // 🔥 テナントIDを明示的に記録
         },
       );
     }
 
-    // 成功した招待ごとにアクティビティを記録
-    for (const result of inviteResults) {
-      // logUserActivityを使う場合（ユーザー関連のアクティビティ）
-      await logUserActivity(
-        corporateTenant.id,
-        userId, // アクションを実行したユーザー（管理者）
-        result.userId, // 対象ユーザー
-        'invite_user',
-        `ユーザー「${result.email}」を招待しました`,
-        {
-          email: result.email,
-          role: role || 'member',
-          departmentId: departmentId || null,
-          departmentName: department?.name || null,
-        },
-      );
-    }
+    console.log(`✅ 招待処理完了: ${inviteResults.length}人成功, ${errors.length}人エラー`);
 
     return NextResponse.json({
       success: true,
       invitedCount: inviteResults.length,
       inviteResults,
       errors: errors.length > 0 ? errors : null,
+      tenantId: corporateTenant.id, // 🔥 デバッグ用に追加
+      tenantName: corporateTenant.name,
     });
   } catch (error) {
-    console.error('[API] エラー:', error);
+    console.error('[API] ❌ 招待処理エラー:', error);
     return NextResponse.json(
       {
         error: 'ユーザー招待の処理に失敗しました',
