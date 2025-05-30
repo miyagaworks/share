@@ -1,7 +1,7 @@
 # 重要事項！！
 ## ベストプラクティスな選択の上、コード生成を行うようにして下さい。
 ## Editにアップロードしたファイルでは不十分な場合、ディレクトリ構造（全てのファイル）から必要なファイルをリクエストして下さい。
-## ファイル共有が不十分で状況が分からないうちはコードは絶対に書かないでください。
+## ファイル共有が不十分で状況が分からないうちはコードは絶対に書かないでください。必ず2回書くようになりますので、厳守です!!!
 ## 全ての状況を完璧に把握してから回答を出して下さい。
 
 share/
@@ -205,6 +205,8 @@ share/
 │   │   │   ├── [userId]
 │   │   │   │   └── profile
 │   │   │   │       └── route.ts
+│   │   │   ├── check-email-verification
+│   │   │   │   └── route.ts
 │   │   │   ├── check-password
 │   │   │   │   └── route.ts
 │   │   │   ├── dashboard-info
@@ -222,6 +224,8 @@ share/
 │   ├── auth
 │   │   ├── change-password
 │   │   │   └── page.tsx
+│   │   ├── email-verification
+│   │   │   └── paga.tsx
 │   │   ├── error
 │   │   │   └── page.tsx
 │   │   ├── forgot-password
@@ -505,6 +509,7 @@ share/
 │   ├── email
 │   │   └── templates
 │   │       ├── admin-notification.ts
+│   │       ├── email-verification.ts
 │   │       ├── grace-period-expired.ts
 │   │       ├── invite-email.ts
 │   │       └── trial-ending.ts
@@ -529,6 +534,7 @@ share/
 │   │   ├── corporate-access-server.ts
 │   │   ├── corporate-access.ts
 │   │   ├── corporate-access.ts.backup
+│   │   ├── emailVerification.ts
 │   │   ├── idempotency.ts
 │   │   ├── logger.ts
 │   │   ├── notification-helpers.ts
@@ -538,9 +544,9 @@ share/
 │   │   ├── subscription.ts.backup
 │   │   └── validation.ts
 │   └── utils.ts
-├── manifest.json
 ├── middleware
 │   ├── checkTenantStatus.ts
+│   ├── emailVerificationHandler.ts
 │   ├── permanentAccessHandler.ts
 │   └── prisma-connection-handler.ts
 ├── middleware.ts
@@ -664,10 +670,11 @@ share/
 │   │   ├── favicon-48x48.png
 │   │   ├── favicon-96x96.png
 │   │   └── favicon.ico
+│   ├── qr-sw.js
+│   ├── qrcode-manifest.json
+│   ├── sw.js
 │   ├── vercel.svg
 │   └── window.svg
-├── qr-sw.js
-├── qrcode-manifest.json
 ├── README.md
 ├── schemas
 │   └── auth.ts
@@ -693,7 +700,6 @@ share/
 │   ├── test-optimization.sh
 │   └── update-permanent-users-plan.ts
 ├── share_db_backup.sql
-├── sw.js
 ├── tailwind.config.js
 ├── tsconfig.json
 ├── types

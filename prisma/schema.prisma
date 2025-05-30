@@ -40,6 +40,7 @@ model User {
   companyUrl          String? // 会社/組織のWebサイト
   companyLabel        String? // 会社/組織のリンク表示名
   activityLogs        CorporateActivityLog[] @relation("UserActivities")
+  emailVerificationToken EmailVerificationToken?
 
   // 認証関連
   emailVerified DateTime?
@@ -374,4 +375,16 @@ model IdempotencyRequest {
   expiresAt   DateTime  // いつまで保持するか
   
   @@index([expiresAt]) // 期限切れレコードを効率的に削除するためのインデックス
+}
+
+// メール認証トークンモデル
+model EmailVerificationToken {
+  id        String   @id @default(cuid())
+  userId    String   @unique // ユーザーIDと一対一の関係
+  token     String   @unique
+  expires   DateTime
+  createdAt DateTime @default(now())
+  
+  // ユーザーとの関係
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }

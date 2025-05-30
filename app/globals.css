@@ -1564,3 +1564,82 @@ body[data-pathname="/dashboard/share"] .qr-designer-button:hover * {
         -webkit-text-fill-color: white !important;
     }
 }
+
+/* チェックボックスの専用ダークモード対応 */
+@media (prefers-color-scheme: dark) {
+
+    /* チェックボックスを白背景に強制 */
+    input[type="checkbox"] {
+        background-color: #ffffff !important;
+        border-color: #d1d5db !important;
+        color: #2563eb !important;
+        /* チェックマークの色 */
+        accent-color: #2563eb !important;
+    }
+
+    /* チェックされた状態でも白背景を維持しつつ、チェックマークは青 */
+    input[type="checkbox"]:checked {
+        background-color: #2563eb !important;
+        border-color: #2563eb !important;
+        color: white !important;
+    }
+
+    /* フォーカス時も白背景を維持 */
+    input[type="checkbox"]:focus {
+        background-color: #ffffff !important;
+        border-color: #2563eb !important;
+        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
+    }
+
+    /* ホバー時の効果 */
+    input[type="checkbox"]:hover {
+        border-color: #2563eb !important;
+    }
+
+    /* チェック状態でのホバー */
+    input[type="checkbox"]:checked:hover {
+        background-color: #1d4ed8 !important;
+    }
+}
+
+/* ライトモードでも確実に表示されるように */
+input[type="checkbox"] {
+    background-color: #ffffff;
+    border-color: #d1d5db;
+    accent-color: #2563eb;
+}
+
+input[type="checkbox"]:checked {
+    background-color: #2563eb;
+    border-color: #2563eb;
+    color: white;
+}
+
+/* 法人テーマでのチェックボックス対応 */
+.corporate-theme input[type="checkbox"] {
+    accent-color: #1E3A8A !important;
+}
+
+.corporate-theme input[type="checkbox"]:checked {
+    background-color: #1E3A8A !important;
+    border-color: #1E3A8A !important;
+}
+
+@media (prefers-color-scheme: dark) {
+    .corporate-theme input[type="checkbox"] {
+        background-color: #ffffff !important;
+        border-color: #d1d5db !important;
+        accent-color: #1E3A8A !important;
+    }
+
+    .corporate-theme input[type="checkbox"]:checked {
+        background-color: #1E3A8A !important;
+        border-color: #1E3A8A !important;
+        color: white !important;
+    }
+
+    .corporate-theme input[type="checkbox"]:focus {
+        border-color: #1E3A8A !important;
+        box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2) !important;
+    }
+}

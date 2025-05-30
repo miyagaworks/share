@@ -135,17 +135,23 @@ export default function SignupPage() {
     }
 
     try {
+      console.log('🚀 サインアップ開始');
       setError(null);
+      setSuccess(null);
       setIsPending(true);
 
-      // 姓名を結合して完全な名前を作成
-      const name = `${data.lastName} ${data.firstName}`;
-
-      console.log('サインアップ開始:', {
+      const requestData = {
         lastName: data.lastName,
         firstName: data.firstName,
-        name,
+        lastNameKana: data.lastNameKana,
+        firstNameKana: data.firstNameKana,
         email: data.email,
+        password: data.password,
+      };
+
+      console.log('📤 リクエスト送信:', {
+        url: '/api/auth/register',
+        hasData: Object.keys(requestData).length > 0,
       });
 
       // サインアップ処理
@@ -154,53 +160,84 @@ export default function SignupPage() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          lastName: data.lastName,
-          firstName: data.firstName,
-          lastNameKana: data.lastNameKana,
-          firstNameKana: data.firstNameKana,
-          email: data.email,
-          password: data.password,
-        }),
+        body: JSON.stringify(requestData),
       });
 
-      console.log('サインアップレスポンスステータス:', response.status);
+      console.log('📥 レスポンス受信:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok,
+      });
 
       const result = await response.json();
-      console.log('サインアップレスポンス:', result);
+      console.log('📄 レスポンスデータ:', result);
 
       if (!response.ok) {
         throw new Error(result.message || 'アカウント登録に失敗しました');
       }
 
-      // アカウント登録成功メッセージを表示
-      setSuccess('アカウントが正常に作成されました。自動的にログインしています...');
+      // アカウント登録成功
+      console.log('✅ アカウント登録成功');
 
-      // ここから新しい処理: 登録成功後に自動ログイン
-      const signInResult = await signIn('credentials', {
-        email: data.email,
-        password: data.password,
-        redirect: false,
-      });
+      // メール認証が必要な場合
+      if (result.requiresEmailVerification) {
+        console.log('📧 メール認証が必要 - 認証画面にリダイレクト');
+        setSuccess(
+          'アカウントが作成されました。認証メールを送信しました。メール認証画面に移動します...',
+        );
 
-      if (signInResult?.error) {
-        throw new Error('自動ログインに失敗しました。ログインページへリダイレクトします。');
+        // 3秒後にメール認証画面にリダイレクト
+        setTimeout(() => {
+          console.log('🔄 メール認証画面にリダイレクト');
+          router.push('/auth/email-verification');
+        }, 3000);
+      } else {
+        // 従来の自動ログイン処理
+        console.log('🔐 自動ログイン試行');
+        setSuccess('アカウントが正常に作成されました。自動的にログインしています...');
+
+        const signInResult = await signIn('credentials', {
+          email: data.email,
+          password: data.password,
+          redirect: false,
+        });
+
+        console.log('🔐 ログイン結果:', signInResult);
+
+        if (signInResult?.error) {
+          console.log('❌ 自動ログイン失敗 - ログイン画面にリダイレクト');
+          setError(
+            'アカウントは作成されましたが、自動ログインに失敗しました。ログイン画面からログインしてください。',
+          );
+
+          setTimeout(() => {
+            router.push('/auth/signin');
+          }, 3000);
+        } else {
+          console.log('✅ 自動ログイン成功 - ダッシュボードにリダイレクト');
+          setTimeout(() => {
+            router.push('/dashboard');
+          }, 2000);
+        }
       }
-
-      // ログイン成功したらダッシュボードへリダイレクト
-      router.push('/dashboard');
-      router.refresh();
     } catch (error) {
-      console.error('サインアップエラー詳細:', error);
+      console.error('💥 サインアップエラー:', error);
+
       if (error instanceof Error) {
         setError(error.message);
+        console.error('エラー詳細:', {
+          name: error.name,
+          message: error.message,
+          stack: error.stack,
+        });
       } else {
         setError('アカウント登録中にエラーが発生しました');
+        console.error('不明なエラー:', error);
       }
-      console.error('サインアップエラー:', error);
-      // エラーが発生した場合は成功メッセージをクリア
+
       setSuccess(null);
     } finally {
+      console.log('🏁 サインアップ処理終了');
       setIsPending(false);
     }
   };
@@ -464,19 +501,29 @@ export default function SignupPage() {
                       type="checkbox"
                       checked={termsAccepted}
                       onChange={(e) => setTermsAccepted(e.target.checked)}
-                      className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                      style={{
+                        backgroundColor: '#ffffff',
+                        borderColor: '#d1d5db',
+                        accentColor: '#2563eb',
+                        colorScheme: 'light',
+                        filter: 'none',
+                        appearance: 'auto',
+                        WebkitAppearance: 'checkbox',
+                        MozAppearance: 'checkbox',
+                      }}
+                      className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 focus:ring-offset-0"
                       disabled={isPending}
                     />
                   </div>
                   <div className="ml-3 text-sm">
-                    <label htmlFor="terms" className="text-gray-700">
+                    <label htmlFor="terms" className="text-gray-700 dark:text-gray-300">
                       <span className="font-medium">利用規約</span>に同意します
                     </label>
-                    <p className="text-gray-500 mt-1">
+                    <p className="text-gray-500 dark:text-gray-400 mt-1">
                       <Link
                         href="/legal/terms"
                         target="_blank"
-                        className="text-blue-600 hover:text-blue-500 hover:underline"
+                        className="text-blue-600 hover:text-blue-500 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                       >
                         利用規約を読む
                       </Link>

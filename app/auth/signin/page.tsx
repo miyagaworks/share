@@ -91,11 +91,157 @@ function SessionTimeoutMessageInner() {
   );
 }
 
+function VerificationMessageInner() {
+  const searchParams = useSearchParams();
+  const [message, setMessage] = useState<{
+    title: string;
+    message: string;
+    type: 'success' | 'error' | 'info';
+  } | null>(null);
+
+  useEffect(() => {
+    const errorType = searchParams?.get('error');
+    const messageType = searchParams?.get('message');
+
+    if (errorType) {
+      switch (errorType) {
+        case 'invalid_token':
+          setMessage({
+            title: '認証エラー',
+            message: '無効な認証リンクです。新しい認証メールをリクエストしてください。',
+            type: 'error',
+          });
+          break;
+        case 'token_expired':
+          setMessage({
+            title: '認証リンク期限切れ',
+            message:
+              '認証リンクの有効期限が切れています。新しい認証メールをリクエストしてください。',
+            type: 'error',
+          });
+          break;
+        case 'verification_failed':
+          setMessage({
+            title: '認証失敗',
+            message: 'メール認証中にエラーが発生しました。再度お試しください。',
+            type: 'error',
+          });
+          break;
+      }
+    } else if (messageType) {
+      switch (messageType) {
+        case 'email_verified':
+          setMessage({
+            title: 'メール認証完了',
+            message: 'メールアドレスの認証が完了しました。ログインしてください。',
+            type: 'success',
+          });
+          break;
+        case 'already_verified':
+          setMessage({
+            title: 'すでに認証済み',
+            message: 'このメールアドレスは既に認証済みです。ログインしてください。',
+            type: 'info',
+          });
+          break;
+      }
+    }
+  }, [searchParams]);
+
+  if (!message) return null;
+
+  const bgColor =
+    message.type === 'success'
+      ? 'bg-green-50 border-green-200'
+      : message.type === 'error'
+        ? 'bg-red-50 border-red-200'
+        : 'bg-blue-50 border-blue-200';
+
+  const textColor =
+    message.type === 'success'
+      ? 'text-green-800'
+      : message.type === 'error'
+        ? 'text-red-800'
+        : 'text-blue-800';
+
+  const iconColor =
+    message.type === 'success'
+      ? 'text-green-600'
+      : message.type === 'error'
+        ? 'text-red-600'
+        : 'text-blue-600';
+
+  return (
+    <div className={`rounded-lg ${bgColor} p-4 mb-6 shadow-sm`}>
+      <div className="flex items-start">
+        <div className="flex-shrink-0">
+          {message.type === 'success' ? (
+            <svg
+              className={`h-5 w-5 ${iconColor}`}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                clipRule="evenodd"
+              />
+            </svg>
+          ) : message.type === 'error' ? (
+            <svg
+              className={`h-5 w-5 ${iconColor}`}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                clipRule="evenodd"
+              />
+            </svg>
+          ) : (
+            <svg
+              className={`h-5 w-5 ${iconColor}`}
+              xmlns="http://www.w3.org/2000/svg"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+                clipRule="evenodd"
+              />
+            </svg>
+          )}
+        </div>
+        <div className="ml-3">
+          <h3 className={`text-sm font-medium ${textColor}`}>{message.title}</h3>
+          <div className={`mt-1 text-sm ${textColor.replace('800', '700')}`}>
+            <p>{message.message}</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Suspenseでラップしたコンポーネント
+function VerificationMessage() {
+  return (
+    <Suspense fallback={null}>
+      <VerificationMessageInner />
+    </Suspense>
+  );
+}
+
 // Suspenseでラップしたコンポーネント
 function SessionTimeoutMessage() {
   return (
     <Suspense fallback={null}>
       <SessionTimeoutMessageInner />
+      <VerificationMessage />
     </Suspense>
   );
 }
@@ -477,19 +623,29 @@ export default function SigninPage() {
                     type="checkbox"
                     checked={termsAccepted}
                     onChange={(e) => setTermsAccepted(e.target.checked)}
-                    className="focus:ring-blue-500 h-4 w-4 text-blue-600 border-gray-300 rounded"
+                    style={{
+                      backgroundColor: '#ffffff',
+                      borderColor: '#d1d5db',
+                      accentColor: '#2563eb',
+                      colorScheme: 'light',
+                      filter: 'none',
+                      appearance: 'auto',
+                      WebkitAppearance: 'checkbox',
+                      MozAppearance: 'checkbox',
+                    }}
+                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 focus:ring-offset-0"
                     disabled={isPending}
                   />
                 </div>
                 <div className="ml-3 text-sm">
-                  <label htmlFor="terms" className="text-gray-700">
+                  <label htmlFor="terms" className="text-gray-700 dark:text-gray-300">
                     <span className="font-medium">利用規約</span>に同意します
                   </label>
-                  <p className="text-gray-500 mt-1">
+                  <p className="text-gray-500 dark:text-gray-400 mt-1">
                     <Link
                       href="/legal/terms"
                       target="_blank"
-                      className="text-blue-600 hover:text-blue-500 hover:underline"
+                      className="text-blue-600 hover:text-blue-500 hover:underline dark:text-blue-400 dark:hover:text-blue-300"
                     >
                       利用規約を読む
                     </Link>

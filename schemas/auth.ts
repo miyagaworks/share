@@ -7,6 +7,19 @@ export const LoginSchema = z.object({
     password: z.string().min(8, { message: "パスワードは8文字以上である必要があります" }),
 });
 
+// メール再送信用スキーマ
+export const ResendVerificationEmailSchema = z.object({
+  email: z.string().email('有効なメールアドレスを入力してください'),
+});
+
+// メール認証用スキーマ
+export const EmailVerificationSchema = z.object({
+  token: z.string().min(1, 'トークンが必要です'),
+});
+
+export type ResendVerificationEmailInput = z.infer<typeof ResendVerificationEmailSchema>;
+export type EmailVerificationInput = z.infer<typeof EmailVerificationSchema>;
+
 // 新規登録フォーム用スキーマ
 export const RegisterSchema = z.object({
   // 名前を姓と名で分離

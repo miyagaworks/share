@@ -146,11 +146,25 @@ export default {
         token.email = user.email;
         token.role = user.role;
 
+        // 🔥 追加: データベースからemailVerified情報を取得
+        try {
+          const dbUser = await prisma.user.findUnique({
+            where: { id: user.id },
+            select: { emailVerified: true },
+          });
+
+          token.emailVerified = !!dbUser?.emailVerified;
+        } catch (error) {
+          console.error('emailVerified取得エラー:', error);
+          token.emailVerified = false;
+        }
+
         console.log('✅ [Auth] JWTトークン更新完了:', {
           sub: token.sub,
           name: token.name,
           email: token.email,
           role: token.role,
+          emailVerified: token.emailVerified, // 追加
         });
       }
 

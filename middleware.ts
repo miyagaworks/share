@@ -2,6 +2,7 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { checkEmailVerification } from './middleware/emailVerificationHandler';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -56,6 +57,12 @@ export async function middleware(request: NextRequest) {
       response.cookies.delete('next-auth.csrf-token');
 
       return response;
+    }
+
+    // 🔥 追加: メール認証チェック
+    const emailVerificationResult = await checkEmailVerification(request);
+    if (emailVerificationResult.url !== request.url) {
+      return emailVerificationResult;
     }
 
     console.log('認証済みユーザー: アクセス許可', {
