@@ -301,6 +301,11 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               gridTemplateColumns: 'repeat(4, 1fr)',
               gap: '1rem',
               marginBottom: '1.5rem',
+              width: '100%',
+              maxWidth: '100%',
+              justifyItems: 'center', // 追加: アイテムを中央揃え
+              alignItems: 'center', // 追加: 垂直方向も中央揃え
+              boxSizing: 'border-box', // 追加: ボックスサイズ計算を明確化
             }}
           >
             {/* 自己紹介ボタン */}
