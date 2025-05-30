@@ -1,20 +1,15 @@
-// next.config.mjs (修正版) - 既存の設定を保持しつつ追加
+// next.config.mjs (PWA対応版)
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // 基本設定
+  // 既存の設定はそのまま保持...
   reactStrictMode: true,
 
-  // 実験的機能
   experimental: {
-    // CSS最適化
     optimizeCss: true,
-    // パッケージインポート最適化
     optimizePackageImports: ['react-icons', 'lucide-react', '@heroicons/react', 'react-hook-form'],
-    // 🔧 Stripe関連パッケージの外部化
     serverComponentsExternalPackages: ['stripe'],
   },
 
-  // TypeScript と ESLint 設定
   typescript: {
     ignoreBuildErrors: true,
   },
@@ -22,7 +17,6 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
-  // 🔧 修正：画像最適化設定（remotePatterns使用）
   images: {
     remotePatterns: [
       {
@@ -35,20 +29,18 @@ const nextConfig = {
       },
       {
         protocol: 'https',
-        hostname: '**', // その他のドメイン
+        hostname: '**',
       },
     ],
     formats: ['image/avif', 'image/webp'],
-    minimumCacheTTL: 31536000, // 1年間キャッシュ
+    minimumCacheTTL: 31536000,
     deviceSizes: [640, 750, 828, 1080, 1200, 1920],
     imageSizes: [16, 32, 48, 64, 96, 128, 256],
     dangerouslyAllowSVG: true,
     contentSecurityPolicy: "default-src 'self'; script-src 'none'; sandbox;",
   },
 
-  // 🔧 バンドル最適化（Stripe警告対応）
   webpack: (config, { isServer, dev }) => {
-    // 🔧 Stripe関連の警告を抑制
     if (dev) {
       config.resolve.fallback = {
         ...config.resolve.fallback,
@@ -58,13 +50,10 @@ const nextConfig = {
       };
     }
 
-    // プロダクションビルドでの最適化
     if (!dev && !isServer) {
-      // チャンク分割の最適化
       config.optimization.splitChunks = {
         chunks: 'all',
         cacheGroups: {
-          // フレームワークチャンク
           framework: {
             chunks: 'all',
             name: 'framework',
@@ -72,7 +61,6 @@ const nextConfig = {
             priority: 40,
             enforce: true,
           },
-          // ライブラリチャンク
           lib: {
             test(module) {
               return module.size() > 160000 && /node_modules[/\\]/.test(module.identifier());
@@ -86,14 +74,12 @@ const nextConfig = {
             minChunks: 1,
             reuseExistingChunk: true,
           },
-          // コモンチャンク
           commons: {
             name: 'commons',
             minChunks: 2,
             priority: 20,
             reuseExistingChunk: true,
           },
-          // デフォルト
           default: {
             minChunks: 2,
             priority: 10,
@@ -106,18 +92,16 @@ const nextConfig = {
     return config;
   },
 
-  // 圧縮とキャッシュ設定
   compress: true,
   poweredByHeader: false,
 
-  // 🔧 環境変数（デバッグモード制御）
   env: {
-    DEBUG: process.env.NODE_ENV === 'development' ? '' : '', // デバッグログを抑制
+    DEBUG: process.env.NODE_ENV === 'development' ? '' : '',
     PRISMA_CONNECTION_LIMIT: '10',
     PRISMA_CONNECTION_TIMEOUT: '5000',
   },
 
-  // ヘッダー設定（セキュリティとキャッシュ）
+  // 🔥 PWA対応: ヘッダー設定を修正
   async headers() {
     return [
       {
@@ -135,6 +119,60 @@ const nextConfig = {
           {
             key: 'Cache-Control',
             value: 'public, max-age=300, s-maxage=300',
+          },
+        ],
+      },
+      // 🔥 PWA マニフェストファイルのヘッダー設定
+      {
+        source: '/manifest.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400',
+          },
+        ],
+      },
+      {
+        source: '/qrcode-manifest.json',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/manifest+json',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=86400',
+          },
+        ],
+      },
+      // 🔥 Service Worker のヘッダー設定
+      {
+        source: '/sw.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
+          },
+        ],
+      },
+      {
+        source: '/qr-sw.js',
+        headers: [
+          {
+            key: 'Content-Type',
+            value: 'application/javascript',
+          },
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=0, must-revalidate',
           },
         ],
       },
@@ -158,14 +196,10 @@ const nextConfig = {
     ];
   },
 
-  // リダイレクト設定を修正
   async redirects() {
-    return [
-      // 無限リダイレクトを避けるため削除
-    ];
+    return [];
   },
 
-  // サーバーランタイム設定
   serverRuntimeConfig: {
     prisma: {
       connectionLimit: process.env.PRISMA_CONNECTION_LIMIT || 10,
@@ -174,7 +208,6 @@ const nextConfig = {
     },
   },
 
-  // その他の最適化
   transpilePackages: ['styled-jsx'],
   onDemandEntries: {
     maxInactiveAge: 60 * 1000,
