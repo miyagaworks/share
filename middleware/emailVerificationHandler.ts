@@ -42,36 +42,3 @@ export async function checkEmailVerification(request: NextRequest) {
 
   return NextResponse.next();
 }
-
-// この方法を使用する場合は、auth.config.ts のJWTコールバックで
-// emailVerified情報をトークンに含める必要があります：
-
-/*
-auth.config.ts に以下を追加:
-
-async jwt({ token, user, trigger }) {
-  // ... 既存のコード
-
-  if (user || trigger === 'update') {
-    try {
-      const userId = user?.id || token.sub;
-      const dbUser = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          emailVerified: true,
-          // ... 他のフィールド
-        },
-      });
-
-      if (dbUser) {
-        token.emailVerified = !!dbUser.emailVerified;
-        // ... 他の設定
-      }
-    } catch (error) {
-      console.error('JWTコールバックエラー:', error);
-    }
-  }
-
-  return token;
-}
-*/
