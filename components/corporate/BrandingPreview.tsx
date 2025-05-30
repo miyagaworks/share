@@ -206,7 +206,16 @@ export function BrandingPreview({
           {highlightSns && (
             <div
               className="absolute inset-0 border-2 border-red-500 rounded-lg animate-pulse"
-              style={{ top: '-8px', left: '-8px', right: '-8px', bottom: '-8px', zIndex: 5 }}
+              style={{
+                top: '-8px',
+                left: '-8px',
+                right: '-8px',
+                bottom: '-8px',
+                zIndex: 5,
+                borderColor: '#ef4444',
+                borderWidth: '2px',
+                borderStyle: 'solid',
+              }}
             ></div>
           )}
 
@@ -240,6 +249,9 @@ export function BrandingPreview({
                   right: '-8px',
                   bottom: '-8px',
                   zIndex: 5,
+                  borderColor: '#ef4444',
+                  borderWidth: '2px',
+                  borderStyle: 'solid',
                 }}
               ></div>
             )}
@@ -464,8 +476,7 @@ export function BrandingPreview({
                   {/* 自己紹介文 */}
                   <div className="px-8 w-full">
                     <p className="text-base text-justify whitespace-pre-wrap">
-                      {bio ||
-                        '自己紹介文がここに入ります。'}
+                      {bio || '自己紹介文がここに入ります。'}
                     </p>
                   </div>
                 </div>

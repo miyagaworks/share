@@ -173,7 +173,7 @@ export default function ImprovedCorporateMemberDesignPage() {
             variant="corporate"
             onClick={() => handleSaveDesign(designData || {})}
             disabled={isSaving}
-            className="flex items-center"
+            className="flex items-center transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
           >
             {isSaving ? (
               <>
@@ -318,7 +318,7 @@ export default function ImprovedCorporateMemberDesignPage() {
                     variant="corporate"
                     onClick={() => handleSaveDesign(designData || {})}
                     disabled={isSaving}
-                    className="w-full sm:w-auto flex items-center justify-center"
+                    className="w-full sm:w-auto flex items-center justify-center transition-all duration-200 hover:shadow-lg hover:-translate-y-0.5"
                   >
                     {isSaving ? (
                       <>

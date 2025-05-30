@@ -1318,3 +1318,67 @@ a.qr-designer-button:hover * {
     color: white !important;
     -webkit-text-fill-color: white !important;
 }
+
+/* ダークモード対応 - タブのhover効果のみ強化 */
+@media (prefers-color-scheme: dark) {
+
+    /* タブボタンのhover効果を強制適用（プレビューに影響しないよう限定） */
+    .corporate-theme button[class*="hover:bg-[#1E3A8A]"]:hover,
+    .corporate-theme .hover\:bg-\[\#1E3A8A\]:hover {
+        background-color: #1E3A8A !important;
+        color: white !important;
+    }
+
+    /* プレビューのハイライト効果のみ保護 */
+    .border-red-500 {
+        border-color: #ef4444 !important;
+        border-width: 2px !important;
+    }
+
+    /* プレビュー内の要素は保護しない（削除） */
+}
+
+/* hover効果の最優先適用（プレビューエリア以外） */
+.corporate-theme .hover\:bg-\[\#1E3A8A\]:hover,
+.corporate-theme button[class*="hover:bg-[#1E3A8A]"]:hover {
+    background-color: #1E3A8A !important;
+    color: white !important;
+    -webkit-text-fill-color: white !important;
+}
+
+/* プレビューのハイライト効果強化 */
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: .5;
+    }
+}
+
+/* 赤いボーダーの強制表示 */
+.border-red-500 {
+    border-color: #ef4444 !important;
+    border-width: 2px !important;
+    border-style: solid !important;
+}
+
+/* ダークモードでも赤いボーダーを維持（プレビューのみ） */
+@media (prefers-color-scheme: dark) {
+    .border-red-500 {
+        border-color: #ef4444 !important;
+        opacity: 1 !important;
+    }
+
+    /* アニメーション効果も強制適用 */
+    .animate-pulse {
+        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
+    }
+}
