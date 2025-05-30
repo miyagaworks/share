@@ -316,8 +316,9 @@ share/
 │   │   ├── subscription
 │   │   │   └── page.tsx
 │   │   └── test-optimization
-│   │       └── page.tsx
 │   ├── debug
+│   │   ├── network
+│   │   │   └── page.tsx
 │   │   └── session
 │   │       └── route.ts
 │   ├── error.tsx
@@ -394,6 +395,8 @@ share/
 │   │   ├── QrCodeClient.tsx
 │   │   ├── ShareOptionClient.tsx
 │   │   └── SubscriptionOverview.tsx
+│   ├── debug
+│   │   └── NetworkDiagnostic.tsx
 │   ├── forms
 │   │   ├── CustomLinkForm.tsx
 │   │   ├── ImprovedDesignForm.tsx
@@ -482,8 +485,7 @@ share/
 │   ├── useOptimizedActivity.ts
 │   ├── useOptimizedProfile.ts
 │   ├── useOptimizedTenant.ts
-│   ├── usePlanInfo.ts
-│   └── useTestDashboardInfo.ts
+│   └── usePlanInfo.ts
 ├── lib
 │   ├── corporateAccess
 │   │   ├── adminAccess.ts
@@ -670,6 +672,8 @@ share/
 │   ├── create-missing-subscriptions.ts
 │   ├── delete-user.ts
 │   ├── fix-corporate-access.ts
+│   ├── fix-incomplete-corporate-members.mjs
+│   ├── fix-incomplete-corporate-members.ts
 │   ├── fix-tenant-relations.ts
 │   ├── generate-prisma-migration.js
 │   ├── migrate-subscription-plans.ts

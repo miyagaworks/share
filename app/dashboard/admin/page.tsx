@@ -5,7 +5,15 @@ import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
-import { HiShieldCheck, HiUsers, HiCreditCard, HiKey, HiBell, HiOutlineMail } from 'react-icons/hi';
+import {
+  HiShieldCheck,
+  HiUsers,
+  HiCreditCard,
+  HiKey,
+  HiBell,
+  HiOutlineMail,
+  HiEye,
+} from 'react-icons/hi';
 
 export default function AdminDashboardPage() {
   const { data: session } = useSession();
@@ -100,6 +108,13 @@ export default function AdminDashboardPage() {
           icon={<HiUsers className="h-6 w-6 text-blue-600" />}
           description="すべてのユーザーの一覧と管理"
           onClick={() => router.push('/dashboard/admin/users')}
+        />
+
+        <AdminMenuCard
+          title="プロフィール・QRコード管理"
+          icon={<HiEye className="h-6 w-6 text-blue-600" />}
+          description="ユーザーの公開プロフィールとQRコードの管理"
+          onClick={() => router.push('/dashboard/admin/profiles')}
         />
 
         <AdminMenuCard

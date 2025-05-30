@@ -1,4 +1,4 @@
-// app/api/user/dashboard-info/route.ts (完全修正版)
+// app/api/user/dashboard-info/route.ts (プロフィール管理メニュー追加版)
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
@@ -65,7 +65,7 @@ interface Navigation {
   menuItems: MenuItem[];
 }
 
-// 🔥 修正: generateNavigationEnhanced 関数
+// 🔥 修正: generateNavigationEnhanced 関数（プロフィール管理メニュー追加）
 function generateNavigationEnhanced(
   permissions: Permissions,
   currentPath?: string | null,
@@ -76,6 +76,7 @@ function generateNavigationEnhanced(
     admin: [
       { title: '管理者ダッシュボード', href: '/dashboard/admin', icon: 'HiShieldCheck' },
       { title: 'ユーザー管理', href: '/dashboard/admin/users', icon: 'HiUsers' },
+      { title: 'プロフィール・QR管理', href: '/dashboard/admin/profiles', icon: 'HiEye' },
       {
         title: 'サブスクリプション管理',
         href: '/dashboard/admin/subscriptions',
@@ -115,7 +116,7 @@ function generateNavigationEnhanced(
       { title: 'ダッシュボード', href: '/dashboard', icon: 'HiHome' },
       { title: 'プロフィール編集', href: '/dashboard/profile', icon: 'HiUser' },
       { title: 'SNS・リンク管理', href: '/dashboard/links', icon: 'HiLink' },
-      { title: 'デザイン設定', href: '/dashboard/design', icon: 'HiColorSwatch' },
+      { title: 'デザイン設計', href: '/dashboard/design', icon: 'HiColorSwatch' },
       { title: '共有設定', href: '/dashboard/share', icon: 'HiShare' },
       { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
       { title: '永久利用権法人機能', href: '#permanent-divider', icon: '', isDivider: true },
