@@ -500,7 +500,7 @@ export default function CorporateMemberPage() {
                   </Button>
                 </Link>
                 <Link href="/qrcode">
-                  <Button variant="corporateOutline" className="w-full">
+                  <Button variant="corporate" className="w-full">
                     <HiColorSwatch className="mr-2 h-4 w-4" />
                     デザイン変更
                   </Button>
