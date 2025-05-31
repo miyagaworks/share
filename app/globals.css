@@ -211,25 +211,82 @@ body {
     background-color: white !important;
     color: #1E3A8A !important;
     border: 1px solid #1E3A8A !important;
+    border-radius: 0.375rem !important;
+    /* rounded-md */
 }
 
 .btn-corporate-outline:hover {
     background-color: rgba(30, 58, 138, 0.05) !important;
+    color: #1E3A8A !important;
+    /* ホバー時も紺色を維持 */
 }
 
 /* ダークモードでのボタンアウトライン調整 */
 @media (prefers-color-scheme: dark) {
-    .btn-corporate-outline {
+    [variant="corporateOutline"] {
         background-color: #ffffff !important;
         /* 白背景維持 */
+        background: #ffffff !important;
+        /* 追加で確実に白背景 */
         color: #1e40af !important;
         /* より濃い青文字 */
         border: 1px solid #1e40af !important;
+        border-radius: 0.375rem !important;
+        /* 角丸を確実に適用 */
+        box-shadow: none !important;
+        /* 不要な影を削除 */
+    }
+
+    [variant="corporateOutline"]:hover {
+        background-color: rgba(30, 64, 175, 0.05) !important;
+        background: rgba(30, 64, 175, 0.05) !important;
+        color: #1e40af !important;
+        /* ホバー時も青文字を維持 */
+        border-color: #1e40af !important;
+    }
+
+    .btn-corporate-outline {
+        background-color: #ffffff !important;
+        /* 白背景維持 */
+        background: #ffffff !important;
+        /* 追加で確実に白背景 */
+        color: #1e40af !important;
+        /* より濃い青文字 */
+        border: 1px solid #1e40af !important;
+        border-radius: 0.375rem !important;
+        /* 角丸を確実に適用 */
+        box-shadow: none !important;
+        /* 不要な影を削除 */
     }
 
     .btn-corporate-outline:hover {
         background-color: rgba(30, 64, 175, 0.05) !important;
+        background: rgba(30, 64, 175, 0.05) !important;
+        color: #1e40af !important;
+        /* ホバー時も青文字を維持 */
+        border-color: #1e40af !important;
     }
+}
+
+/* 法人テーマでのボタン内テキストとアイコンの色を確実に指定 */
+.corporate-theme [variant="corporateOutline"],
+.corporate-theme .btn-corporate-outline {
+    color: #1E3A8A !important;
+}
+
+.corporate-theme [variant="corporateOutline"] *,
+.corporate-theme .btn-corporate-outline * {
+    color: #1E3A8A !important;
+}
+
+.corporate-theme [variant="corporateOutline"]:hover,
+.corporate-theme .btn-corporate-outline:hover {
+    color: #1E3A8A !important;
+}
+
+.corporate-theme [variant="corporateOutline"]:hover *,
+.corporate-theme .btn-corporate-outline:hover * {
+    color: #1E3A8A !important;
 }
 
 [variant="corporate"] {
@@ -241,6 +298,8 @@ body {
     background-color: white !important;
     color: #1E3A8A !important;
     border: 1px solid #1E3A8A !important;
+    border-radius: 0.375rem !important;
+    /* rounded-md */
 }
 
 /* チェックボックスを紺色に変更する明示的なスタイル */
@@ -337,22 +396,31 @@ body {
 
 /* ダークモードでのタブスタイル調整 */
 @media (prefers-color-scheme: dark) {
-    .active-tab {
-        color: #1e40af;
-        /* より濃い青 */
-        background-color: rgba(30, 64, 175, 0.05);
-        border-left: 4px solid #1e40af;
+
+    .corporate-theme [variant="corporateOutline"],
+    .corporate-theme .btn-corporate-outline {
+        background-color: #ffffff !important;
+        background: #ffffff !important;
+        color: #1e40af !important;
+        border-color: #1e40af !important;
+        border-radius: 0.375rem !important;
     }
 
-    .inactive-tab {
-        color: #374151;
-        /* 濃いグレー */
+    .corporate-theme [variant="corporateOutline"] *,
+    .corporate-theme .btn-corporate-outline * {
+        color: #1e40af !important;
     }
 
-    .inactive-tab:hover {
-        background-color: rgba(30, 64, 175, 0.05);
-        border-left: 4px solid #1e40af;
-        color: #1e40af;
+    .corporate-theme [variant="corporateOutline"]:hover,
+    .corporate-theme .btn-corporate-outline:hover {
+        background-color: rgba(30, 64, 175, 0.05) !important;
+        background: rgba(30, 64, 175, 0.05) !important;
+        color: #1e40af !important;
+    }
+
+    .corporate-theme [variant="corporateOutline"]:hover *,
+    .corporate-theme .btn-corporate-outline:hover * {
+        color: #1e40af !important;
     }
 }
 
