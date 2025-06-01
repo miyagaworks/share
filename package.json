@@ -102,5 +102,12 @@
         "ts-node": "^10.9.2",
         "typescript": "^5",
         "webpack-bundle-analyzer": "^4.10.2"
+    },
+    "pnpm": {
+        "allowedDeprecatedVersions": {
+          "@prisma/client": "*",
+          "prisma": "*",
+          "sharp": "*"
+        }
     }
 }
