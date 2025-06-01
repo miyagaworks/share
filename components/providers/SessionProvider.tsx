@@ -18,7 +18,7 @@ export function SessionProvider({
   children,
   sessionTimeoutMinutes = 480, // デフォルト8時間
   warningBeforeMinutes = 5, // デフォルト5分前に警告
-  enableAutoLogout = true,
+  enableAutoLogout = false, // 🚀 一時的に自動ログアウトを無効化してAPIエラーを回避
   excludePaths = [],
 }: EnhancedSessionProviderProps) {
   const pathname = usePathname();
@@ -81,14 +81,31 @@ export function SessionProvider({
           method: 'GET',
           headers: {
             'Cache-Control': 'no-cache',
+            'Accept': 'application/json',
           },
         });
+        
         if (response.ok) {
-          setupSessionTimeout();
+          // レスポンスの内容をチェック
+          const contentType = response.headers.get('content-type');
+          if (contentType && contentType.includes('application/json')) {
+            const data = await response.json();
+            if (data && (data.user || data === null)) {
+              setupSessionTimeout();
+            } else {
+              console.warn('[SessionProvider] セッション情報が無効:', data);
+              handleAutoLogout();
+            }
+          } else {
+            console.error('[SessionProvider] セッションAPIが非JSONレスポンス:', await response.text());
+            handleAutoLogout();
+          }
         } else {
+          console.error('[SessionProvider] セッションAPI呼び出し失敗:', response.status);
           handleAutoLogout();
         }
       } catch (error) {
+        console.error('[SessionProvider] セッション延長エラー:', error);
         handleAutoLogout();
       }
     };
@@ -137,10 +154,12 @@ export function SessionProvider({
   }, [sessionTimeoutMinutes, warningBeforeMinutes, shouldEnableAutoLogout, pathname]);
   return (
     <NextAuthSessionProvider
-      // 🚀 修正: セッション更新頻度を大幅に削減
-      refetchInterval={shouldEnableAutoLogout ? 15 * 60 : 30 * 60} // 15分または30分ごと
-      // 🚀 修正: デザイン・リンクページではフォーカス時更新を無効化
-      refetchOnWindowFocus={!isDesignOrLinksPage}
+      // 🚀 修正: セッション更新頻度を大幅に削減 - 本番環境では更新を最小限に
+      refetchInterval={shouldEnableAutoLogout ? 30 * 60 : 0} // 30分ごとまたは無効
+      // 🚀 修正: フォーカス時の更新を無効化（APIエラーを減らすため）
+      refetchOnWindowFocus={false}
+      // セッション情報の基本設定
+      basePath="/api/auth"
     >
       {children}
     </NextAuthSessionProvider>

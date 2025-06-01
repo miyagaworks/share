@@ -47,6 +47,7 @@ const getSessionMaxAge = (): number => {
 // NextAuth設定
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
+  trustHost: true, // 本番環境での信頼できるホスト設定を追加
   session: {
     strategy: 'jwt',
     // セッションの最大継続時間を設定
@@ -114,6 +115,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       if (user || trigger === 'update') {
         try {
           const userId = user?.id || token.sub;
+          
+          // データベース接続を確認
+          try {
+            await prisma.$connect();
+          } catch (connectError) {
+            logger.error('[Auth JWT] データベース接続失敗:', connectError);
+            throw new Error('Database connection failed');
+          }
+          
           const dbUser = await prisma.user.findUnique({
             where: { id: userId },
             include: {
@@ -121,6 +131,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               adminOfTenant: true,
             },
           });
+          
           if (dbUser) {
             token.isAdmin = !!dbUser.adminOfTenant;
             token.tenantId = dbUser.tenant?.id || dbUser.adminOfTenant?.id || null;
@@ -140,6 +151,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               corporateRole: dbUser.corporateRole,
               sessionExpiry: new Date(token.exp * 1000).toISOString(),
             });
+          } else {
+            logger.warn('[Auth JWT] ユーザーが見つかりません:', { userId });
+            // ユーザーが見つからない場合のフォールバック
+            token.role = 'personal';
+            token.isAdmin = false;
+            token.tenantId = null;
           }
         } catch (error) {
           logger.error('JWTコールバックでのDB取得エラー:', {
@@ -151,9 +168,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           
           // データベースエラーの場合は、トークンに基本情報のみ設定
           if (user) {
-            token.role = 'unknown';
+            token.role = 'personal'; // 'unknown'の代わりに'personal'を使用
             token.isAdmin = false;
             token.tenantId = null;
+          }
+        } finally {
+          // データベース接続を適切に切断
+          try {
+            await prisma.$disconnect();
+          } catch (disconnectError) {
+            logger.error('[Auth JWT] データベース切断エラー:', disconnectError);
           }
         }
       }
