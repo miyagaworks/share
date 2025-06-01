@@ -1,4 +1,4 @@
-// app/auth/signup/page.tsx
+// app/auth/signup/page.tsx (メール保存追加版)
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -10,6 +10,7 @@ import { RegisterSchema } from '@/schemas/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { signIn } from 'next-auth/react';
+
 export default function SignupPage() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
@@ -26,7 +27,8 @@ export default function SignupPage() {
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  // Google認証を開始する関数をここに挿入
+
+  // Google認証を開始する関数
   const handleGoogleSignIn = () => {
     // 利用規約の同意確認
     if (!termsAccepted) {
@@ -36,6 +38,7 @@ export default function SignupPage() {
     // 同意している場合のみGoogleログインを実行
     signIn('google', { callbackUrl: '/dashboard' });
   };
+
   const {
     register,
     handleSubmit,
@@ -53,12 +56,14 @@ export default function SignupPage() {
     },
     mode: 'onChange', // リアルタイムバリデーション
   });
+
   const watchLastName = watch('lastName');
   const watchFirstName = watch('firstName');
   const watchLastNameKana = watch('lastNameKana');
   const watchFirstNameKana = watch('firstNameKana');
   const watchEmail = watch('email');
   const watchPassword = watch('password');
+
   // 入力フィールドの状態を監視
   useEffect(() => {
     // 空白を除去した後の各フィールドの値が空でないかを確認
@@ -68,17 +73,21 @@ export default function SignupPage() {
     const firstNameKanaValue = watchFirstNameKana?.trim() || '';
     const emailValue = watchEmail?.trim() || '';
     const passwordValue = watchPassword || '';
+
     setIsLastNameFilled(lastNameValue.length > 0);
     setIsFirstNameFilled(firstNameValue.length > 0);
     setIsLastNameKanaFilled(lastNameKanaValue.length > 0);
     setIsFirstNameKanaFilled(firstNameKanaValue.length > 0);
     setIsEmailFilled(emailValue.length > 0);
     setIsPasswordFilled(passwordValue.length > 0);
+
     // メールアドレスの簡易バリデーション
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     setIsEmailValid(emailRegex.test(emailValue));
+
     // パスワードの長さチェック
     setIsPasswordValid(passwordValue.length >= 8);
+
     // すべての条件が満たされていればフォームは有効
     const formIsValid =
       lastNameValue.length > 0 &&
@@ -90,6 +99,7 @@ export default function SignupPage() {
       passwordValue.length >= 8 &&
       !Object.keys(errors).length &&
       termsAccepted;
+
     setIsFormValid(formIsValid);
   }, [
     watchLastName,
@@ -102,10 +112,12 @@ export default function SignupPage() {
     isValid,
     termsAccepted,
   ]);
+
   // パスワードの表示/非表示を切り替える関数
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
   const onSubmit = async (data: {
     lastName: string;
     firstName: string;
@@ -119,10 +131,12 @@ export default function SignupPage() {
       setError('利用規約に同意していただく必要があります');
       return;
     }
+
     try {
       setError(null);
       setSuccess(null);
       setIsPending(true);
+
       const requestData = {
         lastName: data.lastName,
         firstName: data.firstName,
@@ -131,6 +145,9 @@ export default function SignupPage() {
         email: data.email,
         password: data.password,
       };
+
+      // 🔥 修正: メールアドレスをローカルストレージに保存
+      localStorage.setItem('pendingVerificationEmail', data.email);
 
       // サインアップ処理
       const response = await fetch('/api/auth/register', {
@@ -145,15 +162,19 @@ export default function SignupPage() {
       if (!response.ok) {
         throw new Error(result.message || 'アカウント登録に失敗しました');
       }
+
       // アカウント登録成功
       // メール認証が必要な場合
       if (result.requiresEmailVerification) {
         setSuccess(
           'アカウントが作成されました。認証メールを送信しました。メール認証画面に移動します...',
         );
-        // 3秒後にメール認証画面にリダイレクト
+
+        // 🔥 修正: メールアドレスをURLパラメータに追加してリダイレクト
         setTimeout(() => {
-          router.push('/auth/email-verification');
+          router.push(
+            `/auth/email-verification?email=${encodeURIComponent(data.email)}&message=registration_success`,
+          );
         }, 3000);
       } else {
         // 従来の自動ログイン処理
@@ -163,6 +184,7 @@ export default function SignupPage() {
           password: data.password,
           redirect: false,
         });
+
         if (signInResult?.error) {
           setError(
             'アカウントは作成されましたが、自動ログインに失敗しました。ログイン画面からログインしてください。',
@@ -187,6 +209,7 @@ export default function SignupPage() {
       setIsPending(false);
     }
   };
+
   return (
     <div className="flex min-h-screen">
       {/* 左側：デコレーション部分 */}
@@ -251,6 +274,7 @@ export default function SignupPage() {
           </span>
         </div>
       </div>
+
       {/* 右側：登録フォーム */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-6 py-12 bg-white">
         <div className="w-full max-w-md">
@@ -263,6 +287,7 @@ export default function SignupPage() {
               新しいアカウントを作成して、様々なSNSを管理しましょう
             </p>
           </div>
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
               <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200 shadow-sm">
@@ -283,7 +308,7 @@ export default function SignupPage() {
                 </div>
               </div>
             )}
-            {/* ここに成功メッセージを追加 */}
+
             {success && (
               <div className="rounded-lg bg-green-50 p-4 text-sm text-green-600 border border-green-200 shadow-sm">
                 <div className="flex items-center">
@@ -303,8 +328,9 @@ export default function SignupPage() {
                 </div>
               </div>
             )}
+
             <div className="space-y-4">
-              {/* 単一の名前入力フィールドを4つに分割 */}
+              {/* 姓名入力フィールド */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Input
@@ -351,6 +377,7 @@ export default function SignupPage() {
                   />
                 </div>
               </div>
+
               <div>
                 <Input
                   label="メールアドレス"
@@ -367,6 +394,7 @@ export default function SignupPage() {
                   </p>
                 )}
               </div>
+
               <div>
                 <div className="relative">
                   <Input
@@ -386,7 +414,6 @@ export default function SignupPage() {
                     style={{ top: '50%', transform: 'translateY(-50%)', marginTop: '12px' }}
                   >
                     {showPassword ? (
-                      // 目を閉じるアイコン (パスワードが表示されている状態)
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="20"
@@ -402,7 +429,6 @@ export default function SignupPage() {
                         <line x1="1" y1="1" x2="23" y2="23"></line>
                       </svg>
                     ) : (
-                      // 目を開くアイコン (パスワードが非表示の状態)
                       <svg
                         xmlns="http://www.w3.org/2000/svg"
                         width="20"
@@ -426,6 +452,7 @@ export default function SignupPage() {
                   </p>
                 )}
               </div>
+
               {/* 利用規約同意チェックボックス */}
               <div className="mt-6">
                 <div className="flex items-start">
@@ -472,6 +499,7 @@ export default function SignupPage() {
                 )}
               </div>
             </div>
+
             <div>
               <Button
                 type="submit"
@@ -512,6 +540,7 @@ export default function SignupPage() {
               </Button>
             </div>
           </form>
+
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -521,6 +550,7 @@ export default function SignupPage() {
                 <span className="px-2 bg-white text-gray-500">または</span>
               </div>
             </div>
+
             <div className="mt-6">
               <Button
                 className={`w-full bg-white text-gray-700 border border-gray-300 flex items-center justify-center transform hover:-translate-y-0.5 transition ${
@@ -528,7 +558,7 @@ export default function SignupPage() {
                 }`}
                 variant="outline"
                 onClick={handleGoogleSignIn}
-                disabled={isPending || !termsAccepted} // 利用規約に同意していない場合は無効化
+                disabled={isPending || !termsAccepted}
               >
                 <Image
                   src="/google-logo.svg"
@@ -544,6 +574,7 @@ export default function SignupPage() {
               </p>
             </div>
           </div>
+
           <div className="text-center text-sm mt-8">
             すでにアカウントをお持ちの場合は{' '}
             <Link

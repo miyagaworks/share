@@ -72,6 +72,8 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── signin
 │   │   │   │   └── route.ts
+│   │   │   ├── verify-email
+│   │   │   │   └── route.ts
 │   │   │   └── verify-reset-token
 │   │   │       └── route.ts
 │   │   ├── corporate
@@ -136,7 +138,6 @@ share/
 │   │   │   └── share
 │   │   │       └── route.ts
 │   │   ├── corporate-profile
-│   │   │   ├── links
 │   │   │   ├── route.ts
 │   │   │   └── update
 │   │   │       └── route.ts
@@ -145,18 +146,23 @@ share/
 │   │   │       ├── cleanup-idempotency
 │   │   │       │   └── route.ts
 │   │   │       └── route.ts
+│   │   ├── debug
+│   │   │   └── db-status
+│   │   │       └── route.ts
 │   │   ├── debug-auth
 │   │   │   └── route.ts
 │   │   ├── jikogene
 │   │   │   └── route.ts
 │   │   ├── links
 │   │   │   ├── custom
-│   │   │   │   └── [id]
-│   │   │   │       └── route.ts
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
 │   │   │   ├── route.ts
 │   │   │   └── sns
-│   │   │       └── [id]
-│   │   │           └── route.ts
+│   │   │       ├── [id]
+│   │   │       │   └── route.ts
+│   │   │       └── route.ts
 │   │   ├── notifications
 │   │   │   ├── read
 │   │   │   │   └── route.ts
@@ -213,7 +219,9 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── delete
 │   │   │   │   └── route.ts
-│   │   │   └── permanent-plan-type
+│   │   │   ├── permanent-plan-type
+│   │   │   │   └── route.ts
+│   │   │   └── send-verification-email
 │   │   │       └── route.ts
 │   │   ├── vcard
 │   │   │   └── [userId]
@@ -225,7 +233,7 @@ share/
 │   │   ├── change-password
 │   │   │   └── page.tsx
 │   │   ├── email-verification
-│   │   │   └── paga.tsx
+│   │   │   └── page.tsx
 │   │   ├── error
 │   │   │   └── page.tsx
 │   │   ├── forgot-password
@@ -301,7 +309,6 @@ share/
 │   │   │       ├── page.tsx
 │   │   │       └── qrcode
 │   │   │           └── page.tsx
-│   │   ├── corporate-profile
 │   │   ├── design
 │   │   │   └── page.tsx
 │   │   ├── layout-optimized.tsx
@@ -323,9 +330,8 @@ share/
 │   │   │   └── page.tsx
 │   │   ├── share
 │   │   │   └── page.tsx
-│   │   ├── subscription
-│   │   │   └── page.tsx
-│   │   └── test-optimization
+│   │   └── subscription
+│   │       └── page.tsx
 │   ├── debug
 │   │   ├── network
 │   │   │   └── page.tsx
@@ -334,6 +340,7 @@ share/
 │   ├── error.tsx
 │   ├── favicon.ico
 │   ├── globals.css
+│   ├── globals.css.backup
 │   ├── jikogene
 │   │   ├── components
 │   │   │   ├── FormSteps
@@ -365,10 +372,19 @@ share/
 │   ├── page.tsx
 │   ├── qr
 │   │   └── [slug]
-│   │       └── page.tsx
+│   │       ├── page.tsx
+│   │       └── QrCodeClient.tsx
 │   ├── qrcode
 │   │   ├── layout.tsx
 │   │   └── page.tsx
+│   ├── styles
+│   │   ├── base
+│   │   │   └── variables.css
+│   │   ├── components
+│   │   │   └── buttons.css
+│   │   ├── dark-mode
+│   │   ├── layouts
+│   │   └── themes
 │   └── support
 │       ├── contact
 │       │   ├── ContactPageContent.tsx
@@ -406,7 +422,8 @@ share/
 │   │   ├── ShareOptionClient.tsx
 │   │   └── SubscriptionOverview.tsx
 │   ├── debug
-│   │   └── NetworkDiagnostic.tsx
+│   │   ├── NetworkDiagnostic.tsx
+│   │   └── SigninDebugOverlay.tsx
 │   ├── forms
 │   │   ├── CustomLinkForm.tsx
 │   │   ├── ImprovedDesignForm.tsx
@@ -414,6 +431,7 @@ share/
 │   │   └── SNSLinkFormWithGuideIntegration.tsx
 │   ├── guards
 │   │   ├── CorporateAccessGuard.tsx
+│   │   ├── CorporateAdminGuard.tsx
 │   │   └── CorporateMemberGuard.tsx
 │   ├── layout
 │   │   ├── AuthLayout.tsx
@@ -530,7 +548,6 @@ share/
 │   │   ├── admin-access-server.ts
 │   │   ├── admin-access.ts
 │   │   ├── api.ts
-│   │   ├── auth.ts
 │   │   ├── corporate-access-server.ts
 │   │   ├── corporate-access.ts
 │   │   ├── corporate-access.ts.backup
@@ -684,14 +701,20 @@ share/
 │   ├── compare-schema.js
 │   ├── create-missing-subscriptions.ts
 │   ├── delete-user.ts
+│   ├── final-console-cleanup.sh
+│   ├── fix-client-console.sh
 │   ├── fix-corporate-access.ts
 │   ├── fix-incomplete-corporate-members.mjs
 │   ├── fix-incomplete-corporate-members.ts
+│   ├── fix-remaining-console.sh
 │   ├── fix-tenant-relations.ts
 │   ├── generate-prisma-migration.js
 │   ├── migrate-subscription-plans.ts
 │   ├── migrate-text-settings.ts
 │   ├── normalize-individual-plans.ts
+│   ├── remove-frontend-console.sh
+│   ├── replace-api-console.sh
+│   ├── replace-console-logs.sh
 │   ├── rollback-optimization.sh
 │   ├── set-trial-end-date.mjs
 │   ├── setup-guide-images.mjs
@@ -702,6 +725,7 @@ share/
 ├── share_db_backup.sql
 ├── tailwind.config.js
 ├── tsconfig.json
+├── tsconfig.tsbuildinfo
 ├── types
 │   ├── next-auth.d.ts
 │   ├── prisma-extensions.ts
@@ -711,3 +735,4 @@ share/
 │   ├── tinycolor2.d.ts
 │   └── user.ts
 └── vercel.json
+
