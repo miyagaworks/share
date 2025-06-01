@@ -9,7 +9,23 @@ import Image from 'next/image';
 import { HiUser, HiLink, HiColorSwatch, HiShare, HiQrcode } from 'react-icons/hi';
 
 export default function DashboardPage() {
+  // デバッグ
   const { data: session, status } = useSession();
+
+  useEffect(() => {
+    console.log('🏠 Dashboard page loaded');
+    console.log('🔍 Dashboard session status:', status);
+    console.log('🔍 Dashboard session data:', session);
+
+    if (status === 'unauthenticated') {
+      console.log('❌ Dashboard: No session, user should be redirected to login');
+    } else if (status === 'authenticated') {
+      console.log('✅ Dashboard: User is authenticated');
+    } else {
+      console.log('⏳ Dashboard: Session loading...');
+    }
+  }, [session, status]);
+
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
