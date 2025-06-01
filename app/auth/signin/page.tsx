@@ -1,4 +1,4 @@
-// app/auth/signin/page.tsx
+// app/auth/signin/page.tsx (修正版)
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -7,9 +7,10 @@ import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@/schemas/auth';
-import { signIn } from 'next-auth/react';
+import { signIn, getSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+
 // SessionTimeoutMessageの内部実装
 function SessionTimeoutMessageInner() {
   const searchParams = useSearchParams();
@@ -18,13 +19,16 @@ function SessionTimeoutMessageInner() {
     message: string;
     icon: string;
   } | null>(null);
+
   useEffect(() => {
     const timeoutReason =
       searchParams?.get('timeout') ||
       searchParams?.get('expired') ||
       searchParams?.get('inactive') ||
       searchParams?.get('security');
+
     if (!timeoutReason) return;
+
     const getMessage = () => {
       switch (timeoutReason) {
         case '1':
@@ -60,9 +64,12 @@ function SessionTimeoutMessageInner() {
           };
       }
     };
+
     setMessage(getMessage());
   }, [searchParams]);
+
   if (!message) return null;
+
   return (
     <div className="rounded-lg bg-yellow-50 border border-yellow-200 p-4 mb-6 shadow-sm">
       <div className="flex items-start">
@@ -81,6 +88,7 @@ function SessionTimeoutMessageInner() {
     </div>
   );
 }
+
 function VerificationMessageInner() {
   const searchParams = useSearchParams();
   const [message, setMessage] = useState<{
@@ -88,9 +96,11 @@ function VerificationMessageInner() {
     message: string;
     type: 'success' | 'error' | 'info';
   } | null>(null);
+
   useEffect(() => {
     const errorType = searchParams?.get('error');
     const messageType = searchParams?.get('message');
+
     if (errorType) {
       switch (errorType) {
         case 'invalid_token':
@@ -135,25 +145,30 @@ function VerificationMessageInner() {
       }
     }
   }, [searchParams]);
+
   if (!message) return null;
+
   const bgColor =
     message.type === 'success'
       ? 'bg-green-50 border-green-200'
       : message.type === 'error'
         ? 'bg-red-50 border-red-200'
         : 'bg-blue-50 border-blue-200';
+
   const textColor =
     message.type === 'success'
       ? 'text-green-800'
       : message.type === 'error'
         ? 'text-red-800'
         : 'text-blue-800';
+
   const iconColor =
     message.type === 'success'
       ? 'text-green-600'
       : message.type === 'error'
         ? 'text-red-600'
         : 'text-blue-600';
+
   return (
     <div className={`rounded-lg ${bgColor} p-4 mb-6 shadow-sm`}>
       <div className="flex items-start">
@@ -209,6 +224,7 @@ function VerificationMessageInner() {
     </div>
   );
 }
+
 // Suspenseでラップしたコンポーネント
 function VerificationMessage() {
   return (
@@ -217,6 +233,7 @@ function VerificationMessage() {
     </Suspense>
   );
 }
+
 // Suspenseでラップしたコンポーネント
 function SessionTimeoutMessage() {
   return (
@@ -226,8 +243,8 @@ function SessionTimeoutMessage() {
     </Suspense>
   );
 }
+
 export default function SigninPage() {
-  // 既存のコード（変更なし）
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [isEmailFilled, setIsEmailFilled] = useState(false);
@@ -237,40 +254,61 @@ export default function SigninPage() {
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
-  // ページロード時にセッションをクリア
-  useEffect(() => {
-    // 古いセッション情報をクリア
-    if (typeof window !== 'undefined') {
-      // LocalStorageとSessionStorageをクリア
-      window.localStorage.clear();
-      window.sessionStorage.clear();
-      // 関連するCookieを削除
-      const cookies = document.cookie.split(';');
-      for (let i = 0; i < cookies.length; i++) {
-        const cookie = cookies[i];
-        const eqPos = cookie.indexOf('=');
-        const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
-        document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-      }
-    }
-  }, []);
-  // Google認証を開始する関数の修正
-  const handleGoogleSignIn = () => {
+
+  // 🔥 修正: Cookie削除を削除（NextAuth.jsに任せる）
+  // 強制的なCookie削除は認証に干渉するため削除
+
+  // 🔥 修正: Google認証を正しいNextAuth.js方式で実装
+  const handleGoogleSignIn = async () => {
     if (!termsAccepted) {
       setError('Googleでログインする場合も利用規約に同意していただく必要があります');
       return;
     }
+
     try {
+      setError(null);
       setIsPending(true);
-      // クエリパラメータにタイムスタンプを追加してキャッシュを防止
-      const redirectUrl = `/api/auth/signin/google?callbackUrl=${encodeURIComponent('/dashboard')}&t=${Date.now()}`;
-      // 完全なページリダイレクトを実行
-      window.location.href = redirectUrl;
-    } catch {
-      setIsPending(false);
+
+      console.log('🚀 Google signin started');
+
+      // 🔥 修正: NextAuth.jsの正式なsignIn関数を使用
+      const result = await signIn('google', {
+        callbackUrl: '/dashboard',
+        redirect: false, // 手動制御
+      });
+
+      console.log('🔍 Google signin result:', result);
+
+      if (result?.error) {
+        console.error('❌ Google signin error:', result.error);
+        setError('Googleログインでエラーが発生しました。再度お試しください。');
+      } else if (result?.ok) {
+        console.log('✅ Google signin successful, checking session...');
+
+        // セッション確認
+        const session = await getSession();
+        console.log('🔍 Session after Google signin:', session);
+
+        if (session?.user) {
+          console.log('✅ Session confirmed, redirecting to dashboard');
+          // 手動でダッシュボードにリダイレクト
+          window.location.href = '/dashboard';
+        } else {
+          console.warn('⚠️ No session found after successful signin');
+          setError('ログイン後のセッション確認に失敗しました。再度お試しください。');
+        }
+      } else if (result?.url) {
+        console.log('🔄 Redirecting to:', result.url);
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      console.error('💥 Google signin exception:', error);
       setError('Googleログイン処理中にエラーが発生しました。');
+    } finally {
+      setIsPending(false);
     }
   };
+
   const {
     register,
     handleSubmit,
@@ -284,69 +322,76 @@ export default function SigninPage() {
     },
     mode: 'onChange',
   });
+
   const watchEmail = watch('email');
   const watchPassword = watch('password');
+
   // 入力フィールドの状態を監視
   useEffect(() => {
     const emailValue = watchEmail?.trim() || '';
     const passwordValue = watchPassword || '';
+
     setIsEmailFilled(emailValue.length > 0);
     setIsPasswordFilled(passwordValue.length > 0);
+
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     setIsEmailValid(emailRegex.test(emailValue));
     setIsPasswordValid(passwordValue.length >= 8);
+
     const formIsValid =
       emailValue.length > 0 &&
       emailRegex.test(emailValue) &&
       passwordValue.length >= 8 &&
       !Object.keys(errors).length;
+
     setIsFormValid(formIsValid);
   }, [watchEmail, watchPassword, errors, isValid]);
-  // signIn関数
+
+  // 🔥 修正: credentials signIn も修正
   const onSubmit = async (data: { email: string; password: string }) => {
     try {
       setError(null);
       setIsPending(true);
-      // 古いセッション情報をクリア
-      if (typeof window !== 'undefined') {
-        // LocalStorageとSessionStorageをクリア
-        window.localStorage.clear();
-        window.sessionStorage.clear();
-        // 関連するCookieを削除
-        const cookies = document.cookie.split(';');
-        for (let i = 0; i < cookies.length; i++) {
-          const cookie = cookies[i];
-          const eqPos = cookie.indexOf('=');
-          const name = eqPos > -1 ? cookie.substring(0, eqPos).trim() : cookie.trim();
-          document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
-        }
-      }
+
+      console.log('🚀 Credentials signin started');
+
       const result = await signIn('credentials', {
         email: data.email.toLowerCase(),
         password: data.password,
         redirect: false,
         callbackUrl: '/dashboard',
       });
+
+      console.log('🔍 Credentials signin result:', result);
+
       if (result?.error) {
         setError('メールアドレスまたはパスワードが正しくありません');
       } else if (result?.ok) {
-        // 成功後は少し待ってからリダイレクト
-        setTimeout(() => {
-          if (typeof window !== 'undefined') {
-            window.location.href = '/dashboard';
-          }
-        }, 500);
+        // セッション確認
+        const session = await getSession();
+        console.log('🔍 Session after credentials signin:', session);
+
+        if (session?.user) {
+          console.log('✅ Session confirmed, redirecting to dashboard');
+          window.location.href = '/dashboard';
+        } else {
+          console.warn('⚠️ No session found after successful signin');
+          setError('ログイン後のセッション確認に失敗しました。再度お試しください。');
+        }
       }
-    } catch {
+    } catch (error) {
+      console.error('💥 Credentials signin exception:', error);
       setError('ログイン処理中にエラーが発生しました。');
     } finally {
       setIsPending(false);
     }
   };
+
   // パスワードの表示/非表示を切り替える関数
   const togglePasswordVisibility = () => {
     setShowPassword(!showPassword);
   };
+
   return (
     <div className="flex min-h-screen">
       {/* 左側：デコレーション部分 */}
@@ -382,6 +427,7 @@ export default function SigninPage() {
           </div>
         </div>
       </div>
+
       {/* 右側：ログインフォーム */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-6 py-12 bg-white">
         <div className="w-full max-w-md">
@@ -392,8 +438,10 @@ export default function SigninPage() {
             <h2 className="text-3xl font-bold text-gray-900">ログイン</h2>
             <p className="mt-2 text-gray-600">ログインしてSNS情報を管理しましょう</p>
           </div>
+
           {/* Suspenseでラップしたセッションタイムアウトメッセージ */}
           <SessionTimeoutMessage />
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
               <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200 shadow-sm">
@@ -414,6 +462,7 @@ export default function SigninPage() {
                 </div>
               </div>
             )}
+
             <div className="space-y-4">
               <div>
                 <Input
@@ -432,6 +481,7 @@ export default function SigninPage() {
                   </p>
                 )}
               </div>
+
               <div>
                 <div className="relative">
                   <Input
@@ -499,6 +549,7 @@ export default function SigninPage() {
                 </div>
               </div>
             </div>
+
             <div>
               <Button
                 type="submit"
@@ -539,6 +590,7 @@ export default function SigninPage() {
               </Button>
             </div>
           </form>
+
           <div className="mt-8">
             <div className="relative">
               <div className="absolute inset-0 flex items-center">
@@ -548,6 +600,7 @@ export default function SigninPage() {
                 <span className="px-2 bg-white text-gray-500">または</span>
               </div>
             </div>
+
             {/* 利用規約同意チェックボックス */}
             <div className="mt-4">
               <div className="flex items-start">
@@ -588,6 +641,7 @@ export default function SigninPage() {
                 </div>
               </div>
             </div>
+
             <div className="mt-4">
               <Button
                 className={`w-full bg-white text-gray-700 border border-gray-300 flex items-center justify-center transform hover:-translate-y-0.5 transition ${
@@ -611,6 +665,7 @@ export default function SigninPage() {
               </p>
             </div>
           </div>
+
           <div className="text-center text-sm mt-8">
             アカウントをお持ちでない場合は{' '}
             <Link

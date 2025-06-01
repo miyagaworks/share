@@ -1,4 +1,4 @@
-// auth.ts (デバッグ強化版)
+// auth.ts (強制デバッグ版)
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -26,25 +26,36 @@ declare module 'next-auth/jwt' {
   }
 }
 
-// 🔥 デバッグ用ログ関数
-const debugLog = (message: string, data?: any) => {
-  if (process.env.NODE_ENV === 'development' || process.env.DEBUG_AUTH === 'true') {
-    console.log(`[NextAuth Debug] ${message}`, data);
-  }
+// 🔥 強制ログ出力（本番でも必ず出力）
+const forceLog = (message: string, data?: any) => {
+  const timestamp = new Date().toISOString();
+  console.log(`🔥 [${timestamp}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
+
+  // 追加：エラー出力でも確認
+  console.error(`🔥 [${timestamp}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
 };
 
-const errorLog = (message: string, error?: any) => {
-  console.error(`[NextAuth Error] ${message}`, error);
-};
+// 🔥 環境変数チェック
+forceLog('Environment Check', {
+  NODE_ENV: process.env.NODE_ENV,
+  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
+  hasSecret: !!process.env.NEXTAUTH_SECRET,
+  hasGoogleId: !!process.env.GOOGLE_CLIENT_ID,
+  hasGoogleSecret: !!process.env.GOOGLE_CLIENT_SECRET,
+  hasDatabaseUrl: !!process.env.DATABASE_URL,
+  DEBUG_AUTH: process.env.DEBUG_AUTH,
+  ALLOW_ALL_USERS: process.env.ALLOW_ALL_USERS,
+});
 
 // NextAuth設定
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt',
-    maxAge: 8 * 60 * 60, // 8時間
+    maxAge: process.env.SESSION_TIMEOUT_HOURS
+      ? parseInt(process.env.SESSION_TIMEOUT_HOURS) * 60 * 60
+      : 8 * 60 * 60, // デフォルト8時間
   },
-  // 🔥 本番環境でのCookie設定を追加
   cookies: {
     sessionToken: {
       name:
@@ -61,23 +72,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      try {
-        debugLog('SignIn attempt', {
-          provider: account?.provider,
-          userEmail: user?.email,
-          userId: user?.id,
-        });
+      forceLog('🚀 SignIn Callback Started', {
+        provider: account?.provider,
+        userEmail: user?.email,
+        userId: user?.id,
+        accountType: account?.type,
+        profileData: profile ? 'present' : 'missing',
+      });
 
+      try {
         if (account?.provider === 'google' && user?.email) {
           const email = user.email.toLowerCase();
 
-          // 🔥 修正: データベース接続テスト
+          forceLog('📧 Processing Google Login', { email });
+
+          // データベース接続テスト
           try {
-            await prisma.$queryRaw`SELECT 1`;
-            debugLog('Database connection successful');
+            await prisma.$queryRaw`SELECT 1 as test`;
+            forceLog('✅ Database connection successful');
           } catch (dbError) {
-            errorLog('Database connection failed', dbError);
-            return false;
+            forceLog('❌ Database connection failed', dbError);
+            return '/auth/error?error=DatabaseConnection';
           }
 
           // 既存ユーザーを検索
@@ -93,29 +108,39 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             },
           });
 
-          debugLog('Existing user search result', {
+          forceLog('🔍 User Lookup Result', {
             email,
             found: !!existingUser,
             userId: existingUser?.id,
+            role: existingUser?.corporateRole,
+            subscriptionStatus: existingUser?.subscriptionStatus,
           });
 
           if (existingUser) {
-            // 既存ユーザーの場合、情報を更新
             user.id = existingUser.id;
             user.name = existingUser.name || user.name;
             user.email = existingUser.email;
 
-            debugLog('Existing user login successful', { userId: user.id });
+            forceLog('✅ Existing user login successful', {
+              userId: user.id,
+              userName: user.name,
+            });
             return true;
           }
 
-          // 🔥 修正: 新規ユーザーも許可（管理者メールまたは招待されたユーザー）
+          // 管理者ユーザーチェック
           if (email === 'admin@sns-share.com') {
-            debugLog('Admin user login allowed', { email });
+            forceLog('👑 Admin user detected', { email });
             return true;
           }
 
-          // 招待されたユーザーかチェック（メールアドレスが事前登録されているか）
+          // 全ユーザー許可モード
+          if (process.env.ALLOW_ALL_USERS === 'true') {
+            forceLog('🌍 All users allowed (debug mode)', { email });
+            return true;
+          }
+
+          // 招待チェック
           const invitedUser = await prisma.passwordResetToken.findFirst({
             where: {
               user: {
@@ -128,127 +153,115 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
 
           if (invitedUser) {
-            debugLog('Invited user login allowed', { email });
+            forceLog('📨 Invited user found', { email });
             return true;
           }
 
-          // 🔥 一時的: 本番デバッグのため全ユーザー許可
-          if (process.env.ALLOW_ALL_USERS === 'true') {
-            debugLog('All users allowed (debug mode)', { email });
-            return true;
-          }
-
-          debugLog('User not found or not invited', { email });
+          forceLog('🚫 User not authorized', {
+            email,
+            reason: 'Not existing user, not admin, not invited',
+          });
           return false;
         }
 
-        debugLog('Non-Google provider or missing email', {
+        forceLog('⚠️ Non-Google login or missing email', {
           provider: account?.provider,
           hasEmail: !!user?.email,
         });
         return true;
       } catch (error) {
-        errorLog('SignIn callback error', error);
+        forceLog('💥 SignIn callback error', {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
         return false;
       }
     },
 
-    async jwt({ token, user, trigger, session }) {
-      try {
-        debugLog('JWT callback triggered', {
-          trigger,
-          hasUser: !!user,
-          tokenSub: token.sub,
-        });
+    async jwt({ token, user, trigger }) {
+      forceLog('🎫 JWT Callback', {
+        trigger,
+        hasUser: !!user,
+        tokenSub: token.sub,
+        tokenEmail: token.email,
+      });
 
-        // 基本的なユーザー情報設定
+      try {
         if (user) {
           token.sub = user.id;
           token.name = user.name;
           token.email = user.email;
-          debugLog('JWT: User info set from user object', {
+          forceLog('👤 JWT: User info updated', {
             id: user.id,
             email: user.email,
+            name: user.name,
           });
         }
 
-        // ロール情報取得（初回またはupdate時のみ）
         if ((user || trigger === 'update') && token.sub) {
-          try {
-            const dbUser = await prisma.user.findUnique({
-              where: { id: token.sub },
-              select: {
-                email: true,
-                subscriptionStatus: true,
-                corporateRole: true,
-                adminOfTenant: {
-                  select: {
-                    id: true,
-                    accountStatus: true,
-                  },
-                },
-                tenant: {
-                  select: {
-                    id: true,
-                    accountStatus: true,
-                  },
-                },
-                subscription: {
-                  select: {
-                    plan: true,
-                    status: true,
-                  },
+          forceLog('🔄 JWT: Fetching user role data', { userId: token.sub });
+
+          const dbUser = await prisma.user.findUnique({
+            where: { id: token.sub },
+            select: {
+              email: true,
+              subscriptionStatus: true,
+              corporateRole: true,
+              adminOfTenant: {
+                select: {
+                  id: true,
+                  accountStatus: true,
                 },
               },
-            });
+              tenant: {
+                select: {
+                  id: true,
+                  accountStatus: true,
+                },
+              },
+            },
+          });
 
-            if (dbUser) {
-              const userEmail = dbUser.email.toLowerCase();
+          if (dbUser) {
+            const userEmail = dbUser.email.toLowerCase();
 
-              // ロール判定ロジック
-              if (userEmail === 'admin@sns-share.com') {
-                token.role = 'super-admin';
-                token.isAdmin = true;
-                token.tenantId = `admin-tenant-${token.sub}`;
-              } else if (dbUser.subscriptionStatus === 'permanent') {
-                token.role = 'permanent-admin';
-                token.isAdmin = true;
-                token.tenantId = `virtual-tenant-${token.sub}`;
-              } else if (dbUser.adminOfTenant) {
-                const isActive = dbUser.adminOfTenant.accountStatus !== 'suspended';
-                token.role = isActive ? 'admin' : 'personal';
-                token.isAdmin = isActive;
-                token.tenantId = isActive ? dbUser.adminOfTenant.id : null;
-              } else if (dbUser.corporateRole === 'member' && dbUser.tenant) {
-                const isActive = dbUser.tenant.accountStatus !== 'suspended';
-                token.role = isActive ? 'member' : 'personal';
-                token.isAdmin = false;
-                token.tenantId = isActive ? dbUser.tenant.id : null;
-              } else if (dbUser.corporateRole === 'member' && !dbUser.tenant) {
-                token.role = 'incomplete-member';
-                token.isAdmin = false;
-                token.tenantId = null;
-              } else {
-                token.role = 'personal';
-                token.isAdmin = false;
-                token.tenantId = null;
-              }
-
-              debugLog('JWT: Role determined', {
-                userId: token.sub,
-                email: userEmail,
-                role: token.role,
-                isAdmin: token.isAdmin,
-                tenantId: token.tenantId,
-              });
+            // ロール判定
+            if (userEmail === 'admin@sns-share.com') {
+              token.role = 'super-admin';
+              token.isAdmin = true;
+              token.tenantId = `admin-tenant-${token.sub}`;
+            } else if (dbUser.subscriptionStatus === 'permanent') {
+              token.role = 'permanent-admin';
+              token.isAdmin = true;
+              token.tenantId = `virtual-tenant-${token.sub}`;
+            } else if (dbUser.adminOfTenant) {
+              const isActive = dbUser.adminOfTenant.accountStatus !== 'suspended';
+              token.role = isActive ? 'admin' : 'personal';
+              token.isAdmin = isActive;
+              token.tenantId = isActive ? dbUser.adminOfTenant.id : null;
+            } else if (dbUser.corporateRole === 'member' && dbUser.tenant) {
+              const isActive = dbUser.tenant.accountStatus !== 'suspended';
+              token.role = isActive ? 'member' : 'personal';
+              token.isAdmin = false;
+              token.tenantId = isActive ? dbUser.tenant.id : null;
             } else {
-              debugLog('JWT: User not found in database', { userId: token.sub });
               token.role = 'personal';
               token.isAdmin = false;
               token.tenantId = null;
             }
-          } catch (dbError) {
-            errorLog('JWT: Database query error', dbError);
+
+            forceLog('🏷️ JWT: Role assigned', {
+              userId: token.sub,
+              email: userEmail,
+              role: token.role,
+              isAdmin: token.isAdmin,
+              tenantId: token.tenantId,
+              corporateRole: dbUser.corporateRole,
+              hasAdminTenant: !!dbUser.adminOfTenant,
+              hasTenant: !!dbUser.tenant,
+            });
+          } else {
+            forceLog('❌ JWT: User not found in database', { userId: token.sub });
             token.role = 'personal';
             token.isAdmin = false;
             token.tenantId = null;
@@ -257,12 +270,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         return token;
       } catch (error) {
-        errorLog('JWT callback error', error);
+        forceLog('💥 JWT callback error', {
+          error: error instanceof Error ? error.message : String(error),
+          stack: error instanceof Error ? error.stack : undefined,
+        });
         return token;
       }
     },
 
     async session({ session, token }) {
+      forceLog('📋 Session Callback', {
+        hasToken: !!token,
+        hasSession: !!session,
+        tokenSub: token?.sub,
+        sessionUserEmail: session?.user?.email,
+      });
+
       try {
         if (token && session.user) {
           session.user.id = token.sub as string;
@@ -270,15 +293,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           session.user.email = token.email as string;
           session.user.role = token.role as string;
 
-          debugLog('Session created', {
+          forceLog('✅ Session created successfully', {
             userId: session.user.id,
             email: session.user.email,
             role: session.user.role,
+            name: session.user.name,
           });
         }
         return session;
       } catch (error) {
-        errorLog('Session callback error', error);
+        forceLog('💥 Session callback error', {
+          error: error instanceof Error ? error.message : String(error),
+        });
         return session;
       }
     },
@@ -289,20 +315,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: '/auth/error',
   },
   providers: authConfig.providers,
-
-  // 🔥 本番環境でのデバッグ設定
-  debug: process.env.NODE_ENV === 'development' || process.env.DEBUG_AUTH === 'true',
-
-  // 🔥 詳細なログ設定（修正版）
-  logger: {
-    error(error: Error) {
-      errorLog('NextAuth Error', error);
-    },
-    warn(code: string) {
-      console.warn(`[NextAuth Warning] ${code}`);
-    },
-    debug(code: string, metadata?: any) {
-      debugLog(`NextAuth Debug [${code}]`, metadata);
-    },
-  },
+  debug: true, // 強制的にtrueに設定
 });
