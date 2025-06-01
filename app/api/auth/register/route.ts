@@ -1,4 +1,4 @@
-// app/api/auth/register/route.ts (デバッグ強化版)
+// app/api/auth/register/route.ts (修正版 - 新テンプレート使用)
 export const dynamic = 'force-dynamic';
 
 import { NextRequest, NextResponse } from 'next/server';
@@ -7,6 +7,7 @@ import { RegisterSchema } from '@/schemas/auth';
 import bcrypt from 'bcryptjs';
 import { randomUUID } from 'crypto';
 import { sendEmail } from '@/lib/email';
+import { getEmailVerificationTemplate } from '@/lib/email/templates/email-verification';
 
 export async function POST(req: NextRequest) {
   try {
@@ -122,35 +123,17 @@ export async function POST(req: NextRequest) {
     try {
       console.log('📧 メール送信開始...');
 
+      // 🚀 新しいスタイリッシュなテンプレートを使用
+      const emailTemplate = getEmailVerificationTemplate({
+        userName: name,
+        verificationUrl: verificationUrl,
+      });
+
       await sendEmail({
         to: normalizedEmail,
-        subject: '【Share】アカウント登録完了・メールアドレス認証のお願い',
-        text: `Shareにご登録いただきありがとうございます。
-
-アカウントの登録が完了しました。
-以下のリンクをクリックしてメールアドレスの認証を完了してください。
-
-${verificationUrl}
-
-このリンクは24時間のみ有効です。
-認証が完了するまで、一部の機能が制限される場合があります。
-
-Share サポートチーム
-support@sns-share.com`,
-        html: `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h1>Shareへようこそ！</h1>
-            <p>この度はShareにご登録いただき、ありがとうございます。</p>
-            <p>以下のボタンをクリックして、メールアドレスの認証を完了してください。</p>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${verificationUrl}" style="background-color: #4A89DC; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">メールアドレスを認証する</a>
-            </div>
-            
-            <p>このリンクは24時間のみ有効です。</p>
-            <p>Share サポートチーム</p>
-          </div>
-        `,
+        subject: emailTemplate.subject,
+        text: emailTemplate.text,
+        html: emailTemplate.html,
       });
 
       console.log('✅ 認証メール送信完了');
