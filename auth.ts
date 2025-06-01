@@ -1,234 +1,200 @@
-// auth.ts (元の状態)
-import { logger } from "@/lib/utils/logger";
+// auth.ts (シンプル化版 - 型安全)
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import type { DefaultSession } from 'next-auth';
+
 // 型定義の拡張
 declare module 'next-auth' {
   interface User {
     role?: string;
-    tenantId?: string | null;
-    isAdmin?: boolean;
   }
   interface Session {
     user: {
       id: string;
       role?: string;
-      tenantId?: string | null;
-      isAdmin?: boolean;
     } & DefaultSession['user'];
   }
 }
-// JWT型の拡張
+
 declare module 'next-auth/jwt' {
   interface JWT {
     role?: string;
-    tenantId?: string | null;
-    isAdmin?: boolean;
   }
 }
-// authConfig設定を取得
-const { callbacks: baseCallbacks, ...restAuthConfig } = authConfig;
-// セッションタイムアウト設定（秒単位）
-const SESSION_MAX_AGE = 8 * 60 * 60; // 8時間（デフォルト）
-// 環境変数から設定を読み込み（カスタマイズ可能）
-const getSessionMaxAge = (): number => {
-  const envValue = process.env.SESSION_TIMEOUT_HOURS;
-  if (envValue) {
-    const hours = parseInt(envValue, 10);
-    if (!isNaN(hours) && hours > 0) {
-      return hours * 60 * 60; // 時間を秒に変換
-    }
-  }
-  return SESSION_MAX_AGE;
-};
-// NextAuth設定
+
+// NextAuth設定 - シンプルで型安全なバージョン
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
-  trustHost: true, // 本番環境での信頼できるホスト設定を追加
   session: {
     strategy: 'jwt',
-    // セッションの最大継続時間を設定
-    maxAge: getSessionMaxAge(),
-    // セッション更新間隔を設定（この間隔でセッションが延長される）
-    updateAge: 24 * 60 * 60, // 24時間（アクティビティがあれば延長）
-  },
-  // JWT設定
-  jwt: {
-    // JWTトークンの最大継続時間
-    maxAge: getSessionMaxAge(),
-  },
-  cookies: {
-    sessionToken: {
-      name: `next-auth.session-token`,
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        domain: undefined,
-        // Cookieの有効期限もセッション時間に合わせる
-        maxAge: getSessionMaxAge(),
-      },
-    },
-    callbackUrl: {
-      name: 'next-auth.callback-url',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        domain: undefined,
-      },
-    },
-    csrfToken: {
-      name: 'next-auth.csrf-token',
-      options: {
-        httpOnly: true,
-        sameSite: 'lax',
-        path: '/',
-        secure: process.env.NODE_ENV === 'production',
-        domain: undefined,
-      },
-    },
+    maxAge: 8 * 60 * 60, // 8時間
   },
   callbacks: {
-    async jwt({ token, user, trigger, ...rest }) {
-      // 既存のコールバックとマージ
-      if (baseCallbacks?.jwt) {
-        token = await baseCallbacks.jwt({ token, user, trigger, ...rest });
-      }
-      // セッション有効期限チェック
-      const now = Math.floor(Date.now() / 1000);
-      const maxAge = getSessionMaxAge();
-      // トークンの有効期限を設定
-      if (!token.exp || token.exp < now) {
-        // 期限切れの場合は新しい有効期限を設定
-        token.exp = now + maxAge;
-        token.iat = now;
-      }
-      // 最後のアクティビティ時間を記録
-      token.lastActivity = now;
-      // 初回サインイン時または更新時にユーザー情報をトークンに追加
-      if (user || trigger === 'update') {
-        try {
-          const userId = user?.id || token.sub;
-          
-          // データベース接続を確認
-          try {
-            await prisma.$connect();
-          } catch (connectError) {
-            logger.error('[Auth JWT] データベース接続失敗:', connectError);
-            throw new Error('Database connection failed');
+    async signIn({ user, account }) {
+      try {
+        if (account?.provider === 'google' && user?.email) {
+          const existingUser = await prisma.user.findUnique({
+            where: { email: user.email.toLowerCase() },
+            select: { id: true, name: true, email: true },
+          });
+
+          if (existingUser) {
+            user.id = existingUser.id;
+            user.name = existingUser.name;
+            user.email = existingUser.email;
+            return true;
           }
-          
+          return false;
+        }
+        return true;
+      } catch (error) {
+        console.error('SignIn callback error:', error);
+        return false;
+      }
+    },
+
+    async jwt({ token, user, trigger }) {
+      // 基本的なユーザー情報設定
+      if (user) {
+        token.sub = user.id;
+        token.name = user.name;
+        token.email = user.email;
+      }
+
+      // 🚀 強化: ロール情報取得（初回またはupdate時のみ）
+      if ((user || trigger === 'update') && token.sub) {
+        try {
           const dbUser = await prisma.user.findUnique({
-            where: { id: userId },
-            include: {
-              tenant: true,
-              adminOfTenant: true,
+            where: { id: token.sub },
+            select: {
+              email: true,
+              subscriptionStatus: true,
+              corporateRole: true,
+              adminOfTenant: {
+                select: {
+                  id: true,
+                  accountStatus: true,
+                },
+              },
+              tenant: {
+                select: {
+                  id: true,
+                  accountStatus: true,
+                },
+              },
+              subscription: {
+                select: {
+                  plan: true,
+                  status: true,
+                },
+              },
             },
           });
-          
+
           if (dbUser) {
-            token.isAdmin = !!dbUser.adminOfTenant;
-            token.tenantId = dbUser.tenant?.id || dbUser.adminOfTenant?.id || null;
-            if (dbUser.adminOfTenant) {
-              token.role = 'admin';
-            } else if (dbUser.tenant && dbUser.corporateRole === 'member') {
-              token.role = 'member';
-            } else if (dbUser.tenant) {
-              token.role = 'corporate-member';
-            } else {
-              token.role = 'personal';
+            // 🚀 新機能: 詳細な法人ユーザー判定とロール設定
+            const userEmail = dbUser.email.toLowerCase();
+
+            // 1. 管理者メールアドレス
+            if (userEmail === 'admin@sns-share.com') {
+              token.role = 'super-admin';
+              token.isAdmin = true;
+              token.tenantId = `admin-tenant-${token.sub}`;
             }
-            logger.debug('[Auth JWT] ユーザー情報更新:', {
-              userId: dbUser.id,
+
+            // 2. 永久利用権ユーザー
+            else if (dbUser.subscriptionStatus === 'permanent') {
+              token.role = 'permanent-admin';
+              token.isAdmin = true;
+              token.tenantId = `virtual-tenant-${token.sub}`;
+            }
+
+            // 3. 法人管理者
+            else if (dbUser.adminOfTenant) {
+              const isActive = dbUser.adminOfTenant.accountStatus !== 'suspended';
+              if (isActive) {
+                token.role = 'admin';
+                token.isAdmin = true;
+                token.tenantId = dbUser.adminOfTenant.id;
+              } else {
+                token.role = 'personal';
+                token.isAdmin = false;
+                token.tenantId = null;
+              }
+            }
+
+            // 4. 法人招待メンバー
+            else if (dbUser.corporateRole === 'member' && dbUser.tenant) {
+              const isActive = dbUser.tenant.accountStatus !== 'suspended';
+              if (isActive) {
+                token.role = 'member';
+                token.isAdmin = false;
+                token.tenantId = dbUser.tenant.id;
+              } else {
+                token.role = 'personal';
+                token.isAdmin = false;
+                token.tenantId = null;
+              }
+            }
+
+            // 5. 不完全な招待メンバー
+            else if (dbUser.corporateRole === 'member' && !dbUser.tenant) {
+              token.role = 'incomplete-member';
+              token.isAdmin = false;
+              token.tenantId = null;
+            }
+
+            // 6. 個人ユーザー
+            else {
+              token.role = 'personal';
+              token.isAdmin = false;
+              token.tenantId = null;
+            }
+
+            console.log('JWT Token Updated:', {
+              userId: token.sub,
+              email: userEmail,
               role: token.role,
+              isAdmin: token.isAdmin,
               tenantId: token.tenantId,
               corporateRole: dbUser.corporateRole,
-              sessionExpiry: new Date(token.exp * 1000).toISOString(),
+              hasAdminTenant: !!dbUser.adminOfTenant,
+              hasTenant: !!dbUser.tenant,
             });
           } else {
-            logger.warn('[Auth JWT] ユーザーが見つかりません:', { userId });
-            // ユーザーが見つからない場合のフォールバック
+            console.warn('JWT: ユーザーが見つかりません:', { userId: token.sub });
             token.role = 'personal';
             token.isAdmin = false;
             token.tenantId = null;
           }
         } catch (error) {
-          logger.error('JWTコールバックでのDB取得エラー:', {
-            error: error instanceof Error ? error.message : String(error),
-            userId: user?.id || token.sub,
-            trigger,
-            stack: error instanceof Error ? error.stack : undefined,
-          });
-          
-          // データベースエラーの場合は、トークンに基本情報のみ設定
-          if (user) {
-            token.role = 'personal'; // 'unknown'の代わりに'personal'を使用
-            token.isAdmin = false;
-            token.tenantId = null;
-          }
-        } finally {
-          // データベース接続を適切に切断
-          try {
-            await prisma.$disconnect();
-          } catch (disconnectError) {
-            logger.error('[Auth JWT] データベース切断エラー:', disconnectError);
-          }
+          console.error('JWT callback DB error:', error);
+          token.role = 'personal';
+          token.isAdmin = false;
+          token.tenantId = null;
         }
       }
+
       return token;
     },
+
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub as string;
-        session.user.role = token.role;
-        session.user.isAdmin = token.isAdmin;
-        session.user.tenantId = token.tenantId;
-        // セッション有効期限情報を追加（デバッグ用）
-        if (token.exp) {
-          const expiryDate = new Date(token.exp * 1000);
-          logger.debug('[Session] セッション有効期限:', expiryDate.toISOString());
-        }
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
+        session.user.role = token.role as string;
       }
       return session;
     },
   },
-  // authConfigから残りの設定を取得
-  ...restAuthConfig,
+  pages: {
+    signIn: '/auth/signin',
+    signOut: '/auth/signin',
+    error: '/auth/error',
+  },
+  providers: authConfig.providers,
+  debug: process.env.NODE_ENV === 'development',
 });
-// セキュリティ問題発生時の強制ログアウト関数
-export const forceSecurityLogout = async (reason: string): Promise<void> => {
-  logger.error(`セキュリティ上の理由によるログアウト: ${reason}`);
-  await signOut({
-    redirect: true,
-    redirectTo: '/auth/signin?security=1',
-  });
-};
-// トークン改ざんを検出する機能
-export const detectTokenTampering = (token: Record<string, unknown>): boolean => {
-  if (!token || typeof token !== 'object') return true;
-  if (!token.sub || !token.iat || !token.exp) return true;
-  const expTime = token.exp as number;
-  if (Date.now() / 1000 > expTime) return true;
-  return false;
-};
-// セッション有効期限チェック関数
-export const isSessionExpired = (token: Record<string, unknown>): boolean => {
-  if (!token.exp) return true;
-  const now = Math.floor(Date.now() / 1000);
-  return (token.exp as number) < now;
-};
-// アクティビティベースのセッション延長チェック
-export const shouldExtendSession = (token: Record<string, unknown>): boolean => {
-  const now = Math.floor(Date.now() / 1000);
-  const lastActivity = (token.lastActivity as number) || 0;
-  const timeSinceLastActivity = now - lastActivity;
-  // 1時間以上非アクティブの場合は延長しない
-  const maxInactiveTime = 60 * 60; // 1時間
-  return timeSinceLastActivity < maxInactiveTime;
-};

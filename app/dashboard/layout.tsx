@@ -1,11 +1,12 @@
-// app/dashboard/layout.tsx (修正版)
+// app/dashboard/layout.tsx (リダイレクト強化版)
 'use client';
-import React, { ReactNode, useEffect, useMemo } from 'react';
+import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useDashboardInfo } from '@/hooks/useDashboardInfo';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Spinner } from '@/components/ui/Spinner';
+
 // 静的アイコンマッピング
 import {
   HiHome,
@@ -23,6 +24,7 @@ import {
   HiBell,
   HiOutlineMail,
 } from 'react-icons/hi';
+
 const iconMap: Record<string, React.ReactNode> = {
   HiHome: <HiHome className="h-5 w-5" />,
   HiUser: <HiUser className="h-5 w-5" />,
@@ -39,14 +41,21 @@ const iconMap: Record<string, React.ReactNode> = {
   HiBell: <HiBell className="h-5 w-5" />,
   HiOutlineMail: <HiOutlineMail className="h-5 w-5" />,
 };
+
 interface DashboardLayoutWrapperProps {
   children: ReactNode;
 }
+
 export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrapperProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
   const { data: dashboardInfo, isLoading, error } = useDashboardInfo();
+
+  // 🚀 新機能: リダイレクト状態管理
+  const [isRedirecting, setIsRedirecting] = useState(false);
+  const [redirectReason, setRedirectReason] = useState<string>('');
+
   // Body要素にパス名属性を設定（CSSでの判定用）
   useEffect(() => {
     if (typeof document !== 'undefined' && pathname) {
@@ -56,38 +65,127 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       };
     }
   }, [pathname]);
-  // 🔥 修正: シンプルで明確なアクセス権チェック
+
+  // 🔥 修正: 強化されたアクセス権チェック
   const accessCheck = useMemo(() => {
     if (!dashboardInfo || !pathname) return { hasAccess: true };
     const { permissions } = dashboardInfo;
+
     // 1. 管理者ページのチェック
     if (pathname.startsWith('/dashboard/admin')) {
       if (!permissions.isSuperAdmin) {
-        return { hasAccess: false, redirectTo: '/dashboard', reason: 'admin権限なし' };
+        return {
+          hasAccess: false,
+          redirectTo: permissions.hasCorpAccess
+            ? permissions.isAdmin
+              ? '/dashboard/corporate'
+              : '/dashboard/corporate-member'
+            : '/dashboard',
+          reason: 'admin権限なし',
+        };
       }
       return { hasAccess: true };
     }
+
     // 2. 法人管理ページのチェック (/dashboard/corporate)
     if (
       pathname.startsWith('/dashboard/corporate') &&
       !pathname.startsWith('/dashboard/corporate-member')
     ) {
       if (!permissions.isAdmin && !permissions.isSuperAdmin) {
-        return { hasAccess: false, redirectTo: '/dashboard', reason: '法人管理権限なし' };
+        return {
+          hasAccess: false,
+          redirectTo: permissions.hasCorpAccess ? '/dashboard/corporate-member' : '/dashboard',
+          reason: '法人管理権限なし',
+        };
       }
       return { hasAccess: true };
     }
+
     // 3. 法人メンバーページのチェック (/dashboard/corporate-member)
     if (pathname.startsWith('/dashboard/corporate-member')) {
-      // 法人アクセス権またはスーパー管理者権限が必要
       if (!permissions.hasCorpAccess && !permissions.isSuperAdmin) {
         return { hasAccess: false, redirectTo: '/dashboard', reason: '法人メンバー権限なし' };
       }
       return { hasAccess: true };
     }
-    // 4. その他のページはアクセス許可
+
+    // 🚀 新機能: 4. 個人ダッシュボードページでの法人ユーザーリダイレクト
+    if (pathname === '/dashboard') {
+      // 法人管理者は法人ダッシュボードにリダイレクト
+      if (permissions.isAdmin && permissions.hasCorpAccess) {
+        return {
+          hasAccess: false,
+          redirectTo: '/dashboard/corporate',
+          reason: '法人管理者は法人ダッシュボードを使用',
+        };
+      }
+      // 法人招待メンバーは法人メンバーページにリダイレクト
+      if (permissions.userRole === 'member' && permissions.hasCorpAccess) {
+        return {
+          hasAccess: false,
+          redirectTo: '/dashboard/corporate-member',
+          reason: '法人メンバーは専用ページを使用',
+        };
+      }
+      // 永久利用権ユーザーは法人ダッシュボードにリダイレクト
+      if (permissions.isPermanentUser) {
+        return {
+          hasAccess: false,
+          redirectTo: '/dashboard/corporate',
+          reason: '永久利用権ユーザーは法人ダッシュボードを使用',
+        };
+      }
+    }
+
+    // 🚀 新機能: 5. 個人機能ページでの法人ユーザーリダイレクト
+    const personalPages = [
+      '/dashboard/profile',
+      '/dashboard/links',
+      '/dashboard/design',
+      '/dashboard/share',
+    ];
+    if (personalPages.some((page) => pathname.startsWith(page))) {
+      // 法人管理者は対応する法人ページにリダイレクト
+      if (permissions.isAdmin && permissions.hasCorpAccess) {
+        const corporatePageMap: Record<string, string> = {
+          '/dashboard/profile': '/dashboard/corporate-member/profile',
+          '/dashboard/links': '/dashboard/corporate-member/links',
+          '/dashboard/design': '/dashboard/corporate-member/design',
+          '/dashboard/share': '/dashboard/corporate-member/share',
+        };
+        const targetPage = personalPages.find((page) => pathname.startsWith(page));
+        if (targetPage && corporatePageMap[targetPage]) {
+          return {
+            hasAccess: false,
+            redirectTo: corporatePageMap[targetPage],
+            reason: '法人管理者は法人版を使用',
+          };
+        }
+      }
+      // 法人招待メンバーも同様
+      if (permissions.userRole === 'member' && permissions.hasCorpAccess) {
+        const corporatePageMap: Record<string, string> = {
+          '/dashboard/profile': '/dashboard/corporate-member/profile',
+          '/dashboard/links': '/dashboard/corporate-member/links',
+          '/dashboard/design': '/dashboard/corporate-member/design',
+          '/dashboard/share': '/dashboard/corporate-member/share',
+        };
+        const targetPage = personalPages.find((page) => pathname.startsWith(page));
+        if (targetPage && corporatePageMap[targetPage]) {
+          return {
+            hasAccess: false,
+            redirectTo: corporatePageMap[targetPage],
+            reason: '法人メンバーは法人版を使用',
+          };
+        }
+      }
+    }
+
+    // 6. その他のページはアクセス許可
     return { hasAccess: true };
   }, [dashboardInfo, pathname]);
+
   // 🔥 修正: テーマクラスの決定（シンプル化）
   const themeClass = useMemo(() => {
     if (!dashboardInfo) return '';
@@ -98,6 +196,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       permissions.hasCorpAccess;
     return isCorporateRelated ? 'corporate-theme' : '';
   }, [dashboardInfo, pathname]);
+
   // CSS変数の強制設定を追加
   useEffect(() => {
     if (themeClass === 'corporate-theme') {
@@ -107,31 +206,50 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       document.documentElement.style.setProperty('--color-corporate-secondary', '#122153');
     }
   }, [themeClass]);
-  // 🔥 修正: リダイレクト処理（シンプル化・キャッシュ問題対応）
+
+  // 🔥 修正: 強化されたリダイレクト処理
   useEffect(() => {
     // 認証チェック
     if (status !== 'loading' && !session) {
-      // キャッシュをクリアしてからリダイレクト
-      if (typeof window !== 'undefined') {
-        window.location.href = '/auth/signin';
-      }
+      setIsRedirecting(true);
+      setRedirectReason('認証が必要です');
+      window.location.href = '/auth/signin';
       return;
     }
+
     // ダッシュボード情報の読み込み中は何もしない
     if (!dashboardInfo || isLoading) return;
+
+    // 🚀 新機能: ダッシュボード情報APIからのリダイレクト指示をチェック
+    if (dashboardInfo.navigation?.shouldRedirect && dashboardInfo.navigation?.redirectPath) {
+      const targetPath = dashboardInfo.navigation.redirectPath;
+      if (pathname !== targetPath) {
+        console.log('ダッシュボード情報APIからリダイレクト指示:', targetPath);
+        setIsRedirecting(true);
+        setRedirectReason(`${targetPath} にリダイレクト中`);
+        window.location.href = targetPath;
+        return;
+      }
+    }
+
     // アクセス権チェックによるリダイレクト
     if (!accessCheck.hasAccess && accessCheck.redirectTo) {
-      // 既に正しいページにいる場合はリダイレクトしない
       if (pathname !== accessCheck.redirectTo) {
-        // キャッシュをクリアしてからリダイレクト
-        if (typeof window !== 'undefined') {
-          window.location.href = accessCheck.redirectTo;
-        }
+        console.log(
+          'アクセス権チェックによるリダイレクト:',
+          accessCheck.redirectTo,
+          '理由:',
+          accessCheck.reason,
+        );
+        setIsRedirecting(true);
+        setRedirectReason(accessCheck.reason || 'リダイレクト中');
+        window.location.href = accessCheck.redirectTo;
         return;
       }
     }
   }, [session, status, dashboardInfo, pathname, accessCheck, router, isLoading]);
-  // 早期リターン
+
+  // 早期リターン - セッション読み込み中
   if (status === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -140,6 +258,8 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       </div>
     );
   }
+
+  // 早期リターン - ダッシュボード情報読み込み中
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -148,6 +268,18 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       </div>
     );
   }
+
+  // 早期リターン - リダイレクト中
+  if (isRedirecting) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Spinner size="lg" />
+        <span className="ml-3 text-gray-500">{redirectReason || 'リダイレクト中...'}</span>
+      </div>
+    );
+  }
+
+  // エラー表示
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -164,6 +296,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       </div>
     );
   }
+
   if (!dashboardInfo) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -171,11 +304,13 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       </div>
     );
   }
+
   // メニュー項目変換
   const menuItems = dashboardInfo.navigation.menuItems.map((item) => ({
     ...item,
     icon: iconMap[item.icon] || iconMap.HiHome,
   }));
+
   return (
     <div className={themeClass}>
       <DashboardLayout items={menuItems}>{children}</DashboardLayout>
