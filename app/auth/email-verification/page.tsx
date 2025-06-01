@@ -82,12 +82,6 @@ function EmailVerificationContent() {
   const handleResendEmail = async () => {
     if (countdown > 0) return;
 
-    // メールアドレスが取得できていない場合
-    if (!userEmail) {
-      setResendError('メールアドレスが特定できません。ログイン画面からやり直してください。');
-      return;
-    }
-
     setIsResending(true);
     setResendError(null);
     setResendMessage(null);
@@ -98,9 +92,6 @@ function EmailVerificationContent() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          email: userEmail, // 🔥 メールアドレスを送信
-        }),
       });
 
       const data = await response.json();
