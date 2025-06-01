@@ -142,7 +142,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             });
           }
         } catch (error) {
-          logger.error('JWTコールバックでのDB取得エラー:', error);
+          logger.error('JWTコールバックでのDB取得エラー:', {
+            error: error instanceof Error ? error.message : String(error),
+            userId: user?.id || token.sub,
+            trigger,
+            stack: error instanceof Error ? error.stack : undefined,
+          });
+          
+          // データベースエラーの場合は、トークンに基本情報のみ設定
+          if (user) {
+            token.role = 'unknown';
+            token.isAdmin = false;
+            token.tenantId = null;
+          }
         }
       }
       return token;

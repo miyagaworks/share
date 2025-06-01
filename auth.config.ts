@@ -30,15 +30,26 @@ export default {
           logger.debug('❌ [Auth] credentials が存在しません');
           return null;
         }
+        
         try {
           const validatedFields = LoginSchema.safeParse(credentials);
           if (!validatedFields.success) {
             logger.debug('❌ [Auth] バリデーションエラー', validatedFields.error);
             return null;
           }
+          
           const { email, password } = validatedFields.data;
           logger.debug('🔧 [Auth] 認証試行:', email);
           const normalizedEmail = email.toLowerCase();
+          
+          // データベース接続の確認
+          try {
+            await prisma.$connect();
+          } catch (dbError) {
+            logger.error('❌ [Auth] データベース接続エラー:', dbError);
+            throw new Error('データベース接続に失敗しました');
+          }
+          
           const user = await prisma.user.findUnique({
             where: { email: normalizedEmail },
             select: {
@@ -47,23 +58,29 @@ export default {
               email: true,
               password: true,
               corporateRole: true,
+              emailVerified: true,
             },
           });
+          
           if (!user || !user.password) {
-            logger.debug('❌ [Auth] ユーザーが見つかりません');
+            logger.debug('❌ [Auth] ユーザーが見つかりません:', normalizedEmail);
             return null;
           }
+          
           const passwordsMatch = await bcrypt.compare(password, user.password);
           if (!passwordsMatch) {
             logger.debug('❌ [Auth] パスワードが一致しません');
             return null;
           }
+          
           logger.debug('✅ [Auth] 認証成功:', {
             id: user.id,
             name: user.name,
             email: user.email,
             role: user.corporateRole,
+            emailVerified: user.emailVerified,
           });
+          
           // 🚨 重要：完全なユーザーオブジェクトを返す
           return {
             id: user.id,
@@ -73,44 +90,76 @@ export default {
           };
         } catch (error) {
           logger.error('❌ [Auth] 認証中のエラー:', error);
+          
+          // データベース接続エラーの場合は、より詳細なエラーメッセージ
+          if (error instanceof Error && error.message.includes('データベース')) {
+            throw error;
+          }
+          
           return null;
+        } finally {
+          try {
+            await prisma.$disconnect();
+          } catch (disconnectError) {
+            logger.error('❌ [Auth] データベース切断エラー:', disconnectError);
+          }
         }
       },
     }),
   ],
   callbacks: {
     async signIn({ user, account }) {
-      logger.debug('🔧 [Auth] SignIn callback:', {
-        userId: user?.id,
-        userName: user?.name,
-        userEmail: user?.email,
-        provider: account?.provider,
-      });
-      if (account?.provider === 'google' && user?.email) {
-        const normalizedEmail = user.email.toLowerCase();
-        try {
-          const existingUser = await prisma.user.findUnique({
-            where: { email: normalizedEmail },
-            select: {
-              id: true,
-              name: true,
-              email: true,
-            },
-          });
-          if (existingUser) {
-            logger.debug('✅ [Auth] Google認証: 既存ユーザー', existingUser);
-            // 🚨 重要：userオブジェクトを更新
-            user.id = existingUser.id;
-            user.name = existingUser.name;
-            user.email = existingUser.email;
+      try {
+        logger.debug('🔧 [Auth] SignIn callback:', {
+          userId: user?.id,
+          userName: user?.name,
+          userEmail: user?.email,
+          provider: account?.provider,
+        });
+        
+        if (account?.provider === 'google' && user?.email) {
+          const normalizedEmail = user.email.toLowerCase();
+          try {
+            const existingUser = await prisma.user.findUnique({
+              where: { email: normalizedEmail },
+              select: {
+                id: true,
+                name: true,
+                email: true,
+                emailVerified: true,
+              },
+            });
+            
+            if (existingUser) {
+              logger.debug('✅ [Auth] Google認証: 既存ユーザー', existingUser);
+              // 🚨 重要：userオブジェクトを更新
+              user.id = existingUser.id;
+              user.name = existingUser.name;
+              user.email = existingUser.email;
+              return true;
+            } else {
+              logger.error('❌ [Auth] Google認証: ユーザーが見つからない', { email: normalizedEmail });
+              return false;
+            }
+          } catch (dbError) {
+            logger.error('❌ [Auth] Google認証DB処理エラー:', dbError);
+            return false;
           }
-          return true;
-        } catch (error) {
-          logger.error('❌ [Auth] Google認証処理エラー:', error);
-          return false;
         }
+        
+        // Credentials認証の場合
+        if (account?.provider === 'credentials') {
+          if (!user?.id || !user?.email) {
+            logger.error('❌ [Auth] Credentials認証: 必要な情報が不足', { user });
+            return false;
+          }
+        }
+        
+        return true;
+      } catch (error) {
+        logger.error('❌ [Auth] SignIn callback全般エラー:', error);
+        return false;
       }
-      return true;
     },
     async jwt({ token, user, trigger }) {
       logger.debug('🔧 [Auth] JWT callback開始:', {
@@ -179,4 +228,6 @@ export default {
     verifyRequest: '/auth/verify-request',
     newUser: '/dashboard',
   },
+  // エラーハンドリングの設定を追加
+  debug: process.env.NODE_ENV === 'development',
 } satisfies NextAuthConfig;
