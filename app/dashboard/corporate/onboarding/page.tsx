@@ -102,8 +102,7 @@ export default function CorporateOnboardingPage() {
           }, 100);
           return;
         } else {
-            'オンボーディングは未完了または不明な状態です。オンボーディングページを表示します。',
-          );
+          // オンボーディングは未完了または不明な状態
         }
         // 会社名の初期値設定
         if (data.tenant?.name && !data.tenant.name.includes('の会社')) {

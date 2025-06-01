@@ -15,6 +15,9 @@ export async function POST(req: NextRequest) {
   }
   let event: Stripe.Event;
   try {
+    if (!stripe) {
+      throw new Error('Stripe client not initialized');
+    }
     event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET);
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : '署名検証エラー';

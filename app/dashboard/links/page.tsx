@@ -74,11 +74,7 @@ export default function LinksPage() {
         throw new Error(`HTTP ${response.status}: リンクの取得に失敗しました`);
       }
       const data = await response.json();
-        snsCount: data.snsLinks?.length || 0,
-        customCount: data.customLinks?.length || 0,
-        snsLinks: data.snsLinks,
-        customLinks: data.customLinks,
-      });
+
       return data;
     } catch (error) {
       toast.error('リンクの取得に失敗しました');
@@ -142,9 +138,7 @@ export default function LinksPage() {
       setSnsLinks([...(data.snsLinks || [])]);
       setCustomLinks([...(data.customLinks || [])]);
       toast.success('カスタムリンクを追加しました！');
-        newSnsCount: data.snsLinks?.length || 0,
-        newCustomCount: data.customLinks?.length || 0,
-      });
+
       // コンポーネントの強制再レンダリング
       setTimeout(() => {
         setRefreshKey((prev) => prev + 1);
@@ -165,9 +159,7 @@ export default function LinksPage() {
       // 強制的にstateを更新
       setSnsLinks([...(data.snsLinks || [])]);
       setCustomLinks([...(data.customLinks || [])]);
-        snsCount: data.snsLinks?.length || 0,
-        customCount: data.customLinks?.length || 0,
-      });
+
     } catch (error) {
       toast.error('リンク情報の取得に失敗しました');
     }
@@ -177,15 +169,7 @@ export default function LinksPage() {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
   };
-  // 🚀 追加: デバッグ情報の表示
-  useEffect(() => {
-      snsLinksCount: snsLinks.length,
-      customLinksCount: customLinks.length,
-      refreshKey,
-      isLoading,
-      isProcessing,
-    });
-  }, [snsLinks, customLinks, refreshKey, isLoading, isProcessing]);
+  // デバッグ情報の表示（本番環境では無効）
   return (
     <div className="space-y-6" key={`links-page-${refreshKey}`}>
       <div className="flex items-center mb-6">

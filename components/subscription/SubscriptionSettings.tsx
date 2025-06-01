@@ -73,10 +73,6 @@ export default function SubscriptionSettings() {
         dashboardInfo.permissions.userType === 'corporate' ||
         dashboardInfo.permissions.userType === 'invited-member' ||
         dashboardInfo.permissions.hasCorpAccess;
-        userType: dashboardInfo.permissions.userType,
-        hasCorpAccess: dashboardInfo.permissions.hasCorpAccess,
-        isCorpUser,
-      });
       setIsCorporateUser(isCorpUser);
       // 🔥 法人契約中ユーザーは法人プランタブをデフォルト表示
       if (isCorpUser) {
@@ -161,12 +157,6 @@ export default function SubscriptionSettings() {
         selectedInterval === 'year'
           ? getYearlyPriceId(selectedPlan)
           : PLAN_PRICE_IDS[selectedPlan as keyof typeof PLAN_PRICE_IDS];
-        plan: selectedPlan,
-        interval: selectedInterval,
-        priceId,
-        paymentMethodId,
-        isCorporate: true,
-      });
       const response = await fetch('/api/subscription/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -210,10 +200,7 @@ export default function SubscriptionSettings() {
     try {
       setProcessing(true);
       const priceId = PLAN_PRICE_IDS[selectedPlan];
-        plan: selectedPlan,
-        priceId,
-        paymentMethodId,
-      });
+
       const response = await fetch('/api/subscription/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

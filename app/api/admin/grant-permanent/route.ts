@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma, disconnectPrisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
-import { isAdminUser } from '@/lib/corporateAccess';
+import { isUserSuperAdmin } from '@/lib/corporateAccess';
 import { PermanentPlanType, PLAN_TYPE_DISPLAY_NAMES } from '@/lib/corporateAccess';
 export async function POST(request: Request) {
   try {
@@ -13,9 +13,8 @@ export async function POST(request: Request) {
     if (!session || !session.user?.id) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
-    // 管理者かどうかを確認（新しいAPIを使用）
-    const isAdmin = await isAdminUser(session.user.id);
-    if (!isAdmin) {
+    // 管理者かどうかを確認（スーパー管理者のみ許可）
+    if (session.user.email !== 'admin@sns-share.com') {
       return NextResponse.json({ success: false, error: 'Not authorized' }, { status: 403 });
     }
     // リクエストボディからユーザーIDとプラン種別を取得
@@ -42,7 +41,6 @@ export async function POST(request: Request) {
         tenant: true,
         adminOfTenant: true,
         subscription: true, // サブスクリプション情報も取得
-        metadata: true, // メタデータ情報も取得
       },
     });
     if (!user) {
@@ -57,25 +55,7 @@ export async function POST(request: Request) {
           subscriptionStatus: 'permanent',
         },
       });
-      // 2. ユーザーのメタデータにプラン種別を保存
-      let metadata = null;
-      if (user.metadata) {
-        // 既存のメタデータを更新
-        metadata = await tx.userMetadata.update({
-          where: { userId },
-          data: {
-            permanentPlanType: planType,
-          },
-        });
-      } else {
-        // メタデータを新規作成
-        metadata = await tx.userMetadata.create({
-          data: {
-            userId,
-            permanentPlanType: planType,
-          },
-        });
-      }
+      // 永久利用権付与をログに記録
       logger.info('永久利用権付与', { userId, planType });
       // 3. 仮想テナントがまだ存在しない場合は作成
       // プラン種別が法人向けの場合のみテナントを作成
@@ -130,7 +110,7 @@ export async function POST(request: Request) {
         // エラー回避：tenant が null の場合はここで処理を終了
         if (!tenant) {
           logger.error('テナント作成失敗', { userId, planType });
-          return { user: updatedUser, tenant: null, metadata };
+          return { user: updatedUser, tenant: null };
         }
         // 3. デフォルトのSNSリンク設定を作成（まだ存在しない場合）
         const existingSnsLinks = await tx.corporateSnsLink.findMany({
@@ -183,7 +163,7 @@ export async function POST(request: Request) {
           },
         });
       }
-      return { user: updatedUser, tenant, metadata, subscription };
+      return { user: updatedUser, tenant, subscription };
     });
     // 成功レスポンス
     return NextResponse.json({
@@ -194,11 +174,8 @@ export async function POST(request: Request) {
         name: result.user.name,
         subscriptionStatus: result.user.subscriptionStatus,
       },
-      planType: result.metadata?.permanentPlanType || PermanentPlanType.PERSONAL,
-      planName:
-        PLAN_TYPE_DISPLAY_NAMES[
-          (result.metadata?.permanentPlanType as PermanentPlanType) || PermanentPlanType.PERSONAL
-        ],
+      planType: planType,
+      planName: PLAN_TYPE_DISPLAY_NAMES[planType as PermanentPlanType],
       tenant: result.tenant
         ? {
             id: result.tenant.id,

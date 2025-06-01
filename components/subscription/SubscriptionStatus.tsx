@@ -217,9 +217,6 @@ export default function SubscriptionStatus({
     }
     // プランまたは契約期間が変更された場合
     if (previousPlan !== currentPlan || previousInterval !== currentInterval) {
-        previous: { plan: previousPlan, interval: previousInterval },
-        current: { plan: currentPlan, interval: currentInterval },
-      });
       // 法人プラン関連のプラン変更の場合のみアクセス権をリフレッシュ
       const isCorporateRelated =
         currentPlan.includes('business') ||

@@ -56,12 +56,6 @@ export function useCorporateAccess({
     if (isApiRequestInProgress) {
       return corporateAccessState; // 現在の状態を返す
     }
-      sessionStatus: status,
-      checkOnMount,
-      forceCheck,
-      isMobile,
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'SSR',
-    });
     // セッションがロード中の場合は終了
     if (status === 'loading') {
       return corporateAccessState;
@@ -95,7 +89,7 @@ export function useCorporateAccess({
       // 修正: forceCheck を { force: forceCheck } に変更
       const result = await checkCorporateAccess({ force: forceCheck });
       // 結果を適用
-      setHasCorporateAccess(result.hasAccess === true);
+      setHasCorporateAccess(result.hasCorporateAccess === true);
       setError(result.error || null);
       setIsLoading(false);
       isApiRequestInProgress = false; // APIリクエスト終了をマーク
@@ -112,14 +106,10 @@ export function useCorporateAccess({
   const refreshAccess = useCallback(async () => {
     setIsLoading(true);
     try {
-      // isMobileフラグをログに記録
-        isMobile,
-        userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'SSR',
-      });
       // 強制的に再チェック (修正: true を { force: true } に変更)
       const result = await checkCorporateAccess({ force: true });
       // テナントIDが取得できない場合にフォールバック
-      if (result.hasAccess === true && !result.tenantId) {
+      if (result.hasCorporateAccess === true && !result.tenant?.id) {
         // 環境に関わらずフォールバックを使用
         corporateAccessState.tenantId = 'fallback-tenant-id';
         // イベントをディスパッチ
@@ -131,10 +121,10 @@ export function useCorporateAccess({
           );
         }
       }
-      setHasCorporateAccess(result.hasAccess === true);
+      setHasCorporateAccess(result.hasCorporateAccess === true);
       setError(result.error || null);
       // モバイル環境では必要に応じて再試行
-      if (isMobile && result.hasAccess === true) {
+      if (isMobile && result.hasCorporateAccess === true) {
         // モバイル環境での初回リロード時に問題が発生する場合に対応
         setTimeout(() => {
           forceRender(); // 強制的に再レンダリング
@@ -153,9 +143,6 @@ export function useCorporateAccess({
   const handleAccessStateChange = useCallback(
     (event: Event) => {
       const customEvent = event as CustomEvent<typeof corporateAccessState>;
-        '[useCorporateAccess] グローバル状態変更検知:',
-        customEvent.detail || corporateAccessState,
-      );
       const newState = customEvent.detail || corporateAccessState;
       setHasCorporateAccess(newState.hasAccess === true);
       setError(newState.error || null);
@@ -165,14 +152,6 @@ export function useCorporateAccess({
   );
   // イベントリスナーの設定
   useEffect(() => {
-      sessionStatus: status,
-      redirectIfNoAccess,
-      checkOnMount,
-      forceCheck,
-      currentState: corporateAccessState,
-      isMobile,
-      userAgent: typeof navigator !== 'undefined' ? navigator.userAgent : 'SSR',
-    });
     // イベントリスナーを追加
     if (typeof window !== 'undefined') {
       window.addEventListener('corporateAccessChanged', handleAccessStateChange as EventListener);

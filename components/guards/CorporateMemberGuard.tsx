@@ -21,10 +21,7 @@ export function CorporateMemberGuard({ children }: { children: ReactNode }) {
       router.push('/auth/signin');
       return;
     }
-      userId: session.user?.id,
-      email: session.user?.email,
-      status,
-    });
+
     const verifyAccess = async () => {
       try {
         setError(null); // エラーをクリア
@@ -39,11 +36,7 @@ export function CorporateMemberGuard({ children }: { children: ReactNode }) {
           result.hasCorporateAccess === true ||
           result.isAdmin === true ||
           (result.userRole && ['admin', 'member'].includes(result.userRole));
-          hasCorporateAccess: result.hasCorporateAccess,
-          isAdmin: result.isAdmin,
-          userRole: result.userRole,
-          shouldHaveAccess,
-        });
+
         if (shouldHaveAccess) {
           setHasAccess(true);
           setRetryCount(0); // リトライカウントをリセット

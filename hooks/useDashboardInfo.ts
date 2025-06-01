@@ -59,12 +59,6 @@ export function useDashboardInfo() {
         throw new Error(`API Error: ${response.status} - ${errorText}`);
       }
       const data = await response.json();
-        userType: data.permissions?.userType,
-        hasMenuItems: !!data.navigation?.menuItems?.length,
-        hasTenant: !!data.tenant,
-        shouldRedirect: data.navigation?.shouldRedirect,
-        redirectPath: data.navigation?.redirectPath,
-      });
       return data;
     },
     enabled: !!session?.user?.id,
@@ -120,22 +114,6 @@ export function usePlanInfo() {
 // デバッグ用フック
 export function useDebugDashboardInfo() {
   const result = useDashboardInfo();
-  // デバッグ情報をコンソールに出力
-  if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-      isLoading: result.isLoading,
-      isError: result.isError,
-      error: result.error,
-      hasData: !!result.data,
-      userType: result.data?.permissions?.userType,
-      menuCount: result.data?.navigation?.menuItems?.length,
-      shouldRedirect: result.data?.navigation?.shouldRedirect,
-      redirectPath: result.data?.navigation?.redirectPath,
-      planInfo: {
-        hasActivePlan: result.data?.permissions?.hasActivePlan,
-        isTrialPeriod: result.data?.permissions?.isTrialPeriod,
-        planDisplayName: result.data?.permissions?.planDisplayName,
-      },
-    });
-  }
+  // デバッグ情報をコンソールに出力（本番環境では無効）
   return result;
 }

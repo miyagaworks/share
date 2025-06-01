@@ -43,12 +43,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
     const updateMemberStatus = () => {
       // 招待メンバー判定（corporateAccessStateから）
       const isInvited = corporateAccessState.userRole === 'member' && !corporateAccessState.isAdmin;
-        userRole: corporateAccessState.userRole,
-        isAdmin: corporateAccessState.isAdmin,
-        hasAccess: corporateAccessState.hasAccess,
-        isInvited,
-        lastChecked: corporateAccessState.lastChecked,
-      });
       setIsInvitedMember(isInvited);
       // ユーザータイプ解決判定
       const isResolved =

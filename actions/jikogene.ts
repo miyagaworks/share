@@ -21,13 +21,7 @@ export async function generateIntroductionAction(
       return validationError;
     }
     // データ内容を簡易ログ出力（機密情報は除外）
-      basicInfoFilled: Boolean(formData.basicInfo.ageGroup && formData.basicInfo.occupation),
-      hobbiesCount: formData.hobbies.length,
-      personalityTraitsCount: formData.personalityTraits.length,
-      keywordsLength: formData.keywords.length,
-      purpose: formData.purpose,
-      length: formData.length,
-    });
+    // 本番環境では不要
     // プロンプト生成
     const prompt = buildPrompt(formData);
     try {
@@ -56,10 +50,7 @@ export async function generateIntroductionAction(
   } catch (error: unknown) {
     // エラーの詳細情報を収集
     const errorObj = error instanceof Error ? error : new Error('不明なエラー');
-      message: errorObj.message,
-      name: errorObj.name,
-      stack: errorObj.stack,
-    });
+    // 本番環境ではエラーログは不要
     try {
       // 最終手段としてフォールバック生成を試みる
       const { text, warning } = tryFallbackGeneration(formData, error);

@@ -46,12 +46,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
     const updateMemberStatus = () => {
       // 招待メンバー判定（corporateAccessStateから）
       const isInvited = corporateAccessState.userRole === 'member' && !corporateAccessState.isAdmin;
-        userRole: corporateAccessState.userRole,
-        isAdmin: corporateAccessState.isAdmin,
-        hasAccess: corporateAccessState.hasAccess,
-        isInvited,
-        lastChecked: corporateAccessState.lastChecked,
-      });
       setIsInvitedMember(isInvited);
       // 🔧 ユーザータイプ解決判定をより柔軟に
       const isResolved =
@@ -60,22 +54,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
         corporateAccessState.hasAccess === false || // 明確にアクセス権なし
         corporateAccessState.error !== null; // エラーが発生した場合も解決済み
       setIsUserTypeResolved(isResolved);
-        isResolved,
-        reason:
-          corporateAccessState.lastChecked > 0
-            ? 'API完了'
-            : corporateAccessState.hasAccess === true
-              ? 'アクセス権あり'
-              : corporateAccessState.hasAccess === false
-                ? 'アクセス権なし'
-                : corporateAccessState.error !== null
-                  ? 'エラー発生'
-                  : '未解決',
-        userRole: corporateAccessState.userRole,
-        hasAccess: corporateAccessState.hasAccess,
-        lastChecked: corporateAccessState.lastChecked,
-        error: corporateAccessState.error,
-      });
     };
     // 初期状態をチェック
     updateMemberStatus();
@@ -359,12 +337,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       </motion.div>
     );
   }
-  // 通常のユーザー向け表示
-    isInvitedMember,
-    isUserTypeResolved,
-    userRole: corporateAccessState.userRole,
-    hasAccess: corporateAccessState.hasAccess,
-  });
+
   // メインメニュー項目
   const mainMenuItems = [...items];
   // 追加リンク用配列

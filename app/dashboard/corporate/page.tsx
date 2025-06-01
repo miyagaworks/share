@@ -165,13 +165,6 @@ export default function OptimizedCorporateDashboardPage() {
   const correctMaxUsers = useMemo(() => {
     return getMaxUsersByPlan(tenant?.subscriptionPlan);
   }, [tenant?.subscriptionPlan]);
-    isLoading,
-    hasError: !!error,
-    hasTenant: !!tenant,
-    tenantId: tenant?.id,
-    subscriptionPlan: tenant?.subscriptionPlan,
-    planDisplayName,
-  });
   // ローディング中の表示
   if (isLoading) {
     return (

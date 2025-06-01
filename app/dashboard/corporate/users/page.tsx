@@ -119,10 +119,6 @@ export default function CorporateUsersPage() {
     if (!selectedUser) return;
     try {
       setIsUpdating(true);
-        userId: selectedUser.id,
-        role: selectedRole,
-        departmentId: selectedDepartmentId || null,
-      });
       const response = await fetch(`/api/corporate/users/${selectedUser.id}`, {
         method: 'PATCH',
         headers: {

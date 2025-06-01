@@ -65,10 +65,7 @@ export async function addSnsLink(data: { platform: string; username?: string; ur
     } catch (revalidateError) {
       // revalidationエラーがあっても処理は継続
     }
-      platform: data.platform,
-      userId: session.user.id,
-      linkId: newLink.id,
-    });
+
     return { success: true, link: newLink };
   } catch (error) {
     return { error: 'SNSリンクの追加に失敗しました' };
@@ -122,10 +119,7 @@ export async function addCustomLink(data: { name: string; url: string }) {
     } catch (revalidateError) {
       // revalidationエラーがあっても処理は継続
     }
-      name: data.name,
-      userId: session.user.id,
-      linkId: newLink.id,
-    });
+
     return { success: true, link: newLink };
   } catch (error) {
     return { error: 'カスタムリンクの追加に失敗しました' };

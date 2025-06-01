@@ -6,7 +6,7 @@ import nodemailer from 'nodemailer';
 import { sendEmail } from '@/lib/email';
 export async function GET() {
   // 環境変数の出力（機密情報は伏せる）
-  logger.debug({
+  logger.debug('環境変数確認', {
     NODE_ENV: process.env.NODE_ENV,
     EMAIL_SERVER_HOST: process.env.EMAIL_SERVER_HOST,
     EMAIL_SERVER_PORT: process.env.EMAIL_SERVER_PORT,

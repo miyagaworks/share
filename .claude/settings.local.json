@@ -9,7 +9,10 @@
       "Bash(/Users/miyagawakiyomi/Projects/share/scripts/fix-remaining-console.sh:*)",
       "Bash(/Users/miyagawakiyomi/Projects/share/scripts/fix-client-console.sh:*)",
       "Bash(/Users/miyagawakiyomi/Projects/share/scripts/final-console-cleanup.sh)",
-      "mcp__ide__getDiagnostics"
+      "mcp__ide__getDiagnostics",
+      "Bash(npm run build:*)",
+      "Bash(npx tsc:*)",
+      "Bash(npx eslint:*)"
     ],
     "deny": []
   }

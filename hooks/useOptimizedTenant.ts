@@ -42,10 +42,7 @@ async function fetchTenantInfo(): Promise<TenantResponse> {
       'Cache-Control': 'max-age=300', // 5分間ブラウザキャッシュ
     },
   });
-    status: response.status,
-    statusText: response.statusText,
-    ok: response.ok,
-  });
+
   if (!response.ok) {
     let errorData: { error?: string; details?: string; code?: string } = {};
     try {
@@ -54,10 +51,7 @@ async function fetchTenantInfo(): Promise<TenantResponse> {
     } catch (parseError) {
       errorData = { error: 'レスポンスの解析に失敗しました' };
     }
-      status: response.status,
-      statusText: response.statusText,
-      errorData,
-    });
+
     const apiError = new Error(
       errorData.error || `HTTP ${response.status}: ${response.statusText}`,
     ) as ApiError;
@@ -67,13 +61,7 @@ async function fetchTenantInfo(): Promise<TenantResponse> {
     throw apiError;
   }
   const data = await response.json();
-    hasTenant: !!data.tenant,
-    tenantId: data.tenant?.id,
-    tenantName: data.tenant?.name,
-    isAdmin: data.isAdmin,
-    userRole: data.userRole,
-    accountStatus: data.tenant?.accountStatus,
-  });
+
   return data;
 }
 // 最適化されたテナント情報取得フック
@@ -99,13 +87,7 @@ export function useOptimizedTenant() {
     refetchOnReconnect: true,
     refetchInterval: false, // 自動更新は無効
   });
-    isLoading: query.isLoading,
-    isError: query.isError,
-    error: query.error?.message,
-    hasData: !!query.data,
-    status: query.status,
-    enabled: !!session?.user?.id,
-  });
+
   return query;
 }
 // テナント情報を手動で更新するフック

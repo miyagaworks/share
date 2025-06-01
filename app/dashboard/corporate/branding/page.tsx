@@ -196,9 +196,6 @@ export default function ImprovedCorporateBrandingPage() {
         }
         // ロゴサイズが保存されている場合は設定
         if (data.tenant.logoWidth && data.tenant.logoHeight) {
-            width: data.tenant.logoWidth,
-            height: data.tenant.logoHeight,
-          });
           // ロゴサイズを設定
           setLogoSize({
             width: data.tenant.logoWidth,
@@ -288,9 +285,6 @@ export default function ImprovedCorporateBrandingPage() {
       // テナントデータを更新
       if (data.tenant) {
         // 保存後のロゴサイズを確認
-          width: data.tenant.logoWidth,
-          height: data.tenant.logoHeight,
-        });
         // undefined の場合は現在のサイズを使用
         const savedLogoWidth = data.tenant.logoWidth || logoSize.width;
         const savedLogoHeight = data.tenant.logoHeight || logoSize.height;
@@ -614,10 +608,6 @@ export default function ImprovedCorporateBrandingPage() {
                         const scale = newSize / 100;
                         const newWidth = Math.round(originalLogoSize.current.width * scale);
                         const newHeight = Math.round(originalLogoSize.current.height * scale);
-                          scale,
-                          original: originalLogoSize.current,
-                          new: { width: newWidth, height: newHeight },
-                        });
                         setCustomWidth(newWidth);
                         setCustomHeight(newHeight);
                         setLogoSize({

@@ -192,10 +192,6 @@ export default function AdminEmailPage() {
           toast(
             `⚠️ ${data.failCount}件のメールは送信できませんでした。詳細はコンソールをご確認ください。`,
           );
-          // 型を明示的に指定
-            '送信失敗したメール:',
-            data.results.filter((r: EmailResultItem) => !r.success),
-          );
         }
         // フォームをリセット
         setFormData({

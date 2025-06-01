@@ -43,8 +43,6 @@ export function QrCodeGenerator({
   // 法人カラーを設定
   const corporateColor = corporatePrimaryColor || '#1E3A8A';
   const getButtonColor = (option: QRColorOption, corporateColor: string): string => {
-      `getButtonColor: ${option.id} -> ${option.id === 'corporate' ? corporateColor : option.value}`,
-    ); // 一時的なログ
     if (option.id === 'corporate') {
       return corporateColor;
     }

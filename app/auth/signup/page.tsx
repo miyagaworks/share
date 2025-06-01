@@ -131,9 +131,7 @@ export default function SignupPage() {
         email: data.email,
         password: data.password,
       };
-        url: '/api/auth/register',
-        hasData: Object.keys(requestData).length > 0,
-      });
+
       // サインアップ処理
       const response = await fetch('/api/auth/register', {
         method: 'POST',
@@ -142,10 +140,7 @@ export default function SignupPage() {
         },
         body: JSON.stringify(requestData),
       });
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok,
-      });
+
       const result = await response.json();
       if (!response.ok) {
         throw new Error(result.message || 'アカウント登録に失敗しました');
@@ -184,10 +179,6 @@ export default function SignupPage() {
     } catch (error) {
       if (error instanceof Error) {
         setError(error.message);
-          name: error.name,
-          message: error.message,
-          stack: error.stack,
-        });
       } else {
         setError('アカウント登録中にエラーが発生しました');
       }

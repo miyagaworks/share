@@ -139,9 +139,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     ...item,
     icon: iconMap[item.icon] || iconMap.HiHome,
   }));
-    userType: dashboardInfo.permissions.userType,
-    menuCount: menuItems.length,
-    hasAccess: accessCheck.hasAccess,
-  });
+
   return <DashboardLayout items={menuItems}>{children}</DashboardLayout>;
 }
