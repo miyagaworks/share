@@ -1,6 +1,7 @@
-// app/qrcode/layout.tsx
+// app/qrcode/layout.tsx (themeColor重複修正版)
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+
 export const metadata: Metadata = {
   title: 'QRコード | Share',
   description: 'スタイリッシュなQRコードを作成',
@@ -27,7 +28,7 @@ export const metadata: Metadata = {
     title: 'My QR',
     statusBarStyle: 'black-translucent',
   },
-  themeColor: '#ffffff',
+  // 🔥 修正: themeColorをmetadataから削除（viewportに移動）
   formatDetection: {
     telephone: false,
   },
@@ -35,12 +36,14 @@ export const metadata: Metadata = {
     'mobile-web-app-capable': 'yes',
   },
 };
+
 export const viewport: Viewport = {
-  themeColor: '#ffffff',
+  themeColor: '#ffffff', // themeColorはviewportのみに残す
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
 };
+
 export default function QrCodeLayout({ children }: { children: React.ReactNode }) {
   return (
     <>

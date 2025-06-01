@@ -1,34 +1,43 @@
 // app/api/admin/email/history/[id]/route.ts
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { isAdminUser } from '@/lib/utils/admin-access-server';
-// 送信履歴削除API
-export async function DELETE(request: Request, { params }: { params: { id: string } }) {
+
+// 🔥 修正: Next.js 15対応 - params型をPromiseに変更
+export async function DELETE(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const emailLogId = params.id;
+    // 🔥 修正: paramsを await で解決
+    const resolvedParams = await params;
+    const emailLogId = resolvedParams.id;
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
+
     // 管理者チェック
     const isAdmin = await isAdminUser(session.user.id);
     if (!isAdmin) {
       return NextResponse.json({ error: '管理者権限がありません' }, { status: 403 });
     }
+
     // 履歴の存在確認
     const existingLog = await prisma.adminEmailLog.findUnique({
       where: { id: emailLogId },
     });
+
     if (!existingLog) {
       return NextResponse.json({ error: '指定された履歴が見つかりません' }, { status: 404 });
     }
+
     // 履歴を削除
     await prisma.adminEmailLog.delete({
       where: { id: emailLogId },
     });
+
     return NextResponse.json({
       success: true,
       message: 'メール送信履歴を削除しました',
@@ -44,6 +53,7 @@ export async function DELETE(request: Request, { params }: { params: { id: strin
     );
   }
 }
+
 // 複数履歴の一括削除API
 export async function POST(request: Request) {
   try {
@@ -51,16 +61,19 @@ export async function POST(request: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
+
     // 管理者チェック
     const isAdmin = await isAdminUser(session.user.id);
     if (!isAdmin) {
       return NextResponse.json({ error: '管理者権限がありません' }, { status: 403 });
     }
+
     // リクエストボディからIDリストを取得
     const { ids } = (await request.json()) as { ids: string[] };
     if (!ids || !Array.isArray(ids) || ids.length === 0) {
       return NextResponse.json({ error: '削除する履歴IDのリストが必要です' }, { status: 400 });
     }
+
     // 履歴を一括削除
     const result = await prisma.adminEmailLog.deleteMany({
       where: {
@@ -69,6 +82,7 @@ export async function POST(request: Request) {
         },
       },
     });
+
     return NextResponse.json({
       success: true,
       deletedCount: result.count,

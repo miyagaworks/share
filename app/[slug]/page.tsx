@@ -1,55 +1,139 @@
-// app/[slug]/page.tsx
-import Image from "next/image";
-import { notFound } from "next/navigation";
-import { prisma } from "@/lib/prisma";
-import { ProfileSnsLink } from "@/components/profile/ProfileSnsLink";
-import { ProfileCustomLink } from "@/components/profile/ProfileCustomLink";
-import { Metadata } from "next";
-import Link from "next/link";
+// app/[slug]/page.tsx (型定義修正版)
+import Image from 'next/image';
+import { notFound } from 'next/navigation';
+import { prisma } from '@/lib/prisma';
+import { ProfileSnsLink } from '@/components/profile/ProfileSnsLink';
+import { ProfileCustomLink } from '@/components/profile/ProfileCustomLink';
+import { Metadata } from 'next';
+import Link from 'next/link';
 import { addDays } from 'date-fns';
-import type { User, CorporateTenant } from "@prisma/client";
-interface ExtendedUser extends User {
+
+// 🔥 修正: Prismaスキーマに基づく正しい型定義
+type ExtendedUser = {
+  id: string;
+  email: string;
+  name: string | null;
+  nameEn: string | null;
+  nameKana: string | null;
+  lastName: string | null;
+  firstName: string | null;
+  lastNameKana: string | null;
+  firstNameKana: string | null;
+  image: string | null;
+  bio: string | null;
+  mainColor: string;
   snsIconColor: string | null;
+  bioBackgroundColor: string | null;
+  bioTextColor: string | null;
+  headerText: string | null;
+  textColor: string | null;
+  phone: string | null;
+  company: string | null;
   companyUrl: string | null;
   companyLabel: string | null;
-  tenant?: CorporateTenant | null;
-  adminOfTenant?: CorporateTenant | null;
+  trialEndsAt: Date | null;
+  subscriptionStatus: string | null;
+  corporateRole: string | null;
+  position: string | null;
+  departmentId: string | null;
+  tenantId: string | null;
+  tenant?: {
+    id: string;
+    name: string;
+    logoUrl: string | null;
+    logoWidth: number | null;
+    logoHeight: number | null;
+    primaryColor: string | null;
+    secondaryColor: string | null;
+    headerText: string | null;
+    textColor: string | null;
+    customDomain: string | null;
+  } | null;
+  adminOfTenant?: {
+    id: string;
+    name: string;
+    logoUrl: string | null;
+    logoWidth: number | null;
+    logoHeight: number | null;
+    primaryColor: string | null;
+    secondaryColor: string | null;
+    headerText: string | null;
+    textColor: string | null;
+    customDomain: string | null;
+  } | null;
   department?: {
     id: string;
     name: string;
   } | null;
-}
-type ProfileParams = {
-    params: {
-        slug: string;
-    };
-    searchParams?: Record<string, string | string[]>;
+  createdAt: Date;
+  updatedAt: Date;
 };
-// 動的メタデータ生成
-export async function generateMetadata({ params }: ProfileParams): Promise<Metadata> {
-    const profile = await prisma.profile.findUnique({
-        where: { slug: params.slug },
-        include: {
-            user: true,
-        },
-    });
-    if (!profile) {
-        return {
-            title: "プロフィールが見つかりません",
-            description: "リクエストされたプロフィールは存在しないか、削除された可能性があります。",
-        };
-    }
+
+// 🔥 修正: SNSリンクの型定義
+type SnsLinkType = {
+  id: string;
+  userId: string;
+  platform: string;
+  username: string | null;
+  url: string;
+  displayOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// 🔥 修正: カスタムリンクの型定義
+type CustomLinkType = {
+  id: string;
+  userId: string;
+  name: string;
+  url: string;
+  displayOrder: number;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+// Next.js 15対応のparams型
+type ProfilePageProps = {
+  params: Promise<{
+    slug: string;
+  }>;
+  searchParams?: Promise<Record<string, string | string[]>>;
+};
+
+// generateMetadata関数
+export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
+
+  const profile = await prisma.profile.findUnique({
+    where: { slug },
+    include: {
+      user: true,
+    },
+  });
+
+  if (!profile) {
     return {
-        title: `${profile.user.name || "ユーザー"} | Share`,
-        description: profile.user.bio || "Shareでプロフィールをチェックしましょう",
-        openGraph: {
-            images: profile.user.image ? [profile.user.image] : [],
-        },
+      title: 'プロフィールが見つかりません',
+      description: 'リクエストされたプロフィールは存在しないか、削除された可能性があります。',
     };
+  }
+
+  return {
+    title: `${profile.user.name || 'ユーザー'} | Share`,
+    description: profile.user.bio || 'Shareでプロフィールをチェックしましょう',
+    openGraph: {
+      images: profile.user.image ? [profile.user.image] : [],
+    },
+  };
 }
-export default async function ProfilePage({ params }: { params: { slug: string } }) {
-  const { slug } = params;
-  // プロフィールデータの取得（テナント情報も含める）
+
+// メイン関数
+export default async function ProfilePage({ params }: ProfilePageProps) {
+  const resolvedParams = await params;
+  const { slug } = resolvedParams;
+
+  // プロフィールデータの取得
   const profile = await prisma.profile.findUnique({
     where: { slug },
     include: {
@@ -57,31 +141,30 @@ export default async function ProfilePage({ params }: { params: { slug: string }
         include: {
           tenant: true,
           adminOfTenant: true,
-          department: true, // 部署情報を明示的に含める
+          department: true,
         },
       },
     },
   });
-  // プロフィールが存在しない、または非公開の場合は404
+
   if (!profile || !profile.isPublic) {
     notFound();
   }
-  // トライアル終了後でアクティブなサブスクリプションがない場合はプロフィールを非表示
-  // userを再定義せず、profile.userを直接使用
-  const extendedUser = profile.user as ExtendedUser; // userではなくextendedUserとして別の変数名を使用
-  const trialEndsAt = extendedUser.trialEndsAt ? new Date(extendedUser.trialEndsAt) : null;
+
+  // 🔥 修正: 型アサーションを使用
+  const user = profile.user as ExtendedUser;
+  const trialEndsAt = user.trialEndsAt ? new Date(user.trialEndsAt) : null;
   const now = new Date();
-  // ユーザーがサブスクリプションを持っているか確認
-  const hasActiveSubscription = extendedUser.subscriptionStatus === 'active';
-  // トライアル終了後かつアクティブなサブスクリプションがない場合
+
+  const hasActiveSubscription = user.subscriptionStatus === 'active';
+
   if (trialEndsAt && now > trialEndsAt && !hasActiveSubscription) {
-    // 猶予期間（7日間）
     const gracePeriodEndDate = addDays(trialEndsAt, 7);
-    // 猶予期間も終了している場合は404を返す
     if (now > gracePeriodEndDate) {
       notFound();
     }
   }
+
   // プロフィールの閲覧数を更新
   await prisma.profile.update({
     where: { id: profile.id },
@@ -92,32 +175,37 @@ export default async function ProfilePage({ params }: { params: { slug: string }
       lastAccessed: new Date(),
     },
   });
-  // SNSリンクの取得
-  const snsLinks = await prisma.snsLink.findMany({
+
+  // 🔥 修正: 明示的に型を指定してSNSリンクを取得
+  const snsLinks: SnsLinkType[] = await prisma.snsLink.findMany({
     where: { userId: profile.userId },
     orderBy: { displayOrder: 'asc' },
   });
-  // カスタムリンクの取得
-  const customLinks = await prisma.customLink.findMany({
+
+  // 🔥 修正: 明示的に型を指定してカスタムリンクを取得
+  const customLinks: CustomLinkType[] = await prisma.customLink.findMany({
     where: { userId: profile.userId },
     orderBy: { displayOrder: 'asc' },
   });
-  // 法人SNSリンクを取得（ユーザーが法人テナントに所属している場合）
-  const tenant = profile.user.tenant || profile.user.adminOfTenant;
-  const user = profile.user as ExtendedUser;
-  // 色設定：テナントがある場合はテナントのprimaryColorを優先
+
+  // テナント情報の取得
+  const tenant = user.tenant || user.adminOfTenant;
+
+  // 色設定
   const mainColor = tenant?.primaryColor || user.mainColor || '#A88C3D';
-  const secondaryColor = tenant?.secondaryColor || '#333333'; // セカンダリーカラー追加
-  // SNSアイコン色：ユーザー設定を維持
+  const secondaryColor = tenant?.secondaryColor || '#333333';
   const snsIconColor = user.snsIconColor || '#333333';
+
   // 会社関連情報
   const companyName = tenant?.name || user.company || '';
   const companyLabel = user.companyLabel || '会社HP';
   const hasCompanyUrl = tenant ? true : user.company && user.companyUrl;
-  // ヘッダーテキストとテキストカラー（テナントからの取得を優先）
+
+  // ヘッダーテキストとテキストカラー
   const headerText =
     tenant?.headerText || user.headerText || 'シンプルにつながる、スマートにシェア。';
   const textColor = tenant?.textColor || user.textColor || '#FFFFFF';
+
   return (
     <div
       style={{
@@ -133,26 +221,26 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           width: '100%',
           maxWidth: '28rem',
           overflow: 'hidden',
-          margin: '0', // 上部の余白を削除
+          margin: '0',
         }}
       >
-        {/* 上部のキャッチフレーズ - 左右に余白あり */}
+        {/* 上部のキャッチフレーズ */}
         <div
           style={{
             backgroundColor: mainColor,
-            width: 'calc(100% - 40px)', // 左右に20pxずつの余白
+            width: 'calc(100% - 40px)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             borderBottomLeftRadius: '15px',
             borderBottomRightRadius: '15px',
-            margin: '0 auto', // 中央寄せにするための設定
-            padding: '0.75rem 1rem', // 固定高さ削除、paddingで調整
+            margin: '0 auto',
+            padding: '0.75rem 1rem',
           }}
         >
           <p
             style={{
-              color: textColor, // 変数名を修正
+              color: textColor,
               textAlign: 'center',
               fontWeight: '500',
               whiteSpace: 'pre-wrap',
@@ -162,8 +250,9 @@ export default async function ProfilePage({ params }: { params: { slug: string }
             {headerText}
           </p>
         </div>
+
         <div style={{ padding: '1.5rem' }}>
-          {/* 法人ロゴ（テナントに所属している場合のみ表示） */}
+          {/* 法人ロゴ */}
           {tenant?.logoUrl && (
             <div
               style={{
@@ -199,53 +288,57 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               </div>
             </div>
           )}
-          {/* テナント名または会社名（テナントに所属している場合のみ表示） */}
+
+          {/* テナント名 */}
           {tenant && (
             <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{tenant.name}</h3>
             </div>
           )}
-          {/* 部署と役職情報（ユーザーが法人テナントに所属している場合） */}
-          {profile.user.department && (
+
+          {/* 部署情報 */}
+          {user.department && (
             <div style={{ textAlign: 'center', marginBottom: '0.1rem' }}>
               <p style={{ fontSize: '0.875rem', color: '#4B5563' }} className="profile-text">
-                {profile.user.department.name}
+                {user.department.name}
               </p>
             </div>
           )}
-          {/* 役職情報（部署と独立して表示） */}
-          {profile.user.position && (
+
+          {/* 役職情報 */}
+          {user.position && (
             <div style={{ textAlign: 'center', marginBottom: '0.1rem' }}>
               <p style={{ fontSize: '0.875rem', color: '#4B5563' }} className="profile-text">
-                {profile.user.position}
+                {user.position}
               </p>
             </div>
           )}
+
           {/* ユーザー名 */}
           <div style={{ textAlign: 'center', marginTop: '0.3rem', marginBottom: '2rem' }}>
-            <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{profile.user.name}</h1>
-            {profile.user.nameEn && (
+            <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{user.name}</h1>
+            {user.nameEn && (
               <p style={{ color: '#4B5563' }} className="profile-text">
-                {profile.user.nameEn}
+                {user.nameEn}
               </p>
             )}
           </div>
-          {/* SNSアイコングリッド（法人SNSリンクを優先） */}
+
+          {/* SNSアイコングリッド */}
           <div
             style={{
               display: 'grid',
               gridTemplateColumns: 'repeat(4, 1fr)',
-              gap: '16px', // 1rem = 16px
-              marginBottom: '32px', // 2rem = 32px
+              gap: '16px',
+              marginBottom: '32px',
               width: '100%',
               maxWidth: '100%',
               padding: '0',
               boxSizing: 'border-box',
               justifyItems: 'center',
               alignItems: 'start',
-              // Android Chrome対応
               gridAutoRows: 'minmax(auto, auto)',
-              gridGap: '16px', // 古いブラウザ対応
+              gridGap: '16px',
             }}
           >
             {snsLinks.map((link) => (
@@ -265,6 +358,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               </div>
             ))}
           </div>
+
           {/* 丸いアイコン（自己紹介、会社HP、メール、電話） */}
           <div
             style={{
@@ -274,9 +368,9 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               marginBottom: '1.5rem',
               width: '100%',
               maxWidth: '100%',
-              justifyItems: 'center', // 追加: アイテムを中央揃え
-              alignItems: 'center', // 追加: 垂直方向も中央揃え
-              boxSizing: 'border-box', // 追加: ボックスサイズ計算を明確化
+              justifyItems: 'center',
+              alignItems: 'center',
+              boxSizing: 'border-box',
             }}
           >
             {/* 自己紹介ボタン */}
@@ -294,7 +388,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '0.3rem',
-                  backgroundColor: secondaryColor, // セカンダリーカラーを使用
+                  backgroundColor: secondaryColor,
                   boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                 }}
               >
@@ -317,6 +411,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 自己紹介
               </span>
             </a>
+
             {/* 会社HPボタン */}
             {hasCompanyUrl && (
               <a
@@ -338,7 +433,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginBottom: '0.3rem',
-                    backgroundColor: secondaryColor, // セカンダリーカラーを使用
+                    backgroundColor: secondaryColor,
                     boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                   }}
                 >
@@ -363,9 +458,10 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 </span>
               </a>
             )}
+
             {/* メールボタン */}
             <a
-              href={`mailto:${profile.user.email}`}
+              href={`mailto:${user.email}`}
               style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
             >
               <div
@@ -377,7 +473,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                   alignItems: 'center',
                   justifyContent: 'center',
                   marginBottom: '0.3rem',
-                  backgroundColor: secondaryColor, // セカンダリーカラーを使用
+                  backgroundColor: secondaryColor,
                   boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                 }}
               >
@@ -400,10 +496,11 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 メール
               </span>
             </a>
+
             {/* 電話ボタン */}
-            {profile.user.phone && (
+            {user.phone && (
               <a
-                href={`tel:${profile.user.phone}`}
+                href={`tel:${user.phone}`}
                 style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}
               >
                 <div
@@ -415,7 +512,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     alignItems: 'center',
                     justifyContent: 'center',
                     marginBottom: '0.3rem',
-                    backgroundColor: secondaryColor, // セカンダリーカラーを使用
+                    backgroundColor: secondaryColor,
                     boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
                   }}
                 >
@@ -439,6 +536,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               </a>
             )}
           </div>
+
           {/* カスタムリンク */}
           {customLinks.length > 0 && (
             <div style={{ marginBottom: '1.5rem' }}>
@@ -447,11 +545,12 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               ))}
             </div>
           )}
+
           {/* 主要アクションボタン */}
           <div style={{ marginBottom: '1rem' }}>
-            {profile.user.phone && (
+            {user.phone && (
               <a
-                href={`tel:${profile.user.phone}`}
+                href={`tel:${user.phone}`}
                 style={{
                   display: 'flex',
                   alignItems: 'center',
@@ -521,7 +620,8 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               連絡先に追加
             </a>
           </div>
-          {/* フッター - 順序修正 */}
+
+          {/* フッター */}
           <div style={{ marginTop: '2rem', textAlign: 'center' }}>
             <Link
               href="https://sns-share.com"
@@ -544,6 +644,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           </div>
         </div>
       </div>
+
       {/* 文字拡大ボタン */}
       <button
         id="zoom-toggle-btn"
@@ -554,7 +655,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           width: '50px',
           height: '50px',
           borderRadius: '50%',
-          backgroundColor: 'rgb(29, 78, 216)', // bg-blue-700
+          backgroundColor: 'rgb(29, 78, 216)',
           color: 'white',
           display: 'flex',
           alignItems: 'center',
@@ -583,19 +684,19 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           <line x1="8" y1="11" x2="14" y2="11"></line>
         </svg>
       </button>
-      {/* 自己紹介モーダル (クライアント側でJavaScriptで制御) */}
+
+      {/* 自己紹介モーダル */}
       <div id="profile-modal" className="fixed inset-0 z-50 hidden">
         <div className="absolute inset-0 flex items-center justify-center px-4">
           <div
             className="relative w-full max-w-md bg-white rounded-lg shadow-xl"
             style={{
               maxWidth: '360px',
-              maxHeight: '90vh', // 画面の90%の高さを最大値に設定
+              maxHeight: '90vh',
               display: 'flex',
-              flexDirection: 'column', // フレックスボックスを使って要素を縦に配置
+              flexDirection: 'column',
             }}
           >
-            {/* モーダルを閉じるボタン */}
             <button className="absolute top-4 right-4 z-10 text-gray-500" id="close-modal">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -612,19 +713,17 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
-            {/* スクロール可能なコンテンツエリア */}
+
             <div style={{ overflowY: 'auto', maxHeight: 'calc(90vh - 2rem)' }}>
-              {/* ユーザー情報 */}
               <div className="flex flex-col items-center py-8">
-                {/* プロフィール画像 */}
                 <div
                   className="w-24 h-24 rounded-full overflow-hidden mb-4 flex items-center justify-center"
                   style={{ backgroundColor: secondaryColor || '#1E40AF' }}
                 >
-                  {profile.user.image ? (
+                  {user.image ? (
                     <Image
-                      src={profile.user.image}
-                      alt={profile.user.name || 'プロフィール画像'}
+                      src={user.image}
+                      alt={user.name || 'プロフィール画像'}
                       width={96}
                       height={96}
                       className="w-full h-full object-cover"
@@ -646,21 +745,17 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     </svg>
                   )}
                 </div>
-                {/* ユーザー名 */}
-                <h2 className="text-2xl font-bold text-center mb-1">{profile.user.name}</h2>
-                {profile.user.nameEn && (
-                  <p className="text-sm text-gray-500 mb-4 profile-text">{profile.user.nameEn}</p>
+                <h2 className="text-2xl font-bold text-center mb-1">{user.name}</h2>
+                {user.nameEn && (
+                  <p className="text-sm text-gray-500 mb-4 profile-text">{user.nameEn}</p>
                 )}
-                {/* 自己紹介文 */}
                 <div className="px-8 w-full mb-6">
                   <p className="text-base text-justify whitespace-pre-wrap profile-text">
-                    {profile.user.bio || '自己紹介がここに入ります。'}
+                    {user.bio || '自己紹介がここに入ります。'}
                   </p>
                 </div>
               </div>
-              {/* 区切り線 */}
               <div className="border-t border-gray-200 w-full"></div>
-              {/* 会社情報と連絡先 */}
               <div
                 className="p-6 text-base rounded-b-lg"
                 style={{
@@ -702,7 +797,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                       <p className="profile-text">{user.position}</p>
                     </div>
                   )}
-                  {profile.user.phone && (
+                  {user.phone && (
                     <div>
                       <p
                         className="font-semibold profile-text"
@@ -710,10 +805,10 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                       >
                         TEL：
                       </p>
-                      <p className="profile-text">{profile.user.phone}</p>
+                      <p className="profile-text">{user.phone}</p>
                     </div>
                   )}
-                  {profile.user.email && (
+                  {user.email && (
                     <div>
                       <p
                         className="font-semibold profile-text"
@@ -721,7 +816,7 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                       >
                         メール：
                       </p>
-                      <p className="profile-text">{profile.user.email}</p>
+                      <p className="profile-text">{user.email}</p>
                     </div>
                   )}
                 </div>
@@ -730,19 +825,18 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           </div>
         </div>
       </div>
+
       {/* スタイル定義 */}
       <style
         dangerouslySetInnerHTML={{
           __html: `
               .text-enlarged {
-                font-size: 110% !important; /* 通常より10%大きく */
+                font-size: 110% !important;
                 line-height: 1.5 !important;
               }
-              /* SNSアイコンのサイズも拡大する */
               .text-enlarged-icon {
                 transform: scale(1.1);
               }
-              /* 文字拡大ボタンのホバーエフェクト */
               #zoom-toggle-btn:hover {
                 background-color: rgb(29, 78, 216, 0.9);
                 transform: scale(1.05);
@@ -750,19 +844,18 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               #zoom-toggle-btn {
                 transition: all 0.2s ease;
               }
-              /* モーダル関連のスタイル */
               .modal-open {
                 overflow: hidden;
               }
             `,
         }}
       />
+
       {/* モーダル用JavaScript */}
       <script
         dangerouslySetInnerHTML={{
           __html: `
               document.addEventListener('DOMContentLoaded', function() {
-                // モーダル関連の処理
                 const modal = document.getElementById('profile-modal');
                 const closeBtn = document.getElementById('close-modal');
                 const profileBtn = document.querySelector('[data-modal-target="profile-modal"]');
@@ -785,13 +878,11 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     closeModal();
                   }
                 });
-                // 文字拡大機能
                 const zoomToggleBtn = document.getElementById('zoom-toggle-btn');
                 let isTextEnlarged = false;
                 if (zoomToggleBtn) {
                   zoomToggleBtn.addEventListener('click', function() {
                     isTextEnlarged = !isTextEnlarged;
-                    // profile-textクラスを持つすべての要素のフォントサイズを変更
                     const textElements = document.querySelectorAll('.profile-text');
                     textElements.forEach(function(element) {
                       if (isTextEnlarged) {
@@ -800,7 +891,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                         element.classList.remove('text-enlarged');
                       }
                     });
-                    // SNSアイコン周りのテキスト要素も拡大対象に
                     const snsTextElements = document.querySelectorAll('.text-xs');
                     snsTextElements.forEach(function(element) {
                       if (isTextEnlarged) {
@@ -809,7 +899,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                         element.classList.remove('text-enlarged');
                       }
                     });
-                    // SNSアイコンのサイズも調整
                     const snsIcons = document.querySelectorAll('.w-16.h-16');
                     snsIcons.forEach(function(element) {
                       if (isTextEnlarged) {
@@ -818,18 +907,15 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                         element.classList.remove('text-enlarged-icon');
                       }
                     });
-                    // ボタンのアイコンを変更
                     const svgIcon = zoomToggleBtn.querySelector('svg');
                     if (svgIcon) {
                       if (isTextEnlarged) {
-                        // 「-」（縮小）アイコンに変更
                         svgIcon.innerHTML = \`
                           <circle cx="11" cy="11" r="8"></circle>
                           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
                           <line x1="8" y1="11" x2="14" y2="11"></line>
                         \`;
                       } else {
-                        // 「+」（拡大）アイコンに変更
                         svgIcon.innerHTML = \`
                           <circle cx="11" cy="11" r="8"></circle>
                           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>

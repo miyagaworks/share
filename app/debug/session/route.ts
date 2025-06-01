@@ -22,8 +22,8 @@ export async function GET(request: NextRequest) {
     });
     logger.debug('JWTトークン', { token });
 
-    // 3. Cookieの確認
-    const cookieStore = cookies();
+    // 🔥 修正: cookies()をawaitで解決
+    const cookieStore = await cookies();
     const sessionToken = cookieStore.get('next-auth.session-token');
     const callbackUrl = cookieStore.get('next-auth.callback-url');
     const csrfToken = cookieStore.get('next-auth.csrf-token');

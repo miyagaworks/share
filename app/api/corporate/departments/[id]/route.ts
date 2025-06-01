@@ -1,15 +1,19 @@
 // app/api/corporate/departments/[id]/route.ts
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccess';
+
 // 部署詳細取得（GET）
-export async function GET(req: Request, { params }: { params: { id: string } }) {
+export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
   // 永久利用権ユーザーかどうかチェック
   const isPermanent = checkPermanentAccess();
   if (isPermanent) {
+    const resolvedParams = await params;
+    const departmentId = resolvedParams.id;
+
     // 仮想テナントデータから部署情報を返す
     const virtualData = getVirtualTenantData();
     if (!virtualData) {
@@ -19,7 +23,7 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       );
     }
     // 部署IDに一致する部署を仮想データから検索
-    const department = virtualData.departments.find((dept) => dept.id === params.id);
+    const department = virtualData.departments.find((dept) => dept.id === departmentId);
     if (!department) {
       return NextResponse.json({ error: '部署が見つかりません' }, { status: 404 });
     }
@@ -32,12 +36,16 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
       },
     });
   }
+
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-    const departmentId = params.id;
+
+    const resolvedParams = await params;
+    const departmentId = resolvedParams.id;
+
     // ユーザーのテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -83,9 +91,12 @@ export async function GET(req: Request, { params }: { params: { id: string } }) 
     return NextResponse.json({ error: '部署情報の取得に失敗しました' }, { status: 500 });
   }
 }
+
 // 部署更新（PUT）
-export async function PUT(req: Request, { params }: { params: { id: string } }) {
+export async function PUT(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params;
+
     // 永久利用権ユーザーかどうかチェック
     const isPermanent = checkPermanentAccess();
     const session = await auth();
@@ -110,7 +121,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         const body = await req.json();
         const { name, description } = body;
         logger.debug('永久利用権ユーザーからの部署更新リクエスト:', {
-          id: params.id,
+          id: resolvedParams.id,
           body,
         });
         // 必須フィールドの検証
@@ -133,7 +144,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         // 部署の存在確認と所有権確認
         const existingDepartment = await prisma.department.findFirst({
           where: {
-            id: params.id,
+            id: resolvedParams.id,
             tenantId: tenant.id,
           },
         });
@@ -145,7 +156,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
         }
         // 部署を更新
         const updatedDepartment = await prisma.department.update({
-          where: { id: params.id },
+          where: { id: resolvedParams.id },
           data: {
             name,
             description,
@@ -161,7 +172,7 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       }
     }
     // 通常のユーザー処理
-    const departmentId = params.id;
+    const departmentId = resolvedParams.id;
     const body = await req.json();
     const { name, description } = body;
     // 必須フィールドの検証
@@ -212,19 +223,23 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
     return NextResponse.json({ error: '部署の更新に失敗しました' }, { status: 500 });
   }
 }
+
 // 部署削除（DELETE）
-export async function DELETE(req: Request, { params }: { params: { id: string } }) {
+export async function DELETE(req: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
     // セッション認証をまず行う
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
+
+    const resolvedParams = await params;
+
     // 永久利用権ユーザーかどうかチェック
     const isPermanent = checkPermanentAccess();
     if (isPermanent) {
       try {
-        const departmentId = params.id;
+        const departmentId = resolvedParams.id;
         // ユーザーのテナント情報を取得
         const userWithTenant = await prisma.user.findUnique({
           where: { id: session.user.id }, // sessionはすでに取得済み
@@ -279,7 +294,7 @@ export async function DELETE(req: Request, { params }: { params: { id: string } 
       }
     }
     // 以下は通常のユーザー処理（既存コード）
-    const departmentId = params.id;
+    const departmentId = resolvedParams.id;
     // ユーザーとテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },

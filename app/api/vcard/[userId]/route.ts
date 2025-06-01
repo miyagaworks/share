@@ -1,13 +1,15 @@
 // app/api/vcard/[userId]/route.ts
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { prisma } from '@/lib/prisma';
+
 // 画像データの型を定義
 interface ImageData {
   base64: string;
   mimeType: string;
 }
+
 // 画像をfetchしてBase64にエンコードする関数
 async function fetchImageAsBase64(imageUrl: string): Promise<ImageData | null> {
   try {
@@ -32,6 +34,7 @@ async function fetchImageAsBase64(imageUrl: string): Promise<ImageData | null> {
     return null;
   }
 }
+
 // vCardフィールド値のエスケープ処理
 function escapeVCardValue(value: string): string {
   if (!value) return '';
@@ -42,9 +45,15 @@ function escapeVCardValue(value: string): string {
     .replace(/;/g, '\\;')
     .replace(/\n/g, '\\n');
 }
-export async function GET(request: NextRequest, { params }: { params: { userId: string } }) {
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ userId: string }> },
+) {
   try {
-    const userId = params.userId;
+    const resolvedParams = await params;
+    const userId = resolvedParams.userId;
+
     // ユーザー情報と関連データを一度に取得
     // selectを使って必要なフィールドを明示的に指定
     const user = await prisma.user.findUnique({
@@ -87,17 +96,21 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
         },
       },
     });
+
     if (!user) {
       logger.error('User not found:', userId);
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
+
     // vCardフォーマットの生成
     const now = new Date().toISOString().replace(/[-:]/g, '').split('.')[0] + 'Z';
+
     // 名前を適切に処理
     let lastName = user.lastName || '',
       firstName = user.firstName || '',
       lastNameKana = user.lastNameKana || '',
       firstNameKana = user.firstNameKana || '';
+
     // 直接のフィールドがない場合は従来の分割ロジックを使用
     if (!lastName && !firstName && user.name) {
       const nameParts = user.name.split(' ');
@@ -108,6 +121,7 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
         firstName = user.name;
       }
     }
+
     if (!lastNameKana && !firstNameKana && user.nameKana) {
       const kanaParts = user.nameKana.split(' ');
       if (kanaParts.length > 1) {
@@ -117,12 +131,14 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
         firstNameKana = user.nameKana;
       }
     }
+
     const vcard = [
       'BEGIN:VCARD',
       'VERSION:3.0',
       `FN:${escapeVCardValue(user.name || '')}`,
       `N:${escapeVCardValue(lastName)};${escapeVCardValue(firstName)};;;`,
     ];
+
     // フリガナ情報があれば追加
     if (firstNameKana || lastNameKana) {
       // iPhoneのフリガナ対応
@@ -135,19 +151,25 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
         `SOUND;X-IRMC-N;CHARSET=UTF-8;ENCODING=QUOTED-PRINTABLE:;${escapeVCardValue(firstNameKana)};${escapeVCardValue(lastNameKana)};;`,
       );
     }
+
     vcard.push(`REV:${now}`);
+
     if (user.phone) {
       vcard.push(`TEL;TYPE=CELL:${escapeVCardValue(user.phone)}`);
     }
+
     if (user.email) {
       vcard.push(`EMAIL;TYPE=INTERNET:${escapeVCardValue(user.email)}`);
     }
+
     if (user.company) {
       vcard.push(`ORG:${escapeVCardValue(user.company)}`);
     }
+
     if (user.bio) {
       vcard.push(`NOTE:${escapeVCardValue(user.bio)}`);
     }
+
     if (user.image) {
       try {
         // 画像をBase64で取得
@@ -165,10 +187,12 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
         vcard.push(`PHOTO;VALUE=URI:${user.image}`);
       }
     }
+
     // 役職があれば追加
     if (user.position) {
       vcard.push(`TITLE:${escapeVCardValue(user.position)}`);
     }
+
     // 部署情報を追加
     if (user.departmentId) {
       const department = await prisma.department.findUnique({
@@ -178,6 +202,7 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
         vcard.push(`ORG-UNIT:${escapeVCardValue(department.name)}`);
       }
     }
+
     // プロフィールURLを追加
     const profile = await prisma.profile.findUnique({
       where: { userId },
@@ -191,6 +216,7 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
       const profileUrl = `${baseUrl}/${profile.slug}`;
       vcard.push(`URL;TYPE=PROFILE:${profileUrl}`);
     }
+
     // SNSリンクの追加
     if (user.snsLinks && user.snsLinks.length > 0) {
       user.snsLinks.forEach((link) => {
@@ -199,6 +225,7 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
         );
       });
     }
+
     // カスタムリンクの追加
     if (user.customLinks && user.customLinks.length > 0) {
       user.customLinks.forEach((link) => {
@@ -206,12 +233,16 @@ export async function GET(request: NextRequest, { params }: { params: { userId: 
         vcard.push(`URL;TYPE=${linkLabel}:${escapeVCardValue(link.url)}`);
       });
     }
+
     // vCardの終了
     vcard.push('END:VCARD');
+
     // 標準的なvCardの行区切りはCRLF
     const vcardContent = vcard.join('\r\n');
+
     // ファイル名をASCII文字のみにする
     const safeFilename = 'contact.vcf';
+
     // vCardデータを返す
     // Content-Dispositionヘッダーに非ASCII文字を含めないようにする
     return new NextResponse(vcardContent, {

@@ -1,31 +1,39 @@
 // app/api/qrcode/update/[id]/route.ts
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-export async function POST(request: Request, { params }: { params: { id: string } }) {
+
+export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
   try {
-    const id = params.id;
+    const resolvedParams = await params;
+    const id = resolvedParams.id;
+
     // 認証チェック
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
+
     // リクエストボディを取得
     const body = await request.json();
     logger.debug('Update request body:', body); // デバッグ用
+
     // 既存のQRコードページを検索
     const existingQrCode = await prisma.qrCodePage.findUnique({
       where: { id },
     });
+
     if (!existingQrCode) {
       return NextResponse.json({ error: 'QRコードページが見つかりません' }, { status: 404 });
     }
+
     // 所有者チェック
     if (existingQrCode.userId !== session.user.id) {
       return NextResponse.json({ error: '権限がありません' }, { status: 403 });
     }
+
     // スラグの更新がある場合は重複チェック
     if (body.slug && body.slug !== existingQrCode.slug) {
       const slugExists = await prisma.qrCodePage.findUnique({
@@ -41,6 +49,7 @@ export async function POST(request: Request, { params }: { params: { id: string 
         );
       }
     }
+
     // 更新データを準備
     const updateData = {
       primaryColor: body.primaryColor,
@@ -51,11 +60,13 @@ export async function POST(request: Request, { params }: { params: { id: string 
       // nameEn フィールドはスキーマに存在しない場合は除外
       slug: body.slug || existingQrCode.slug, // スラグも更新可能に
     };
+
     // QRコードページを更新
     const updatedQrCode = await prisma.qrCodePage.update({
       where: { id },
       data: updateData,
     });
+
     return NextResponse.json({
       success: true,
       qrCode: updatedQrCode,

@@ -1,15 +1,18 @@
 // app/api/corporate/sns/[id]/route.ts
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccess';
-// import type { CorporateSnsLink } from '@prisma/client';
+
 // 法人共通SNSリンクの取得
-export async function GET(req: NextRequest, { params }: { params: { id: string } }) {
+export async function GET(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params;
+    const linkId = resolvedParams.id;
+
     // 永久利用権ユーザーかどうかチェック
     const isPermanent = checkPermanentAccess();
     if (isPermanent) {
@@ -22,7 +25,7 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         );
       }
       // IDに一致するSNSリンクを検索
-      const snsLink = virtualData.snsLinks.find((link) => link.id === params.id);
+      const snsLink = virtualData.snsLinks.find((link) => link.id === linkId);
       if (!snsLink) {
         return NextResponse.json({ error: 'リンクが見つかりません' }, { status: 404 });
       }
@@ -32,11 +35,12 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
         isAdmin: true,
       });
     }
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-    const linkId = params.id;
+
     // ユーザーの法人テナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -73,9 +77,13 @@ export async function GET(req: NextRequest, { params }: { params: { id: string }
     return NextResponse.json({ error: '法人共通SNSリンクの取得に失敗しました' }, { status: 500 });
   }
 }
+
 // 法人共通SNSリンクの更新
-export async function PATCH(req: NextRequest, { params }: { params: { id: string } }) {
+export async function PATCH(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params;
+    const linkId = resolvedParams.id;
+
     // 永久利用権ユーザーかどうかチェック
     const isPermanent = checkPermanentAccess();
     if (isPermanent) {
@@ -85,7 +93,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         success: true,
         message: '永久利用権ユーザーのSNSリンク設定は更新されません',
         link: {
-          id: params.id,
+          id: linkId,
           platform: 'platform' in body ? body.platform : 'unknown',
           username: 'username' in body ? body.username : null,
           url: 'url' in body ? body.url : 'https://example.com',
@@ -93,6 +101,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
         },
       });
     }
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
@@ -107,7 +116,7 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     if (!user || !user.adminOfTenant) {
       return NextResponse.json({ error: 'この操作には管理者権限が必要です' }, { status: 403 });
     }
-    const linkId = params.id;
+
     // リンクが存在するか確認
     const link = await prisma.corporateSnsLink.findFirst({
       where: {
@@ -151,9 +160,13 @@ export async function PATCH(req: NextRequest, { params }: { params: { id: string
     return NextResponse.json({ error: '法人共通SNSリンクの更新に失敗しました' }, { status: 500 });
   }
 }
+
 // 法人共通SNSリンクの削除
-export async function DELETE(req: NextRequest, { params }: { params: { id: string } }) {
+export async function DELETE(req: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
+    const resolvedParams = await params;
+    const linkId = resolvedParams.id;
+
     // 永久利用権ユーザーかどうかチェック
     const isPermanent = checkPermanentAccess();
     if (isPermanent) {
@@ -162,6 +175,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
         message: '永久利用権ユーザーのSNSリンク設定は削除されません',
       });
     }
+
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
@@ -176,7 +190,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     if (!user || !user.adminOfTenant) {
       return NextResponse.json({ error: 'この操作には管理者権限が必要です' }, { status: 403 });
     }
-    const linkId = params.id;
+
     // リンクが存在するか確認
     const link = await prisma.corporateSnsLink.findFirst({
       where: {
@@ -187,17 +201,20 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
     if (!link) {
       return NextResponse.json({ error: 'リンクが見つかりません' }, { status: 404 });
     }
+
     // 管理者は必須リンクも削除可能
     // 必須フラグのチェックを削除
     // リンクを削除
     await prisma.corporateSnsLink.delete({
       where: { id: linkId },
     });
+
     // 残りのリンクの表示順を再調整
     const remainingLinks = await prisma.corporateSnsLink.findMany({
       where: { tenantId: user.adminOfTenant.id },
       orderBy: { displayOrder: 'asc' },
     });
+
     // 表示順を更新
     for (let i = 0; i < remainingLinks.length; i++) {
       await prisma.corporateSnsLink.update({
@@ -205,6 +222,7 @@ export async function DELETE(req: NextRequest, { params }: { params: { id: strin
         data: { displayOrder: i + 1 },
       });
     }
+
     return NextResponse.json({
       success: true,
       message: 'リンクを削除しました',
