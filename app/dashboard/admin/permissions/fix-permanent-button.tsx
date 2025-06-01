@@ -41,7 +41,7 @@ export default function FixPermanentUsersButton() {
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
         // JSONではないレスポンスを処理
-        const text = await response.text();
+        await response.text();
         toast.error('APIからの応答が不正です: JSONではありません');
         setIsLoading(false);
         return;
@@ -60,9 +60,9 @@ export default function FixPermanentUsersButton() {
         // APIからのエラーレスポンスを表示
         toast.error('APIエラー: ' + (data.error || `ステータスコード ${response.status}`));
       }
-    } catch (error) {
+    } catch {
       toast.error(
-        `リクエスト中にエラーが発生しました: ${error instanceof Error ? error.message : String(error)}`,
+        'リクエスト中にエラーが発生しました。',
       );
     } finally {
       setIsLoading(false);

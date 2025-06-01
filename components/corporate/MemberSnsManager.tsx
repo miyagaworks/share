@@ -290,8 +290,8 @@ export function MemberSnsManager({
       });
       setIsAddingSns(false);
       toast.success('SNSリンクを追加しました');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'SNSリンクの追加に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'SNSリンクの追加に失敗しました');
     }
   };
   // SNSリンク更新処理
@@ -324,8 +324,8 @@ export function MemberSnsManager({
         url: '',
       });
       toast.success('SNSリンクを更新しました');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'SNSリンクの更新に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'SNSリンクの更新に失敗しました');
     }
   };
   // 法人必須SNSリンクかどうかを判定する
@@ -355,8 +355,8 @@ export function MemberSnsManager({
       const updatedLinks = personalSnsLinks.filter((link) => link.id !== id);
       onSnsLinkUpdate(updatedLinks);
       toast.success('SNSリンクを削除しました');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'SNSリンクの削除に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'SNSリンクの削除に失敗しました');
     }
   };
   // カスタムリンク追加処理
@@ -387,8 +387,8 @@ export function MemberSnsManager({
       });
       setIsAddingCustom(false);
       toast.success('カスタムリンクを追加しました');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'カスタムリンクの追加に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'カスタムリンクの追加に失敗しました');
     }
   };
   // カスタムリンク更新処理
@@ -420,8 +420,8 @@ export function MemberSnsManager({
         url: '',
       });
       toast.success('カスタムリンクを更新しました');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'カスタムリンクの更新に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'カスタムリンクの更新に失敗しました');
     }
   };
   // カスタムリンク削除処理
@@ -442,8 +442,8 @@ export function MemberSnsManager({
       const updatedLinks = customLinks.filter((link) => link.id !== id);
       onCustomLinkUpdate(updatedLinks);
       toast.success('カスタムリンクを削除しました');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'カスタムリンクの削除に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'カスタムリンクの削除に失敗しました');
     }
   };
   // 編集を開始する - SNS

@@ -60,7 +60,7 @@ export function SNSLinkFormWithGuideIntegration({
     try {
       new URL(urlValue);
       setUrlValid(true);
-    } catch {
+    } catch (err) {
       setUrlValid(false);
     }
   }, [urlValue]);
@@ -76,7 +76,7 @@ export function SNSLinkFormWithGuideIntegration({
     try {
       new URL(url);
       return url;
-    } catch {
+    } catch (err) {
       return '';
     }
   };
@@ -161,7 +161,7 @@ export function SNSLinkFormWithGuideIntegration({
           if (errorData.error) {
             errorMessage = errorData.error;
           }
-        } catch {
+        } catch (err) {
         }
         throw new Error(errorMessage);
       }
@@ -178,8 +178,8 @@ export function SNSLinkFormWithGuideIntegration({
       setOfficialLineInputValue('');
       setBerealInputValue('');
       onSuccess();
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : 'SNSリンクの追加に失敗しました';
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : 'SNSリンクの追加に失敗しました';
       toast.error(errorMessage);
     } finally {
       setIsPending(false);

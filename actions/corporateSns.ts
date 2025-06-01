@@ -36,7 +36,7 @@ export async function getCorporateSnsLinks() {
       orderBy: { displayOrder: 'asc' },
     });
     return { success: true, snsLinks, isAdmin: !!user.adminOfTenant };
-  } catch (error) {
+  } catch {
     return { error: '法人共通SNSリンクの取得に失敗しました' };
   }
 }
@@ -104,7 +104,7 @@ export async function addCorporateSnsLink(data: {
     revalidatePath('/dashboard/corporate/sns');
     revalidatePath('/dashboard/corporate');
     return { success: true, link: newLink };
-  } catch (error) {
+  } catch {
     return { error: '法人共通SNSリンクの追加に失敗しました' };
   }
 }
@@ -159,7 +159,7 @@ export async function deleteCorporateSnsLink(id: string) {
     revalidatePath('/dashboard/corporate/sns');
     revalidatePath('/dashboard/corporate');
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: '法人共通SNSリンクの削除に失敗しました' };
   }
 }
@@ -203,7 +203,7 @@ export async function updateCorporateSnsLinkOrder(linkIds: string[]) {
     revalidatePath('/dashboard/corporate/sns');
     revalidatePath('/dashboard/corporate');
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: '法人共通SNSリンクの順序更新に失敗しました' };
   }
 }
@@ -265,7 +265,7 @@ export async function updateCorporateSnsLink(
     revalidatePath('/dashboard/corporate/sns');
     revalidatePath('/dashboard/corporate');
     return { success: true, link: updatedLink };
-  } catch (error) {
+  } catch {
     return { error: '法人共通SNSリンクの更新に失敗しました' };
   }
 }
@@ -352,7 +352,7 @@ export async function syncCorporateSnsToUsers() {
       success: true,
       message: `${tenantUsers.length}人のユーザーに対して、${updatedCount}件のリンクを更新、${createdCount}件のリンクを追加しました`,
     };
-  } catch (error) {
+  } catch {
     return { error: 'SNSリンクの同期に失敗しました' };
   }
 }

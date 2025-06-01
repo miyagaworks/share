@@ -76,7 +76,7 @@ export default function LinksPage() {
       const data = await response.json();
 
       return data;
-    } catch (error) {
+    } catch {
       toast.error('リンクの取得に失敗しました');
       return { snsLinks: [], customLinks: [] };
     }
@@ -94,7 +94,7 @@ export default function LinksPage() {
         const data = await fetchLinks();
         setSnsLinks(data.snsLinks || []);
         setCustomLinks(data.customLinks || []);
-      } catch (error) {
+      } catch {
         toast.error('リンクの取得に失敗しました');
       } finally {
         setIsLoading(false);
@@ -115,7 +115,7 @@ export default function LinksPage() {
       setSnsLinks([...(data.snsLinks || [])]);
       setCustomLinks([...(data.customLinks || [])]);
       toast.success('SNSリンクを追加しました！');
-    } catch (error) {
+    } catch {
       toast.error('データの更新に失敗しました');
     } finally {
       setIsProcessing(false);
@@ -143,7 +143,7 @@ export default function LinksPage() {
       setTimeout(() => {
         setRefreshKey((prev) => prev + 1);
       }, 100);
-    } catch (error) {
+    } catch {
       toast.error('データの更新に失敗しました');
     } finally {
       setIsProcessing(false);
@@ -160,7 +160,7 @@ export default function LinksPage() {
       setSnsLinks([...(data.snsLinks || [])]);
       setCustomLinks([...(data.customLinks || [])]);
 
-    } catch (error) {
+    } catch {
       toast.error('リンク情報の取得に失敗しました');
     }
   };

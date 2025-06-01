@@ -73,7 +73,7 @@ export function QrCodeClient({ profileUrl }: QrCodeClientProps) {
       } else {
         toast.error('キャンバスの作成に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('QRコードのダウンロードに失敗しました');
     }
   };
@@ -107,7 +107,7 @@ export function QrCodeClient({ profileUrl }: QrCodeClientProps) {
       // 追加した白背景要素を削除（表示上の問題を防ぐ）
       svg.removeChild(rect);
       toast.success('QRコード（SVG）をダウンロードしました');
-    } catch (error) {
+    } catch {
       toast.error('QRコードのダウンロードに失敗しました');
     }
   };

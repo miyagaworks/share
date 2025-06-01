@@ -36,7 +36,7 @@ export default function QrCodePage() {
           const data = await response.json();
           setIsCorporateMember(data.hasAccess === true);
         }
-      } catch (err) {
+      } catch {
         // 法人アクセス権チェックエラーは無視（非重要）
       }
     };
@@ -72,7 +72,7 @@ export default function QrCodePage() {
           }
         }
       }
-    } catch (err) {
+    } catch {
       // 法人データ取得エラーは無視（非重要）
     }
   }, [isCorporateMember]);
@@ -128,7 +128,7 @@ export default function QrCodePage() {
         // APIエラー処理
         toast.error('プロフィール情報の取得に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('エラーが発生しました。再度お試しください。');
     } finally {
       setIsLoading(false);

@@ -45,7 +45,7 @@ export function ImprovedSnsLinkList({ links, onUpdate, onEdit }: ImprovedSnsLink
             setItems(items.filter(item => item.id !== id));
             toast.success(`${platform}を削除しました`);
             onUpdate();
-        } catch (error) {
+        } catch {
             toast.error("SNSリンクの削除に失敗しました");
         } finally {
             setIsDeleting(null);
@@ -68,7 +68,7 @@ export function ImprovedSnsLinkList({ links, onUpdate, onEdit }: ImprovedSnsLink
             }
             toast.success("表示順を更新しました");
             onUpdate();
-        } catch (error) {
+        } catch {
             toast.error("表示順の更新に失敗しました");
             // エラー時に元の順序に戻す
             setItems(links);

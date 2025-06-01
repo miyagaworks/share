@@ -1,5 +1,4 @@
 // lib/utils/corporate-access.ts
-import { logger } from "@/lib/utils/logger";
 // ⚠️ 警告: このファイルはクライアントサイドでは使用できません
 // サーバーサイドでの使用は lib/utils/corporate-access-server.ts を推奨
 /**

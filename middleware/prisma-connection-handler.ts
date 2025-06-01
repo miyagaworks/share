@@ -1,5 +1,4 @@
 // middleware/prisma-connection-handler.ts
-import { logger } from "@/lib/utils/logger";
 import type { NextRequest, NextResponse } from 'next/server';
 import { disconnectPrisma } from '@/lib/prisma';
 /**

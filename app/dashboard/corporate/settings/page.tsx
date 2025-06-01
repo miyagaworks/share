@@ -157,7 +157,7 @@ export default function CorporateSettingsPage() {
             const responseData = await response.json();
             setTenantData(responseData.tenant);
             setIsAdmin(responseData.userRole === 'admin');
-          } catch (tenantError) {
+          } catch {
             throw new Error('テナント情報を読み込めませんでした');
           }
         }
@@ -170,10 +170,10 @@ export default function CorporateSettingsPage() {
               setSubscriptionData(subData.subscription);
             }
           }
-        } catch (subError) {
+        } catch {
           // サブスクリプション情報の取得失敗は致命的エラーではないのでスルー
         }
-      } catch (err) {
+      } catch {
         setError('テナント情報を読み込めませんでした');
       } finally {
         setIsLoading(false);
@@ -223,8 +223,8 @@ export default function CorporateSettingsPage() {
         });
       }
       toast.success('基本設定を保存しました');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '設定の更新に失敗しました');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '設定の更新に失敗しました');
     } finally {
       setIsSaving(false);
     }
@@ -257,7 +257,7 @@ export default function CorporateSettingsPage() {
         });
       }
       toast.success('セキュリティ設定を保存しました');
-    } catch (err) {
+    } catch {
       toast.error('セキュリティ設定の保存に失敗しました');
     } finally {
       setIsSaving(false);
@@ -323,8 +323,8 @@ export default function CorporateSettingsPage() {
           accountStatus: data.status,
         });
       }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '操作に失敗しました');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '操作に失敗しました');
     } finally {
       setIsSaving(false);
     }
@@ -390,7 +390,7 @@ export default function CorporateSettingsPage() {
       document.body.appendChild(allDataLink);
       allDataLink.click();
       document.body.removeChild(allDataLink);
-    } catch (error) {
+    } catch {
       toast.error('データのダウンロードに失敗しました');
     }
   };
@@ -425,7 +425,7 @@ export default function CorporateSettingsPage() {
         });
       }
       toast.success('通知設定を保存しました');
-    } catch (err) {
+    } catch {
       toast.error('通知設定の保存に失敗しました');
     } finally {
       setIsSaving(false);
@@ -463,7 +463,7 @@ export default function CorporateSettingsPage() {
         });
       }
       toast.success('請求情報を保存しました');
-    } catch (err) {
+    } catch {
       toast.error('請求情報の保存に失敗しました');
     } finally {
       setIsSaving(false);

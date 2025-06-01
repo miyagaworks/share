@@ -94,7 +94,7 @@ export default function SubscriptionSettings() {
             data.user?.bio;
           setHasIndividualData(hasData);
         }
-      } catch (error) {
+      } catch {
       }
     };
     checkIndividualData();

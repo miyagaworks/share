@@ -22,7 +22,7 @@ const Result = memo(function Result({ text, onReset, warning }: ResultProps) {
       setCopied(true);
       toast.success('クリップボードにコピーしました');
       setTimeout(() => setCopied(false), 2000);
-    } catch (error) {
+    } catch {
       toast.error('コピーに失敗しました');
       // クリップボードコピーエラーは既にtoastで通知済み
     }

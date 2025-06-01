@@ -117,7 +117,7 @@ export function QrCodeGenerator({
         setIsSlugAvailable(true);
         setIsExistingQrCode(false);
       }
-    } catch (err) {
+    } catch {
       setIsSlugAvailable(false);
       setIsExistingQrCode(false);
     } finally {
@@ -179,7 +179,7 @@ export function QrCodeGenerator({
           const errorData = await response.json();
           throw new Error(errorData.error || 'QRコードページの作成に失敗しました');
         }
-        const data = await response.json();
+        await response.json();
       }
       // 🔧 修正: 成功後もプロフィールURLを使用
       toast.success(isExistingQrCode ? 'QRコードを更新しました' : 'QRコードを作成しました');
@@ -230,7 +230,7 @@ export function QrCodeGenerator({
       } else {
         toast.error('キャンバスの作成に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('QRコードのダウンロードに失敗しました');
     }
   };
@@ -264,7 +264,7 @@ export function QrCodeGenerator({
       // 追加した白背景要素を削除（表示上の問題を防ぐ）
       svg.removeChild(rect);
       toast.success('QRコード（SVG）をダウンロードしました');
-    } catch (error) {
+    } catch {
       toast.error('QRコードのダウンロードに失敗しました');
     }
   };

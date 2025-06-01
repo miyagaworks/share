@@ -187,7 +187,7 @@ export default function ImprovedCorporateBrandingPage() {
               setCustomWidth(width);
               setCustomHeight(height);
             })
-            .catch((err) => {
+            .catch(() => {
               // デフォルトサイズを設定
               setLogoSize({ width: 400, height: 400 });
               setCustomWidth(400);
@@ -216,11 +216,11 @@ export default function ImprovedCorporateBrandingPage() {
             const userData = await userResponse.json();
             setCurrentUser(userData.user);
           }
-        } catch (userError) {
+        } catch {
           // ユーザー情報取得エラーは致命的ではないので、エラー表示はしない
         }
         setError(null);
-      } catch (err) {
+      } catch {
         // グローバル状態から取得
         if (corporateAccessState.hasAccess && corporateAccessState.tenantId) {
           setIsAdmin(corporateAccessState.isAdmin);

@@ -64,7 +64,7 @@ export default function DepartmentsPage() {
         const deptData = await deptResponse.json();
         setDepartments(deptData.departments || []);
         setError(null);
-      } catch (err) {
+      } catch {
         setError('テナント情報を読み込めませんでした');
       } finally {
         setIsLoading(false);
@@ -155,8 +155,8 @@ export default function DepartmentsPage() {
       }
       // モーダルを閉じる
       closeModal();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '部署の保存に失敗しました');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '部署の保存に失敗しました');
     } finally {
       setIsSaving(false);
     }
@@ -186,8 +186,8 @@ export default function DepartmentsPage() {
       // 部署リストから削除
       setDepartments(departments.filter((dept) => dept.id !== department.id));
       toast.success('部署を削除しました');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '部署の削除に失敗しました');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '部署の削除に失敗しました');
     }
   };
   // 読み込み中

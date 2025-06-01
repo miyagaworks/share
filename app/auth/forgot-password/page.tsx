@@ -46,7 +46,7 @@ export default function ForgotPasswordPage() {
         return;
       }
       setSuccess('パスワードリセット用のリンクをメールで送信しました。メールをご確認ください。');
-    } catch (error) {
+    } catch {
       setError('リクエスト処理中にエラーが発生しました。');
     } finally {
       setIsPending(false);

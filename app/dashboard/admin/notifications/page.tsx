@@ -126,7 +126,7 @@ export default function AdminNotificationsPage() {
       } else {
         toast.error('お知らせ一覧の取得に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('お知らせ情報の取得中にエラーが発生しました');
     } finally {
       setLoading(false);
@@ -148,7 +148,7 @@ export default function AdminNotificationsPage() {
         } else {
           router.push('/dashboard');
         }
-      } catch (error) {
+      } catch {
         router.push('/dashboard');
       }
     };
@@ -329,7 +329,7 @@ export default function AdminNotificationsPage() {
         const errorData = await response.json();
         toast.error(errorData.error || 'お知らせの保存に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('処理中にエラーが発生しました');
     } finally {
       setFormSubmitting(false);
@@ -370,7 +370,7 @@ export default function AdminNotificationsPage() {
         const errorData = await response.json();
         toast.error(errorData.error || 'お知らせの削除に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('削除中にエラーが発生しました');
     } finally {
       setDeletingId(null);

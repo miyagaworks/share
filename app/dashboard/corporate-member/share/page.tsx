@@ -78,10 +78,10 @@ export default function CorporateMemberSharePage() {
               setIsQrSlugAvailable(true);
             }
           }
-        } catch (qrError) {
+        } catch {
           // エラーがあっても処理は続行
         }
-      } catch (err) {
+      } catch {
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
@@ -101,7 +101,7 @@ export default function CorporateMemberSharePage() {
       const data = await response.json();
       // 自分のものか新規作成可能な場合
       setIsQrSlugAvailable(data.available || data.ownedByCurrentUser);
-    } catch (error) {
+    } catch {
       setIsQrSlugAvailable(false);
     } finally {
       setIsCheckingQrSlug(false);
@@ -137,8 +137,8 @@ export default function CorporateMemberSharePage() {
       setHasProfile(true);
       toast.success('共有設定を更新しました');
       return updatedData; // 成功時はデータを返す
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '共有設定の更新に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '共有設定の更新に失敗しました');
       // エラーを再スローして、子コンポーネントでもキャッチできるようにする
       throw error;
     }

@@ -35,7 +35,7 @@ export default function AdminDashboardPage() {
           // 管理者でない場合はダッシュボードにリダイレクト
           router.push('/dashboard');
         }
-      } catch (error) {
+      } catch {
         router.push('/dashboard');
       } finally {
         setLoading(false);

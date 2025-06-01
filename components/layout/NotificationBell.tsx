@@ -1,6 +1,6 @@
 // components/layout/NotificationBell.tsx
 'use client';
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { HiBell } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
 import { formatDistanceToNow } from 'date-fns';
@@ -63,7 +63,7 @@ export default function NotificationBell() {
         credentials: 'include', // クッキー（認証情報）を含める
       });
       if (!response.ok) {
-        const errorData = await response.json().catch(() => ({}));
+        await response.json().catch(() => ({}));
         throw new Error(`API応答エラー: ${response.status}`);
       }
       const data = await response.json();
@@ -74,8 +74,7 @@ export default function NotificationBell() {
       }
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount || 0);
-    } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : '不明なエラー';
+    } catch {
       setError('お知らせの取得に失敗しました');
     } finally {
       setLoading(false);
@@ -102,7 +101,7 @@ export default function NotificationBell() {
       if (!response.ok) {
         // エラーが発生してもUI側の表示は変更しない（UX向上のため）
       }
-    } catch (err) {
+    } catch {
       // エラーが発生してもUI側の表示は変更しない（UX向上のため）
     }
   };

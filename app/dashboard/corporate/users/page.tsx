@@ -83,7 +83,7 @@ export default function CorporateUsersPage() {
           },
         });
         if (!deptResponse.ok) {
-          const errorData = await deptResponse.json().catch(() => ({}));
+          await deptResponse.json().catch(() => ({}));
           toast.error('部署情報の取得に失敗しました。一部の機能が制限されます');
         } else {
           const deptData = await deptResponse.json();
@@ -157,8 +157,8 @@ export default function CorporateUsersPage() {
       toast.success(`${selectedUser.name}の情報を更新しました`);
       setIsEditRoleDialogOpen(false);
       setSelectedUser(null);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'ユーザー情報の更新に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'ユーザー情報の更新に失敗しました');
     } finally {
       setIsUpdating(false);
     }

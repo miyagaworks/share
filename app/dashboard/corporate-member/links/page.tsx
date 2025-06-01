@@ -108,7 +108,7 @@ export default function CorporateMemberLinksPage() {
         });
         setCorporatePlatformUrls(urlMap);
         setError(null);
-      } catch (err) {
+      } catch {
         setError('リンク情報の取得に失敗しました');
       } finally {
         setIsLoading(false);

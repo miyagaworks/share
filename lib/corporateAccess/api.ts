@@ -1,5 +1,4 @@
 // lib/corporateAccess/api.ts
-import { logger } from "@/lib/utils/logger";
 import { corporateAccessState, updateState, logDebug, isClient } from './state';
 import { saveToStorage, StorageKey, StorageType } from './storage';
 export interface ApiResult {

@@ -104,8 +104,8 @@ export function SessionProvider({
           console.error('[SessionProvider] セッションAPI呼び出し失敗:', response.status);
           handleAutoLogout();
         }
-      } catch (error) {
-        console.error('[SessionProvider] セッション延長エラー:', error);
+      } catch {
+        console.error('[SessionProvider] セッション延長エラー');
         handleAutoLogout();
       }
     };
@@ -115,7 +115,7 @@ export function SessionProvider({
           redirect: true,
           callbackUrl: '/auth/signin?timeout=1',
         });
-      } catch (error) {
+      } catch {
         window.location.href = '/auth/signin?timeout=1';
       }
     };

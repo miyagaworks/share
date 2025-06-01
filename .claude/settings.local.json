@@ -12,7 +12,11 @@
       "mcp__ide__getDiagnostics",
       "Bash(npm run build:*)",
       "Bash(npx tsc:*)",
-      "Bash(npx eslint:*)"
+      "Bash(npx eslint:*)",
+      "Bash(sed:*)",
+      "Bash(for file in lib/corporateAccess/api.ts lib/corporateAccess/permanentAccess.ts lib/corporateAccess/virtualTenant.ts lib/jikogene/env.ts lib/jikogene/validator.ts lib/utils/corporate-access.ts lib/utils/subscription.ts lib/utils/validation.ts)",
+      "Bash(do sed -i '' '/import.*logger.*@\\/lib\\/utils\\/logger/d' \"$file\")",
+      "Bash(done)"
     ],
     "deny": []
   }

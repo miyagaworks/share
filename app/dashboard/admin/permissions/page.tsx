@@ -60,7 +60,7 @@ export default function AdminPermissionsPage() {
         } else {
           router.push('/dashboard');
         }
-      } catch (error) {
+      } catch {
         router.push('/dashboard');
       }
     };
@@ -77,7 +77,7 @@ export default function AdminPermissionsPage() {
       } else {
         toast.error('ユーザー一覧の取得に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('ユーザー情報の取得中にエラーが発生しました');
     } finally {
       setLoading(false);
@@ -103,7 +103,7 @@ export default function AdminPermissionsPage() {
       } else {
         toast.error('永久利用権の更新に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('処理中にエラーが発生しました');
     }
   };

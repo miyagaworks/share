@@ -13,7 +13,7 @@ export function SnsLinkClientWrapper({ links }: SnsLinkClientWrapperProps) {
     setKey((prev) => String(Number(prev) + 1));
   };
   // onEdit プロパティを追加
-  const handleEdit = (id: string) => {
+  const handleEdit = () => {
     // 必要に応じて編集ロジックを実装
   };
   return (

@@ -81,7 +81,7 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
         const data = await response.json();
         throw new Error(data.error || '共有設定の更新に失敗しました');
       }
-      const responseData = await response.json();
+      await response.json();
       toast.success('共有設定を更新しました');
       setFormChanged(false);
       // 成功時にページをリフレッシュして最新データを取得

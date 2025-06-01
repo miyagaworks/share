@@ -139,7 +139,7 @@ export default function SubscriptionStatus({
     try {
       const planType = await fetchPermanentPlanType();
       setPermanentPlanType(planType);
-    } catch (error) {
+    } catch {
     } finally {
       setPermanentPlanLoaded(true);
     }
@@ -153,7 +153,7 @@ export default function SubscriptionStatus({
         month: 'long',
         day: 'numeric',
       });
-    } catch (e) {
+    } catch {
       return dateString;
     }
   };
@@ -170,7 +170,7 @@ export default function SubscriptionStatus({
         );
       }
       return result;
-    } catch (error) {
+    } catch {
       return null;
     }
   }, []);
@@ -192,7 +192,7 @@ export default function SubscriptionStatus({
         }
       }
       setError(null);
-    } catch (err) {
+    } catch {
       setError('プラン情報を読み込めませんでした');
       toast.error('プラン情報の取得に失敗しました');
     } finally {
@@ -380,8 +380,8 @@ export default function SubscriptionStatus({
       await refreshCorporateAccess();
       // 拡張された再読み込み処理を実行
       enhancedReload();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'プランの再アクティブ化に失敗しました');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'プランの再アクティブ化に失敗しました');
     } finally {
       setReactivating(false);
     }
@@ -422,8 +422,8 @@ export default function SubscriptionStatus({
       await refreshCorporateAccess();
       // 拡張された再読み込み処理を実行
       enhancedReload();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'ご利用プランのキャンセルに失敗しました');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'ご利用プランのキャンセルに失敗しました');
     } finally {
       setCancelling(false);
     }

@@ -49,7 +49,6 @@ export async function generateIntroductionAction(
     }
   } catch (error: unknown) {
     // エラーの詳細情報を収集
-    const errorObj = error instanceof Error ? error : new Error('不明なエラー');
     // 本番環境ではエラーログは不要
     try {
       // 最終手段としてフォールバック生成を試みる
@@ -62,7 +61,7 @@ export async function generateIntroductionAction(
           warning: warning,
         },
       };
-    } catch (fallbackError) {
+    } catch {
       // フォールバックも失敗した場合
       return {
         error: '自己紹介文の生成に失敗しました。お手数ですが、時間をおいて再度お試しください。',

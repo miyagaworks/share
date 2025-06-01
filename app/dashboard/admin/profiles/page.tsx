@@ -101,7 +101,7 @@ export default function AdminProfilesPage() {
       } else {
         toast.error('プロファイル一覧の取得に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('プロファイル情報の取得中にエラーが発生しました');
     } finally {
       setLoading(false);
@@ -123,7 +123,7 @@ export default function AdminProfilesPage() {
         } else {
           router.push('/dashboard');
         }
-      } catch (error) {
+      } catch {
         router.push('/dashboard');
       }
     };
@@ -202,7 +202,7 @@ export default function AdminProfilesPage() {
       });
       setQrCodeDataUrl(qrDataUrl);
       setShowQRModal(true);
-    } catch (error) {
+    } catch {
       toast.error('QRコードの生成に失敗しました');
     }
   };

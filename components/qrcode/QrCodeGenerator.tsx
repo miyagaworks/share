@@ -37,15 +37,13 @@ const USER_TEXT_COLOR_KEY = 'userTextColor';
 export function QrCodeGenerator({
   corporateBranding,
   userProfile,
-  // コンポーネント内では使用しないが、型定義のためにpropsは残す
-  hideBackButton = false, // eslint-disable-line @typescript-eslint/no-unused-vars
+  // hideBackButton = false,
   hideSlugInput = false,
-  customBackUrl, // eslint-disable-line @typescript-eslint/no-unused-vars
+  // customBackUrl,
   initialQrCodeSlug,
   hideTitleHeader = false,
 }: QrCodeGeneratorProps) {
-  // isCorporateMemberは法人ブランディングの条件分岐で使用
-  const isCorporateMember = !!corporateBranding; // eslint-disable-line @typescript-eslint/no-unused-vars
+  // const isCorporateMember = !!corporateBranding;
   // 初期値の設定
   const initialPrimaryColor = corporateBranding?.primaryColor || '#3B82F6';
   const initialTextColor = corporateBranding?.textColor || '#FFFFFF';
@@ -126,14 +124,14 @@ export function QrCodeGenerator({
               setCustomUrlSlug(randomSlug);
               checkSlugAvailability(randomSlug);
             }
-          } catch (err) {
+          } catch {
             // QRコード取得に失敗した場合もランダムスラグを設定
             const randomSlug = Math.random().toString(36).substring(2, 7);
             setCustomUrlSlug(randomSlug);
             checkSlugAvailability(randomSlug);
           }
         }
-      } catch (err) {
+      } catch {
         toast.error('プロフィール情報の取得に失敗しました');
       }
     };
@@ -169,7 +167,7 @@ export function QrCodeGenerator({
         setIsExistingQrCode(false);
         setExistingQrCodeId(null);
       }
-    } catch (err) {
+    } catch {
       setIsSlugAvailable(false);
       setIsExistingQrCode(false);
     } finally {

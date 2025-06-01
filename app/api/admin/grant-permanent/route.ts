@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma, disconnectPrisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
-import { isUserSuperAdmin } from '@/lib/corporateAccess';
 import { PermanentPlanType, PLAN_TYPE_DISPLAY_NAMES } from '@/lib/corporateAccess';
 export async function POST(request: Request) {
   try {

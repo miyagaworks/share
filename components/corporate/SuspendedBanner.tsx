@@ -22,7 +22,7 @@ export function SuspendedBanner() {
         const data = await response.json();
         setTenantSuspended(data.tenant.accountStatus === 'suspended');
         setIsAdmin(data.userRole === 'admin');
-      } catch (error) {
+      } catch {
       }
     };
     checkTenantStatus();

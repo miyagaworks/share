@@ -73,11 +73,11 @@ export default function QrCodeViewPage() {
                 setHeaderText(userData.user.headerText);
               }
             }
-          } catch (userError) {
+          } catch {
             // ユーザー情報取得エラー（サイレント失敗）
           }
         }
-      } catch (error) {
+      } catch {
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);

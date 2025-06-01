@@ -78,7 +78,7 @@ export default function SubscriptionPage() {
       }
       const data = await response.json();
       return data.user;
-    } catch (error) {
+    } catch {
       return null;
     }
   };

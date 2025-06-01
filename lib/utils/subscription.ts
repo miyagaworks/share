@@ -1,5 +1,4 @@
 // lib/utils/subscription.ts
-import { logger } from "@/lib/utils/logger";
 // ⚠️ 警告: このファイルはクライアントサイドでは使用できません
 // サーバーサイドでの使用は lib/utils/subscription-server.ts を推奨
 /**

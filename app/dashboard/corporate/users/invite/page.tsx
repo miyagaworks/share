@@ -68,7 +68,7 @@ export default function InviteUserPage() {
           });
         }
         setError(null);
-      } catch (err) {
+      } catch {
         setError('テナント情報を読み込めませんでした');
       } finally {
         setIsLoading(false);
@@ -134,8 +134,8 @@ export default function InviteUserPage() {
       }
       // ユーザー一覧ページに戻る
       router.push('/dashboard/corporate/users');
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : '招待の送信に失敗しました');
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : '招待の送信に失敗しました');
     } finally {
       setIsSending(false);
     }

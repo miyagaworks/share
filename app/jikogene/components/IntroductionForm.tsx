@@ -117,7 +117,7 @@ const IntroductionForm = memo(function IntroductionForm({
         try {
           setIsSubmitting(true);
           await onSubmit(formData);
-        } catch (error) {
+        } catch {
           toast.error('送信中にエラーが発生しました');
         } finally {
           setIsSubmitting(false);

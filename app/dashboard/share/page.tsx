@@ -60,7 +60,7 @@ function SharePageContent() {
         setShareSettings(data.shareSettings);
         setHasProfile(data.hasProfile);
         setError(null);
-      } catch (err) {
+      } catch {
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);

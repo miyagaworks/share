@@ -59,7 +59,7 @@ export default function GrantPermanentAccess() {
         // エラー通知
         toast.error(data.error || '処理中にエラーが発生しました');
       }
-    } catch (err) {
+    } catch {
       setResult({
         success: false,
         error: 'APIリクエスト中にエラーが発生しました',

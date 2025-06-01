@@ -62,12 +62,12 @@ export async function addSnsLink(data: { platform: string; username?: string; ur
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('sns-links');
-    } catch (revalidateError) {
+    } catch {
       // revalidationエラーがあっても処理は継続
     }
 
     return { success: true, link: newLink };
-  } catch (error) {
+  } catch {
     return { error: 'SNSリンクの追加に失敗しました' };
   }
 }
@@ -116,12 +116,12 @@ export async function addCustomLink(data: { name: string; url: string }) {
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('custom-links');
-    } catch (revalidateError) {
+    } catch {
       // revalidationエラーがあっても処理は継続
     }
 
     return { success: true, link: newLink };
-  } catch (error) {
+  } catch {
     return { error: 'カスタムリンクの追加に失敗しました' };
   }
 }
@@ -167,10 +167,10 @@ export async function deleteSnsLink(id: string) {
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('sns-links');
-    } catch (revalidateError) {
+    } catch {
     }
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: 'SNSリンクの削除に失敗しました' };
   }
 }
@@ -208,10 +208,10 @@ export async function updateSnsLinkOrder(linkIds: string[]) {
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('sns-links');
-    } catch (revalidateError) {
+    } catch {
     }
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: 'SNSリンクの順序更新に失敗しました' };
   }
 }
@@ -264,10 +264,10 @@ export async function updateSnsLink(
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('sns-links');
-    } catch (revalidateError) {
+    } catch {
     }
     return { success: true, link: updatedLink };
-  } catch (error) {
+  } catch {
     return { error: 'SNSリンクの更新に失敗しました' };
   }
 }
@@ -312,10 +312,10 @@ export async function deleteCustomLink(id: string) {
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('custom-links');
-    } catch (revalidateError) {
+    } catch {
     }
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: 'カスタムリンクの削除に失敗しました' };
   }
 }
@@ -353,10 +353,10 @@ export async function updateCustomLinkOrder(linkIds: string[]) {
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('custom-links');
-    } catch (revalidateError) {
+    } catch {
     }
     return { success: true };
-  } catch (error) {
+  } catch {
     return { error: 'カスタムリンクの順序更新に失敗しました' };
   }
 }
@@ -409,10 +409,10 @@ export async function updateCustomLink(
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('custom-links');
-    } catch (revalidateError) {
+    } catch {
     }
     return { success: true, link: updatedLink };
-  } catch (error) {
+  } catch {
     return { error: 'カスタムリンクの更新に失敗しました' };
   }
 }

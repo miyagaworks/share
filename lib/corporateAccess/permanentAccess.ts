@@ -1,5 +1,4 @@
 // lib/corporateAccess/permanentAccess.ts
-import { logger } from "@/lib/utils/logger";
 import {
   CorporateAccessState,
   corporateAccessState,

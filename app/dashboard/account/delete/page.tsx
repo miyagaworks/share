@@ -72,7 +72,7 @@ export default function DeleteAccountPage() {
           const response = await fetch('/api/user/check-password');
           const data = await response.json();
           setIsOAuthUser(!data.hasPassword);
-        } catch (error) {
+        } catch {
         }
       };
       checkUserPassword();

@@ -51,8 +51,8 @@ export function CorporateMemberGuard({ children }: { children: ReactNode }) {
             }
           }, 2000);
         }
-      } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : '不明なエラー';
+      } catch (err) {
+        const errorMessage = err instanceof Error ? err.message : '不明なエラー';
         // ネットワークエラーの場合はリトライを試行
         if (
           errorMessage.includes('fetch') ||

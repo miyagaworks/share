@@ -111,7 +111,7 @@ export default function ProfilePage() {
           companyLabel: userData?.companyLabel || '会社HP',
         });
         setImage(userData?.image || null);
-      } catch (error) {
+      } catch {
       } finally {
         setIsLoading(false);
       }

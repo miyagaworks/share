@@ -31,20 +31,7 @@ export default function ImprovedDesignPage() {
   const [error, setError] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const [shouldScroll, setShouldScroll] = useState(false);
-  // ユーザーデータを取得する関数
-  const fetchUserData = async (): Promise<UserWithProfile> => {
-    try {
-      const response = await fetch('/api/profile');
-      if (!response.ok) {
-        throw new Error('プロフィール情報の取得に失敗しました');
-      }
-      const data = await response.json();
-      return data.user as UserWithProfile;
-    } catch (error) {
-      // エラー情報はトーストで表示
-      throw error;
-    }
-  };
+
   // データが更新されたときに再取得する関数
   const handleUpdate = async () => {
     try {
@@ -70,7 +57,7 @@ export default function ImprovedDesignPage() {
       if (typeof window !== 'undefined' && window.innerWidth < 1024) {
         setShouldScroll(true);
       }
-    } catch (error) {
+    } catch {
       // エラーはトーストで表示済み
       setError('プロフィール情報の再取得に失敗しました');
       toast.error('プロフィール情報の再取得に失敗しました');
@@ -102,7 +89,7 @@ export default function ImprovedDesignPage() {
               behavior: 'smooth',
             });
           }
-        } catch (e) {
+        } catch {
         }
         // フラグをリセット
         setShouldScroll(false);
@@ -117,18 +104,24 @@ export default function ImprovedDesignPage() {
       router.push('/auth/signin');
       return;
     }
+
     const loadUserData = async () => {
       try {
-        const userData = await fetchUserData();
-        setUser(userData);
-      } catch (error) {
-        // エラー情報はトーストで表示
+        // fetchUserData を直接定義
+        const response = await fetch('/api/profile');
+        if (!response.ok) {
+          throw new Error('プロフィール情報の取得に失敗しました');
+        }
+        const data = await response.json();
+        setUser(data.user);
+      } catch {
         setError('プロフィール情報の取得に失敗しました');
         toast.error('プロフィール情報の取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
+
     loadUserData();
   }, [session, status, router]);
   const pageVariants = {

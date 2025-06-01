@@ -55,31 +55,7 @@ export default function CorporateMemberPage() {
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [snsCount, setSnsCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
-  // APIからデータを取得する関数
-  const fetchData = async () => {
-    try {
-      // プロフィール情報の取得
-      const profileResponse = await fetch('/api/corporate-profile');
-      if (!profileResponse.ok) {
-        throw new Error('法人プロフィール情報の取得に失敗しました');
-      }
-      const profileData = await profileResponse.json();
-      // リンク情報の取得
-      const linksResponse = await fetch('/api/links');
-      if (!linksResponse.ok) {
-        throw new Error('リンク情報の取得に失敗しました');
-      }
-      const linksData = await linksResponse.json();
-      return {
-        user: profileData.user,
-        tenant: profileData.tenant,
-        snsLinks: linksData.snsLinks || [],
-        customLinks: linksData.customLinks || [],
-      };
-    } catch (error) {
-      throw error;
-    }
-  };
+
   // 初期データ取得
   useEffect(() => {
     if (status === 'loading') return;
@@ -87,18 +63,32 @@ export default function CorporateMemberPage() {
       router.push('/auth/signin');
       return;
     }
+
     const loadData = async () => {
       try {
-        const data = await fetchData();
-        setUserData(data.user);
-        setTenantData(data.tenant);
-        setSnsCount(data.snsLinks.length);
-      } catch (error) {
+        // fetchData を直接定義するか、useCallback でメモ化
+        const response = await fetch('/api/corporate-profile');
+        if (!response.ok) {
+          throw new Error('法人プロフィール情報の取得に失敗しました');
+        }
+        const profileData = await response.json();
+
+        const linksResponse = await fetch('/api/links');
+        if (!linksResponse.ok) {
+          throw new Error('リンク情報の取得に失敗しました');
+        }
+        const linksData = await linksResponse.json();
+
+        setUserData(profileData.user);
+        setTenantData(profileData.tenant);
+        setSnsCount(linksData.snsLinks?.length || 0);
+      } catch {
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
+
     loadData();
   }, [session, status, router]);
   // アニメーション設定

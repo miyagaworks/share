@@ -85,7 +85,7 @@ function InvitePageContent() {
         // setUserId(userData.userId || '');
         setIsValid(true);
         setIsLoading(false);
-      } catch (error) {
+      } catch {
         setIsValid(false);
         setError('招待の検証中にエラーが発生しました');
         setIsLoading(false);
@@ -146,7 +146,7 @@ function InvitePageContent() {
           });
           // 法人メンバーダッシュボードへリダイレクト
           router.push('/dashboard/corporate-member');
-        } catch (sessionError) {
+        } catch {
           // エラーが発生してもリダイレクトは実行
           router.push('/dashboard/corporate-member');
         }

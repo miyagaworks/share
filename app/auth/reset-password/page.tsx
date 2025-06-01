@@ -43,7 +43,7 @@ function ResetPasswordContent() {
         }
         break;
       }
-    } catch (e) {
+    } catch {
       break;
     }
   }
@@ -75,7 +75,7 @@ function ResetPasswordContent() {
       try {
         const response = await fetch(`/api/auth/verify-reset-token?token=${token}`);
         setIsValidToken(response.ok);
-      } catch (error) {
+      } catch {
         setIsValidToken(false);
       } finally {
         setIsTokenChecking(false);
@@ -109,7 +109,7 @@ function ResetPasswordContent() {
       setTimeout(() => {
         router.push('/auth/signin');
       }, 3000);
-    } catch (error) {
+    } catch {
       setError('リクエスト処理中にエラーが発生しました。');
     } finally {
       setIsPending(false);

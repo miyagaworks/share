@@ -36,7 +36,7 @@ export async function getUserDashboardPath() {
       return '/dashboard/corporate-member';
     }
     return '/dashboard';
-  } catch (error) {
+  } catch {
     return '/dashboard';
   }
 }
@@ -47,7 +47,7 @@ export async function getUserByEmail(email: string) {
       where: { email },
     });
     return { success: true, user };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'ユーザーの検索に失敗しました' };
   }
 }
@@ -58,7 +58,7 @@ export async function getUserById(id: string) {
       where: { id },
     });
     return { success: true, user };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'ユーザーの検索に失敗しました' };
   }
 }
@@ -78,7 +78,7 @@ export async function getCurrentUser() {
       },
     });
     return { success: true, user };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'ユーザー情報の取得に失敗しました' };
   }
 }
@@ -115,7 +115,7 @@ export async function createProfile(userId: string) {
       },
     });
     return { success: true, profile };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'プロフィールの作成に失敗しました' };
   }
 }
@@ -152,7 +152,7 @@ export async function updateProfile(data: {
       user: updatedUser,
       profile: profileResult.profile,
     };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'プロフィールの更新に失敗しました' };
   }
 }
@@ -207,7 +207,7 @@ export async function updateProfileSettings(data: {
       revalidatePath(`/${updatedProfile.slug}`);
     }
     return { success: true, profile: updatedProfile };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'プロフィール設定の更新に失敗しました' };
   }
 }
@@ -224,7 +224,7 @@ export async function deleteUserAccount() {
       where: { id: userId },
     });
     return { success: true };
-  } catch (error) {
+  } catch {
     return { success: false, error: 'アカウントの削除に失敗しました' };
   }
 }
@@ -246,7 +246,7 @@ export async function verifyPassword(password: string) {
     });
     const data = await result.json();
     return data;
-  } catch (error) {
+  } catch {
     return { success: false, error: 'パスワードの検証に失敗しました' };
   }
 }

@@ -291,7 +291,7 @@ export default function CorporateSnsMangementPage() {
         setCorporateSnsLinks(data.snsLinks || []);
         setIsAdmin(data.isAdmin);
         setError(null);
-      } catch (err) {
+      } catch {
         setError('法人共通SNSリンク情報を読み込めませんでした');
       } finally {
         setIsLoading(false);
@@ -348,8 +348,8 @@ export default function CorporateSnsMangementPage() {
       }
       const data = await response.json();
       toast.success(data.message || 'SNSリンクを同期しました');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'SNSリンクの同期に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'SNSリンクの同期に失敗しました');
     } finally {
       setIsSyncing(false);
     }
@@ -373,8 +373,8 @@ export default function CorporateSnsMangementPage() {
         throw new Error(errorData.error || '表示順の更新に失敗しました');
       }
       toast.success('SNSリンクの表示順を更新しました');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : '表示順の更新に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : '表示順の更新に失敗しました');
       // エラーの場合は元の順序に戻す
       const response = await fetch('/api/corporate/sns');
       if (response.ok) {

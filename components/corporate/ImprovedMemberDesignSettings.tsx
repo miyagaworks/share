@@ -96,7 +96,7 @@ export function ImprovedMemberDesignSettings({
         bioTextColor,
       });
       setFormChanged(false);
-    } catch (error) {
+    } catch {
     } finally {
       setIsSaving(false);
     }

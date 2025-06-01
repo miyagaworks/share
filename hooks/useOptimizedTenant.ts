@@ -48,7 +48,7 @@ async function fetchTenantInfo(): Promise<TenantResponse> {
     try {
       const errorText = await response.text();
       errorData = JSON.parse(errorText);
-    } catch (parseError) {
+    } catch {
       errorData = { error: 'レスポンスの解析に失敗しました' };
     }
 

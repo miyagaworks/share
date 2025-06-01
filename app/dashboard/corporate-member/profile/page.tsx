@@ -55,7 +55,7 @@ export default function CorporateMemberProfilePage() {
       setUserData(userWithRequiredFields);
       setTenantData(data.tenant);
       setError(null);
-    } catch (err) {
+    } catch {
       setError('プロフィール情報の取得に失敗しました');
     } finally {
       setIsLoading(false);
@@ -80,8 +80,8 @@ export default function CorporateMemberProfilePage() {
       setUserData(updatedData.user);
       // トースト通知は1回だけ表示（MemberProfileForm内の通知を削除または無効化）
       // toast.success('プロフィールを更新しました'); // <-- この行をコメントアウトまたは削除
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'プロフィールの更新に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'プロフィールの更新に失敗しました');
       throw error; // 親コンポーネントでもエラーハンドリングできるようにエラーを再スロー
     }
   };

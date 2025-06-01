@@ -80,8 +80,8 @@ export default function CorporateMemberQrcodePage() {
         setProfileData(profileData);
         setTenantData(shareData.tenant);
         setError(null);
-      } catch (error) {
-        setError(error instanceof Error ? error.message : 'データの取得に失敗しました');
+      } catch (err) {
+        setError(err instanceof Error ? err.message : 'データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }

@@ -85,7 +85,7 @@ export default function AdminUsersPage() {
         } else {
           router.push('/dashboard');
         }
-      } catch (error) {
+      } catch {
         router.push('/dashboard');
       }
     };
@@ -102,7 +102,7 @@ export default function AdminUsersPage() {
       } else {
         toast.error('ユーザー一覧の取得に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('ユーザー情報の取得中にエラーが発生しました');
     } finally {
       setLoading(false);
@@ -144,7 +144,7 @@ export default function AdminUsersPage() {
           toast.error(data.error || 'ユーザー削除に失敗しました');
         }
       }
-    } catch (error) {
+    } catch {
       toast.error('ユーザー削除中にエラーが発生しました');
     } finally {
       setDeletingUser(null);

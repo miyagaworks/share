@@ -35,7 +35,7 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
         await checkCorporateAccess();
         // 状態が変更されたら再レンダリング
         setRenderKey((prev) => prev + 1);
-      } catch (error) {
+      } catch {
       }
     };
     initAccess();

@@ -1,5 +1,4 @@
 // lib/corporateAccess/adminAccess.ts
-import { logger } from "@/lib/utils/logger";
 import { corporateAccessState, isClient, logDebug, updateState } from './state';
 // 管理者メールアドレスのリスト（クライアントサイド用）
 const ADMIN_EMAILS = ['admin@sns-share.com'];

@@ -128,7 +128,7 @@ export function MemberProfileForm({
       // 親コンポーネントの保存関数を呼び出し
       await onSave(updateData);
       toast.success('プロフィールを更新しました');
-    } catch (error) {
+    } catch {
       toast.error('プロフィールの更新に失敗しました');
     } finally {
       setIsSaving(false);

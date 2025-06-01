@@ -32,14 +32,6 @@ interface EmailHistory {
     email: string;
   };
 }
-// メール送信結果の型定義
-interface EmailResultItem {
-  userId: string;
-  email: string;
-  success: boolean;
-  messageId?: string;
-  error?: string;
-}
 export default function AdminEmailPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -98,7 +90,7 @@ export default function AdminEmailPage() {
         } else {
           router.push('/dashboard');
         }
-      } catch (error) {
+      } catch {
         router.push('/dashboard');
       } finally {
         setLoading(false);
@@ -132,7 +124,7 @@ export default function AdminEmailPage() {
       } else {
         toast.error('ユーザー検索に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('ユーザーの検索中にエラーが発生しました');
     } finally {
       setSearchLoading(false);
@@ -155,7 +147,7 @@ export default function AdminEmailPage() {
       } else {
         toast.error('送信履歴の取得に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('送信履歴の取得中にエラーが発生しました');
     } finally {
       setHistoryLoading(false);
@@ -212,7 +204,7 @@ export default function AdminEmailPage() {
         // エラーの場合
         toast.error(data.error || 'メール送信に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('処理中にエラーが発生しました。ネットワーク接続を確認してください。');
     } finally {
       setSending(false);
@@ -236,7 +228,7 @@ export default function AdminEmailPage() {
         const data = await response.json();
         toast.error(data.error || '送信履歴の削除に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('送信履歴の削除中にエラーが発生しました');
     } finally {
       setDeletingId(null);
@@ -277,7 +269,7 @@ export default function AdminEmailPage() {
         const data = await response.json();
         toast.error(data.error || '送信履歴の一括削除に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('送信履歴の一括削除中にエラーが発生しました');
     } finally {
       setBulkDeleting(false);
@@ -660,7 +652,7 @@ export default function AdminEmailPage() {
                   className="w-full border-gray-300 rounded-l-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  onKeyPress={(e) => e.key === 'Enter' && searchUsers()}
+                  onKeyDown={(e) => e.key === 'Enter' && searchUsers()}
                 />
                 <button
                   onClick={searchUsers}

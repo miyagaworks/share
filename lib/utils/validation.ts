@@ -1,5 +1,4 @@
 // lib/utils/validation.ts
-import { logger } from "@/lib/utils/logger";
 import { z } from 'zod';
 // HTMLエスケープ用ユーティリティ（XSS対策）
 export const sanitizeHtml = (html: string): string => {

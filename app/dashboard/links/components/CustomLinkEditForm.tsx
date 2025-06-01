@@ -69,9 +69,9 @@ export function CustomLinkEditForm({ link, onCancel, onSuccess }: CustomLinkEdit
             toast.success("カスタムリンクを更新しました");
             router.refresh();
             onSuccess();
-        } catch (error) {
-            setError(error instanceof Error ? error.message : "更新中にエラーが発生しました");
-            toast.error(error instanceof Error ? error.message : "更新中にエラーが発生しました");
+        } catch (err) {
+            setError(err instanceof Error ? err.message : "更新中にエラーが発生しました");
+            toast.error(err instanceof Error ? err.message : "更新中にエラーが発生しました");
         } finally {
             setIsSubmitting(false);
         }

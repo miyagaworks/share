@@ -53,7 +53,7 @@ export function CustomLinkForm({ onSuccess }: CustomLinkFormProps) {
           if (errorData.error) {
             errorMessage = errorData.error;
           }
-        } catch {
+        } catch (err) {
         }
         throw new Error(errorMessage);
       }
@@ -66,9 +66,9 @@ export function CustomLinkForm({ onSuccess }: CustomLinkFormProps) {
       reset();
       // 成功コールバックを呼び出し（親コンポーネントで状態更新）
       onSuccess();
-    } catch (error) {
+    } catch (err) {
       const errorMessage =
-        error instanceof Error ? error.message : 'カスタムリンクの追加に失敗しました';
+        err instanceof Error ? err.message : 'カスタムリンクの追加に失敗しました';
       toast.error(errorMessage);
     } finally {
       setIsPending(false);

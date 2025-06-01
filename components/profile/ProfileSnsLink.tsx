@@ -104,7 +104,7 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
           window.open(link.url, '_blank');
         }, 500);
         e.preventDefault();
-      } catch (error) {
+      } catch {
         // エラーが発生した場合はブラウザで開く
       }
     }

@@ -112,7 +112,7 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
       toast.success('デザイン設定を更新しました');
       // 🚀 修正: router.refreshは最後に実行（必要に応じて）
       // router.refresh();
-    } catch (error) {
+    } catch {
       toast.error(errorMessage || 'デザイン設定の更新に失敗しました');
     } finally {
       setIsPending(false);

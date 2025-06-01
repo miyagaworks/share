@@ -82,7 +82,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
               secondaryColor: '#122153',
             });
           }
-        } catch (tenantError) {
+        } catch {
           setTenantData({
             id: accessResult.tenantId || 'default',
             name: '法人テナント',
@@ -91,7 +91,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
             secondaryColor: '#122153',
           });
         }
-      } catch (error) {
+      } catch {
         setError('システムエラーが発生しました');
       } finally {
         setIsLoading(false);

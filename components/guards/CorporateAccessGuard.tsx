@@ -62,7 +62,7 @@ export function CorporateMemberGuard({ children }: { children: ReactNode }) {
           setError('法人メンバー機能へのアクセス権がありません');
           router.push('/dashboard');
         }
-      } catch (error) {
+      } catch {
         setError('法人メンバーアクセスの確認中にエラーが発生しました。');
         setHasAccess(false);
         setTimeout(() => router.push('/dashboard'), 2000);

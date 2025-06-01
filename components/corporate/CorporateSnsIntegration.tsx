@@ -1,5 +1,5 @@
 // components/corporate/CorporateSnsIntegration.tsx
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { HiOfficeBuilding, HiExclamation, HiInformationCircle, HiCheck } from 'react-icons/hi';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform, SNS_METADATA } from '@/types/sns';
@@ -58,7 +58,7 @@ export function CorporateSnsIntegration({
       const targetButtons = Array.from(allButtons).filter(
         (btn) => btn.textContent?.includes('設定を変更') || btn.textContent?.includes('設定する'),
       );
-      targetButtons.forEach((btn, index) => {
+      targetButtons.forEach((btn) => {
         // 色を変更
         btn.style.setProperty('background-color', '#1E3A8A', 'important');
         btn.style.setProperty('border-color', '#1E3A8A', 'important');
@@ -95,7 +95,7 @@ export function CorporateSnsIntegration({
           } else if (pathParts.length > 0) {
             username = pathParts[pathParts.length - 1]; // 最後のパス部分を使用
           }
-        } catch (e) {
+        } catch {
         }
       }
       // APIを呼び出してSNSリンクを追加

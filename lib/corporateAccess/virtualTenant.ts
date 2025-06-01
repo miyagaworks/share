@@ -1,5 +1,4 @@
 // lib/corporateAccess/virtualTenant.ts
-import { logger } from "@/lib/utils/logger";
 import { isClient, logDebug } from './state';
 import { getFromStorage, saveToStorage, StorageKey, StorageType } from './storage';
 interface UserData {

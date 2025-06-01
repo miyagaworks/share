@@ -49,37 +49,7 @@ export default function ImprovedDashboardPage() {
   const [snsCount, setSnsCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [qrCodeSlug, setQrCodeSlug] = useState<string | null>(null);
-  // APIからデータを取得する関数
-  const fetchData = async () => {
-    try {
-      // プロフィール情報の取得
-      const profileResponse = await fetch('/api/profile');
-      if (!profileResponse.ok) {
-        throw new Error('プロフィール情報の取得に失敗しました');
-      }
-      const profileData = await profileResponse.json();
-      // リンク情報の取得
-      const linksResponse = await fetch('/api/links');
-      if (!linksResponse.ok) {
-        throw new Error('リンク情報の取得に失敗しました');
-      }
-      const linksData = await linksResponse.json();
-      // QRコード情報の取得
-      const qrCodeResponse = await fetch('/api/qrcode');
-      let qrCodeData: { qrCodes: QrCodeData[] } = { qrCodes: [] };
-      if (qrCodeResponse.ok) {
-        qrCodeData = await qrCodeResponse.json();
-      }
-      return {
-        user: profileData.user,
-        snsLinks: linksData.snsLinks || [],
-        customLinks: linksData.customLinks || [],
-        qrCodes: qrCodeData.qrCodes || [],
-      };
-    } catch (error) {
-      throw error;
-    }
-  };
+
   // 初期データ取得
   useEffect(() => {
     if (status === 'loading') return;
@@ -87,27 +57,45 @@ export default function ImprovedDashboardPage() {
       router.push('/auth/signin');
       return;
     }
+
     const loadData = async () => {
       try {
-        const data = await fetchData();
-        setUserData(data.user);
-        setSnsCount(data.snsLinks.length);
-        // 最新のQRコードの取得（存在する場合）
-        if (data.qrCodes && data.qrCodes.length > 0) {
-          // 型アサーションを追加して型エラーを回避
-          const qrCodes = data.qrCodes as QrCodeData[];
-          // 最新のQRコードを取得（作成日時で降順ソート）
+        // fetchData を直接定義
+        const profileResponse = await fetch('/api/profile');
+        if (!profileResponse.ok) {
+          throw new Error('プロフィール情報の取得に失敗しました');
+        }
+        const profileData = await profileResponse.json();
+
+        const linksResponse = await fetch('/api/links');
+        if (!linksResponse.ok) {
+          throw new Error('リンク情報の取得に失敗しました');
+        }
+        const linksData = await linksResponse.json();
+
+        const qrCodeResponse = await fetch('/api/qrcode');
+        let qrCodeData: { qrCodes: QrCodeData[] } = { qrCodes: [] };
+        if (qrCodeResponse.ok) {
+          qrCodeData = await qrCodeResponse.json();
+        }
+
+        setUserData(profileData.user);
+        setSnsCount(linksData.snsLinks?.length || 0);
+
+        if (qrCodeData.qrCodes && qrCodeData.qrCodes.length > 0) {
+          const qrCodes = qrCodeData.qrCodes as QrCodeData[];
           const latestQrCode = qrCodes.sort(
             (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
           )[0];
           setQrCodeSlug(latestQrCode.slug);
         }
-      } catch (error) {
+      } catch {
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
+
     loadData();
   }, [session, status, router]);
   // アニメーション設定

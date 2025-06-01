@@ -58,7 +58,7 @@ export function CorporateSnsEditForm({ link, onCancel, onSuccess }: CorporateSns
         // line.me/ti/p/の後の部分がユーザー名（ID）
         const lineId = pathSegments[pathSegments.length - 1];
         setUsername(lineId);
-      } catch (error) {
+      } catch {
       }
     }
   };

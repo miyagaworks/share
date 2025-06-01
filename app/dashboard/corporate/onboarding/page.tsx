@@ -112,7 +112,7 @@ export default function CorporateOnboardingPage() {
             companyName: data.tenant.name,
           }));
         }
-      } catch (err) {
+      } catch {
       } finally {
         setIsLoading(false);
       }
@@ -140,7 +140,7 @@ export default function CorporateOnboardingPage() {
       }
       // ダッシュボードへリダイレクト
       router.push('/dashboard/corporate');
-    } catch (error) {
+    } catch {
       toast.error('設定の保存に失敗しました');
       // エラーが発生してもダッシュボードに移動
       router.push('/dashboard/corporate');
@@ -209,7 +209,7 @@ export default function CorporateOnboardingPage() {
       }
       toast.success('会社情報を保存しました');
       goToNextStep();
-    } catch (error) {
+    } catch {
       toast.error('会社情報の保存に失敗しました');
     } finally {
       setIsSaving(false);
@@ -230,7 +230,7 @@ export default function CorporateOnboardingPage() {
           type: 'general',
         }),
       });
-    } catch (error) {
+    } catch {
     } finally {
       setIsSaving(false);
       // ダッシュボードへリダイレクト

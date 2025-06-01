@@ -20,7 +20,7 @@ export function ShareOptionClient({ profileUrl }: ShareOptionClientProps) {
       setTimeout(() => {
         setIsCopied(false);
       }, 2000);
-    } catch (error) {
+    } catch {
       toast.error('URLのコピーに失敗しました');
     }
   };

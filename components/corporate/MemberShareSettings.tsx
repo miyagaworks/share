@@ -82,10 +82,10 @@ export function MemberShareSettings({
       });
       setFormChanged(false);
       // トーストメッセージは親コンポーネントで表示
-    } catch (error) {
+    } catch (err) {
       // エラー発生時にフォームを再設定しない
       // 代わりにエラーの詳細を表示して、ユーザーが修正できるようにする
-      if (error instanceof Error && error.message.includes('既に使用されています')) {
+      if (err instanceof Error && err.message.includes('既に使用されています')) {
         setSlugError('このURLスラッグは既に使用されています。別の値を入力してください。');
       }
       // フォームの状態は変更済みのままにする

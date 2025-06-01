@@ -95,7 +95,7 @@ export function SnsLinkEditForm({ link, onCancel, onSuccess }: SnsLinkEditFormPr
         // line.me/ti/p/の後の部分がユーザー名（ID）
         const lineId = pathSegments[pathSegments.length - 1];
         setValue('username', lineId);
-      } catch (error) {
+      } catch {
       }
     }
   };

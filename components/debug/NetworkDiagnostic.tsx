@@ -45,15 +45,15 @@ export function NetworkDiagnostic() {
       } else {
         addResult('network', 'error', 'ブラウザはオフライン状態です');
       }
-    } catch (error) {
+    } catch (err) {
       const errorDetails =
-        error instanceof Error
+        err instanceof Error
           ? {
-              name: error.name,
-              message: error.message,
-              stack: error.stack,
+              name: err.name,
+              message: err.message,
+              stack: err.stack,
             }
-          : { error: String(error) };
+          : { error: String(err) };
       addResult('network', 'error', 'ネットワーク状態の確認に失敗', errorDetails);
     }
 
@@ -69,14 +69,14 @@ export function NetworkDiagnostic() {
           email: session?.user?.email,
         },
       );
-    } catch (error) {
+    } catch (err) {
       const errorDetails =
-        error instanceof Error
+        err instanceof Error
           ? {
-              name: error.name,
-              message: error.message,
+              name: err.name,
+              message: err.message,
             }
-          : { error: String(error) };
+          : { error: String(err) };
       addResult('session', 'error', 'セッション状態の確認に失敗', errorDetails);
     }
 
@@ -99,14 +99,14 @@ export function NetworkDiagnostic() {
           statusText: response.statusText,
         });
       }
-    } catch (error) {
+    } catch (err) {
       const errorDetails =
-        error instanceof Error
+        err instanceof Error
           ? {
-              name: error.name,
-              message: error.message,
+              name: err.name,
+              message: err.message,
             }
-          : { error: String(error) };
+          : { error: String(err) };
       addResult('auth-api', 'error', 'Auth APIへの接続に失敗', errorDetails);
     }
 
@@ -129,14 +129,14 @@ export function NetworkDiagnostic() {
           statusText: response.statusText,
         });
       }
-    } catch (error) {
+    } catch (err) {
       const errorDetails =
-        error instanceof Error
+        err instanceof Error
           ? {
-              name: error.name,
-              message: error.message,
+              name: err.name,
+              message: err.message,
             }
-          : { error: String(error) };
+          : { error: String(err) };
       addResult('corporate-api', 'error', 'Corporate Access APIへの接続に失敗', errorDetails);
     }
 
@@ -149,14 +149,14 @@ export function NetworkDiagnostic() {
       } else {
         addResult('dns', 'error', 'DNS解決に問題があります');
       }
-    } catch (error) {
+    } catch (err) {
       const errorDetails =
-        error instanceof Error
+        err instanceof Error
           ? {
-              name: error.name,
-              message: error.message,
+              name: err.name,
+              message: err.message,
             }
-          : { error: String(error) };
+          : { error: String(err) };
       addResult('dns', 'error', 'DNS解決テストに失敗', errorDetails);
     }
 

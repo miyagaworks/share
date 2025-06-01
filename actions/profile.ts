@@ -128,7 +128,7 @@ export async function updateProfile(data: ProfileUpdateData) {
     revalidatePath('/dashboard');
     revalidatePath('/dashboard/design');
     return { success: true, user: updatedUser, profile };
-  } catch (error) {
+  } catch {
     return { error: 'プロフィールの更新に失敗しました' };
   }
 }

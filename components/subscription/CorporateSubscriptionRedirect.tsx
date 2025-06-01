@@ -22,7 +22,7 @@ export default function CorporateSubscriptionRedirect({
         // オンボーディングページへリダイレクト
         setRedirectStatus('complete'); // ステータスを更新
         router.push('/dashboard/corporate/onboarding');
-      } catch (err) {
+      } catch {
         setError('ページの移動に失敗しました。ダッシュボードから法人設定を行ってください。');
         setRedirectStatus('error'); // エラー状態に更新
       }

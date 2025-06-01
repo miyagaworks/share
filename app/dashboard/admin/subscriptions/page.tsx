@@ -55,7 +55,7 @@ export default function AdminSubscriptionsPage() {
         } else {
           router.push('/dashboard');
         }
-      } catch (error) {
+      } catch {
         router.push('/dashboard');
       }
     };
@@ -72,7 +72,7 @@ export default function AdminSubscriptionsPage() {
       } else {
         toast.error('サブスクリプション一覧の取得に失敗しました');
       }
-    } catch (error) {
+    } catch {
       toast.error('サブスクリプション情報の取得中にエラーが発生しました');
     } finally {
       setLoading(false);

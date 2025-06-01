@@ -43,7 +43,7 @@ export default function JikogeneContent() {
             setUserInfo(data.user);
           }
         }
-      } catch (error) {
+      } catch {
         // ユーザー情報取得エラーは処理を続行（必須ではないため）
       } finally {
         setInitialLoading(false);

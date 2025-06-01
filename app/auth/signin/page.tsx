@@ -3,7 +3,7 @@
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { LoginSchema } from '@/schemas/auth';
@@ -228,7 +228,6 @@ function SessionTimeoutMessage() {
 }
 export default function SigninPage() {
   // 既存のコード（変更なし）
-  const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [isEmailFilled, setIsEmailFilled] = useState(false);
@@ -267,7 +266,7 @@ export default function SigninPage() {
       const redirectUrl = `/api/auth/signin/google?callbackUrl=${encodeURIComponent('/dashboard')}&t=${Date.now()}`;
       // 完全なページリダイレクトを実行
       window.location.href = redirectUrl;
-    } catch (error) {
+    } catch {
       setIsPending(false);
       setError('Googleログイン処理中にエラーが発生しました。');
     }
@@ -338,7 +337,7 @@ export default function SigninPage() {
           }
         }, 500);
       }
-    } catch (error) {
+    } catch {
       setError('ログイン処理中にエラーが発生しました。');
     } finally {
       setIsPending(false);

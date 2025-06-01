@@ -1,5 +1,4 @@
 // lib/jikogene/validator.ts
-import { logger } from "@/lib/utils/logger";
 import { FormData, ErrorResponse } from '@/app/jikogene/types';
 /**
  * フォームデータのバリデーション

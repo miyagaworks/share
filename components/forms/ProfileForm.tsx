@@ -151,7 +151,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
       }
       toast.success('プロフィールを更新しました');
       router.refresh();
-    } catch (error) {
+    } catch {
       toast.error('プロフィールの更新に失敗しました');
     } finally {
       setIsPending(false);

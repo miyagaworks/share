@@ -52,26 +52,26 @@ export function useCorporateAccess({
   }, []);
   // アクセスチェックを行う関数（useCallbackでメモ化）
   const checkAccess = useCallback(async () => {
-    // APIリクエストが進行中の場合は中止
     if (isApiRequestInProgress) {
-      return corporateAccessState; // 現在の状態を返す
+      return corporateAccessState;
     }
-    // セッションがロード中の場合は終了
+
     if (status === 'loading') {
       return corporateAccessState;
     }
-    // ユーザーがログインしていない場合
+
     if (!session) {
       setHasCorporateAccess(false);
       setIsLoading(false);
       return corporateAccessState;
     }
+
     setIsLoading(true);
-    isApiRequestInProgress = true; // APIリクエストの開始をマーク
-    // キャッシュの有効期限を拡大（特にモバイル環境）
-    const CACHE_DURATION = isMobile ? 30 * 1000 : 60 * 1000; // モバイルは30秒、デスクトップは60秒
+    isApiRequestInProgress = true;
+
+    const CACHE_DURATION = isMobile ? 30 * 1000 : 60 * 1000;
+
     try {
-      // より厳格なキャッシュ判定
       if (
         !forceCheck &&
         corporateAccessState.hasAccess !== null &&
@@ -82,26 +82,26 @@ export function useCorporateAccess({
       ) {
         setHasCorporateAccess(corporateAccessState.hasAccess === true);
         setIsLoading(false);
-        isApiRequestInProgress = false; // APIリクエスト終了をマーク
+        isApiRequestInProgress = false;
         return { ...corporateAccessState };
       }
-      // APIを呼び出して状態を更新
-      // 修正: forceCheck を { force: forceCheck } に変更
+
       const result = await checkCorporateAccess({ force: forceCheck });
-      // 結果を適用
+
       setHasCorporateAccess(result.hasCorporateAccess === true);
       setError(result.error || null);
       setIsLoading(false);
-      isApiRequestInProgress = false; // APIリクエスト終了をマーク
+      isApiRequestInProgress = false;
+
       return result;
     } catch (err) {
       setError(err instanceof Error ? err.message : String(err));
       setHasCorporateAccess(false);
       setIsLoading(false);
-      isApiRequestInProgress = false; // APIリクエスト終了をマーク
+      isApiRequestInProgress = false;
       return corporateAccessState;
     }
-  }, [session, status, forceCheck, checkOnMount, isMobile]);
+  }, [session, status, forceCheck, isMobile]);
   // 強制的にアクセスチェックを実行する関数
   const refreshAccess = useCallback(async () => {
     setIsLoading(true);

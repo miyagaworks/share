@@ -40,7 +40,7 @@ export function CustomLinkList({ links, onUpdate, onEdit }: CustomLinkListProps)
             setItems(items.filter(item => item.id !== id));
             toast.success("カスタムリンクを削除しました");
             onUpdate();
-        } catch (error) {
+        } catch {
             toast.error("カスタムリンクの削除に失敗しました");
         } finally {
             setIsDeleting(null);
@@ -67,7 +67,7 @@ export function CustomLinkList({ links, onUpdate, onEdit }: CustomLinkListProps)
             }
             toast.success("表示順を更新しました");
             onUpdate();
-        } catch (error) {
+        } catch {
             toast.error("表示順の更新に失敗しました");
         } finally {
             setIsReordering(false);

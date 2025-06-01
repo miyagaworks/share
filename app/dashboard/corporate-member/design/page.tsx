@@ -92,7 +92,7 @@ export default function ImprovedCorporateMemberDesignPage() {
         });
         setTenantData(designData.tenant);
         setError(null);
-      } catch (err) {
+      } catch {
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
@@ -127,8 +127,8 @@ export default function ImprovedCorporateMemberDesignPage() {
         ...updatedData.design, // 更新されたデータですべてのフィールドを上書き
       });
       toast.success('デザイン設定を更新しました');
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'デザイン設定の更新に失敗しました');
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'デザイン設定の更新に失敗しました');
       throw error;
     } finally {
       setIsSaving(false);

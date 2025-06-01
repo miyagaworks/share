@@ -65,7 +65,7 @@ export default function DashboardPage() {
           const linksData = await linksResponse.json();
           setSnsCount(linksData.snsLinks?.length || 0);
         }
-      } catch (error) {
+      } catch {
         // エラー処理
       }
       // ダッシュボードの表示を許可

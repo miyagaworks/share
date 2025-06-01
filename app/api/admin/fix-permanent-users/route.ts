@@ -1,7 +1,6 @@
 // app/api/admin/fix-permanent-users/route.ts
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 // 結果の型定義

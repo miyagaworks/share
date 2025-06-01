@@ -70,7 +70,7 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
         if (corporateAccessState.isPermanentUser) {
           setPermanentPlanType(corporateAccessState.permanentPlanType);
         }
-      } catch (e) {
+      } catch {
       }
     }
     // アクセス状態変更イベントのリスナー
