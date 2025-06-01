@@ -170,11 +170,10 @@ export default function SignupPage() {
           'アカウントが作成されました。認証メールを送信しました。メール認証画面に移動します...',
         );
 
-        // 🔥 修正: メールアドレスをURLパラメータに追加してリダイレクト
+        // 🔥 メールアドレスをURLパラメータで渡す
         setTimeout(() => {
-          router.push(
-            `/auth/email-verification?email=${encodeURIComponent(data.email)}&message=registration_success`,
-          );
+          const encodedEmail = encodeURIComponent(data.email);
+          router.push(`/auth/email-verification?email=${encodedEmail}`);
         }, 3000);
       } else {
         // 従来の自動ログイン処理
