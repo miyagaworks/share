@@ -1,4 +1,4 @@
-// auth.ts (強制デバッグ版)
+// auth.ts (Google修正版)
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -26,32 +26,11 @@ declare module 'next-auth/jwt' {
   }
 }
 
-// 🔥 強制ログ出力（本番でも必ず出力）
-const forceLog = (message: string, data?: any) => {
-  const timestamp = new Date().toISOString();
-  console.log(`🔥 [${timestamp}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
-
-  // 追加：エラー出力でも確認
-  console.error(`🔥 [${timestamp}] ${message}`, data ? JSON.stringify(data, null, 2) : '');
-};
-
-// 🔥 環境変数チェック
-forceLog('Environment Check', {
-  NODE_ENV: process.env.NODE_ENV,
-  NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-  hasSecret: !!process.env.NEXTAUTH_SECRET,
-  hasGoogleId: !!process.env.GOOGLE_CLIENT_ID,
-  hasGoogleSecret: !!process.env.GOOGLE_CLIENT_SECRET,
-  hasDatabaseUrl: !!process.env.DATABASE_URL,
-  DEBUG_AUTH: process.env.DEBUG_AUTH,
-  ALLOW_ALL_USERS: process.env.ALLOW_ALL_USERS,
-});
-
 // NextAuth設定
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
-    strategy: 'jwt',
+    strategy: 'jwt', // 🔥 重要: JWTを使用
     maxAge: process.env.SESSION_TIMEOUT_HOURS
       ? parseInt(process.env.SESSION_TIMEOUT_HOURS) * 60 * 60
       : 8 * 60 * 60, // デフォルト8時間
@@ -72,28 +51,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      forceLog('🚀 SignIn Callback Started', {
+      console.log('🚀 SignIn callback started', {
         provider: account?.provider,
         userEmail: user?.email,
         userId: user?.id,
-        accountType: account?.type,
-        profileData: profile ? 'present' : 'missing',
       });
 
       try {
         if (account?.provider === 'google' && user?.email) {
           const email = user.email.toLowerCase();
-
-          forceLog('📧 Processing Google Login', { email });
-
-          // データベース接続テスト
-          try {
-            await prisma.$queryRaw`SELECT 1 as test`;
-            forceLog('✅ Database connection successful');
-          } catch (dbError) {
-            forceLog('❌ Database connection failed', dbError);
-            return '/auth/error?error=DatabaseConnection';
-          }
+          console.log('📧 Processing Google login for:', email);
 
           // 既存ユーザーを検索
           const existingUser = await prisma.user.findUnique({
@@ -108,99 +75,89 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             },
           });
 
-          forceLog('🔍 User Lookup Result', {
-            email,
-            found: !!existingUser,
-            userId: existingUser?.id,
-            role: existingUser?.corporateRole,
-            subscriptionStatus: existingUser?.subscriptionStatus,
-          });
-
           if (existingUser) {
+            console.log('✅ Existing user found:', existingUser.id);
             user.id = existingUser.id;
             user.name = existingUser.name || user.name;
             user.email = existingUser.email;
-
-            forceLog('✅ Existing user login successful', {
-              userId: user.id,
-              userName: user.name,
-            });
             return true;
           }
 
           // 管理者ユーザーチェック
           if (email === 'admin@sns-share.com') {
-            forceLog('👑 Admin user detected', { email });
+            console.log('👑 Admin user detected');
             return true;
           }
 
-          // 全ユーザー許可モード
-          if (process.env.ALLOW_ALL_USERS === 'true') {
-            forceLog('🌍 All users allowed (debug mode)', { email });
+          // 開発環境での全ユーザー許可モード
+          if (process.env.NODE_ENV === 'development' && process.env.ALLOW_ALL_USERS === 'true') {
+            console.log('🌍 All users allowed (development mode)');
             return true;
           }
 
-          // 招待チェック
-          const invitedUser = await prisma.passwordResetToken.findFirst({
-            where: {
-              user: {
+          // 🔥 新規ユーザーの作成を試行
+          console.log('🆕 Creating new user for Google login');
+          try {
+            const newUser = await prisma.user.create({
+              data: {
                 email: email,
+                name: user.name || profile?.name || 'Google User',
+                image: user.image || profile?.picture || null,
+                emailVerified: new Date(), // Googleユーザーは認証済み
+                subscriptionStatus: 'trial', // デフォルトはトライアル
               },
-            },
-            include: {
-              user: true,
-            },
-          });
+            });
 
-          if (invitedUser) {
-            forceLog('📨 Invited user found', { email });
+            console.log('✅ New user created:', newUser.id);
+            user.id = newUser.id;
+            user.name = newUser.name;
+            user.email = newUser.email;
             return true;
-          }
+          } catch (createError) {
+            console.error('❌ Failed to create new user:', createError);
 
-          forceLog('🚫 User not authorized', {
-            email,
-            reason: 'Not existing user, not admin, not invited',
-          });
-          return false;
+            // 招待チェック（フォールバック）
+            const invitedUser = await prisma.passwordResetToken.findFirst({
+              where: {
+                user: {
+                  email: email,
+                },
+              },
+              include: {
+                user: true,
+              },
+            });
+
+            if (invitedUser) {
+              console.log('📨 Invited user found');
+              user.id = invitedUser.user.id;
+              user.name = invitedUser.user.name;
+              user.email = invitedUser.user.email;
+              return true;
+            }
+
+            console.log('🚫 User not authorized');
+            return false;
+          }
         }
 
-        forceLog('⚠️ Non-Google login or missing email', {
-          provider: account?.provider,
-          hasEmail: !!user?.email,
-        });
+        console.log('✅ Non-Google login approved');
         return true;
       } catch (error) {
-        forceLog('💥 SignIn callback error', {
-          error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
-        });
+        console.error('💥 SignIn callback error:', error);
         return false;
       }
     },
 
     async jwt({ token, user, trigger }) {
-      forceLog('🎫 JWT Callback', {
-        trigger,
-        hasUser: !!user,
-        tokenSub: token.sub,
-        tokenEmail: token.email,
-      });
-
       try {
         if (user) {
           token.sub = user.id;
           token.name = user.name;
           token.email = user.email;
-          forceLog('👤 JWT: User info updated', {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-          });
         }
 
         if ((user || trigger === 'update') && token.sub) {
-          forceLog('🔄 JWT: Fetching user role data', { userId: token.sub });
-
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
             select: {
@@ -249,19 +206,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               token.isAdmin = false;
               token.tenantId = null;
             }
-
-            forceLog('🏷️ JWT: Role assigned', {
-              userId: token.sub,
-              email: userEmail,
-              role: token.role,
-              isAdmin: token.isAdmin,
-              tenantId: token.tenantId,
-              corporateRole: dbUser.corporateRole,
-              hasAdminTenant: !!dbUser.adminOfTenant,
-              hasTenant: !!dbUser.tenant,
-            });
           } else {
-            forceLog('❌ JWT: User not found in database', { userId: token.sub });
             token.role = 'personal';
             token.isAdmin = false;
             token.tenantId = null;
@@ -270,41 +215,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
         return token;
       } catch (error) {
-        forceLog('💥 JWT callback error', {
-          error: error instanceof Error ? error.message : String(error),
-          stack: error instanceof Error ? error.stack : undefined,
-        });
+        console.error('JWT callback error:', error);
         return token;
       }
     },
 
     async session({ session, token }) {
-      forceLog('📋 Session Callback', {
-        hasToken: !!token,
-        hasSession: !!session,
-        tokenSub: token?.sub,
-        sessionUserEmail: session?.user?.email,
-      });
-
       try {
         if (token && session.user) {
           session.user.id = token.sub as string;
           session.user.name = token.name as string;
           session.user.email = token.email as string;
           session.user.role = token.role as string;
-
-          forceLog('✅ Session created successfully', {
-            userId: session.user.id,
-            email: session.user.email,
-            role: session.user.role,
-            name: session.user.name,
-          });
         }
         return session;
       } catch (error) {
-        forceLog('💥 Session callback error', {
-          error: error instanceof Error ? error.message : String(error),
-        });
+        console.error('Session callback error:', error);
         return session;
       }
     },
@@ -315,5 +241,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: '/auth/error',
   },
   providers: authConfig.providers,
-  debug: true, // 強制的にtrueに設定
+  debug: process.env.NODE_ENV === 'development',
 });

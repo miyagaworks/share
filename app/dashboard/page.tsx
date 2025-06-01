@@ -1,4 +1,4 @@
-// app/dashboard/page.tsx (法人ユーザー動線対応版)
+// app/dashboard/page.tsx (本番版)
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -9,28 +9,13 @@ import Image from 'next/image';
 import { HiUser, HiLink, HiColorSwatch, HiShare, HiQrcode } from 'react-icons/hi';
 
 export default function DashboardPage() {
-  // デバッグ
   const { data: session, status } = useSession();
-
-  useEffect(() => {
-    console.log('🏠 Dashboard page loaded');
-    console.log('🔍 Dashboard session status:', status);
-    console.log('🔍 Dashboard session data:', session);
-
-    if (status === 'unauthenticated') {
-      console.log('❌ Dashboard: No session, user should be redirected to login');
-    } else if (status === 'authenticated') {
-      console.log('✅ Dashboard: User is authenticated');
-    } else {
-      console.log('⏳ Dashboard: Session loading...');
-    }
-  }, [session, status]);
-
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
   const [isRedirecting, setIsRedirecting] = useState(false);
+  const [redirectChecked, setRedirectChecked] = useState(false);
 
-  // 型定義を追加
+  // 型定義
   interface UserData {
     id: string;
     name?: string | null;
@@ -45,9 +30,14 @@ export default function DashboardPage() {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [snsCount, setSnsCount] = useState(0);
 
-  // 🚀 新機能: 法人ユーザーの早期検出とリダイレクト
+  // ユーザータイプ判定とリダイレクト処理
   useEffect(() => {
     const checkUserTypeAndRedirect = async () => {
+      // 既にチェック済みまたはリダイレクト中の場合は何もしない
+      if (redirectChecked || isRedirecting) {
+        return;
+      }
+
       // セッションがロード中は何もしない
       if (status === 'loading') {
         return;
@@ -59,15 +49,18 @@ export default function DashboardPage() {
         return;
       }
 
-      // 特定の管理者メールアドレスは強制的に管理者ページへ
-      if (session.user?.email === 'admin@sns-share.com') {
-        setIsRedirecting(true);
-        router.push('/dashboard/admin');
-        return;
-      }
+      // リダイレクトチェック完了フラグを設定
+      setRedirectChecked(true);
 
       try {
-        // 🔥 新機能: ユーザーの法人アクセス権をチェック
+        // 特定の管理者メールアドレスは強制的に管理者ページへ
+        if (session.user?.email === 'admin@sns-share.com') {
+          setIsRedirecting(true);
+          router.push('/dashboard/admin');
+          return;
+        }
+
+        // 法人アクセス権チェック
         const corporateAccessResponse = await fetch('/api/corporate/access', {
           cache: 'no-cache',
           headers: {
@@ -80,7 +73,6 @@ export default function DashboardPage() {
 
           // 法人管理者の場合
           if (corporateData.isAdmin && corporateData.hasCorporateAccess) {
-            console.log('法人管理者を検出: 法人ダッシュボードにリダイレクト');
             setIsRedirecting(true);
             router.push('/dashboard/corporate');
             return;
@@ -88,22 +80,20 @@ export default function DashboardPage() {
 
           // 法人招待メンバーの場合
           if (corporateData.userRole === 'member' && corporateData.hasCorporateAccess) {
-            console.log('法人招待メンバーを検出: 法人メンバーページにリダイレクト');
             setIsRedirecting(true);
             router.push('/dashboard/corporate-member');
             return;
           }
 
-          // 永久利用権ユーザーの場合 (APIレスポンスから判定)
+          // 永久利用権ユーザーの場合
           if (corporateData.tenantId && corporateData.tenantId.startsWith('virtual-tenant-')) {
-            console.log('永久利用権ユーザーを検出: 法人ダッシュボードにリダイレクト');
             setIsRedirecting(true);
             router.push('/dashboard/corporate');
             return;
           }
         }
 
-        // 🔥 追加: ダッシュボード情報APIからのリダイレクト指示をチェック
+        // ダッシュボード情報APIチェック
         const dashboardInfoResponse = await fetch('/api/user/dashboard-info', {
           cache: 'no-cache',
           headers: {
@@ -116,10 +106,6 @@ export default function DashboardPage() {
 
           // API側でリダイレクトが推奨されている場合
           if (dashboardInfo.navigation?.shouldRedirect && dashboardInfo.navigation?.redirectPath) {
-            console.log(
-              'ダッシュボード情報APIからリダイレクト指示:',
-              dashboardInfo.navigation.redirectPath,
-            );
             setIsRedirecting(true);
             router.push(dashboardInfo.navigation.redirectPath);
             return;
@@ -127,8 +113,6 @@ export default function DashboardPage() {
         }
 
         // ここまで来たら個人ユーザーとして処理
-        console.log('個人ユーザーとして個人ダッシュボードを表示');
-
         // ユーザープロフィール情報を取得
         const [profileResponse, linksResponse] = await Promise.all([
           fetch('/api/profile', {
@@ -155,7 +139,7 @@ export default function DashboardPage() {
           setSnsCount(linksData.snsLinks?.length || 0);
         }
       } catch (error) {
-        console.error('ユーザータイプ判定エラー:', error);
+        console.error('User type check error:', error);
         // エラー時も個人ダッシュボードを表示
       }
 
@@ -164,10 +148,10 @@ export default function DashboardPage() {
     };
 
     checkUserTypeAndRedirect();
-  }, [session, status, router]);
+  }, [session, status, router, redirectChecked, isRedirecting]);
 
-  // ページの内容
-  if (status === 'loading' || isLoading) {
+  // ローディング状態
+  if (status === 'loading' || (isLoading && !redirectChecked)) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Spinner size="lg" />

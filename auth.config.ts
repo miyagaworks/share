@@ -1,4 +1,4 @@
-// auth.config.ts (シンプル化版)
+// auth.config.ts (Google修正版)
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
@@ -11,7 +11,15 @@ export default {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-      allowDangerousEmailAccountLinking: false,
+      allowDangerousEmailAccountLinking: true, // 🔥 修正: trueに変更
+      authorization: {
+        params: {
+          scope: 'openid email profile',
+          prompt: 'consent',
+          access_type: 'offline',
+          response_type: 'code',
+        },
+      },
     }),
     Credentials({
       credentials: {
@@ -64,48 +72,6 @@ export default {
       },
     }),
   ],
-  callbacks: {
-    async signIn({ user, account }) {
-      try {
-        if (account?.provider === 'google' && user?.email) {
-          const existingUser = await prisma.user.findUnique({
-            where: { email: user.email.toLowerCase() },
-            select: { id: true, name: true, email: true },
-          });
-
-          if (existingUser) {
-            user.id = existingUser.id;
-            user.name = existingUser.name;
-            user.email = existingUser.email;
-            return true;
-          }
-          return false;
-        }
-        return true;
-      } catch (error) {
-        console.error('SignIn callback error:', error);
-        return false;
-      }
-    },
-
-    async jwt({ token, user }) {
-      if (user) {
-        token.sub = user.id;
-        token.name = user.name;
-        token.email = user.email;
-      }
-      return token;
-    },
-
-    async session({ session, token }) {
-      if (token && session.user) {
-        session.user.id = token.sub as string;
-        session.user.name = token.name as string;
-        session.user.email = token.email as string;
-      }
-      return session;
-    },
-  },
   pages: {
     signIn: '/auth/signin',
     signOut: '/auth/signin',
