@@ -1,25 +1,21 @@
 // lib/jikogene/ai-service.ts
+import { logger } from "@/lib/utils/logger";
 import { GoogleGenerativeAI } from '@google/generative-ai';
-
 // 環境変数からAPIキーを取得
 const apiKey = process.env.GEMINI_API_KEY;
 // モデルIDを最新バージョンに更新
 const modelId = process.env.GEMINI_MODEL_ID || 'gemini-2.0-flash'; // 更新：gemini-1.5-proから変更
-
 if (!apiKey) {
   throw new Error('Missing GEMINI_API_KEY environment variable');
 }
-
 // Gemini API の初期化
 const genAI = new GoogleGenerativeAI(apiKey);
-
 interface GeminiErrorResponse {
   status?: number;
   code?: string;
   message?: string;
   details?: Record<string, unknown>;
 }
-
 /**
  * Google Gemini API を使用して自己紹介文を生成する
  * エラーハンドリングを強化し、リトライロジックを追加
@@ -30,16 +26,14 @@ export async function generateIntroduction(prompt: string): Promise<string> {
   // リトライ回数
   const maxRetries = 2;
   let lastError: unknown = null;
-
   // リトライループ
   for (let attempt = 0; attempt <= maxRetries; attempt++) {
     try {
       if (attempt > 0) {
-        console.log(`Gemini API呼び出し - リトライ ${attempt}/${maxRetries}`);
+        logger.debug(`Gemini API呼び出し - リトライ ${attempt}/${maxRetries}`);
       } else {
-        console.log('Gemini API呼び出し開始');
+        logger.debug('Gemini API呼び出し開始');
       }
-
       // モデルを取得
       const model = genAI.getGenerativeModel({
         model: modelId,
@@ -51,51 +45,42 @@ export async function generateIntroduction(prompt: string): Promise<string> {
           topP: 0.95,
         },
       });
-
       // デバッグ情報
-      console.log(`使用モデル: ${modelId}, プロンプト長: ${prompt.length}文字`);
-
+      logger.debug(`使用モデル: ${modelId}, プロンプト長: ${prompt.length}文字`);
       // Gemini 2.0 API形式に合わせた呼び出し
       const result = await model.generateContent({
         contents: [{ role: 'user', parts: [{ text: prompt }] }],
       });
-
       const response = result.response;
       const text = response.text();
-
-      console.log('Gemini API呼び出し成功', {
+      logger.debug('Gemini API呼び出し成功', {
         attemptNumber: attempt + 1,
         responseLength: text.length,
       });
-
       return text;
     } catch (error) {
       lastError = error;
-      console.error(`Gemini API呼び出しエラー (試行 ${attempt + 1}/${maxRetries + 1}):`, error);
-
+      logger.error(`Gemini API呼び出しエラー (試行 ${attempt + 1}/${maxRetries + 1}):`, error);
       // エラーの詳細情報を出力
       if (typeof error === 'object' && error !== null) {
         try {
-          console.error('エラー詳細:', JSON.stringify(error, null, 2));
+          logger.error('エラー詳細:', JSON.stringify(error, null, 2));
         } catch (e) {
-          console.error('エラーの詳細JSONシリアライズに失敗:', e);
+          logger.error('エラーの詳細JSONシリアライズに失敗:', e);
         }
       }
-
       // 最後のリトライでなければ少し待機
       if (attempt < maxRetries) {
         const waitTime = 1000 * (attempt + 1); // 1秒、2秒と増加
-        console.log(`${waitTime}ms待機してリトライします...`);
+        logger.debug(`${waitTime}ms待機してリトライします...`);
         await new Promise((resolve) => setTimeout(resolve, waitTime));
       }
     }
   }
-
   // すべてのリトライが失敗した場合
-  console.error('すべてのリトライが失敗しました。エラー処理を実行します。');
+  logger.error('すべてのリトライが失敗しました。エラー処理を実行します。');
   return handleGeminiError(lastError);
 }
-
 /**
  * Gemini APIエラーを処理する関数
  * より詳細なエラーメッセージを返す
@@ -103,8 +88,7 @@ export async function generateIntroduction(prompt: string): Promise<string> {
 function handleGeminiError(error: unknown): never {
   // エラーをGeminiErrorResponseとして扱う
   const geminiError = error as GeminiErrorResponse;
-  console.error('Gemini詳細エラー情報:', geminiError);
-
+  logger.error('Gemini詳細エラー情報:', geminiError);
   // ステータスコードによるエラー処理
   if (geminiError.status) {
     switch (geminiError.status) {

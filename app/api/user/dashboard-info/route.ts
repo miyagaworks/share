@@ -1,10 +1,9 @@
 // app/api/user/dashboard-info/route.ts (プロフィール管理メニュー追加版)
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-
 // 既存の型定義は省略...
 interface UserData {
   id: string;
@@ -36,14 +35,12 @@ interface UserData {
     interval?: string;
   } | null;
 }
-
 interface MenuItem {
   title: string;
   href: string;
   icon: string;
   isDivider?: boolean;
 }
-
 interface Permissions {
   userType: 'admin' | 'corporate' | 'personal' | 'permanent' | 'invited-member';
   isAdmin: boolean;
@@ -58,20 +55,17 @@ interface Permissions {
   planType: 'personal' | 'corporate' | 'permanent' | null;
   planDisplayName: string;
 }
-
 interface Navigation {
   shouldRedirect: boolean;
   redirectPath: string | null;
   menuItems: MenuItem[];
 }
-
 // 🔥 修正: generateNavigationEnhanced 関数（プロフィール管理メニュー追加）
 function generateNavigationEnhanced(
   permissions: Permissions,
   currentPath?: string | null,
 ): Navigation {
   const { userType } = permissions;
-
   const menuTemplates: Record<string, MenuItem[]> = {
     admin: [
       { title: '管理者ダッシュボード', href: '/dashboard/admin', icon: 'HiShieldCheck' },
@@ -123,9 +117,7 @@ function generateNavigationEnhanced(
       { title: '法人管理ダッシュボード', href: '/dashboard/corporate', icon: 'HiOfficeBuilding' },
     ],
   };
-
   const menuItems = menuTemplates[userType] || menuTemplates.personal;
-
   // 🔥 修正: リダイレクト処理
   const defaultRedirectMap: Record<string, string> = {
     admin: '/dashboard/admin',
@@ -133,21 +125,18 @@ function generateNavigationEnhanced(
     permanent: '/dashboard/corporate',
     corporate: '/dashboard/corporate',
   };
-
   // 🔥 法人管理者の特別処理
   if (userType === 'corporate') {
     const isCorporateMemberPath = currentPath?.startsWith('/dashboard/corporate-member');
     const isCorporatePath = currentPath?.startsWith('/dashboard/corporate');
     const isSubscriptionPath = currentPath?.startsWith('/dashboard/subscription');
-
-    console.log('🔧 法人管理者のリダイレクト判定:', {
+    logger.debug('🔧 法人管理者のリダイレクト判定:', {
       currentPath,
       isCorporateMemberPath,
       isCorporatePath,
       isSubscriptionPath,
       userType,
     });
-
     // 許可されたパスではリダイレクトしない
     if (isCorporateMemberPath || isCorporatePath || isSubscriptionPath) {
       return {
@@ -177,23 +166,19 @@ function generateNavigationEnhanced(
       };
     }
   }
-
   // その他のユーザータイプの処理
   const redirectPath = defaultRedirectMap[userType];
-
   return {
     shouldRedirect: !!redirectPath && currentPath === '/dashboard',
     redirectPath: redirectPath || null,
     menuItems,
   };
 }
-
 // 既存のcalculatePermissionsFixed関数とGET関数は変更なし
 function calculatePermissionsFixed(userData: UserData): Permissions {
   const ADMIN_EMAILS = ['admin@sns-share.com'];
   const isAdminEmail = ADMIN_EMAILS.includes(userData.email.toLowerCase());
-
-  console.log('🔧 権限計算詳細デバッグ:', {
+  logger.debug('🔧 権限計算詳細デバッグ:', {
     email: userData.email,
     subscriptionStatus: userData.subscriptionStatus,
     corporateRole: userData.corporateRole,
@@ -201,7 +186,6 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
     hasTenant: !!userData.tenant,
     isAdminEmail,
   });
-
   // 管理者の早期リターン
   if (isAdminEmail) {
     return {
@@ -219,11 +203,10 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       planDisplayName: '管理者アカウント',
     };
   }
-
   // 永久利用権ユーザーの判定
   const isPermanentUser = userData.subscriptionStatus === 'permanent';
   if (isPermanentUser) {
-    console.log('✅ 永久利用権ユーザーを検出');
+    logger.debug('✅ 永久利用権ユーザーを検出');
     return {
       userType: 'permanent',
       isAdmin: true,
@@ -239,34 +222,28 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       planDisplayName: '永久利用権',
     };
   }
-
   // 法人テナント関連の判定
   const hasTenant = !!(userData.adminOfTenant || userData.tenant);
   const tenant = userData.adminOfTenant || userData.tenant;
   const isTenantActive = tenant?.accountStatus !== 'suspended';
   const isCorpAdmin = !!userData.adminOfTenant;
-
   // 招待メンバーの厳格な判定
   const isInvitedMember =
     hasTenant && userData.corporateRole === 'member' && !isCorpAdmin && isTenantActive;
-
-  console.log('🎯 招待メンバー判定:', {
+  logger.debug('🎯 招待メンバー判定:', {
     hasTenant,
     corporateRole: userData.corporateRole,
     isCorpAdmin,
     isTenantActive,
     result: isInvitedMember,
   });
-
   // 法人管理者の判定
   if (isCorpAdmin && isTenantActive) {
-    console.log('✅ 法人管理者を検出');
-
+    logger.debug('✅ 法人管理者を検出');
     let corporatePlanDisplayName = '法人プラン';
     if (userData.subscription?.plan) {
       const plan = userData.subscription.plan.toLowerCase();
       const interval = userData.subscription.interval || 'month';
-
       if (plan.includes('starter')) {
         corporatePlanDisplayName =
           interval === 'year'
@@ -283,20 +260,17 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
             ? '法人エンタープライズプラン(50名まで・年額)'
             : '法人エンタープライズプラン(50名まで・月額)';
       }
-
       if (plan.includes('business_legacy')) {
         corporatePlanDisplayName = '法人スタータープラン(10名まで)';
       } else if (plan.includes('business_plus') || plan.includes('business-plus')) {
         corporatePlanDisplayName = '法人ビジネスプラン(30名まで)';
       }
     }
-
-    console.log('🔧 法人プラン判定:', {
+    logger.debug('🔧 法人プラン判定:', {
       subscriptionPlan: userData.subscription?.plan,
       interval: userData.subscription?.interval,
       displayName: corporatePlanDisplayName,
     });
-
     return {
       userType: 'corporate',
       isAdmin: true,
@@ -312,10 +286,9 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       planDisplayName: corporatePlanDisplayName,
     };
   }
-
   // 招待メンバーの判定
   if (isInvitedMember) {
-    console.log('✅ 招待メンバーを検出');
+    logger.debug('✅ 招待メンバーを検出');
     return {
       userType: 'invited-member',
       isAdmin: false,
@@ -331,25 +304,19 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       planDisplayName: '法人メンバー',
     };
   }
-
   // 個人ユーザーの判定
-  console.log('✅ 個人ユーザーとして判定');
-
+  logger.debug('✅ 個人ユーザーとして判定');
   const hasPersonalPlan = userData.subscription?.status === 'active';
-
   const isTrialUser =
     userData.subscriptionStatus === 'trialing' || userData.subscription?.status === 'trialing';
-
   const isTrialActive =
     isTrialUser && userData.trialEndsAt ? new Date(userData.trialEndsAt) > new Date() : false;
-
-  console.log('🔧 個人ユーザーのプラン判定:', {
+  logger.debug('🔧 個人ユーザーのプラン判定:', {
     hasPersonalPlan,
     isTrialUser,
     isTrialActive,
     trialEndsAt: userData.trialEndsAt,
   });
-
   return {
     userType: 'personal',
     isAdmin: false,
@@ -369,44 +336,34 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
         : '無料プラン',
   };
 }
-
 export async function GET(request: Request) {
   const startTime = Date.now();
-
   try {
-    console.log('📊 Dashboard API開始 - タイムスタンプ:', new Date().toISOString());
-
+    logger.debug('📊 Dashboard API開始 - タイムスタンプ:', new Date().toISOString());
     const url = new URL(request.url);
     const referer = request.headers.get('referer');
     const currentPath = referer ? new URL(referer).pathname : null;
-
-    console.log('🔧 リクエスト情報:', {
+    logger.debug('🔧 リクエスト情報:', {
       url: url.toString(),
       referer,
       currentPath,
     });
-
     const session = await auth();
-    console.log('🔧 セッション取得結果:', {
+    logger.debug('🔧 セッション取得結果:', {
       hasSession: !!session,
       hasUser: !!session?.user,
       userId: session?.user?.id,
       userEmail: session?.user?.email,
     });
-
     if (!session?.user?.id) {
-      console.log('❌ 認証失敗 - セッションまたはユーザーIDがありません');
+      logger.debug('❌ 認証失敗 - セッションまたはユーザーIDがありません');
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
-
     const userId = session.user.id;
-    console.log('✅ ユーザー認証OK:', userId);
-
+    logger.debug('✅ ユーザー認証OK:', userId);
     let userData: UserData | null = null;
-
     try {
-      console.log('🔧 DB query開始 - ユーザーID:', userId);
-
+      logger.debug('🔧 DB query開始 - ユーザーID:', userId);
       userData = (await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -446,8 +403,7 @@ export async function GET(request: Request) {
           },
         },
       })) as UserData | null;
-
-      console.log('✅ DB query完了:', {
+      logger.debug('✅ DB query完了:', {
         hasUser: !!userData,
         userEmail: userData?.email,
         hasAdminTenant: !!userData?.adminOfTenant,
@@ -457,12 +413,11 @@ export async function GET(request: Request) {
         trialEndsAt: userData?.trialEndsAt,
       });
     } catch (dbError) {
-      console.error('❌ データベースエラー詳細:', {
+      logger.error('❌ データベースエラー詳細:', {
         error: dbError,
         userId,
         timestamp: new Date().toISOString(),
       });
-
       return NextResponse.json(
         {
           error: 'Database connection error',
@@ -473,26 +428,21 @@ export async function GET(request: Request) {
         { status: 500 },
       );
     }
-
     if (!userData) {
-      console.log('❌ ユーザー見つからず - DB結果がnull');
+      logger.debug('❌ ユーザー見つからず - DB結果がnull');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
-    console.log('🚀 権限計算開始');
+    logger.debug('🚀 権限計算開始');
     const permissions = calculatePermissionsFixed(userData);
-    console.log('✅ 権限計算完了:', permissions);
-
-    console.log('🚀 ナビゲーション生成開始');
+    logger.debug('✅ 権限計算完了:', permissions);
+    logger.debug('🚀 ナビゲーション生成開始');
     const navigation = generateNavigationEnhanced(permissions, currentPath);
-    console.log('✅ ナビゲーション生成完了:', {
+    logger.debug('✅ ナビゲーション生成完了:', {
       shouldRedirect: navigation.shouldRedirect,
       redirectPath: navigation.redirectPath,
       menuItemsCount: navigation.menuItems.length,
     });
-
     const tenant = userData.adminOfTenant || userData.tenant;
-
     const response = {
       user: {
         id: userData.id,
@@ -513,10 +463,8 @@ export async function GET(request: Request) {
           }
         : null,
     };
-
     const duration = Date.now() - startTime;
-    console.log(`⚡ Dashboard API完了: ${duration}ms - レスポンス準備完了`);
-
+    logger.debug(`⚡ Dashboard API完了: ${duration}ms - レスポンス準備完了`);
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': 'private, max-age=300',
@@ -525,7 +473,7 @@ export async function GET(request: Request) {
     });
   } catch (error) {
     const duration = Date.now() - startTime;
-    console.error('❌ Dashboard API全体エラー:', {
+    logger.error('❌ Dashboard API全体エラー:', {
       error,
       errorMessage: error instanceof Error ? error.message : 'Unknown error',
       errorStack: error instanceof Error ? error.stack : undefined,

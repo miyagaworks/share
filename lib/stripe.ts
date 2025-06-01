@@ -1,11 +1,10 @@
 // lib/stripe.ts
+import { logger } from "@/lib/utils/logger";
 import Stripe from 'stripe';
-
 // このファイルはサーバーサイドでのみ使用
 if (!process.env.STRIPE_SECRET_KEY) {
-  console.warn('Missing STRIPE_SECRET_KEY environment variable');
+  logger.warn('Missing STRIPE_SECRET_KEY environment variable');
 }
-
 // サーバーサイドのみで使用するエクスポート
 export const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
@@ -17,12 +16,10 @@ export const stripe = process.env.STRIPE_SECRET_KEY
       },
     })
   : null;
-
 // Stripe利用可能かどうかをチェックするヘルパー関数
 export function isStripeAvailable(): boolean {
   return !!process.env.STRIPE_SECRET_KEY;
 }
-
 // プラン定義 - クライアントサイドとサーバーサイドの両方で使用可能
 export const PLANS = {
   // 個人プラン（既存）
@@ -44,7 +41,6 @@ export const PLANS = {
     planId: 'yearly',
     maxUsers: 1,
   },
-
   // 法人プラン（新規または修正）
   STARTER: {
     name: '法人スタータープラン',
@@ -101,7 +97,6 @@ export const PLANS = {
     maxUsers: 50,
   },
 };
-
 // planIdからプラン名を直接取得する関数
 export function getPlanNameFromId(planId: string, interval?: string): string {
   // 個人プラン
@@ -110,7 +105,6 @@ export function getPlanNameFromId(planId: string, interval?: string): string {
   } else if (planId === 'yearly') {
     return '個人プラン(1年で自動更新)';
   }
-
   // 法人プラン
   else if (planId === 'starter') {
     return interval === 'year'
@@ -125,25 +119,21 @@ export function getPlanNameFromId(planId: string, interval?: string): string {
       ? '法人エンタープライズプラン(50名まで・年額)'
       : '法人エンタープライズプラン(50名まで・月額)';
   }
-
   // 古いプランID（互換性のため）
   else if (planId === 'business_legacy') {
     return '法人スタータープラン(10名まで)';
   } else if (planId === 'business-plus' || planId === 'business_plus') {
     return '法人ビジネスプラン(30名まで)';
   }
-
   // 特殊プラン
   else if (planId === 'permanent') {
     return '永久利用可能';
   } else if (planId === 'trial') {
     return '無料トライアル中';
   }
-
   // プランを特定できない場合
   return '不明なプラン';
 }
-
 // ご利用プランステータスの表示名を取得するヘルパー関数
 export function getSubscriptionStatusText(
   status: string,
@@ -154,12 +144,10 @@ export function getSubscriptionStatusText(
   if (status === 'trialing') {
     return '無料トライアル中';
   }
-
   // ステータスが「アクティブ」の場合はプラン名を表示
   if (status === 'active' && plan) {
     return getPlanNameFromId(plan, interval);
   }
-
   // その他のステータス
   switch (status) {
     case 'active':
@@ -178,7 +166,6 @@ export function getSubscriptionStatusText(
       return '不明なステータス';
   }
 }
-
 // プランIDから名前を取得するヘルパー関数
 export function getPlanNameById(planId: string): string {
   // PLANSオブジェクトからpriceIdに一致するプランを探す
@@ -188,6 +175,5 @@ export function getPlanNameById(planId: string): string {
   }
   return '不明なプラン';
 }
-
 // 既存の関数名を残すためのエイリアス
 export const getPlanName = getPlanNameById;

@@ -1,7 +1,6 @@
 // components/ui/CorporateBranding.tsx
 import React, { ReactNode } from 'react';
 import Image from 'next/image';
-
 interface CorporateBrandingProps {
   children: ReactNode;
   primaryColor?: string;
@@ -15,7 +14,6 @@ interface CorporateBrandingProps {
   border?: boolean;
   showLogo?: boolean; // ロゴ表示の制御用
 }
-
 export function CorporateBranding({
   children,
   primaryColor = 'var(--color-corporate-primary)',
@@ -36,22 +34,18 @@ export function CorporateBranding({
     ${shadow ? 'shadow-md' : ''}
     ${border ? `border border-gray-200` : ''}
   `;
-
   // ヘッダー高さを調整（スマホ表示を考慮）
   const headerClasses = 'w-full flex items-center justify-center relative py-4 px-2';
-
   // 動的スタイル
   const headerStyle = {
     backgroundColor: primaryColor,
   };
-
   const borderStyle = border
     ? {
         borderColor: `${primaryColor}40`,
         '--secondary-color': secondaryColor,
       }
     : {};
-
   return (
     <div className={containerClasses} style={borderStyle}>
       {/* ヘッダー部分 - 高さを調整して可変に */}
@@ -68,7 +62,6 @@ export function CorporateBranding({
             />
           </div>
         )}
-
         {/* ヘッダーテキスト - スマホ表示でもきれいに */}
         {headerText && (
           <div
@@ -79,7 +72,6 @@ export function CorporateBranding({
           </div>
         )}
       </div>
-
       {/* コンテンツ部分 */}
       <div className="p-4 sm:p-6">{children}</div>
     </div>

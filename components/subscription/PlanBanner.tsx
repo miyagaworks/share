@@ -1,20 +1,15 @@
 // components/subscription/PlanBanner.tsx - 完全修正版
 'use client';
-
 import React from 'react';
 import { usePlanInfo } from '@/hooks/usePlanInfo';
 import { HiClock } from 'react-icons/hi';
-
 interface PlanBannerProps {
   className?: string;
 }
-
 export function PlanBanner({ className = '' }: PlanBannerProps) {
   const planInfo = usePlanInfo();
-
   // データ取得中またはエラー時は非表示
   if (!planInfo) return null;
-
   // 🚀 トライアルバナー（個人ユーザーのみ）
   if (planInfo.shouldShowTrialBanner) {
     return (
@@ -48,7 +43,6 @@ export function PlanBanner({ className = '' }: PlanBannerProps) {
       </div>
     );
   }
-
   // 🚀 法人プラン表示（法人ユーザー・管理者）- プレミアム機能バナーを削除
   if (planInfo.shouldShowCorporateFeatures && planInfo.hasActivePlan) {
     const getBannerStyle = () => {
@@ -68,9 +62,7 @@ export function PlanBanner({ className = '' }: PlanBannerProps) {
         };
       }
     };
-
     const style = getBannerStyle();
-
     return (
       <div className={`${style.bgClass} border rounded-lg p-4 mb-6 ${className}`}>
         <div className="flex items-center">
@@ -101,7 +93,6 @@ export function PlanBanner({ className = '' }: PlanBannerProps) {
       </div>
     );
   }
-
   // その他の場合は何も表示しない（プレミアム機能バナーを削除）
   return null;
 }

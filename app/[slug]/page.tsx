@@ -8,7 +8,6 @@ import { Metadata } from "next";
 import Link from "next/link";
 import { addDays } from 'date-fns';
 import type { User, CorporateTenant } from "@prisma/client";
-
 interface ExtendedUser extends User {
   snsIconColor: string | null;
   companyUrl: string | null;
@@ -20,14 +19,12 @@ interface ExtendedUser extends User {
     name: string;
   } | null;
 }
-
 type ProfileParams = {
     params: {
         slug: string;
     };
     searchParams?: Record<string, string | string[]>;
 };
-
 // 動的メタデータ生成
 export async function generateMetadata({ params }: ProfileParams): Promise<Metadata> {
     const profile = await prisma.profile.findUnique({
@@ -36,14 +33,12 @@ export async function generateMetadata({ params }: ProfileParams): Promise<Metad
             user: true,
         },
     });
-
     if (!profile) {
         return {
             title: "プロフィールが見つかりません",
             description: "リクエストされたプロフィールは存在しないか、削除された可能性があります。",
         };
     }
-
     return {
         title: `${profile.user.name || "ユーザー"} | Share`,
         description: profile.user.bio || "Shareでプロフィールをチェックしましょう",
@@ -52,10 +47,8 @@ export async function generateMetadata({ params }: ProfileParams): Promise<Metad
         },
     };
 }
-
 export default async function ProfilePage({ params }: { params: { slug: string } }) {
   const { slug } = params;
-
   // プロフィールデータの取得（テナント情報も含める）
   const profile = await prisma.profile.findUnique({
     where: { slug },
@@ -69,32 +62,26 @@ export default async function ProfilePage({ params }: { params: { slug: string }
       },
     },
   });
-
   // プロフィールが存在しない、または非公開の場合は404
   if (!profile || !profile.isPublic) {
     notFound();
   }
-
   // トライアル終了後でアクティブなサブスクリプションがない場合はプロフィールを非表示
   // userを再定義せず、profile.userを直接使用
   const extendedUser = profile.user as ExtendedUser; // userではなくextendedUserとして別の変数名を使用
   const trialEndsAt = extendedUser.trialEndsAt ? new Date(extendedUser.trialEndsAt) : null;
   const now = new Date();
-
   // ユーザーがサブスクリプションを持っているか確認
   const hasActiveSubscription = extendedUser.subscriptionStatus === 'active';
-
   // トライアル終了後かつアクティブなサブスクリプションがない場合
   if (trialEndsAt && now > trialEndsAt && !hasActiveSubscription) {
     // 猶予期間（7日間）
     const gracePeriodEndDate = addDays(trialEndsAt, 7);
-
     // 猶予期間も終了している場合は404を返す
     if (now > gracePeriodEndDate) {
       notFound();
     }
   }
-
   // プロフィールの閲覧数を更新
   await prisma.profile.update({
     where: { id: profile.id },
@@ -105,41 +92,32 @@ export default async function ProfilePage({ params }: { params: { slug: string }
       lastAccessed: new Date(),
     },
   });
-
   // SNSリンクの取得
   const snsLinks = await prisma.snsLink.findMany({
     where: { userId: profile.userId },
     orderBy: { displayOrder: 'asc' },
   });
-
   // カスタムリンクの取得
   const customLinks = await prisma.customLink.findMany({
     where: { userId: profile.userId },
     orderBy: { displayOrder: 'asc' },
   });
-
   // 法人SNSリンクを取得（ユーザーが法人テナントに所属している場合）
   const tenant = profile.user.tenant || profile.user.adminOfTenant;
-
   const user = profile.user as ExtendedUser;
-
   // 色設定：テナントがある場合はテナントのprimaryColorを優先
   const mainColor = tenant?.primaryColor || user.mainColor || '#A88C3D';
   const secondaryColor = tenant?.secondaryColor || '#333333'; // セカンダリーカラー追加
-
   // SNSアイコン色：ユーザー設定を維持
   const snsIconColor = user.snsIconColor || '#333333';
-
   // 会社関連情報
   const companyName = tenant?.name || user.company || '';
   const companyLabel = user.companyLabel || '会社HP';
   const hasCompanyUrl = tenant ? true : user.company && user.companyUrl;
-
   // ヘッダーテキストとテキストカラー（テナントからの取得を優先）
   const headerText =
     tenant?.headerText || user.headerText || 'シンプルにつながる、スマートにシェア。';
   const textColor = tenant?.textColor || user.textColor || '#FFFFFF';
-
   return (
     <div
       style={{
@@ -184,7 +162,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
             {headerText}
           </p>
         </div>
-
         <div style={{ padding: '1.5rem' }}>
           {/* 法人ロゴ（テナントに所属している場合のみ表示） */}
           {tenant?.logoUrl && (
@@ -222,14 +199,12 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               </div>
             </div>
           )}
-
           {/* テナント名または会社名（テナントに所属している場合のみ表示） */}
           {tenant && (
             <div style={{ textAlign: 'center', marginBottom: '0.5rem' }}>
               <h3 style={{ fontSize: '1.25rem', fontWeight: '600' }}>{tenant.name}</h3>
             </div>
           )}
-
           {/* 部署と役職情報（ユーザーが法人テナントに所属している場合） */}
           {profile.user.department && (
             <div style={{ textAlign: 'center', marginBottom: '0.1rem' }}>
@@ -238,7 +213,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               </p>
             </div>
           )}
-
           {/* 役職情報（部署と独立して表示） */}
           {profile.user.position && (
             <div style={{ textAlign: 'center', marginBottom: '0.1rem' }}>
@@ -247,7 +221,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               </p>
             </div>
           )}
-
           {/* ユーザー名 */}
           <div style={{ textAlign: 'center', marginTop: '0.3rem', marginBottom: '2rem' }}>
             <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{profile.user.name}</h1>
@@ -257,7 +230,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               </p>
             )}
           </div>
-
           {/* SNSアイコングリッド（法人SNSリンクを優先） */}
           <div
             style={{
@@ -293,7 +265,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               </div>
             ))}
           </div>
-
           {/* 丸いアイコン（自己紹介、会社HP、メール、電話） */}
           <div
             style={{
@@ -346,7 +317,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 自己紹介
               </span>
             </a>
-
             {/* 会社HPボタン */}
             {hasCompanyUrl && (
               <a
@@ -393,7 +363,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 </span>
               </a>
             )}
-
             {/* メールボタン */}
             <a
               href={`mailto:${profile.user.email}`}
@@ -431,7 +400,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 メール
               </span>
             </a>
-
             {/* 電話ボタン */}
             {profile.user.phone && (
               <a
@@ -471,7 +439,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               </a>
             )}
           </div>
-
           {/* カスタムリンク */}
           {customLinks.length > 0 && (
             <div style={{ marginBottom: '1.5rem' }}>
@@ -480,7 +447,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               ))}
             </div>
           )}
-
           {/* 主要アクションボタン */}
           <div style={{ marginBottom: '1rem' }}>
             {profile.user.phone && (
@@ -518,7 +484,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 電話をかける
               </a>
             )}
-
             <a
               href={`/api/vcard/${profile.userId}`}
               style={{
@@ -556,7 +521,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
               連絡先に追加
             </a>
           </div>
-
           {/* フッター - 順序修正 */}
           <div style={{ marginTop: '2rem', textAlign: 'center' }}>
             <Link
@@ -566,7 +530,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
             >
               このサービスを使ってみる
             </Link>
-
             <div
               style={{
                 borderTop: '1px solid #B8B8B8',
@@ -581,7 +544,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           </div>
         </div>
       </div>
-
       {/* 文字拡大ボタン */}
       <button
         id="zoom-toggle-btn"
@@ -621,7 +583,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           <line x1="8" y1="11" x2="14" y2="11"></line>
         </svg>
       </button>
-
       {/* 自己紹介モーダル (クライアント側でJavaScriptで制御) */}
       <div id="profile-modal" className="fixed inset-0 z-50 hidden">
         <div className="absolute inset-0 flex items-center justify-center px-4">
@@ -651,7 +612,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 <line x1="6" y1="6" x2="18" y2="18"></line>
               </svg>
             </button>
-
             {/* スクロール可能なコンテンツエリア */}
             <div style={{ overflowY: 'auto', maxHeight: 'calc(90vh - 2rem)' }}>
               {/* ユーザー情報 */}
@@ -686,13 +646,11 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     </svg>
                   )}
                 </div>
-
                 {/* ユーザー名 */}
                 <h2 className="text-2xl font-bold text-center mb-1">{profile.user.name}</h2>
                 {profile.user.nameEn && (
                   <p className="text-sm text-gray-500 mb-4 profile-text">{profile.user.nameEn}</p>
                 )}
-
                 {/* 自己紹介文 */}
                 <div className="px-8 w-full mb-6">
                   <p className="text-base text-justify whitespace-pre-wrap profile-text">
@@ -700,10 +658,8 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                   </p>
                 </div>
               </div>
-
               {/* 区切り線 */}
               <div className="border-t border-gray-200 w-full"></div>
-
               {/* 会社情報と連絡先 */}
               <div
                 className="p-6 text-base rounded-b-lg"
@@ -724,7 +680,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                       <p className="profile-text">{companyName}</p>
                     </div>
                   )}
-
                   {user.department?.name && (
                     <div>
                       <p
@@ -736,7 +691,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                       <p className="profile-text">{user.department.name}</p>
                     </div>
                   )}
-
                   {user.position && (
                     <div>
                       <p
@@ -748,7 +702,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                       <p className="profile-text">{user.position}</p>
                     </div>
                   )}
-
                   {profile.user.phone && (
                     <div>
                       <p
@@ -760,7 +713,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                       <p className="profile-text">{profile.user.phone}</p>
                     </div>
                   )}
-
                   {profile.user.email && (
                     <div>
                       <p
@@ -778,7 +730,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
           </div>
         </div>
       </div>
-
       {/* スタイル定義 */}
       <style
         dangerouslySetInnerHTML={{
@@ -787,22 +738,18 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 font-size: 110% !important; /* 通常より10%大きく */
                 line-height: 1.5 !important;
               }
-              
               /* SNSアイコンのサイズも拡大する */
               .text-enlarged-icon {
                 transform: scale(1.1);
               }
-              
               /* 文字拡大ボタンのホバーエフェクト */
               #zoom-toggle-btn:hover {
                 background-color: rgb(29, 78, 216, 0.9);
                 transform: scale(1.05);
               }
-              
               #zoom-toggle-btn {
                 transition: all 0.2s ease;
               }
-              
               /* モーダル関連のスタイル */
               .modal-open {
                 overflow: hidden;
@@ -810,7 +757,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
             `,
         }}
       />
-
       {/* モーダル用JavaScript */}
       <script
         dangerouslySetInnerHTML={{
@@ -820,7 +766,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                 const modal = document.getElementById('profile-modal');
                 const closeBtn = document.getElementById('close-modal');
                 const profileBtn = document.querySelector('[data-modal-target="profile-modal"]');
-                
                 if (profileBtn) {
                   profileBtn.addEventListener('click', function(e) {
                     e.preventDefault();
@@ -828,30 +773,24 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                     document.body.classList.add('modal-open');
                   });
                 }
-                
                 function closeModal() {
                   modal.classList.add('hidden');
                   document.body.classList.remove('modal-open');
                 }
-                
                 if (closeBtn) {
                   closeBtn.addEventListener('click', closeModal);
                 }
-                
                 window.addEventListener('click', function(e) {
                   if (e.target === modal) {
                     closeModal();
                   }
                 });
-
                 // 文字拡大機能
                 const zoomToggleBtn = document.getElementById('zoom-toggle-btn');
                 let isTextEnlarged = false;
-                
                 if (zoomToggleBtn) {
                   zoomToggleBtn.addEventListener('click', function() {
                     isTextEnlarged = !isTextEnlarged;
-                    
                     // profile-textクラスを持つすべての要素のフォントサイズを変更
                     const textElements = document.querySelectorAll('.profile-text');
                     textElements.forEach(function(element) {
@@ -861,7 +800,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                         element.classList.remove('text-enlarged');
                       }
                     });
-                    
                     // SNSアイコン周りのテキスト要素も拡大対象に
                     const snsTextElements = document.querySelectorAll('.text-xs');
                     snsTextElements.forEach(function(element) {
@@ -871,7 +809,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                         element.classList.remove('text-enlarged');
                       }
                     });
-                    
                     // SNSアイコンのサイズも調整
                     const snsIcons = document.querySelectorAll('.w-16.h-16');
                     snsIcons.forEach(function(element) {
@@ -881,7 +818,6 @@ export default async function ProfilePage({ params }: { params: { slug: string }
                         element.classList.remove('text-enlarged-icon');
                       }
                     });
-                    
                     // ボタンのアイコンを変更
                     const svgIcon = zoomToggleBtn.querySelector('svg');
                     if (svgIcon) {

@@ -2,7 +2,6 @@
 import React, { ReactNode } from "react";
 import { motion } from "framer-motion";
 import { cn } from "@/lib/utils";
-
 interface DashboardCardProps {
     title: string;
     description?: string;
@@ -12,7 +11,6 @@ interface DashboardCardProps {
     children?: ReactNode;
     onClick?: () => void;
 }
-
 export function DashboardCard({
     title,
     description,
@@ -41,14 +39,11 @@ export function DashboardCard({
             {description && <p className="mt-1 text-sm text-gray-500">{description}</p>}
           </div>
         </div>
-
         {children && <div className="mt-4">{children}</div>}
-
         {footer && <div className="mt-4">{footer}</div>}
       </motion.div>
     );
 }
-
 // カードグリッドコンポーネント
 export function DashboardCardGrid({
     children,

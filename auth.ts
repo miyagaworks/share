@@ -1,10 +1,10 @@
 // auth.ts (元の状態)
+import { logger } from "@/lib/utils/logger";
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import type { DefaultSession } from 'next-auth';
-
 // 型定義の拡張
 declare module 'next-auth' {
   interface User {
@@ -12,7 +12,6 @@ declare module 'next-auth' {
     tenantId?: string | null;
     isAdmin?: boolean;
   }
-
   interface Session {
     user: {
       id: string;
@@ -22,7 +21,6 @@ declare module 'next-auth' {
     } & DefaultSession['user'];
   }
 }
-
 // JWT型の拡張
 declare module 'next-auth/jwt' {
   interface JWT {
@@ -31,13 +29,10 @@ declare module 'next-auth/jwt' {
     isAdmin?: boolean;
   }
 }
-
 // authConfig設定を取得
 const { callbacks: baseCallbacks, ...restAuthConfig } = authConfig;
-
 // セッションタイムアウト設定（秒単位）
 const SESSION_MAX_AGE = 8 * 60 * 60; // 8時間（デフォルト）
-
 // 環境変数から設定を読み込み（カスタマイズ可能）
 const getSessionMaxAge = (): number => {
   const envValue = process.env.SESSION_TIMEOUT_HOURS;
@@ -49,7 +44,6 @@ const getSessionMaxAge = (): number => {
   }
   return SESSION_MAX_AGE;
 };
-
 // NextAuth設定
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
@@ -60,13 +54,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     // セッション更新間隔を設定（この間隔でセッションが延長される）
     updateAge: 24 * 60 * 60, // 24時間（アクティビティがあれば延長）
   },
-
   // JWT設定
   jwt: {
     // JWTトークンの最大継続時間
     maxAge: getSessionMaxAge(),
   },
-
   cookies: {
     sessionToken: {
       name: `next-auth.session-token`,
@@ -101,28 +93,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       },
     },
   },
-
   callbacks: {
     async jwt({ token, user, trigger, ...rest }) {
       // 既存のコールバックとマージ
       if (baseCallbacks?.jwt) {
         token = await baseCallbacks.jwt({ token, user, trigger, ...rest });
       }
-
       // セッション有効期限チェック
       const now = Math.floor(Date.now() / 1000);
       const maxAge = getSessionMaxAge();
-
       // トークンの有効期限を設定
       if (!token.exp || token.exp < now) {
         // 期限切れの場合は新しい有効期限を設定
         token.exp = now + maxAge;
         token.iat = now;
       }
-
       // 最後のアクティビティ時間を記録
       token.lastActivity = now;
-
       // 初回サインイン時または更新時にユーザー情報をトークンに追加
       if (user || trigger === 'update') {
         try {
@@ -134,11 +121,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               adminOfTenant: true,
             },
           });
-
           if (dbUser) {
             token.isAdmin = !!dbUser.adminOfTenant;
             token.tenantId = dbUser.tenant?.id || dbUser.adminOfTenant?.id || null;
-
             if (dbUser.adminOfTenant) {
               token.role = 'admin';
             } else if (dbUser.tenant && dbUser.corporateRole === 'member') {
@@ -148,8 +133,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             } else {
               token.role = 'personal';
             }
-
-            console.log('[Auth JWT] ユーザー情報更新:', {
+            logger.debug('[Auth JWT] ユーザー情報更新:', {
               userId: dbUser.id,
               role: token.role,
               tenantId: token.tenantId,
@@ -158,43 +142,37 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             });
           }
         } catch (error) {
-          console.error('JWTコールバックでのDB取得エラー:', error);
+          logger.error('JWTコールバックでのDB取得エラー:', error);
         }
       }
-
       return token;
     },
-
     async session({ session, token }) {
       if (token && session.user) {
         session.user.id = token.sub as string;
         session.user.role = token.role;
         session.user.isAdmin = token.isAdmin;
         session.user.tenantId = token.tenantId;
-
         // セッション有効期限情報を追加（デバッグ用）
         if (token.exp) {
           const expiryDate = new Date(token.exp * 1000);
-          console.log('[Session] セッション有効期限:', expiryDate.toISOString());
+          logger.debug('[Session] セッション有効期限:', expiryDate.toISOString());
         }
       }
       return session;
     },
   },
-
   // authConfigから残りの設定を取得
   ...restAuthConfig,
 });
-
 // セキュリティ問題発生時の強制ログアウト関数
 export const forceSecurityLogout = async (reason: string): Promise<void> => {
-  console.error(`セキュリティ上の理由によるログアウト: ${reason}`);
+  logger.error(`セキュリティ上の理由によるログアウト: ${reason}`);
   await signOut({
     redirect: true,
     redirectTo: '/auth/signin?security=1',
   });
 };
-
 // トークン改ざんを検出する機能
 export const detectTokenTampering = (token: Record<string, unknown>): boolean => {
   if (!token || typeof token !== 'object') return true;
@@ -203,20 +181,17 @@ export const detectTokenTampering = (token: Record<string, unknown>): boolean =>
   if (Date.now() / 1000 > expTime) return true;
   return false;
 };
-
 // セッション有効期限チェック関数
 export const isSessionExpired = (token: Record<string, unknown>): boolean => {
   if (!token.exp) return true;
   const now = Math.floor(Date.now() / 1000);
   return (token.exp as number) < now;
 };
-
 // アクティビティベースのセッション延長チェック
 export const shouldExtendSession = (token: Record<string, unknown>): boolean => {
   const now = Math.floor(Date.now() / 1000);
   const lastActivity = (token.lastActivity as number) || 0;
   const timeSinceLastActivity = now - lastActivity;
-
   // 1時間以上非アクティブの場合は延長しない
   const maxInactiveTime = 60 * 60; // 1時間
   return timeSinceLastActivity < maxInactiveTime;

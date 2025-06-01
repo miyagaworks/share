@@ -12,9 +12,7 @@ export const SNS_PLATFORMS = [
   'note',
   'bereal',
 ] as const;
-
 export type SnsPlatform = (typeof SNS_PLATFORMS)[number];
-
 export interface SnsMetadata {
   name: string;
   icon: string;
@@ -22,7 +20,6 @@ export interface SnsMetadata {
   placeholderText: string;
   helpText: string;
 }
-
 export const SNS_METADATA: Record<SnsPlatform, SnsMetadata> = {
   line: {
     name: 'LINE',

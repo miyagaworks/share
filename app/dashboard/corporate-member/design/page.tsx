@@ -1,6 +1,5 @@
 // app/dashboard/corporate-member/design/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -11,7 +10,6 @@ import { Button } from '@/components/ui/Button';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { BrandingPreview } from '@/components/corporate/BrandingPreview';
 import { ImprovedMemberDesignSettings } from '@/components/corporate/ImprovedMemberDesignSettings';
-
 // 型定義
 interface TenantData {
   id: string;
@@ -24,14 +22,12 @@ interface TenantData {
   headerText?: string | null;
   textColor?: string | null;
 }
-
 interface DesignData {
   mainColor: string | null;
   snsIconColor: string | null;
   bioBackgroundColor?: string | null;
   bioTextColor?: string | null;
 }
-
 interface UserData {
   id: string;
   name: string | null;
@@ -44,7 +40,6 @@ interface UserData {
   } | null;
   position?: string | null;
 }
-
 export default function ImprovedCorporateMemberDesignPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -58,34 +53,28 @@ export default function ImprovedCorporateMemberDesignPage() {
   const handleTabChange = (tab: 'sns' | 'bio') => {
     setActiveTab(tab);
   };
-
   // データ取得
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session) {
       router.push('/auth/signin');
       return;
     }
-
     const fetchData = async () => {
       try {
         setIsLoading(true);
-
         // プロフィール情報を取得
         const profileResponse = await fetch('/api/corporate-member/profile');
         if (!profileResponse.ok) {
           throw new Error('プロフィール情報の取得に失敗しました');
         }
         const profileData = await profileResponse.json();
-
         // デザイン設定情報を取得
         const designResponse = await fetch('/api/corporate-member/design');
         if (!designResponse.ok) {
           throw new Error('デザイン設定の取得に失敗しました');
         }
         const designData = await designResponse.json();
-
         // ユーザー情報を設定
         setUserData({
           id: profileData.user.id,
@@ -96,27 +85,21 @@ export default function ImprovedCorporateMemberDesignPage() {
           department: profileData.user.department,
           position: profileData.user.position || '',
         });
-
         // デザイン情報を設定
         setDesignData({
           ...designData.design,
           secondaryColor: designData.design.secondaryColor || designData.tenant.secondaryColor,
         });
-
         setTenantData(designData.tenant);
-
         setError(null);
       } catch (err) {
-        console.error('データ取得エラー:', err);
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, [session, status, router]);
-
   // デザイン設定保存処理
   const handleSaveDesign = async (values: {
     snsIconColor?: string | null;
@@ -126,7 +109,6 @@ export default function ImprovedCorporateMemberDesignPage() {
   }) => {
     try {
       setIsSaving(true);
-
       const response = await fetch('/api/corporate-member/design', {
         method: 'POST',
         headers: {
@@ -134,30 +116,24 @@ export default function ImprovedCorporateMemberDesignPage() {
         },
         body: JSON.stringify(values), // ここで追加したフィールドも送信されます
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'デザイン設定の更新に失敗しました');
       }
-
       const updatedData = await response.json();
-
       // 更新されたデータをセット
       setDesignData({
         ...designData,
         ...updatedData.design, // 更新されたデータですべてのフィールドを上書き
       });
-
       toast.success('デザイン設定を更新しました');
     } catch (error) {
-      console.error('設定更新エラー:', error);
       toast.error(error instanceof Error ? error.message : 'デザイン設定の更新に失敗しました');
       throw error;
     } finally {
       setIsSaving(false);
     }
   };
-
   return (
     <CorporateMemberGuard>
       <div className="space-y-6">
@@ -168,7 +144,6 @@ export default function ImprovedCorporateMemberDesignPage() {
               プロフィールのデザインを法人カラーに合わせて設定します
             </p>
           </div>
-
           <Button
             variant="corporate"
             onClick={() => handleSaveDesign(designData || {})}
@@ -188,7 +163,6 @@ export default function ImprovedCorporateMemberDesignPage() {
             )}
           </Button>
         </div>
-
         {isLoading ? (
           <div className="flex justify-center items-center min-h-[300px]">
             <Spinner size="lg" />
@@ -214,7 +188,6 @@ export default function ImprovedCorporateMemberDesignPage() {
                 <p className="text-sm text-gray-500 mb-4 text-justify">
                   プロフィールに表示するSNSアイコンのカラー設定をカスタマイズします。
                 </p>
-
                 {designData && tenantData && (
                   <ImprovedMemberDesignSettings
                     initialValues={designData}
@@ -227,7 +200,6 @@ export default function ImprovedCorporateMemberDesignPage() {
                   />
                 )}
               </div>
-
               {/* デザインガイドライン */}
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
                 <h2 className="text-lg font-medium mb-4 flex items-center">
@@ -250,7 +222,6 @@ export default function ImprovedCorporateMemberDesignPage() {
                 <p className="text-sm text-gray-500 mb-4 text-justify">
                   法人プロファイルでは以下の要素をカスタマイズできます:
                 </p>
-
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                   <div className="border border-gray-200 rounded-md p-4">
                     <h3 className="font-medium mb-2">カスタマイズ可能な項目</h3>
@@ -260,7 +231,6 @@ export default function ImprovedCorporateMemberDesignPage() {
                       <li>• 自己紹介ページの文字色</li>
                     </ul>
                   </div>
-
                   <div className="border border-gray-200 rounded-md p-4">
                     <h3 className="font-medium mb-2">法人設定による固定項目</h3>
                     <ul className="text-sm text-gray-600 space-y-1">
@@ -276,7 +246,6 @@ export default function ImprovedCorporateMemberDesignPage() {
                 </div>
               </div>
             </div>
-
             {/* プレビュー - こちらを branding/page.tsx と同じレイアウトに修正 */}
             <div className="space-y-6">
               <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -287,7 +256,6 @@ export default function ImprovedCorporateMemberDesignPage() {
                 <p className="text-sm text-gray-500 mb-6 text-center">
                   設定がユーザープロフィールにどのように表示されるかのプレビューです
                 </p>
-
                 {userData && tenantData && designData && (
                   <BrandingPreview
                     primaryColor={tenantData.primaryColor || '#1E3A8A'}
@@ -311,7 +279,6 @@ export default function ImprovedCorporateMemberDesignPage() {
                     highlightBio={activeTab === 'bio'}
                   />
                 )}
-
                 {/* 保存ボタン（プレビューの下に配置） */}
                 <div className="mt-6 flex justify-center">
                   <Button
@@ -334,7 +301,6 @@ export default function ImprovedCorporateMemberDesignPage() {
                   </Button>
                 </div>
               </div>
-
               {/* ブランディングの活用方法 */}
               <div
                 className="mt-6 rounded-md p-4"
@@ -363,7 +329,6 @@ export default function ImprovedCorporateMemberDesignPage() {
     </CorporateMemberGuard>
   );
 }
-
 // HiEyeコンポーネント
 function HiEye(props: { className: string }) {
   return (

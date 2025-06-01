@@ -1,13 +1,11 @@
 // app/auth/change-password/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { Card } from '@/components/ui/Card';
-
 // カスタムエラーメッセージコンポーネント
 function ErrorMessage({ message }: { message: string }) {
   return (
@@ -16,7 +14,6 @@ function ErrorMessage({ message }: { message: string }) {
     </div>
   );
 }
-
 // カスタム情報メッセージコンポーネント
 function InfoMessage({ message }: { message: string }) {
   return (
@@ -25,7 +22,6 @@ function InfoMessage({ message }: { message: string }) {
     </div>
   );
 }
-
 // カスタムローディングスピナーコンポーネント
 function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
   const sizeClasses = {
@@ -33,7 +29,6 @@ function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     md: 'w-6 h-6',
     lg: 'w-8 h-8',
   };
-
   return (
     <div className="flex justify-center">
       <svg
@@ -59,7 +54,6 @@ function LoadingSpinner({ size = 'md' }: { size?: 'sm' | 'md' | 'lg' }) {
     </div>
   );
 }
-
 export default function ChangePasswordPage() {
   const { status } = useSession();
   const router = useRouter();
@@ -73,7 +67,6 @@ export default function ChangePasswordPage() {
   const [showCurrentPassword, setShowCurrentPassword] = useState(false);
   const [showNewPassword, setShowNewPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-
   // ユーザー情報を取得してOAuthユーザーかどうかを判断
   useEffect(() => {
     if (status === 'authenticated') {
@@ -84,14 +77,11 @@ export default function ChangePasswordPage() {
           const data = await response.json();
           setIsOAuthUser(!data.hasPassword);
         } catch (error) {
-          console.error('ユーザー情報取得エラー:', error);
         }
       };
-
       checkUserPassword();
     }
   }, [status]);
-
   // 認証チェック
   if (status === 'loading') {
     return (
@@ -106,45 +96,37 @@ export default function ChangePasswordPage() {
       </div>
     );
   }
-
   if (status === 'unauthenticated') {
     router.push('/auth/signin');
     return null;
   }
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     // 基本的な検証
     if (!isOAuthUser && !currentPassword) {
       setError('現在のパスワードを入力してください');
       setLoading(false);
       return;
     }
-
     if (!newPassword || !confirmPassword) {
       setError('新しいパスワードと確認用パスワードを入力してください');
       setLoading(false);
       return;
     }
-
     if (newPassword !== confirmPassword) {
       setError('新しいパスワードと確認用パスワードが一致しません');
       setLoading(false);
       return;
     }
-
     if (newPassword.length < 8) {
       setError('パスワードは8文字以上必要です');
       setLoading(false);
       return;
     }
-
     try {
       const requestBody = isOAuthUser ? { newPassword } : { currentPassword, newPassword };
-
       const response = await fetch('/api/auth/change-password', {
         method: 'POST',
         headers: {
@@ -152,19 +134,15 @@ export default function ChangePasswordPage() {
         },
         body: JSON.stringify(requestBody),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.message || 'パスワードの変更に失敗しました');
       }
-
       // 成功
       setSuccess(true);
       setCurrentPassword('');
       setNewPassword('');
       setConfirmPassword('');
-
       // 3秒後にダッシュボードにリダイレクト
       setTimeout(() => {
         router.push('/dashboard');
@@ -179,7 +157,6 @@ export default function ChangePasswordPage() {
       setLoading(false);
     }
   };
-
   return (
     <div className="min-h-screen flex flex-col py-12">
       <div className="container mx-auto px-4">
@@ -187,11 +164,9 @@ export default function ChangePasswordPage() {
           <h1 className="text-2xl font-bold mb-6">
             {isOAuthUser ? 'パスワード設定' : 'パスワード変更'}
           </h1>
-
           {isOAuthUser && (
             <InfoMessage message="ソーシャルログイン（Google等）でアカウントを作成されたため、まだパスワードが設定されていません。ここでパスワードを設定すると、メールアドレスとパスワードでもログインできるようになります。" />
           )}
-
           {success ? (
             <div className="bg-green-50 border border-green-200 text-green-800 rounded-md p-4 mb-4">
               <p>
@@ -204,7 +179,6 @@ export default function ChangePasswordPage() {
           ) : (
             <form onSubmit={handleSubmit} className="space-y-4">
               {error && <ErrorMessage message={error} />}
-
               {!isOAuthUser && (
                 <div>
                   <div className="relative">
@@ -265,7 +239,6 @@ export default function ChangePasswordPage() {
                   </div>
                 </div>
               )}
-
               <div>
                 <div className="relative">
                   <label
@@ -325,7 +298,6 @@ export default function ChangePasswordPage() {
                 </div>
                 <p className="mt-1 text-xs text-gray-500">8文字以上で入力してください</p>
               </div>
-
               <div>
                 <div className="relative">
                   <label
@@ -384,7 +356,6 @@ export default function ChangePasswordPage() {
                   </button>
                 </div>
               </div>
-
               <Button type="submit" className="w-full" disabled={loading}>
                 {loading ? (
                   <LoadingSpinner size="sm" />

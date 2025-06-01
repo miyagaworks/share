@@ -1,15 +1,12 @@
 // components/shared/FaqItem.tsx
 'use client';
 import React, { useState } from 'react';
-
 type FaqItemProps = {
   question: string;
   answer: React.ReactNode;
 };
-
 export const FaqItem: React.FC<FaqItemProps> = ({ question, answer }) => {
   const [isOpen, setIsOpen] = useState(false);
-
   return (
     <div className="border-b border-gray-200 last:border-0">
       <button

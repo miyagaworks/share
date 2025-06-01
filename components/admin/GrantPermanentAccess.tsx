@@ -1,13 +1,11 @@
 // components/admin/GrantPermanentAccess.tsx
 'use client';
-
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from 'react-hot-toast';
 import { PermanentPlanType, PLAN_TYPE_DISPLAY_NAMES } from '@/lib/corporateAccess';
-
 export default function GrantPermanentAccess() {
   const [userId, setUserId] = useState('');
   const [planType, setPlanType] = useState<PermanentPlanType>(PermanentPlanType.PERSONAL);
@@ -20,18 +18,14 @@ export default function GrantPermanentAccess() {
     planName?: string;
   } | null>(null);
   const router = useRouter();
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!userId.trim()) {
       setResult({ success: false, error: 'ユーザーIDを入力してください' });
       return;
     }
-
     setIsLoading(true);
     setResult(null);
-
     try {
       const response = await fetch('/api/admin/grant-permanent', {
         method: 'POST',
@@ -43,9 +37,7 @@ export default function GrantPermanentAccess() {
           planType,
         }),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         setResult({
           success: true,
@@ -72,17 +64,14 @@ export default function GrantPermanentAccess() {
         success: false,
         error: 'APIリクエスト中にエラーが発生しました',
       });
-      console.error('永久利用権付与エラー:', err);
       toast.error('APIリクエスト中にエラーが発生しました');
     } finally {
       setIsLoading(false);
     }
   };
-
   return (
     <div className="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
       <h2 className="text-lg font-semibold mb-4">永久利用権の付与</h2>
-
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
           <label htmlFor="userId" className="block text-sm font-medium text-gray-700 mb-1">
@@ -98,7 +87,6 @@ export default function GrantPermanentAccess() {
             disabled={isLoading}
           />
         </div>
-
         <div>
           <label htmlFor="planType" className="block text-sm font-medium text-gray-700 mb-1">
             プラン種別
@@ -120,7 +108,6 @@ export default function GrantPermanentAccess() {
             付与するプラン種別を選択してください。個人プランは個人機能のみ、法人プランは法人機能も利用可能です。
           </p>
         </div>
-
         <div className="text-sm text-gray-600 bg-gray-50 p-3 rounded-md">
           <p className="mb-2">
             <strong>プラン説明:</strong>
@@ -140,7 +127,6 @@ export default function GrantPermanentAccess() {
             </li>
           </ul>
         </div>
-
         <Button type="submit" disabled={isLoading} className="w-full">
           {isLoading ? (
             <>
@@ -152,7 +138,6 @@ export default function GrantPermanentAccess() {
           )}
         </Button>
       </form>
-
       {result && (
         <div
           className={`mt-4 p-3 rounded-md ${result.success ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}

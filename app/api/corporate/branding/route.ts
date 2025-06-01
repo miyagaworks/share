@@ -1,21 +1,18 @@
 // app/api/corporate/branding/route.ts
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
 import { generateVirtualTenantData } from '@/lib/corporateAccess';
-
 // ブランディング設定の取得（GET）
 export async function GET() {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-
     // ユーザーのテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -27,16 +24,13 @@ export async function GET() {
         tenant: true,
       },
     });
-
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
-
     // 永久利用権ユーザーの場合、仮想テナントのブランディング情報を返す
     if (user.subscriptionStatus === 'permanent') {
-      console.log('永久利用権ユーザー用仮想ブランディング情報の生成:', user.id);
+      logger.debug('永久利用権ユーザー用仮想ブランディング情報の生成:', user.id);
       const virtualTenant = generateVirtualTenantData(user.id, user.name);
-
       return NextResponse.json({
         success: true,
         branding: {
@@ -50,14 +44,11 @@ export async function GET() {
         },
       });
     }
-
     // テナント情報を取得（管理者または一般メンバーのいずれか）
     const tenant = user.adminOfTenant || user.tenant;
-
     if (!tenant) {
       return NextResponse.json({ error: '法人テナント情報が見つかりません' }, { status: 404 });
     }
-
     return NextResponse.json({
       success: true,
       branding: {
@@ -71,20 +62,17 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('ブランディング情報取得エラー:', error);
+    logger.error('ブランディング情報取得エラー:', error);
     return NextResponse.json({ error: 'ブランディング情報の取得に失敗しました' }, { status: 500 });
   }
 }
-
 // app/api/corporate/branding/route.ts の PUT メソッド修正
 export async function PUT(req: Request) {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-
     // リクエストボディの取得
     const body = await req.json();
     const {
@@ -96,7 +84,6 @@ export async function PUT(req: Request) {
       headerText, // 追加
       textColor, // 追加
     } = body;
-
     // ユーザーとテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -106,15 +93,12 @@ export async function PUT(req: Request) {
         adminOfTenant: true,
       },
     });
-
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
-
     // 永久利用権ユーザーの場合、仮想テナントの設定を更新（ローカルストレージに保存）
     if (user.subscriptionStatus === 'permanent') {
-      console.log('永久利用権ユーザーの仮想ブランディング設定は更新できません');
-
+      logger.debug('永久利用権ユーザーの仮想ブランディング設定は更新できません');
       // 更新はサポートせず、成功レスポンスを返す
       return NextResponse.json({
         success: true,
@@ -131,7 +115,6 @@ export async function PUT(req: Request) {
         },
       });
     }
-
     // 管理者権限の確認
     if (!user.adminOfTenant) {
       return NextResponse.json(
@@ -139,7 +122,6 @@ export async function PUT(req: Request) {
         { status: 403 },
       );
     }
-
     // 更新データを準備（明示的な型を使用）
     type UpdateData = {
       primaryColor: string | null;
@@ -150,13 +132,11 @@ export async function PUT(req: Request) {
       headerText?: string | null; // 追加
       textColor?: string | null; // 追加
     };
-
     const updateData: UpdateData = {
       primaryColor,
       secondaryColor,
       logoUrl,
     };
-
     // 数値型に変換して保存 (値が存在する場合のみ)
     if (logoWidth !== undefined) {
       updateData.logoWidth = Number(logoWidth);
@@ -164,7 +144,6 @@ export async function PUT(req: Request) {
     if (logoHeight !== undefined) {
       updateData.logoHeight = Number(logoHeight);
     }
-
     // 追加したフィールドを設定
     if (headerText !== undefined) {
       updateData.headerText = headerText;
@@ -172,15 +151,12 @@ export async function PUT(req: Request) {
     if (textColor !== undefined) {
       updateData.textColor = textColor;
     }
-
-    console.log('テナント更新データ:', updateData);
-
+    logger.debug('テナント更新データ:', updateData);
     // テナント情報を更新
     const updatedTenant = await prisma.corporateTenant.update({
       where: { id: user.adminOfTenant.id },
       data: updateData,
     });
-
     // ブランディング更新後のアクティビティログ
     await logCorporateActivity({
       tenantId: user.adminOfTenant.id,
@@ -211,13 +187,12 @@ export async function PUT(req: Request) {
         },
       },
     });
-
     return NextResponse.json({
       success: true,
       tenant: updatedTenant,
     });
   } catch (error) {
-    console.error('ブランディング設定更新エラー:', error);
+    logger.error('ブランディング設定更新エラー:', error);
     return NextResponse.json({ error: 'ブランディング設定の更新に失敗しました' }, { status: 500 });
   }
 }

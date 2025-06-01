@@ -1,7 +1,7 @@
 // lib/utils/subscription.ts
+import { logger } from "@/lib/utils/logger";
 // ⚠️ 警告: このファイルはクライアントサイドでは使用できません
 // サーバーサイドでの使用は lib/utils/subscription-server.ts を推奨
-
 /**
  * クライアントサイドでの使用を防ぐガード関数
  */
@@ -14,7 +14,6 @@ function ensureServerSide(functionName: string) {
     );
   }
 }
-
 /**
  * トライアル終了メール送信（サーバーサイド専用）
  *
@@ -29,14 +28,12 @@ function ensureServerSide(functionName: string) {
  */
 export async function sendTrialEndingEmails() {
   ensureServerSide('sendTrialEndingEmails');
-
   // サーバー専用版にリダイレクト
   const { sendTrialEndingEmails: serverSendTrialEndingEmails } = await import(
     './subscription-server'
   );
   return serverSendTrialEndingEmails();
 }
-
 /**
  * 猶予期間チェック（サーバーサイド専用）
  *
@@ -44,14 +41,12 @@ export async function sendTrialEndingEmails() {
  */
 export async function checkExpiredGracePeriods() {
   ensureServerSide('checkExpiredGracePeriods');
-
   // サーバー専用版にリダイレクト
   const { checkExpiredGracePeriods: serverCheckExpiredGracePeriods } = await import(
     './subscription-server'
   );
   return serverCheckExpiredGracePeriods();
 }
-
 /**
  * @deprecated このファイルは非推奨です
  *
@@ -63,5 +58,4 @@ const subscriptionUtils = {
   sendTrialEndingEmails,
   checkExpiredGracePeriods,
 };
-
 export default subscriptionUtils;

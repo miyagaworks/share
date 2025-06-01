@@ -1,9 +1,7 @@
 // components/shared/ErrorMessage.tsx
 import React from 'react';
 import { AlertCircle, Info, RefreshCw } from 'lucide-react';
-
 type ErrorSeverity = 'error' | 'warning' | 'info';
-
 interface ErrorMessageProps {
   message: string;
   details?: string;
@@ -11,7 +9,6 @@ interface ErrorMessageProps {
   onRetry?: () => void;
   className?: string;
 }
-
 export function ErrorMessage({
   message,
   details,
@@ -40,9 +37,7 @@ export function ErrorMessage({
       text: 'text-blue-700',
     },
   };
-
   const style = severityStyles[severity];
-
   return (
     <div className={`${style.bg} ${style.border} border rounded-md p-3 ${className}`}>
       <div className="flex justify-between items-start">
@@ -58,7 +53,6 @@ export function ErrorMessage({
             )}
           </div>
         </div>
-
         {onRetry && (
           <button
             onClick={onRetry}

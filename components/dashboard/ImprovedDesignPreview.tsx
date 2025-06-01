@@ -1,26 +1,21 @@
 // components/dashboard/ImprovedDesignPreview.tsx (最終修正版)
 'use client';
-
 import { useState, useEffect, useMemo } from 'react';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
 import type { User } from '@prisma/client';
 import { motion } from 'framer-motion';
-
 // 型拡張
 interface ExtendedUser extends User {
   snsIconColor: string | null;
   headerText: string | null;
   textColor: string | null;
 }
-
 interface ImprovedDesignPreviewProps {
   user: User;
 }
-
 export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
   const extendedUser = user as ExtendedUser;
-
   // 🚀 useMemoで値を安定化
   const previewData = useMemo(() => {
     const data = {
@@ -30,23 +25,17 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
       textColor: extendedUser.textColor || '#FFFFFF',
       timestamp: Date.now(), // 変更検出用
     };
-
-    console.log('🎨 [Preview] データ更新:', data);
     return data;
   }, [user.mainColor, extendedUser.snsIconColor, extendedUser.headerText, extendedUser.textColor]);
-
   // 🚀 強制更新用のキー
   const [updateKey, setUpdateKey] = useState(0);
-
   // 🚀 プレビューデータが変更されたら強制更新
   useEffect(() => {
     setUpdateKey((prev) => {
       const newKey = prev + 1;
-      console.log('🎨 [Preview] 強制更新:', newKey, previewData);
       return newKey;
     });
   }, [previewData]);
-
   // テスト用のダミーデータ
   const dummySnsLinks = [
     { platform: 'line', name: 'LINE' },
@@ -54,7 +43,6 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
     { platform: 'x', name: 'X' },
     { platform: 'instagram', name: 'Instagram' },
   ];
-
   return (
     <div className="flex justify-center w-full">
       <motion.div
@@ -83,14 +71,12 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
             {previewData.headerText}
           </p>
         </div>
-
         <div className="p-5">
           {/* ユーザー名 */}
           <div className="text-center mt-2 mb-6">
             <h3 className="text-lg font-bold">{user.name || 'Your Name'}</h3>
             {user.nameEn && <p className="text-sm text-muted-foreground">{user.nameEn}</p>}
           </div>
-
           {/* SNSリンク（サンプル） */}
           <div className="grid grid-cols-4 gap-3">
             {dummySnsLinks.map((link, index) => (
@@ -116,7 +102,6 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
               </motion.div>
             ))}
           </div>
-
           {/* アクションボタン（プロフィール情報、会社HP、メール、電話） */}
           <div className="mt-6">
             <div className="grid grid-cols-4 gap-3">
@@ -145,7 +130,6 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
                 </div>
                 <span className="text-xs text-gray-900">自己紹介</span>
               </motion.div>
-
               {/* 会社HPボタン */}
               <motion.div
                 className="flex flex-col items-center"
@@ -172,7 +156,6 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
                 </div>
                 <span className="text-xs text-gray-900">会社HP</span>
               </motion.div>
-
               {/* メールボタン */}
               <motion.div
                 className="flex flex-col items-center"
@@ -198,7 +181,6 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
                 </div>
                 <span className="text-xs text-gray-900">メール</span>
               </motion.div>
-
               {/* 電話ボタン */}
               <motion.div
                 className="flex flex-col items-center"
@@ -225,7 +207,6 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
               </motion.div>
             </div>
           </div>
-
           {/* 主要アクションボタン */}
           <div className="mt-6 space-y-3">
             <motion.button
@@ -281,7 +262,6 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
               連絡先に追加
             </motion.button>
           </div>
-
           {/* フッター */}
           <div className="mt-6 text-center">
             <a href="#" className="text-sm text-blue-600">

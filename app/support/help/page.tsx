@@ -2,12 +2,10 @@
 import Link from 'next/link';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
-
 export const metadata: Metadata = {
   title: 'ヘルプセンター | Share',
   description: 'Shareサービスのヘルプセンターです。よくある質問や使い方のガイドを提供しています。',
 };
-
 export default function HelpCenterPage() {
   return (
     <PageLayout
@@ -43,7 +41,6 @@ export default function HelpCenterPage() {
             </div>
           </div>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-4">よく見られるヘルプ</h2>
           <ul className="space-y-2">
@@ -73,7 +70,6 @@ export default function HelpCenterPage() {
             </li>
           </ul>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-4">カテゴリ別ヘルプ</h2>
           <div className="grid md:grid-cols-3 gap-4">

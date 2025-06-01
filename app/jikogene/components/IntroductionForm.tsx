@@ -1,6 +1,5 @@
 // app/jikogene/components/IntroductionForm.tsx
 'use client';
-
 import { useState, useCallback, useEffect, useRef } from 'react';
 import StepIndicator from './StepIndicator';
 import BasicInfo from './FormSteps/BasicInfo';
@@ -14,7 +13,6 @@ import { FormData } from '../types';
 import { useIntroductionForm } from '../hooks/useIntroductionForm';
 import { memo } from 'react';
 import { toast } from 'react-hot-toast';
-
 interface IntroductionFormProps {
   onSubmit: (data: FormData) => void;
   initialUserInfo?: {
@@ -25,7 +23,6 @@ interface IntroductionFormProps {
     currentBio?: string;
   };
 }
-
 /**
  * 自己紹介フォームメインコンポーネント
  */
@@ -36,141 +33,102 @@ const IntroductionForm = memo(function IntroductionForm({
   const [currentStep, setCurrentStep] = useState(0);
   const { formData, fieldErrors, updateBasicInfo, updateFormData, isStepValid } =
     useIntroductionForm();
-
   // formRef を使用してフォーム要素にアクセス
   const formRef = useRef<HTMLFormElement>(null);
-
   // 現在のステップの検証状態
   const [isCurrentStepValid, setIsCurrentStepValid] = useState(false);
   // 送信中の状態
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // コンポーネントのマウント時に実行するロジック
   useEffect(() => {
-    console.log('IntroductionForm mounted, initial step:', currentStep);
-
     // ステップの検証状態を初期化
     const valid = isStepValid(currentStep);
     setIsCurrentStepValid(valid);
-    console.log(`Step ${currentStep} initial validation state:`, valid);
   }, [currentStep, isStepValid]);
-
   // 現在のステップの検証状態を更新
   useEffect(() => {
     const valid = isStepValid(currentStep);
     setIsCurrentStepValid(valid);
-    console.log(`Step ${currentStep} validation state updated:`, valid);
   }, [currentStep, formData, isStepValid]);
-
   // 次のステップへ進む - 厳格な制御を追加
   const nextStep = useCallback(
     (e?: React.MouseEvent) => {
       // イベントがある場合は、デフォルトの送信動作を明示的に防止
       if (e) {
         e.preventDefault();
-        console.log('Prevented default form submission in nextStep');
       }
-
       // ステップの上限をチェック
       if (currentStep >= formSteps.length - 1) {
-        console.log('Already at last step, cannot proceed further');
         return;
       }
-
       // 現在のステップの検証
       const valid = isStepValid(currentStep);
       if (!valid) {
-        console.log(`Step ${currentStep} validation failed`);
         toast.error('必須項目を入力してください');
         return;
       }
-
       // 次のステップに進む
       const nextStepIndex = currentStep + 1;
-      console.log(`Moving from step ${currentStep} to ${nextStepIndex}`);
-
       setCurrentStep(nextStepIndex);
       window.scrollTo(0, 0);
     },
     [currentStep, isStepValid],
   );
-
   // 前のステップに戻る
   const prevStep = useCallback(
     (e?: React.MouseEvent) => {
       // イベントがある場合は、デフォルトの送信動作を明示的に防止
       if (e) {
         e.preventDefault();
-        console.log('Prevented default form submission in prevStep');
       }
-
       if (currentStep <= 0) {
-        console.log('Already at first step, cannot go back');
         return;
       }
-
       const prevStepIndex = currentStep - 1;
-      console.log(`Moving back from step ${currentStep} to ${prevStepIndex}`);
-
       setCurrentStep(prevStepIndex);
       window.scrollTo(0, 0);
     },
     [currentStep],
   );
-
   // フォーム送信 - 最後のステップでのみ発生させる
   const handleSubmit = useCallback(
     async (e: React.FormEvent) => {
       e.preventDefault();
-      console.log('Form submission triggered, current step:', currentStep);
-
       // 送信中の場合は処理を行わない
       if (isSubmitting) {
-        console.log('Form is already submitting, ignoring this request');
         return;
       }
-
       // 最後のステップであることを確認
       if (currentStep === formSteps.length - 1) {
-        console.log('At final step, checking validation before submission');
-
         // 最終ステップの検証
         if (!isStepValid(currentStep)) {
-          console.log('Final step validation failed');
           toast.error('出力オプションの必須項目を入力してください');
           return;
         }
-
         // すべてのステップが有効かどうかを確認
         for (let i = 0; i < formSteps.length; i++) {
           if (!isStepValid(i)) {
-            console.log(`Validation failed at step ${i}`);
             toast.error(`ステップ ${i + 1} に未入力の必須項目があります`);
             // 問題のあるステップに移動
             setCurrentStep(i);
             return;
           }
         }
-
         try {
-          console.log('All steps validated, proceeding with form submission');
           setIsSubmitting(true);
           await onSubmit(formData);
         } catch (error) {
-          console.error('Form submission error:', error);
           toast.error('送信中にエラーが発生しました');
         } finally {
           setIsSubmitting(false);
         }
       } else {
         // 最終ステップでなければ次へ進む
-        console.log('Not at final step, moving to next step instead of submitting');
         nextStep();
       }
     },
     [currentStep, formData, isStepValid, isSubmitting, nextStep, onSubmit],
   );
-
   // 各ステップの見出しとアイコン
   const stepHeaders = [
     { title: '基本情報', icon: formSteps[0].icon },
@@ -179,7 +137,6 @@ const IntroductionForm = memo(function IntroductionForm({
     { title: 'キーワード', icon: formSteps[3].icon },
     { title: '出力オプション', icon: formSteps[4].icon },
   ];
-
   // 現在のステップコンポーネントをレンダリング
   const renderCurrentStep = () => {
     switch (currentStep) {
@@ -232,11 +189,9 @@ const IntroductionForm = memo(function IntroductionForm({
         return <div>不明なステップです</div>;
     }
   };
-
   // 「次へ」と「送信」ボタンのレンダリング
   const renderNextOrSubmitButton = () => {
     const isLastStep = currentStep === formSteps.length - 1;
-
     if (isLastStep) {
       return (
         <Button
@@ -261,7 +216,6 @@ const IntroductionForm = memo(function IntroductionForm({
         </Button>
       );
     }
-
     return (
       <Button
         type="button" // 最終ステップでない場合は明示的にtypeをbuttonに設定
@@ -286,12 +240,10 @@ const IntroductionForm = memo(function IntroductionForm({
       </Button>
     );
   };
-
   return (
     <div className="max-w-3xl mx-auto">
       {/* ステップインジケーター */}
       <StepIndicator currentStep={currentStep} steps={formSteps} />
-
       <form onSubmit={handleSubmit} ref={formRef}>
         {/* 現在のステップのタイトルとアイコンを表示 */}
         <div className="mb-6">
@@ -300,10 +252,8 @@ const IntroductionForm = memo(function IntroductionForm({
             {stepHeaders[currentStep].title}
           </h2>
         </div>
-
         {/* 現在のステップコンポーネント */}
         {renderCurrentStep()}
-
         {/* ナビゲーションボタン */}
         <div className="flex justify-between mt-8">
           <Button
@@ -327,11 +277,9 @@ const IntroductionForm = memo(function IntroductionForm({
             </svg>
             前へ
           </Button>
-
           {renderNextOrSubmitButton()}
         </div>
       </form>
-
       {/* ステップ数表示 */}
       <div className="mt-6 text-center text-gray-500 text-sm">
         ステップ {currentStep + 1} / {formSteps.length}
@@ -339,5 +287,4 @@ const IntroductionForm = memo(function IntroductionForm({
     </div>
   );
 });
-
 export default IntroductionForm;

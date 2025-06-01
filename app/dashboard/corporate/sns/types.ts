@@ -1,5 +1,4 @@
 // app/dashboard/corporate/sns/types.ts
-
 export interface CorporateSnsLink {
   id: string;
   tenantId: string;

@@ -1,6 +1,5 @@
 // app/support/contact/ContactPageContent.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { PageLayout } from '@/components/layout/PageLayout';
@@ -9,7 +8,6 @@ import { Input } from '@/components/ui/Input';
 import { toast } from 'react-hot-toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import Link from 'next/link';
-
 // お問い合わせの種類
 type ContactType =
   | 'account'
@@ -19,10 +17,8 @@ type ContactType =
   | 'feedback'
   | 'corporate'
   | 'other';
-
 export default function ContactPageContent() {
   const searchParams = useSearchParams();
-
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
   const [companyName, setCompanyName] = useState('');
@@ -33,47 +29,38 @@ export default function ContactPageContent() {
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   // URLパラメータからの初期値設定
   useEffect(() => {
     const subjectParam = searchParams.get('subject');
     const planParam = searchParams.get('plan');
-
     if (subjectParam) {
       setSubject(subjectParam);
     }
-
     // 法人プラン申し込みの場合
     if (subjectParam === '法人プラン申し込み') {
       setContactType('corporate');
-
       // プランパラメータがある場合、メッセージに自動追加
       if (planParam) {
         const planName = planParam === 'business' ? 'スタータープラン (¥3,000/月)' : planParam;
-
         setMessage(
           `法人プラン「${planName}」について詳細を知りたいです。\n\n会社の規模やご要望を記載いただくとスムーズです。`,
         );
       }
     }
   }, [searchParams]);
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
-
     try {
       // フォームのバリデーション
       if (!name || !email || !subject || !message || !privacyAgreed) {
         throw new Error('すべての必須項目を入力してください');
       }
-
       // 法人プランの場合は会社名必須
       if (contactType === 'corporate' && !companyName) {
         throw new Error('法人プランのお問い合わせには会社名が必須です');
       }
-
       // お問い合わせ送信処理
       const response = await fetch('/api/support/contact', {
         method: 'POST',
@@ -89,17 +76,13 @@ export default function ContactPageContent() {
           message,
         }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.message || 'お問い合わせの送信に失敗しました');
       }
-
       // 成功
       setSuccess(true);
       toast.success('お問い合わせが送信されました');
-
       // フォームをリセット（法人プラン申し込みの場合は残す）
       if (contactType !== 'corporate') {
         setName('');
@@ -120,7 +103,6 @@ export default function ContactPageContent() {
       setLoading(false);
     }
   };
-
   const resetForm = () => {
     setSuccess(false);
     setError(null);
@@ -133,7 +115,6 @@ export default function ContactPageContent() {
     }
     setPrivacyAgreed(false);
   };
-
   return (
     <PageLayout
       title="お問い合わせ"
@@ -146,7 +127,6 @@ export default function ContactPageContent() {
         <p className="mb-6 text-justify">
           Shareに関するお問い合わせは、以下のフォームからお願いいたします。通常2営業日以内にご返信いたします。
         </p>
-
         {success && contactType === 'corporate' ? (
           <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
             <h3 className="text-lg font-medium text-green-800 mb-2">
@@ -184,7 +164,6 @@ export default function ContactPageContent() {
                 {error}
               </div>
             )}
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
               <div>
                 <label htmlFor="name" className="block text-sm font-medium text-gray-700 mb-1">
@@ -198,7 +177,6 @@ export default function ContactPageContent() {
                   required
                 />
               </div>
-
               <div>
                 <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">
                   メールアドレス <span className="text-red-500">*</span>
@@ -212,7 +190,6 @@ export default function ContactPageContent() {
                 />
               </div>
             </div>
-
             <div>
               <label htmlFor="category" className="block text-sm font-medium text-gray-700 mb-1">
                 お問い合わせカテゴリ <span className="text-red-500">*</span>
@@ -233,7 +210,6 @@ export default function ContactPageContent() {
                 <option value="other">その他</option>
               </select>
             </div>
-
             {/* 法人プランの場合のみ会社名フィールドを表示 */}
             {contactType === 'corporate' && (
               <div>
@@ -252,7 +228,6 @@ export default function ContactPageContent() {
                 />
               </div>
             )}
-
             <div>
               <label htmlFor="subject" className="block text-sm font-medium text-gray-700 mb-1">
                 件名 <span className="text-red-500">*</span>
@@ -265,7 +240,6 @@ export default function ContactPageContent() {
                 required
               />
             </div>
-
             <div>
               <label htmlFor="message" className="block text-sm font-medium text-gray-700 mb-1">
                 お問い合わせ内容 <span className="text-red-500">*</span>
@@ -279,7 +253,6 @@ export default function ContactPageContent() {
                 className="w-full px-4 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-justify"
               ></textarea>
             </div>
-
             {/* 法人プランの場合の追加説明 */}
             {contactType === 'corporate' && (
               <div className="bg-blue-50 border border-blue-200 rounded-md p-4">
@@ -291,7 +264,6 @@ export default function ContactPageContent() {
                 </p>
               </div>
             )}
-
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -314,7 +286,6 @@ export default function ContactPageContent() {
                 に同意します
               </label>
             </div>
-
             <div>
               <Button
                 type="submit"
@@ -332,21 +303,17 @@ export default function ContactPageContent() {
             </div>
           </form>
         )}
-
         <div className="mt-8 pt-6 border-t border-gray-200">
           <h2 className="text-xl font-semibold mb-4">その他のお問い合わせ方法</h2>
-
           <div className="space-y-4">
             <div>
               <h3 className="font-medium">メールでのお問い合わせ</h3>
               <p className="mt-1">support@sns-share.com</p>
             </div>
-
             <div>
               <h3 className="font-medium">お電話でのお問い合わせ</h3>
               <p className="mt-1 text-justify">082-208-3976（平日10:00〜18:00 土日祝日休業）</p>
             </div>
-
             <div>
               <h3 className="font-medium">郵送でのお問い合わせ</h3>
               <p className="mt-1 text-justify">

@@ -1,12 +1,10 @@
 // components/corporate/SuspendedBanner.tsx
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter, usePathname } from 'next/navigation';
 import { HiExclamation } from 'react-icons/hi';
 import { Button } from '@/components/ui/Button';
-
 // 名前付きエクスポートに変更
 export function SuspendedBanner() {
   const { data: session } = useSession();
@@ -14,32 +12,25 @@ export function SuspendedBanner() {
   const pathname = usePathname();
   const [tenantSuspended, setTenantSuspended] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
-
   useEffect(() => {
     // テナント情報をフェッチしてステータスを確認
     const checkTenantStatus = async () => {
       if (!session?.user?.id) return;
-
       try {
         const response = await fetch('/api/corporate/tenant');
         if (!response.ok) return;
-
         const data = await response.json();
         setTenantSuspended(data.tenant.accountStatus === 'suspended');
         setIsAdmin(data.userRole === 'admin');
       } catch (error) {
-        console.error('テナントステータス取得エラー:', error);
       }
     };
-
     checkTenantStatus();
   }, [session]);
-
   // 一時停止中でない場合またはすでに設定ページにいる場合は何も表示しない
   if (!tenantSuspended || pathname === '/dashboard/corporate/settings') {
     return null;
   }
-
   return (
     <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
       <div className="flex items-start">

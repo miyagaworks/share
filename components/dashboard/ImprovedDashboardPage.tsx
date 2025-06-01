@@ -1,6 +1,5 @@
 // components/dashboard/ImprovedDashboardPage.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -22,7 +21,6 @@ import {
   HiOfficeBuilding,
   HiDeviceMobile,
 } from 'react-icons/hi';
-
 // QRコードデータの型定義
 interface QrCodeData {
   id: string;
@@ -32,7 +30,6 @@ interface QrCodeData {
   updatedAt: string;
   // 他の必要なプロパティも追加
 }
-
 // ユーザーデータの型定義
 interface UserWithProfile {
   id: string;
@@ -44,7 +41,6 @@ interface UserWithProfile {
     isPublic: boolean;
   } | null;
 }
-
 export default function ImprovedDashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -53,7 +49,6 @@ export default function ImprovedDashboardPage() {
   const [snsCount, setSnsCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [qrCodeSlug, setQrCodeSlug] = useState<string | null>(null);
-
   // APIからデータを取得する関数
   const fetchData = async () => {
     try {
@@ -63,21 +58,18 @@ export default function ImprovedDashboardPage() {
         throw new Error('プロフィール情報の取得に失敗しました');
       }
       const profileData = await profileResponse.json();
-
       // リンク情報の取得
       const linksResponse = await fetch('/api/links');
       if (!linksResponse.ok) {
         throw new Error('リンク情報の取得に失敗しました');
       }
       const linksData = await linksResponse.json();
-
       // QRコード情報の取得
       const qrCodeResponse = await fetch('/api/qrcode');
       let qrCodeData: { qrCodes: QrCodeData[] } = { qrCodes: [] };
       if (qrCodeResponse.ok) {
         qrCodeData = await qrCodeResponse.json();
       }
-
       return {
         user: profileData.user,
         snsLinks: linksData.snsLinks || [],
@@ -85,29 +77,21 @@ export default function ImprovedDashboardPage() {
         qrCodes: qrCodeData.qrCodes || [],
       };
     } catch (error) {
-      console.error('データ取得エラー:', error);
       throw error;
     }
   };
-
   // 初期データ取得
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session) {
-      console.log('セッションなし、サインインページへリダイレクト');
       router.push('/auth/signin');
       return;
     }
-
-    console.log('セッション情報:', session);
-
     const loadData = async () => {
       try {
         const data = await fetchData();
         setUserData(data.user);
         setSnsCount(data.snsLinks.length);
-
         // 最新のQRコードの取得（存在する場合）
         if (data.qrCodes && data.qrCodes.length > 0) {
           // 型アサーションを追加して型エラーを回避
@@ -119,16 +103,13 @@ export default function ImprovedDashboardPage() {
           setQrCodeSlug(latestQrCode.slug);
         }
       } catch (error) {
-        console.error('データロードエラー:', error);
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     loadData();
   }, [session, status, router]);
-
   // アニメーション設定
   const pageVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -141,7 +122,6 @@ export default function ImprovedDashboardPage() {
       },
     },
   };
-
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -149,7 +129,6 @@ export default function ImprovedDashboardPage() {
       y: 0,
     },
   };
-
   const staggerContainerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -159,7 +138,6 @@ export default function ImprovedDashboardPage() {
       },
     },
   };
-
   // ローディング表示
   if (isLoading) {
     return (
@@ -180,7 +158,6 @@ export default function ImprovedDashboardPage() {
       </div>
     );
   }
-
   // エラー表示
   if (error || !userData) {
     return (
@@ -206,17 +183,14 @@ export default function ImprovedDashboardPage() {
       </div>
     );
   }
-
   // ボタンのスタイルを統一するためのクラス定義
   const primaryButtonClass =
     'flex items-center justify-center w-full py-2.5 px-4 bg-blue-600 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors';
   const secondaryButtonClass =
     'flex items-center justify-center w-full py-2.5 px-4 bg-white border border-gray-300 rounded-md text-sm font-medium text-gray-700 hover:bg-blue-50 hover:text-blue-700 hover:border-blue-700 transition-colors';
   const buttonGroupClass = 'space-y-1';
-
   // プロフィールURLの取得
   const profileUrl = userData.profile ? `/${userData.profile.slug}` : null;
-
   return (
     <motion.div initial="hidden" animate="visible" variants={pageVariants} className="space-y-6">
       <div className="flex items-center mb-6">
@@ -226,14 +200,12 @@ export default function ImprovedDashboardPage() {
           <p className="text-muted-foreground">あなたのプロフィールの概要と管理</p>
         </div>
       </div>
-
       <motion.div
         variants={staggerContainerVariants}
         className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
       >
         {/* プロフィールカードと他のコンポーネント... */}
         {/* 既存のコンポーネントをここにコピー */}
-
         {/* プロフィールカード */}
         <motion.div
           variants={cardVariants}
@@ -287,7 +259,6 @@ export default function ImprovedDashboardPage() {
             </Link>
           </div>
         </motion.div>
-
         {/* SNSリンクカード */}
         <motion.div
           variants={cardVariants}
@@ -315,7 +286,6 @@ export default function ImprovedDashboardPage() {
             </Link>
           </div>
         </motion.div>
-
         {/* 公開プロフィールカード */}
         <motion.div
           variants={cardVariants}
@@ -365,7 +335,6 @@ export default function ImprovedDashboardPage() {
             )}
           </div>
         </motion.div>
-
         {/* 公開QRコードカード */}
         <motion.div
           variants={cardVariants}
@@ -437,7 +406,6 @@ export default function ImprovedDashboardPage() {
             )}
           </div>
         </motion.div>
-
         {/* クイックアクションカード */}
         <motion.div
           variants={cardVariants}
@@ -458,14 +426,12 @@ export default function ImprovedDashboardPage() {
                   デザインをカスタマイズする
                 </button>
               </Link>
-
               <Link href="/dashboard/links" className="mb-1">
                 <button className={secondaryButtonClass}>
                   <HiPlus className="mr-2 h-4 w-4" />
                   SNSを追加する
                 </button>
               </Link>
-
               <Link href="/dashboard/share">
                 <button className={secondaryButtonClass}>
                   <HiQrcode className="mr-2 h-4 w-4" />
@@ -475,7 +441,6 @@ export default function ImprovedDashboardPage() {
             </div>
           </div>
         </motion.div>
-
         {/* ご利用プランカード */}
         <motion.div
           variants={cardVariants}
@@ -518,7 +483,6 @@ export default function ImprovedDashboardPage() {
           </div>
         </motion.div>
       </motion.div>
-
       {/* 法人プランユーザー向けのカード */}
       {corporateAccessState.hasAccess === true && (
         <motion.div

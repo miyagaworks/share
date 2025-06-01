@@ -1,25 +1,21 @@
 // app/jikogene/components/Result.tsx
 'use client';
-
 import { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent, CardFooter } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { memo } from 'react';
-
 interface ResultProps {
   text: string;
   onReset: () => void;
   warning?: string;
 }
-
 /**
  * 生成された自己紹介文を表示するコンポーネント
  * ボタンの縦幅を調整して、スマホでも見やすく
  */
 const Result = memo(function Result({ text, onReset, warning }: ResultProps) {
   const [copied, setCopied] = useState(false);
-
   const handleCopy = async () => {
     try {
       await navigator.clipboard.writeText(text);
@@ -28,17 +24,15 @@ const Result = memo(function Result({ text, onReset, warning }: ResultProps) {
       setTimeout(() => setCopied(false), 2000);
     } catch (error) {
       toast.error('コピーに失敗しました');
-      console.error('クリップボードへのコピーに失敗:', error);
+      // クリップボードコピーエラーは既にtoastで通知済み
     }
   };
-
   return (
     <div className="max-w-3xl mx-auto animate-fadeIn">
       <Card>
         <CardHeader>
           <CardTitle className="text-xl text-center">自己紹介文が完成しました！</CardTitle>
         </CardHeader>
-
         {/* 警告メッセージがある場合に表示 */}
         {warning && (
           <div className="mx-6 mb-2 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
@@ -63,13 +57,11 @@ const Result = memo(function Result({ text, onReset, warning }: ResultProps) {
             </div>
           </div>
         )}
-
         <CardContent>
           <div className="bg-gray-50 p-6 rounded-md border border-gray-200 mb-6">
             <p className="whitespace-pre-line text-gray-800 text-justify">{text}</p>
           </div>
         </CardContent>
-
         <CardFooter className="flex flex-col sm:flex-row justify-center space-y-4 sm:space-y-0 sm:space-x-4 py-6">
           <Button
             onClick={handleCopy}
@@ -86,7 +78,6 @@ const Result = memo(function Result({ text, onReset, warning }: ResultProps) {
             </svg>
             {copied ? 'コピーしました！' : 'テキストをコピー'}
           </Button>
-
           <Button
             variant="outline"
             onClick={onReset}
@@ -111,5 +102,4 @@ const Result = memo(function Result({ text, onReset, warning }: ResultProps) {
     </div>
   );
 });
-
 export default Result;

@@ -1,13 +1,11 @@
 // app/api/admin/grant-permanent/route.ts
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma, disconnectPrisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
 import { isAdminUser } from '@/lib/corporateAccess';
 import { PermanentPlanType, PLAN_TYPE_DISPLAY_NAMES } from '@/lib/corporateAccess';
-
 export async function POST(request: Request) {
   try {
     // 管理者認証チェック
@@ -15,21 +13,17 @@ export async function POST(request: Request) {
     if (!session || !session.user?.id) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
-
     // 管理者かどうかを確認（新しいAPIを使用）
     const isAdmin = await isAdminUser(session.user.id);
     if (!isAdmin) {
       return NextResponse.json({ success: false, error: 'Not authorized' }, { status: 403 });
     }
-
     // リクエストボディからユーザーIDとプラン種別を取得
     const body = await request.json();
     const { userId, planType = PermanentPlanType.PERSONAL } = body;
-
     if (!userId) {
       return NextResponse.json({ success: false, error: 'User ID is required' }, { status: 400 });
     }
-
     // プラン種別の検証
     if (planType && !Object.values(PermanentPlanType).includes(planType)) {
       return NextResponse.json(
@@ -41,7 +35,6 @@ export async function POST(request: Request) {
         { status: 400 },
       );
     }
-
     // ユーザーが存在するか確認
     const user = await prisma.user.findUnique({
       where: { id: userId },
@@ -52,11 +45,9 @@ export async function POST(request: Request) {
         metadata: true, // メタデータ情報も取得
       },
     });
-
     if (!user) {
       return NextResponse.json({ success: false, error: 'User not found' }, { status: 404 });
     }
-
     // トランザクションで処理を実行
     const result = await prisma.$transaction(async (tx) => {
       // 1. ユーザーに永久利用権を付与
@@ -66,10 +57,8 @@ export async function POST(request: Request) {
           subscriptionStatus: 'permanent',
         },
       });
-
       // 2. ユーザーのメタデータにプラン種別を保存
       let metadata = null;
-
       if (user.metadata) {
         // 既存のメタデータを更新
         metadata = await tx.userMetadata.update({
@@ -87,19 +76,15 @@ export async function POST(request: Request) {
           },
         });
       }
-
       logger.info('永久利用権付与', { userId, planType });
-
       // 3. 仮想テナントがまだ存在しない場合は作成
       // プラン種別が法人向けの場合のみテナントを作成
       let tenant = null;
-
       const isCorporatePlan = [
         PermanentPlanType.BUSINESS,
         PermanentPlanType.BUSINESS_PLUS,
         PermanentPlanType.ENTERPRISE,
       ].includes(planType as PermanentPlanType);
-
       // 法人向けプランの場合のみテナント作成処理
       if (isCorporatePlan) {
         // 既存のテナント関連付けがあるかチェック
@@ -115,7 +100,6 @@ export async function POST(request: Request) {
           } else if (planType === PermanentPlanType.ENTERPRISE) {
             maxUsers = 50;
           }
-
           // 仮想テナントを新規作成
           tenant = await tx.corporateTenant.create({
             data: {
@@ -133,9 +117,7 @@ export async function POST(request: Request) {
               },
             },
           });
-
           logger.info('新規テナント作成', { tenantId: tenant.id, planType, maxUsers });
-
           // ユーザーを作成したテナントのメンバーにする
           await tx.user.update({
             where: { id: userId },
@@ -145,18 +127,15 @@ export async function POST(request: Request) {
             },
           });
         }
-
         // エラー回避：tenant が null の場合はここで処理を終了
         if (!tenant) {
           logger.error('テナント作成失敗', { userId, planType });
           return { user: updatedUser, tenant: null, metadata };
         }
-
         // 3. デフォルトのSNSリンク設定を作成（まだ存在しない場合）
         const existingSnsLinks = await tx.corporateSnsLink.findMany({
           where: { tenantId: tenant.id },
         });
-
         // デフォルトSNSがまだない場合は作成
         if (existingSnsLinks.length === 0) {
           const defaultSnsLinks = [
@@ -164,7 +143,6 @@ export async function POST(request: Request) {
             { platform: 'instagram', url: 'https://www.instagram.com/', displayOrder: 2 },
             { platform: 'youtube', url: 'https://www.youtube.com/c/', displayOrder: 3 },
           ];
-
           for (const snsLink of defaultSnsLinks) {
             await tx.corporateSnsLink.create({
               data: {
@@ -173,11 +151,9 @@ export async function POST(request: Request) {
               },
             });
           }
-
           logger.info('デフォルトSNSリンク作成', { tenantId: tenant.id });
         }
       }
-
       // 4. サブスクリプション情報を更新（存在する場合）
       let subscription = null;
       if (user.subscription) {
@@ -193,7 +169,6 @@ export async function POST(request: Request) {
         const now = new Date();
         const endDate = new Date();
         endDate.setFullYear(endDate.getFullYear() + 100); // 100年後（実質永久）
-
         subscription = await tx.subscription.create({
           data: {
             userId,
@@ -208,10 +183,8 @@ export async function POST(request: Request) {
           },
         });
       }
-
       return { user: updatedUser, tenant, metadata, subscription };
     });
-
     // 成功レスポンス
     return NextResponse.json({
       success: true,
@@ -234,7 +207,7 @@ export async function POST(request: Request) {
         : null,
     });
   } catch (error) {
-    console.error('永久利用権付与エラー:', error);
+    logger.error('永久利用権付与エラー:', error);
     return NextResponse.json(
       {
         success: false,

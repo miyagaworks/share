@@ -1,11 +1,9 @@
 // app/jikogene/hooks/useIntroductionForm.ts
 'use client';
-
 import { useState, useCallback } from 'react';
 import { FormData, FormDataValue, BasicInfo } from '../types';
 import { validateField } from '@/lib/jikogene/validator';
 import { toast } from 'react-hot-toast';
-
 // フォームの初期値
 const initialFormData: FormData = {
   basicInfo: {
@@ -20,7 +18,6 @@ const initialFormData: FormData = {
   purpose: 'general',
   length: 'medium',
 };
-
 /**
  * 自己紹介フォームの状態と検証ロジックを管理するカスタムフック
  * ステップ間の遷移問題を修正するための強化版
@@ -28,10 +25,8 @@ const initialFormData: FormData = {
 export function useIntroductionForm() {
   // フォームデータの状態
   const [formData, setFormData] = useState<FormData>(initialFormData);
-
   // フィールドエラーの状態
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
-
   // 基本情報の更新
   const updateBasicInfo = useCallback((field: keyof BasicInfo, value: string) => {
     setFormData((prev) => ({
@@ -41,7 +36,6 @@ export function useIntroductionForm() {
         [field]: value,
       },
     }));
-
     // エラー状態を更新
     const error = validateField(field, value);
     if (error) {
@@ -54,7 +48,6 @@ export function useIntroductionForm() {
       });
     }
   }, []);
-
   // フォームデータの更新（汎用）
   const updateFormData = useCallback(
     <K extends keyof FormData>(section: K, value: FormDataValue<K>) => {
@@ -62,7 +55,6 @@ export function useIntroductionForm() {
         ...prev,
         [section]: value,
       }));
-
       // エラー状態を更新
       const error = validateField(section as string, value);
       if (error) {
@@ -77,7 +69,6 @@ export function useIntroductionForm() {
     },
     [],
   );
-
   // 現在のステップが有効かどうかを確認
   const isStepValid = useCallback(
     (step: number) => {
@@ -98,32 +89,26 @@ export function useIntroductionForm() {
     },
     [formData],
   );
-
   // 全てのステップが有効かどうかを確認
   const isFormValid = useCallback(() => {
     // 基本情報
     if (!formData.basicInfo.ageGroup || !formData.basicInfo.occupation) {
       return false;
     }
-
     // 趣味・興味
     if (formData.hobbies.length === 0) {
       return false;
     }
-
     // 性格・特性
     if (formData.personalityTraits.length === 0) {
       return false;
     }
-
     // 出力オプション
     if (!formData.purpose || !formData.length) {
       return false;
     }
-
     return true;
   }, [formData]);
-
   // 特定のステップに移動する前に全ステップの検証
   const validateSteps = useCallback(
     (targetStep: number) => {
@@ -138,7 +123,6 @@ export function useIntroductionForm() {
     },
     [isStepValid],
   );
-
   return {
     formData,
     fieldErrors,

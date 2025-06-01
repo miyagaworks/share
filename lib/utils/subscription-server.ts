@@ -1,11 +1,11 @@
 // lib/utils/subscription-server.ts
+import { logger } from "@/lib/utils/logger";
 // サーバーサイド専用のサブスクリプション機能
 import { prisma } from '@/lib/prisma';
 import { addDays } from 'date-fns';
 import { sendEmail } from '@/lib/email';
 import { getTrialEndingEmailTemplate } from '@/lib/email/templates/trial-ending';
 import { getGracePeriodExpiredEmailTemplate } from '@/lib/email/templates/grace-period-expired';
-
 // ユーザーメール送信結果のインターフェース定義を追加
 interface EmailResult {
   id: string;
@@ -13,11 +13,9 @@ interface EmailResult {
   status: 'success' | 'failed';
   error?: string;
 }
-
 // 無料トライアル終了の通知を送信する（サーバーサイド専用）
 export async function sendTrialEndingEmails() {
   const now = new Date();
-
   // 2日後に終了するトライアルを検索
   const twoDaysFromNow = addDays(now, 2);
   const startOfDay = new Date(
@@ -33,7 +31,6 @@ export async function sendTrialEndingEmails() {
     59,
     59,
   );
-
   const users = await prisma.user.findMany({
     where: {
       trialEndsAt: {
@@ -56,9 +53,7 @@ export async function sendTrialEndingEmails() {
       trialEndsAt: true,
     },
   });
-
-  console.log(`トライアル終了2日前のユーザー: ${users.length}人`);
-
+  logger.debug(`トライアル終了2日前のユーザー: ${users.length}人`);
   // 結果を格納する配列 - 具体的な型を指定
   const results = {
     total: users.length,
@@ -66,35 +61,29 @@ export async function sendTrialEndingEmails() {
     failed: 0,
     users: [] as EmailResult[], // EmailResult[] 型を指定
   };
-
   // 各ユーザーにメールを送信
   for (const user of users) {
     if (!user.email || !user.trialEndsAt) continue;
-
     try {
       const emailTemplate = getTrialEndingEmailTemplate({
         userName: user.name || 'ユーザー',
         trialEndDate: user.trialEndsAt,
       });
-
       await sendEmail({
         to: user.email,
         subject: emailTemplate.subject,
         text: emailTemplate.text,
         html: emailTemplate.html,
       });
-
       results.success++;
       results.users.push({
         id: user.id,
         email: user.email,
         status: 'success',
       });
-
-      console.log(`トライアル終了メール送信成功: ${user.email}`);
+      logger.debug(`トライアル終了メール送信成功: ${user.email}`);
     } catch (error) {
-      console.error(`トライアル終了メール送信失敗: ${user.email}`, error);
-
+      logger.error(`トライアル終了メール送信失敗: ${user.email}`, error);
       results.failed++;
       results.users.push({
         id: user.id,
@@ -104,14 +93,11 @@ export async function sendTrialEndingEmails() {
       });
     }
   }
-
   return results;
 }
-
 // 猶予期間が過ぎたユーザーをチェックし、管理者に通知する（サーバーサイド専用）
 export async function checkExpiredGracePeriods() {
   const now = new Date();
-
   // トライアル終了から7日以上経過したユーザーを検索
   const users = await prisma.user.findMany({
     where: {
@@ -138,9 +124,7 @@ export async function checkExpiredGracePeriods() {
       trialEndsAt: true,
     },
   });
-
-  console.log(`猶予期間が過ぎたユーザー: ${users.length}人`);
-
+  logger.debug(`猶予期間が過ぎたユーザー: ${users.length}人`);
   if (users.length === 0) {
     return {
       total: 0,
@@ -148,10 +132,8 @@ export async function checkExpiredGracePeriods() {
       message: '猶予期間が過ぎたユーザーはいません',
     };
   }
-
   // 管理者メールアドレス
   const adminEmail = 'admin@sns-share.com';
-
   // 猶予期間終了ユーザー情報を整形
   const expiredUsers = users.map((user) => ({
     id: user.id,
@@ -160,22 +142,18 @@ export async function checkExpiredGracePeriods() {
     trialEndDate: user.trialEndsAt as Date,
     gracePeriodEndDate: addDays(user.trialEndsAt as Date, 7),
   }));
-
   try {
     // 管理者通知メールを送信
     const emailTemplate = getGracePeriodExpiredEmailTemplate({
       expiredUsers,
     });
-
     await sendEmail({
       to: adminEmail,
       subject: emailTemplate.subject,
       text: emailTemplate.text,
       html: emailTemplate.html,
     });
-
-    console.log(`管理者通知メール送信成功: ${adminEmail}, ユーザー数: ${users.length}`);
-
+    logger.debug(`管理者通知メール送信成功: ${adminEmail}, ユーザー数: ${users.length}`);
     // ユーザーステータスを更新（猶予期間終了マーク）
     await prisma.$transaction(
       users.map((user) =>
@@ -185,15 +163,13 @@ export async function checkExpiredGracePeriods() {
         }),
       ),
     );
-
     return {
       total: users.length,
       success: 1,
       message: `${users.length}人の猶予期間終了ユーザーについて、管理者に通知しました`,
     };
   } catch (error) {
-    console.error(`管理者通知メール送信失敗:`, error);
-
+    logger.error(`管理者通知メール送信失敗:`, error);
     return {
       total: users.length,
       success: 0,

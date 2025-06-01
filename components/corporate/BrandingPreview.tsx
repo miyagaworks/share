@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
-
 // SNSリンクタイプ
 interface SnsLink {
   id: string;
@@ -12,13 +11,11 @@ interface SnsLink {
   url: string;
   displayOrder: number;
 }
-
 // 法人SNSリンクタイプ
 interface CorporateSnsLink extends SnsLink {
   isRequired: boolean;
   description: string | null;
 }
-
 interface BrandingPreviewProps {
   primaryColor: string;
   secondaryColor: string;
@@ -42,7 +39,6 @@ interface BrandingPreviewProps {
   highlightSns?: boolean; // SNSアイコンのハイライト表示
   highlightBio?: boolean; // 自己紹介のハイライト表示
 }
-
 export function BrandingPreview({
   primaryColor,
   secondaryColor,
@@ -68,11 +64,9 @@ export function BrandingPreview({
 }: BrandingPreviewProps) {
   // 状態管理
   const [showBioModal, setShowBioModal] = useState(false);
-
   // 安全な値を設定
   const safeTextColor = textColor || '#FFFFFF';
   const safeSnsIconColor = snsIconColor === 'original' ? 'original' : snsIconColor || '#333333';
-
   // プラットフォーム名を正規化する関数
   const normalizeSnsPlatform = (platform: string): SnsPlatform => {
     const platformMap: { [key: string]: SnsPlatform } = {
@@ -88,10 +82,8 @@ export function BrandingPreview({
       note: 'note',
       bereal: 'bereal',
     };
-
     return platformMap[platform.toLowerCase()] || 'line';
   };
-
   // プラットフォーム名を表示用に変換
   const getPlatformDisplayName = (platform: string) => {
     const platformMap: { [key: string]: string } = {
@@ -109,7 +101,6 @@ export function BrandingPreview({
     };
     return platformMap[platform.toLowerCase()] || platform;
   };
-
   // デモ用SNSリンク
   const dummySnsLinks = [
     { platform: 'line', name: 'LINE' },
@@ -117,7 +108,6 @@ export function BrandingPreview({
     { platform: 'x', name: 'X' },
     { platform: 'instagram', name: 'Instagram' },
   ];
-
   // 表示するSNSリンク
   const displaySnsLinks =
     corporateSnsLinks.length > 0 || personalSnsLinks.length > 0
@@ -131,7 +121,6 @@ export function BrandingPreview({
           url: '#',
           displayOrder: index,
         }));
-
   return (
     <div
       className="border border-gray-200 rounded-lg overflow-hidden shadow-sm max-w-xs mx-auto"
@@ -182,24 +171,20 @@ export function BrandingPreview({
             </div>
           </div>
         )}
-
         {/* テナント名 - 改行防止のために whitespace-nowrap を追加 */}
         <div className="text-center mb-4 px-2">
           <h3 className="text-base font-medium max-w-full whitespace-nowrap">{tenantName}</h3>
         </div>
-
         {/* 部署情報 */}
         <div className="text-center mb-2">
           <p className="text-sm text-gray-600">{department}</p>
           {position && <p className="text-sm text-gray-600">{position}</p>}
         </div>
-
         {/* ユーザー名 */}
         <div className="text-center mt-2 mb-3">
           <h3 className="text-xl font-bold text-gray-900">{userName}</h3>
           {userNameEn && <p className="text-sm text-gray-500">{userNameEn}</p>}
         </div>
-
         {/* SNSリンク */}
         <div className="mt-4 grid grid-cols-4 gap-3 relative">
           {/* SNSアイコン全体を囲むハイライト枠 */}
@@ -218,7 +203,6 @@ export function BrandingPreview({
               }}
             ></div>
           )}
-
           {/* 個別のSNSアイコン（ハイライト枠は削除） */}
           {displaySnsLinks.map((link, index) => (
             <div key={index} className="flex flex-col items-center">
@@ -235,7 +219,6 @@ export function BrandingPreview({
             </div>
           ))}
         </div>
-
         {/* アクションボタン部分 */}
         <div className="mt-6 grid grid-cols-4 gap-3">
           {/* 自己紹介ボタンにハイライト表示を追加 */}
@@ -277,7 +260,6 @@ export function BrandingPreview({
             </button>
             <span className="text-xs">自己紹介</span>
           </div>
-
           {/* 会社HPボタン */}
           <div className="flex flex-col items-center">
             <div
@@ -302,7 +284,6 @@ export function BrandingPreview({
             </div>
             <span className="text-xs">会社HP</span>
           </div>
-
           {/* メールボタン */}
           <div className="flex flex-col items-center">
             <div
@@ -326,7 +307,6 @@ export function BrandingPreview({
             </div>
             <span className="text-xs">メール</span>
           </div>
-
           {/* 電話ボタン */}
           <div className="flex flex-col items-center">
             <div
@@ -350,7 +330,6 @@ export function BrandingPreview({
             <span className="text-xs">電話</span>
           </div>
         </div>
-
         {/* 主要アクションボタン */}
         <div className="mt-5 space-y-3">
           <button
@@ -373,7 +352,6 @@ export function BrandingPreview({
             </svg>
             電話をかける
           </button>
-
           <button
             className="w-full py-2 rounded-md text-sm font-medium border transition-all flex items-center justify-center bg-white"
             style={{ borderColor: secondaryColor, color: secondaryColor }}
@@ -398,7 +376,6 @@ export function BrandingPreview({
             連絡先に追加
           </button>
         </div>
-
         {/* フッター - サービスリンクの色を修正 */}
         <div className="mt-6 text-center">
           <a href="#" className="text-sm text-[#2563EB]">
@@ -438,7 +415,6 @@ export function BrandingPreview({
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                   </svg>
                 </button>
-
                 {/* ユーザー情報部分 */}
                 <div className="flex flex-col items-center py-8">
                   {/* プロフィール画像 */}
@@ -468,11 +444,9 @@ export function BrandingPreview({
                       </svg>
                     )}
                   </div>
-
                   {/* ユーザー名 */}
                   <h2 className="text-2xl font-bold text-center mb-1">{userName}</h2>
                   {userNameEn && <p className="text-sm text-gray-500 mb-4">{userNameEn}</p>}
-
                   {/* 自己紹介文 */}
                   <div className="px-8 w-full">
                     <p className="text-base text-justify whitespace-pre-wrap">
@@ -480,10 +454,8 @@ export function BrandingPreview({
                     </p>
                   </div>
                 </div>
-
                 {/* 区切り線 */}
                 <div className="border-t border-gray-200 w-full"></div>
-
                 {/* 会社情報と連絡先 */}
                 <div
                   className="p-6 text-base"
@@ -497,24 +469,20 @@ export function BrandingPreview({
                       <p className="font-semibold">会社 / 組織：</p>
                       <p>{tenantName}</p>
                     </div>
-
                     <div>
                       <p className="font-semibold">部署：</p>
                       <p>{department}</p>
                     </div>
-
                     {position && (
                       <div>
                         <p className="font-semibold">役職：</p>
                         <p>{position}</p>
                       </div>
                     )}
-
                     <div>
                       <p className="font-semibold">TEL：</p>
                       <p>09016868728</p>
                     </div>
-
                     <div>
                       <p className="font-semibold">メール：</p>
                       <p>moe@yamaguchi.com</p>

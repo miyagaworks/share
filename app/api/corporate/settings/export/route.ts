@@ -1,18 +1,15 @@
 // app/api/corporate/settings/export/route.ts
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-
 export async function POST() {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-
     // ユーザーとテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -20,16 +17,13 @@ export async function POST() {
         adminOfTenant: true,
       },
     });
-
     if (!user || !user.adminOfTenant) {
       return NextResponse.json(
         { error: 'データエクスポートには管理者権限が必要です' },
         { status: 403 },
       );
     }
-
     const tenantId = user.adminOfTenant.id;
-
     // テナントのユーザー一覧を取得
     const tenantUsers = await prisma.user.findMany({
       where: {
@@ -49,7 +43,6 @@ export async function POST() {
         createdAt: true,
       },
     });
-
     // テナントの部署一覧を取得
     const departments = await prisma.department.findMany({
       where: {
@@ -63,7 +56,6 @@ export async function POST() {
         updatedAt: true,
       },
     });
-
     // テナントのプロフィール情報を取得
     const profiles = await prisma.profile.findMany({
       where: {
@@ -81,12 +73,10 @@ export async function POST() {
         updatedAt: true,
       },
     });
-
     // CSV形式のデータを生成
     const usersCSV = generateUsersCSV(tenantUsers);
     const departmentsCSV = generateDepartmentsCSV(departments);
     const profilesCSV = generateProfilesCSV(profiles);
-
     // エクスポートデータをまとめる
     const exportData = {
       companyName: user.adminOfTenant.name,
@@ -98,7 +88,6 @@ export async function POST() {
       departmentsCSV,
       profilesCSV,
     };
-
     // エクスポート履歴を記録（オプション）
     // const exportLog = await prisma.tenantExportLog.create({
     //   data: {
@@ -107,18 +96,16 @@ export async function POST() {
     //     exportType: 'full',
     //   },
     // });
-
     return NextResponse.json({
       success: true,
       message: 'データのエクスポートに成功しました',
       data: exportData,
     });
   } catch (error) {
-    console.error('データエクスポートエラー:', error);
+    logger.error('データエクスポートエラー:', error);
     return NextResponse.json({ error: 'データのエクスポートに失敗しました' }, { status: 500 });
   }
 }
-
 // ユーザーデータの型定義
 interface UserData {
   id: string;
@@ -131,12 +118,10 @@ interface UserData {
   } | null;
   createdAt: Date;
 }
-
 // ユーザーデータをCSV形式に変換
 function generateUsersCSV(users: UserData[]) {
   // ヘッダー行
   const headers = ['ID', 'メールアドレス', '名前', '役職', '権限', '部署', '作成日'];
-
   // データ行
   const rows = users.map((user) => [
     user.id,
@@ -147,11 +132,9 @@ function generateUsersCSV(users: UserData[]) {
     user.department?.name || '',
     new Date(user.createdAt).toLocaleDateString('ja-JP'),
   ]);
-
   // CSVとして結合
   return [headers, ...rows].map((row) => row.map((field) => `"${field}"`).join(',')).join('\n');
 }
-
 // 部署データの型定義
 interface DepartmentData {
   id: string;
@@ -160,12 +143,10 @@ interface DepartmentData {
   createdAt: Date;
   updatedAt: Date;
 }
-
 // 部署データをCSV形式に変換
 function generateDepartmentsCSV(departments: DepartmentData[]) {
   // ヘッダー行
   const headers = ['ID', '部署名', '説明', '作成日', '更新日'];
-
   // データ行
   const rows = departments.map((dept) => [
     dept.id,
@@ -174,11 +155,9 @@ function generateDepartmentsCSV(departments: DepartmentData[]) {
     new Date(dept.createdAt).toLocaleDateString('ja-JP'),
     new Date(dept.updatedAt).toLocaleDateString('ja-JP'),
   ]);
-
   // CSVとして結合
   return [headers, ...rows].map((row) => row.map((field) => `"${field}"`).join(',')).join('\n');
 }
-
 // プロフィールデータの型定義
 interface ProfileData {
   id: string;
@@ -189,12 +168,10 @@ interface ProfileData {
   createdAt: Date;
   updatedAt: Date;
 }
-
 // プロフィールデータをCSV形式に変換
 function generateProfilesCSV(profiles: ProfileData[]) {
   // ヘッダー行
   const headers = ['ID', 'ユーザーID', 'スラッグ', '閲覧数', '公開状態', '作成日', '更新日'];
-
   // データ行
   const rows = profiles.map((profile) => [
     profile.id,
@@ -205,7 +182,6 @@ function generateProfilesCSV(profiles: ProfileData[]) {
     new Date(profile.createdAt).toLocaleDateString('ja-JP'),
     new Date(profile.updatedAt).toLocaleDateString('ja-JP'),
   ]);
-
   // CSVとして結合
   return [headers, ...rows].map((row) => row.map((field) => `"${field}"`).join(',')).join('\n');
 }

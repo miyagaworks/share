@@ -1,5 +1,4 @@
 // types/sns-guide.ts
-
 /**
  * SNSガイドのステップ情報
  */
@@ -8,7 +7,6 @@ export interface SnsGuideStep {
     description: string;
     imageUrl?: string;
 }
-
 /**
  * SNSガイドの全体情報
  */
@@ -18,7 +16,6 @@ export interface SnsGuide {
     steps: SnsGuideStep[];
     additionalInfo?: string;
 }
-
 /**
  * 各SNSプラットフォームのガイド情報
  */

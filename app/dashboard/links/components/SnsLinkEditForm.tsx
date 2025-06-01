@@ -1,6 +1,5 @@
 // app/dashboard/links/components/SnsLinkEditForm.tsx (修正版)
 'use client';
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -11,21 +10,17 @@ import { toast } from 'react-hot-toast';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { SNS_METADATA, type SnsPlatform } from '@/types/sns';
 import type { SnsLink } from '@prisma/client';
-
 // 編集用スキーマ（URL検証のみ）
 const EditSnsLinkSchema = z.object({
   username: z.string().optional(),
   url: z.string().url({ message: '有効なURLを入力してください' }),
 });
-
 type FormData = z.infer<typeof EditSnsLinkSchema>;
-
 interface SnsLinkEditFormProps {
   link: SnsLink;
   onCancel: () => void;
   onSuccess: () => void;
 }
-
 /**
  * LINEのURLからIDを抽出し、正規化されたURLを返す
  * @param url LINEのURL（重複している可能性あり）
@@ -36,37 +31,29 @@ const simplifyLineUrl = (url: string): string => {
   if (!url) {
     return url;
   }
-
   // プロトコルがなければ追加（処理を統一するため）
   let processedUrl = url;
   if (processedUrl.startsWith('line.me/')) {
     processedUrl = 'https://' + processedUrl;
   }
-
   // https://line.me/ti/p/の部分を探す
   // 大文字小文字を区別しないように小文字に変換して検索
   const lowerUrl = processedUrl.toLowerCase();
   const baseUrl = 'https://line.me/ti/p/';
-
   if (!lowerUrl.includes('line.me/ti/p/')) {
     return url; // LINE URLでない場合は元のURLを返す
   }
-
   const idStartPos = lowerUrl.lastIndexOf('line.me/ti/p/') + 'line.me/ti/p/'.length;
-
   // IDだけを抽出（URLパラメータは除去）
   let lineId = processedUrl.substring(idStartPos);
   lineId = lineId.split('?')[0].split('#')[0];
-
   // IDを使って新しいURLを構築
   return `${baseUrl}${lineId}`;
 };
-
 export function SnsLinkEditForm({ link, onCancel, onSuccess }: SnsLinkEditFormProps) {
   const [isPending, setIsPending] = useState(false);
   const platform = link.platform as SnsPlatform;
   const isLineLink = platform === 'line';
-
   const {
     register,
     handleSubmit,
@@ -80,17 +67,13 @@ export function SnsLinkEditForm({ link, onCancel, onSuccess }: SnsLinkEditFormPr
       url: link.url,
     },
   });
-
   const watchUrl = watch('url');
   const watchUsername = watch('username');
-
   // ユーザー名変更時のURL自動生成（LINE以外）
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isLineLink) return;
-
     const username = e.target.value;
     let url = '';
-
     // 各プラットフォームごとに適切なURL形式を設定
     if (platform in SNS_METADATA && SNS_METADATA[platform].baseUrl) {
       url = `${SNS_METADATA[platform].baseUrl}${username}`;
@@ -98,15 +81,12 @@ export function SnsLinkEditForm({ link, onCancel, onSuccess }: SnsLinkEditFormPr
       // 未知のプラットフォーム用のフォールバック
       url = `https://${platform}.com/${username}`;
     }
-
     setValue('url', url);
   };
-
   // LINE URLの直接編集時の処理
   const handleLineUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const url = e.target.value;
     setValue('url', url);
-
     // LINE URLからユーザー名部分を抽出して保存
     if (url.includes('line.me/ti/p/')) {
       try {
@@ -116,23 +96,18 @@ export function SnsLinkEditForm({ link, onCancel, onSuccess }: SnsLinkEditFormPr
         const lineId = pathSegments[pathSegments.length - 1];
         setValue('username', lineId);
       } catch (error) {
-        console.error('Invalid LINE URL', error);
       }
     }
   };
-
   // 🚀 修正: 直接API Routeを呼び出す（Server Actionではなく）
   const onSubmit = async (data: FormData) => {
     try {
       setIsPending(true);
-
       // LINE選択時はURLの簡略化を行う
       let finalUrl = data.url;
       if (isLineLink) {
         finalUrl = simplifyLineUrl(data.url);
-        console.log('修正したLINE URL:', finalUrl);
       }
-
       // 🔥 重要: 直接API Routeを呼び出し
       const response = await fetch(`/api/links/sns/${link.id}`, {
         method: 'PATCH',
@@ -144,47 +119,37 @@ export function SnsLinkEditForm({ link, onCancel, onSuccess }: SnsLinkEditFormPr
           url: finalUrl,
         }),
       });
-
       if (!response.ok) {
         const responseText = await response.text();
         let errorMessage = 'SNSリンクの更新に失敗しました';
-
         try {
           const data = JSON.parse(responseText);
           if (data.error) {
             errorMessage = data.error;
           }
         } catch {
-          console.error('API返却値が不正なフォーマット:', responseText);
         }
-
         throw new Error(errorMessage);
       }
-
       const result = await response.json();
-
       if (!result.success) {
         throw new Error(result.error || '更新処理でエラーが発生しました');
       }
-
       toast.success(`${SNS_METADATA[platform].name}のリンクを更新しました`);
       onSuccess();
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'SNSリンクの更新に失敗しました';
       toast.error(errorMessage);
-      console.error(error);
     } finally {
       setIsPending(false);
     }
   };
-
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 py-2">
       <div className="flex items-center gap-2 mb-4">
         <ImprovedSnsIcon platform={platform} size={24} color="primary" />
         <span className="font-medium">{SNS_METADATA[platform]?.name || platform}を編集</span>
       </div>
-
       {/* LINEの場合はURL入力のみ */}
       {isLineLink ? (
         <div>
@@ -213,7 +178,6 @@ export function SnsLinkEditForm({ link, onCancel, onSuccess }: SnsLinkEditFormPr
               disabled={isPending}
             />
           </div>
-
           <div>
             <label className="text-sm font-medium block mb-2">URL</label>
             <Input
@@ -228,7 +192,6 @@ export function SnsLinkEditForm({ link, onCancel, onSuccess }: SnsLinkEditFormPr
           </div>
         </>
       )}
-
       <div className="flex justify-end space-x-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
           キャンセル

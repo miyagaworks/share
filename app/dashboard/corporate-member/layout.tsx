@@ -1,6 +1,5 @@
 // app/dashboard/corporate-member/layout.tsx (完全版)
 'use client';
-
 import React, { ReactNode, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -8,11 +7,9 @@ import { HiUser, HiLink, HiColorSwatch, HiShare, HiOfficeBuilding, HiMenu } from
 import { Spinner } from '@/components/ui/Spinner';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
-
 interface CorporateMemberLayoutProps {
   children: ReactNode;
 }
-
 interface AccessData {
   hasAccess: boolean;
   isAdmin: boolean;
@@ -20,7 +17,6 @@ interface AccessData {
   tenantId: string | null;
   error: string | null;
 }
-
 interface TenantData {
   id: string;
   name: string;
@@ -28,51 +24,39 @@ interface TenantData {
   primaryColor: string | null;
   secondaryColor: string | null;
 }
-
 export default function CorporateMemberLayout({ children }: CorporateMemberLayoutProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-
   const [accessData, setAccessData] = useState<AccessData | null>(null);
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   // シンプルな初期化処理
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session) {
       router.push('/auth/signin');
       return;
     }
-
     const initializeAccess = async () => {
       try {
         setIsLoading(true);
         setError(null);
-
         // 1. アクセス権限をチェック
         const accessResponse = await fetch('/api/corporate/access');
         if (!accessResponse.ok) {
           throw new Error('アクセス権限の確認に失敗しました');
         }
-
         const accessResult = await accessResponse.json();
-
         // 2. アクセス権限の検証（シンプル化）
         if (!accessResult.hasAccess) {
-          console.log('❌ 法人メンバーアクセス権限なし:', accessResult);
-
           // 🔥 修正: 個人プランユーザーを個人ダッシュボードにリダイレクト
           if (!accessResult.userRole || accessResult.userRole === null) {
-            console.log('🚀 個人プランユーザー → 個人ダッシュボード');
             router.push('/dashboard');
             return;
           }
-
           // 不完全な招待メンバーの場合
           if (accessResult.userRole === 'incomplete-member') {
             setError('招待の設定が完了していません。管理者にお問い合わせください。');
@@ -82,9 +66,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           setIsLoading(false);
           return;
         }
-
         setAccessData(accessResult);
-
         // 3. テナント情報を取得
         try {
           const tenantResponse = await fetch('/api/corporate-profile');
@@ -92,7 +74,6 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
             const tenantResult = await tenantResponse.json();
             setTenantData(tenantResult.tenant);
           } else {
-            console.warn('テナント情報の取得に失敗、デフォルト値を使用');
             setTenantData({
               id: accessResult.tenantId || 'default',
               name: '法人テナント',
@@ -102,7 +83,6 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
             });
           }
         } catch (tenantError) {
-          console.warn('テナント情報取得エラー:', tenantError);
           setTenantData({
             id: accessResult.tenantId || 'default',
             name: '法人テナント',
@@ -112,16 +92,13 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           });
         }
       } catch (error) {
-        console.error('❌ 初期化エラー:', error);
         setError('システムエラーが発生しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     initializeAccess();
   }, [session, status, router]);
-
   // CSSテーマの設定
   useEffect(() => {
     document.documentElement.classList.add('corporate-theme');
@@ -129,7 +106,6 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       document.documentElement.classList.remove('corporate-theme');
     };
   }, []);
-
   // ナビゲーション項目の定義（シンプル化）
   const navItems = [
     {
@@ -169,18 +145,15 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       adminOnly: true,
     },
   ];
-
   // フィルタリング（管理者のみのアイテムを制御）
   const filteredNavItems = navItems.filter(
     (item) => !item.adminOnly || accessData?.isAdmin === true,
   );
-
   // 現在のページタイトルを取得
   const getCurrentPageTitle = () => {
     const currentItem = filteredNavItems.find((item) => item.href === pathname);
     return currentItem ? currentItem.label : '法人メンバープロフィール';
   };
-
   // ローディング表示
   if (isLoading) {
     return (
@@ -192,7 +165,6 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       </div>
     );
   }
-
   // エラー表示
   if (error) {
     return (
@@ -225,10 +197,8 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       </div>
     );
   }
-
   // プライマリカラーの設定
   const primaryColor = '#1E3A8A';
-
   return (
     <div
       className="corporate-theme"
@@ -250,7 +220,6 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           <HiMenu className="h-6 w-6" />
         </button>
       </div>
-
       {/* モバイルメニュー */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
@@ -293,7 +262,6 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           </div>
         </div>
       )}
-
       {/* デスクトップ用タブナビゲーション */}
       <div className="hidden px-1 md:block mb-6 overflow-x-auto">
         <div className="flex space-x-2 min-w-max pb-2">
@@ -312,7 +280,6 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           ))}
         </div>
       </div>
-
       {/* メインコンテンツ */}
       <div className="px-1">{children}</div>
     </div>

@@ -1,13 +1,12 @@
 // app/api/test-email/route.ts
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import nodemailer from 'nodemailer';
 import { sendEmail } from '@/lib/email';
-
 export async function GET() {
   // 環境変数の出力（機密情報は伏せる）
-  console.log({
+  logger.debug({
     NODE_ENV: process.env.NODE_ENV,
     EMAIL_SERVER_HOST: process.env.EMAIL_SERVER_HOST,
     EMAIL_SERVER_PORT: process.env.EMAIL_SERVER_PORT,
@@ -15,7 +14,6 @@ export async function GET() {
     EMAIL_SERVER_PASSWORD: process.env.EMAIL_SERVER_PASSWORD ? '設定あり' : 'なし',
     EMAIL_FROM: process.env.EMAIL_FROM,
   });
-
   // 一時的なトランスポーターを作成してテスト
   const testTransporter = nodemailer.createTransport({
     host: process.env.EMAIL_SERVER_HOST,
@@ -26,12 +24,10 @@ export async function GET() {
       pass: process.env.EMAIL_SERVER_PASSWORD,
     },
   });
-
   try {
     // SMTP接続テスト
     const verify = await testTransporter.verify();
-    console.log('SMTP接続テスト結果:', verify);
-
+    logger.debug('SMTP接続テスト結果:', verify);
     // 実際にテストメールを送信
     try {
       const result = await sendEmail({
@@ -39,7 +35,6 @@ export async function GET() {
         subject: 'テストメール',
         text: 'これはテストメールです。送信時刻: ' + new Date().toISOString(),
       });
-
       return NextResponse.json({
         success: true,
         message: 'テストメール送信成功',
@@ -47,7 +42,7 @@ export async function GET() {
         emailResult: result,
       });
     } catch (emailError) {
-      console.error('メール送信エラー:', emailError);
+      logger.error('メール送信エラー:', emailError);
       return NextResponse.json(
         {
           success: false,
@@ -59,7 +54,7 @@ export async function GET() {
       );
     }
   } catch (error) {
-    console.error('SMTP接続エラー:', error);
+    logger.error('SMTP接続エラー:', error);
     return NextResponse.json(
       {
         success: false,

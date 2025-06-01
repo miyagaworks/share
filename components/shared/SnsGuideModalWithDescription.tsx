@@ -1,5 +1,4 @@
 'use client';
-
 // components/shared/SnsGuideModalWithDescription.tsx
 import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/Dialog';
@@ -9,19 +8,15 @@ import { snsGuidesData } from '@/types/sns-guide';
 import { motion, AnimatePresence } from 'framer-motion';
 import Image from 'next/image';
 import { type SnsPlatform } from '@/types/sns';
-
 interface SnsGuideModalWithDescriptionProps {
     platform: string;
     isOpen: boolean;
     onClose: () => void;
 }
-
 export function SnsGuideModalWithDescription({ platform, isOpen, onClose }: SnsGuideModalWithDescriptionProps) {
     const [currentStep, setCurrentStep] = useState(0);
     const [understood, setUnderstood] = useState(false);
-
     const guide = snsGuidesData[platform];
-
     // モーダルが閉じられたらステートをリセット
     useEffect(() => {
         if (!isOpen) {
@@ -29,9 +24,7 @@ export function SnsGuideModalWithDescription({ platform, isOpen, onClose }: SnsG
             setUnderstood(false);
         }
     }, [isOpen]);
-
     if (!guide) return null;
-
     return (
         <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
             <DialogContent className="sm:max-w-md max-h-[90vh] overflow-y-auto bg-white p-6 rounded-lg">
@@ -45,7 +38,6 @@ export function SnsGuideModalWithDescription({ platform, isOpen, onClose }: SnsG
                         このガイドでは{guide.platformName}のアカウント情報を取得する方法を説明します
                     </DialogDescription>
                 </DialogHeader>
-
                 {/* ステップインジケーター */}
                 <div className="flex justify-center space-x-1 my-4">
                     {guide.steps.map((_, idx) => (
@@ -55,7 +47,6 @@ export function SnsGuideModalWithDescription({ platform, isOpen, onClose }: SnsG
                         />
                     ))}
                 </div>
-
                 {/* 現在のステップコンテンツ */}
                 <AnimatePresence mode="wait">
                     <motion.div
@@ -68,7 +59,6 @@ export function SnsGuideModalWithDescription({ platform, isOpen, onClose }: SnsG
                     >
                         <h3 className="text-lg font-semibold mb-2">{guide.steps[currentStep].title}</h3>
                         <p className="text-sm text-gray-600 mb-4">{guide.steps[currentStep].description}</p>
-
                         {guide.steps[currentStep].imageUrl && (
                             <div className="relative aspect-square w-full rounded-md overflow-hidden border border-gray-200 mb-4 bg-gray-100">
                                 <Image
@@ -82,7 +72,6 @@ export function SnsGuideModalWithDescription({ platform, isOpen, onClose }: SnsG
                         )}
                     </motion.div>
                 </AnimatePresence>
-
                 {/* ナビゲーションボタン */}
                 <div className="flex justify-between mt-4">
                     <Button
@@ -92,7 +81,6 @@ export function SnsGuideModalWithDescription({ platform, isOpen, onClose }: SnsG
                     >
                         前へ
                     </Button>
-
                     {currentStep < guide.steps.length - 1 ? (
                         <Button onClick={() => setCurrentStep(prev => Math.min(guide.steps.length - 1, prev + 1))}>
                             次へ
@@ -114,7 +102,6 @@ export function SnsGuideModalWithDescription({ platform, isOpen, onClose }: SnsG
                         </div>
                     )}
                 </div>
-
                 {/* 追加情報 */}
                 {guide.additionalInfo && (
                     <div className="mt-6 p-3 bg-blue-50 rounded-md">

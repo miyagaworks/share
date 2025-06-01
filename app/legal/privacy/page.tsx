@@ -1,12 +1,10 @@
 // app/legal/privacy/page.tsx
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
-
 export const metadata: Metadata = {
   title: 'プライバシーポリシー | Share',
   description: 'Shareサービスのプライバシーポリシーです。',
 };
-
 export default function PrivacyPage() {
   return (
     <PageLayout
@@ -23,7 +21,6 @@ export default function PrivacyPage() {
             ビイアルファ株式会社（以下「当社」）は、提供するサービス「Share」（以下「本サービス」）における個人情報の取り扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」）を定めます。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">2. 収集する情報</h2>
           <p className="text-justify">当社は、本サービスの提供にあたり、以下の情報を収集することがあります。</p>
@@ -33,7 +30,6 @@ export default function PrivacyPage() {
             <li>利用履歴、アクセスログなどの利用情報</li>
           </ul>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">3. 利用目的</h2>
           <p className="text-justify">当社は、収集した情報を以下の目的で利用します。</p>
@@ -45,7 +41,6 @@ export default function PrivacyPage() {
             <li>その他、当社のプライバシーポリシーに定める目的のため</li>
           </ul>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">4. 情報の共有</h2>
           <p className="text-justify">
@@ -61,35 +56,30 @@ export default function PrivacyPage() {
             </li>
           </ul>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">5. 情報の保護</h2>
           <p className="text-justify">
             当社は、ユーザーの個人情報を適切に保護するため、セキュリティ対策を講じております。個人情報への不正アクセス、紛失、破壊、改ざん、漏洩などのリスクに対して、技術的及び組織的な安全対策を実施しています。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">6. ユーザーの権利</h2>
           <p className="text-justify">
             ユーザーは、当社に対して、自己の個人情報の開示、訂正、追加、削除、利用停止を請求することができます。請求を行う場合は、当社所定の手続きに従って行ってください。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">7. Cookieの使用</h2>
           <p className="text-justify">
             当社のサービスでは、ユーザー体験の向上やサービス改善のために、Cookieを使用することがあります。Cookieの使用を望まない場合は、ブラウザの設定でCookieを無効にすることができますが、一部の機能が利用できなくなる可能性があります。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3 text-justify">8. プライバシーポリシーの変更</h2>
           <p className="text-justify">
             当社は、必要に応じて本ポリシーを変更することがあります。重要な変更がある場合は、本サービス上での通知や電子メールでユーザーに通知します。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">9. お問い合わせ</h2>
           <p className="text-justify">本ポリシーに関するお問い合わせは、下記の連絡先までお願いいたします。</p>

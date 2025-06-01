@@ -16,13 +16,11 @@ import { HiPlus, HiQuestionMarkCircle } from 'react-icons/hi';
 import { CorporateSnsLink } from '../types';
 import { addCorporateSnsLink } from '@/actions/corporateSns';
 import { handleApiError, simplifyLineUrl } from '../utils';
-
 interface CorporateSnsAddFormProps {
   existingLinks: CorporateSnsLink[];
   onCancel: () => void;
   onSuccess: (newLink: CorporateSnsLink) => void;
 }
-
 export function CorporateSnsAddForm({
   existingLinks,
   onCancel,
@@ -33,30 +31,24 @@ export function CorporateSnsAddForm({
   const [url, setUrl] = useState('');
   const [isRequired, setIsRequired] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
-
   // ガイドモーダル用のステート
   const [isGuideOpen, setIsGuideOpen] = useState(false);
-
   // 選択されたプラットフォームのメタデータを取得
   const selectedMetadata = selectedPlatform ? SNS_METADATA[selectedPlatform as SnsPlatform] : null;
-
   // LINE系のプラットフォームかどうか
   const isLineLink = selectedPlatform === 'line';
   const isOfficialLineLink = selectedPlatform === 'official-line';
-
   // プラットフォームがガイドをサポートしているかどうかを確認
   const hasGuide =
     selectedPlatform &&
     ['line', 'official-line', 'instagram', 'facebook', 'youtube', 'x', 'tiktok'].includes(
       selectedPlatform,
     );
-
   // プラットフォーム選択時の処理
   const handlePlatformSelect = (platform: string) => {
     setSelectedPlatform(platform);
     setUsername('');
     setUrl('');
-
     // プラットフォームごとのデフォルト値をセット
     if (platform === 'line' || platform === 'official-line') {
       setUrl('');
@@ -67,14 +59,11 @@ export function CorporateSnsAddForm({
       }
     }
   };
-
   // ユーザー名変更時にURLを自動生成（LINE以外）
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isLineLink || isOfficialLineLink) return;
-
     const newUsername = e.target.value;
     setUsername(newUsername);
-
     if (selectedPlatform && newUsername) {
       const metadata = SNS_METADATA[selectedPlatform as SnsPlatform];
       if (metadata && metadata.baseUrl) {
@@ -82,12 +71,10 @@ export function CorporateSnsAddForm({
       }
     }
   };
-
   // LINE URLの直接編集時の処理
   const handleLineUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newUrl = e.target.value;
     setUrl(newUrl);
-
     // LINE URLからユーザー名部分を抽出して保存
     if (newUrl.includes('line.me/ti/p/')) {
       try {
@@ -97,11 +84,9 @@ export function CorporateSnsAddForm({
         const lineId = pathSegments[pathSegments.length - 1];
         setUsername(lineId);
       } catch (error) {
-        console.error('Invalid LINE URL', error);
       }
     }
   };
-
   // フォームリセット
   const resetForm = () => {
     setSelectedPlatform('');
@@ -109,29 +94,24 @@ export function CorporateSnsAddForm({
     setUrl('');
     setIsRequired(false);
   };
-
   // 送信処理
   const handleSubmit = async () => {
     if (!selectedPlatform || !url) {
       toast.error('必須項目を入力してください');
       return;
     }
-
     // LINE以外でユーザー名が必要な場合に検証
     if (!isLineLink && !isOfficialLineLink && !username) {
       toast.error('ユーザー名を入力してください');
       return;
     }
-
     try {
       setIsSubmitting(true);
-
       // LINE選択時はURLの簡略化を行う
       let finalUrl = url;
       if (isLineLink || isOfficialLineLink) {
         finalUrl = simplifyLineUrl(url);
       }
-
       // サーバーアクションを使用
       const result = await addCorporateSnsLink({
         platform: selectedPlatform,
@@ -139,30 +119,24 @@ export function CorporateSnsAddForm({
         url: finalUrl,
         isRequired,
       });
-
       if (result.error) {
         throw new Error(result.error);
       }
-
       toast.success(`${SNS_METADATA[selectedPlatform as SnsPlatform].name}のリンクを追加しました`);
       resetForm();
-
       // 型変換して渡す
       const linkWithStringDates: CorporateSnsLink = {
         ...result.link!,
         createdAt: result.link!.createdAt.toString(),
         updatedAt: result.link!.updatedAt.toString(),
       };
-
       onSuccess(linkWithStringDates);
     } catch (error) {
-      console.error('SNSリンク追加エラー:', error);
       toast.error(handleApiError(error, '法人共通SNSリンクの追加に失敗しました'));
     } finally {
       setIsSubmitting(false);
     }
   };
-
   // プレースホルダーテキストとラベルの取得
   const getLinePlaceholder = () => {
     if (isLineLink) {
@@ -172,7 +146,6 @@ export function CorporateSnsAddForm({
     }
     return 'https://...';
   };
-
   const getLineLabel = () => {
     if (isLineLink) {
       return 'LINEのURL';
@@ -181,14 +154,12 @@ export function CorporateSnsAddForm({
     }
     return 'URL';
   };
-
   return (
     <DialogContent className="sm:max-w-md bg-white w-full max-w-full">
       <DialogHeader>
         <DialogTitle>法人共通SNSリンクを追加</DialogTitle>
         <DialogDescription>法人共通のSNSリンク設定を行います。</DialogDescription>
       </DialogHeader>
-
       <div className="space-y-4 mt-4">
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -198,7 +169,6 @@ export function CorporateSnsAddForm({
             {SNS_PLATFORMS.map((platform) => {
               // 既に追加済みのプラットフォームは無効化
               const isDisabled = existingLinks.some((link) => link.platform === platform);
-
               return (
                 <button
                   key={platform}
@@ -222,7 +192,6 @@ export function CorporateSnsAddForm({
             })}
           </div>
         </div>
-
         {selectedPlatform && (
           <>
             {/* LINEの場合はURL入力のみ */}
@@ -274,7 +243,6 @@ export function CorporateSnsAddForm({
                     </Button>
                   )}
                 </div>
-
                 <div>
                   <Input
                     value={username}
@@ -287,7 +255,6 @@ export function CorporateSnsAddForm({
                     </p>
                   )}
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     URL <span className="text-red-500">*</span>
@@ -301,7 +268,6 @@ export function CorporateSnsAddForm({
                 </div>
               </>
             )}
-
             <div className="flex items-center">
               <input
                 type="checkbox"
@@ -317,7 +283,6 @@ export function CorporateSnsAddForm({
           </>
         )}
       </div>
-
       <div className="flex justify-end space-x-4 mt-6">
         <Button type="button" variant="corporateOutline" onClick={onCancel} disabled={isSubmitting}>
           キャンセル
@@ -346,7 +311,6 @@ export function CorporateSnsAddForm({
           )}
         </Button>
       </div>
-
       {/* SNSガイドモーダル */}
       {selectedPlatform && (
         <SnsGuideModalWithDescription

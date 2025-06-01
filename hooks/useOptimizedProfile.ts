@@ -1,6 +1,5 @@
 // hooks/useOptimizedProfile.ts
 import { useQuery } from '@tanstack/react-query';
-
 export function useOptimizedProfile(userId?: string) {
   return useQuery({
     queryKey: ['profile', userId],

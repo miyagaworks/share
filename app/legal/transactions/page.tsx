@@ -1,12 +1,10 @@
 // app/legal/transactions/page.tsx
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
-
 export const metadata: Metadata = {
   title: '特定商取引法に基づく表記 | Share',
   description: 'Shareサービスの特定商取引法に基づく表記です。',
 };
-
 export default function TransactionsPage() {
   return (
     <PageLayout

@@ -1,6 +1,5 @@
 // app/dashboard/admin/email/page.tsx
 'use client';
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -14,14 +13,12 @@ import {
   HiOutlineSearch,
   HiOutlineUser,
 } from 'react-icons/hi';
-
 // ユーザー検索モーダル用の型
 interface User {
   id: string;
   name: string | null;
   email: string;
 }
-
 // メール履歴の型定義
 interface EmailHistory {
   id: string;
@@ -35,7 +32,6 @@ interface EmailHistory {
     email: string;
   };
 }
-
 // メール送信結果の型定義
 interface EmailResultItem {
   userId: string;
@@ -44,7 +40,6 @@ interface EmailResultItem {
   messageId?: string;
   error?: string;
 }
-
 export default function AdminEmailPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -57,14 +52,12 @@ export default function AdminEmailPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
-
   // ユーザー検索関連の状態
   const [showUserSearchModal, setShowUserSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
-
   const [formData, setFormData] = useState({
     subject: '',
     title: '',
@@ -74,7 +67,6 @@ export default function AdminEmailPage() {
     ctaUrl: '',
     userId: '', // 個別ユーザーID
   });
-
   // ターゲットグループオプション
   const targetGroups = [
     { value: 'all', label: '全ユーザー' },
@@ -91,7 +83,6 @@ export default function AdminEmailPage() {
     { value: 'expired', label: '利用期限切れユーザー' },
     { value: 'single_user', label: '特定のユーザー' }, // 追加: 特定ユーザーオプション
   ];
-
   // 管理者チェック
   useEffect(() => {
     const checkAdminAccess = async () => {
@@ -99,45 +90,37 @@ export default function AdminEmailPage() {
         router.push('/auth/signin');
         return;
       }
-
       try {
         const response = await fetch('/api/admin/access');
         const data = await response.json();
-
         if (data.isSuperAdmin) {
           setIsAdmin(true);
         } else {
           router.push('/dashboard');
         }
       } catch (error) {
-        console.error('管理者チェックエラー:', error);
         router.push('/dashboard');
       } finally {
         setLoading(false);
       }
     };
-
     checkAdminAccess();
   }, [session, router]);
-
   // 入力フォームの変更ハンドラ
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
   ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
-
     // ターゲットグループが変更されたとき、single_user以外に変更された場合はselectedUserをクリア
     if (name === 'targetGroup' && value !== 'single_user') {
       setSelectedUser(null);
       setFormData((prev) => ({ ...prev, userId: '' }));
     }
   };
-
   // 追加: ユーザー検索の実行
   const searchUsers = useCallback(async () => {
     if (!searchQuery.trim()) return;
-
     setSearchLoading(true);
     try {
       const response = await fetch(
@@ -150,20 +133,17 @@ export default function AdminEmailPage() {
         toast.error('ユーザー検索に失敗しました');
       }
     } catch (error) {
-      console.error('ユーザー検索エラー:', error);
       toast.error('ユーザーの検索中にエラーが発生しました');
     } finally {
       setSearchLoading(false);
     }
   }, [searchQuery]);
-
   // 追加: ユーザー選択ハンドラ
   const handleSelectUser = (user: User) => {
     setSelectedUser(user);
     setFormData((prev) => ({ ...prev, userId: user.id }));
     setShowUserSearchModal(false);
   };
-
   // 送信履歴の取得
   const fetchEmailHistory = async () => {
     setHistoryLoading(true);
@@ -173,36 +153,28 @@ export default function AdminEmailPage() {
         const data = await response.json();
         setEmailHistory(data.history || []);
       } else {
-        console.error('送信履歴取得エラー');
         toast.error('送信履歴の取得に失敗しました');
       }
     } catch (error) {
-      console.error('送信履歴取得エラー:', error);
       toast.error('送信履歴の取得中にエラーが発生しました');
     } finally {
       setHistoryLoading(false);
     }
   };
-
   // メール送信ハンドラ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     // すでに送信中なら処理をスキップ
     if (sending) return;
-
     // 特定ユーザー選択時にユーザーIDがない場合はエラー
     if (formData.targetGroup === 'single_user' && !formData.userId) {
       toast.error('ユーザーを選択してください');
       return;
     }
-
     setSending(true);
-
     try {
       // 冪等性キーを生成
       const idempotencyKey = crypto.randomUUID();
-
       const response = await fetch('/api/admin/email', {
         method: 'POST',
         headers: {
@@ -211,25 +183,20 @@ export default function AdminEmailPage() {
         },
         body: JSON.stringify(formData),
       });
-
       const data = await response.json();
-
       if (response.ok) {
         // 成功の場合
         toast.success(`メールを送信しました（${data.sentCount}/${data.totalCount}件成功）`);
-
         // 失敗したメールがある場合は通知
         if (data.failCount > 0) {
           toast(
             `⚠️ ${data.failCount}件のメールは送信できませんでした。詳細はコンソールをご確認ください。`,
           );
           // 型を明示的に指定
-          console.error(
             '送信失敗したメール:',
             data.results.filter((r: EmailResultItem) => !r.success),
           );
         }
-
         // フォームをリセット
         setFormData({
           subject: '',
@@ -241,7 +208,6 @@ export default function AdminEmailPage() {
           userId: '',
         });
         setSelectedUser(null);
-
         // 履歴を更新
         if (showHistory) {
           fetchEmailHistory();
@@ -251,26 +217,21 @@ export default function AdminEmailPage() {
         toast.error(data.error || 'メール送信に失敗しました');
       }
     } catch (error) {
-      console.error('メール送信エラー:', error);
       toast.error('処理中にエラーが発生しました。ネットワーク接続を確認してください。');
     } finally {
       setSending(false);
     }
   };
-
   // 単一の履歴を削除するハンドラ
   const handleDeleteHistory = async (id: string) => {
     if (!confirm('この送信履歴を削除しますか？')) {
       return;
     }
-
     setDeletingId(id);
-
     try {
       const response = await fetch(`/api/admin/email/history/${id}`, {
         method: 'DELETE',
       });
-
       if (response.ok) {
         toast.success('送信履歴を削除しました');
         // 履歴を再取得
@@ -280,33 +241,27 @@ export default function AdminEmailPage() {
         toast.error(data.error || '送信履歴の削除に失敗しました');
       }
     } catch (error) {
-      console.error('送信履歴削除エラー:', error);
       toast.error('送信履歴の削除中にエラーが発生しました');
     } finally {
       setDeletingId(null);
     }
   };
-
   // 履歴の選択状態を切り替えるハンドラ
   const handleToggleSelectHistory = (id: string) => {
     setSelectedHistoryIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
-
   // 選択した履歴を一括削除するハンドラ
   const handleBulkDelete = async () => {
     if (selectedHistoryIds.length === 0) {
       toast.error('削除する履歴を選択してください');
       return;
     }
-
     if (!confirm(`選択した${selectedHistoryIds.length}件の送信履歴を削除しますか？`)) {
       return;
     }
-
     setBulkDeleting(true);
-
     try {
       const response = await fetch('/api/admin/email/history', {
         method: 'POST',
@@ -315,7 +270,6 @@ export default function AdminEmailPage() {
         },
         body: JSON.stringify({ ids: selectedHistoryIds }),
       });
-
       if (response.ok) {
         const data = await response.json();
         toast.success(`${data.deletedCount}件の送信履歴を削除しました`);
@@ -328,19 +282,16 @@ export default function AdminEmailPage() {
         toast.error(data.error || '送信履歴の一括削除に失敗しました');
       }
     } catch (error) {
-      console.error('送信履歴一括削除エラー:', error);
       toast.error('送信履歴の一括削除中にエラーが発生しました');
     } finally {
       setBulkDeleting(false);
     }
   };
-
   // ターゲットグループの表示名を取得
   const getTargetGroupLabel = (value: string) => {
     const group = targetGroups.find((g) => g.value === value);
     return group ? group.label : value;
   };
-
   // 日付フォーマット
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -352,7 +303,6 @@ export default function AdminEmailPage() {
       minute: '2-digit',
     });
   };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -363,11 +313,9 @@ export default function AdminEmailPage() {
       </div>
     );
   }
-
   if (!isAdmin) {
     return null; // リダイレクト処理中は表示なし
   }
-
   return (
     <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
       {/* メール送信フォーム */}
@@ -391,7 +339,6 @@ export default function AdminEmailPage() {
             {showHistory ? '履歴を非表示' : '送信履歴を表示'}
           </button>
         </div>
-
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-5 mb-8">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -404,13 +351,11 @@ export default function AdminEmailPage() {
             </div>
           </div>
         </div>
-
         {/* 送信履歴セクション */}
         {showHistory && (
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">送信履歴</h2>
-
               {/* 一括削除ボタン */}
               {selectedHistoryIds.length > 0 && (
                 <button
@@ -427,7 +372,6 @@ export default function AdminEmailPage() {
                 </button>
               )}
             </div>
-
             {historyLoading ? (
               <div className="flex justify-center items-center py-8">
                 <Spinner size="md" />
@@ -538,7 +482,6 @@ export default function AdminEmailPage() {
             )}
           </div>
         )}
-
         <form onSubmit={handleSubmit} className="space-y-8">
           <div>
             <label htmlFor="targetGroup" className="block text-base font-medium text-gray-700 mb-2">
@@ -559,7 +502,6 @@ export default function AdminEmailPage() {
               ))}
             </select>
           </div>
-
           {/* 特定ユーザー選択フィールド */}
           {formData.targetGroup === 'single_user' && (
             <div>
@@ -602,7 +544,6 @@ export default function AdminEmailPage() {
               </div>
             </div>
           )}
-
           <div>
             <label htmlFor="subject" className="block text-base font-medium text-gray-700 mb-2">
               件名
@@ -618,7 +559,6 @@ export default function AdminEmailPage() {
               required
             />
           </div>
-
           <div>
             <label htmlFor="title" className="block text-base font-medium text-gray-700 mb-2">
               タイトル
@@ -634,7 +574,6 @@ export default function AdminEmailPage() {
               required
             />
           </div>
-
           <div>
             <label htmlFor="message" className="block text-base font-medium text-gray-700 mb-2">
               本文
@@ -650,10 +589,8 @@ export default function AdminEmailPage() {
               required
             />
           </div>
-
           <div className="border-t border-gray-200 pt-6">
             <h3 className="text-lg font-medium text-gray-700 mb-4">Call To Action（オプション）</h3>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="ctaText" className="block text-base font-medium text-gray-700 mb-2">
@@ -669,7 +606,6 @@ export default function AdminEmailPage() {
                   placeholder="今すぐ確認する"
                 />
               </div>
-
               <div>
                 <label htmlFor="ctaUrl" className="block text-base font-medium text-gray-700 mb-2">
                   CTAリンクURL
@@ -686,7 +622,6 @@ export default function AdminEmailPage() {
               </div>
             </div>
           </div>
-
           <div className="flex justify-end">
             <button
               type="submit"
@@ -708,7 +643,6 @@ export default function AdminEmailPage() {
           </div>
         </form>
       </div>
-
       {/* 追加: ユーザー検索モーダル */}
       {showUserSearchModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -722,7 +656,6 @@ export default function AdminEmailPage() {
                 ✕
               </button>
             </div>
-
             <div className="mb-4">
               <div className="flex items-center">
                 <input
@@ -742,7 +675,6 @@ export default function AdminEmailPage() {
                 </button>
               </div>
             </div>
-
             <div className="max-h-80 overflow-y-auto">
               {searchResults.length > 0 ? (
                 <ul className="divide-y divide-gray-200">
@@ -770,7 +702,6 @@ export default function AdminEmailPage() {
                   ユーザー名またはメールアドレスを入力して検索してください
                 </div>
               ) : null}
-
               {searchLoading && (
                 <div className="flex justify-center items-center py-4">
                   <Spinner size="md" />
@@ -778,7 +709,6 @@ export default function AdminEmailPage() {
                 </div>
               )}
             </div>
-
             <div className="mt-4 flex justify-end">
               <button
                 onClick={() => setShowUserSearchModal(false)}

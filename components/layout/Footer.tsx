@@ -1,14 +1,11 @@
 // components/layout/Footer.tsx
 import React from 'react';
 import Link from 'next/link';
-
 export function Footer() {
     const currentYear = new Date().getFullYear();
-
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
         {/* サービス情報の上の区切り線は削除（ここには何も置かない） */}
-
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {/* サービス情報 */}
           <div>
@@ -31,7 +28,6 @@ export function Footer() {
               </li>
             </ul>
           </div>
-
           {/* サポート */}
           <div>
             <h2 className="text-lg font-semibold mb-4">サポート</h2>
@@ -53,7 +49,6 @@ export function Footer() {
               </li>
             </ul>
           </div>
-
           {/* 会社情報 */}
           <div>
             <h2 className="text-lg font-semibold mb-4">会社情報</h2>
@@ -71,7 +66,6 @@ export function Footer() {
             </ul>
           </div>
         </div>
-
         {/* コピーライトの上の区切り線は維持 */}
         <div className="mt-8 border-t border-gray-200 pt-4">
           <p className="text-base text-gray-400 text-center">

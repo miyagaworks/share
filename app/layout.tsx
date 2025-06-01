@@ -5,19 +5,16 @@ import { ToastProvider } from '@/components/providers/ToastProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import './globals.css';
-
 const inter = Inter({
   variable: '--font-geist-sans',
   subsets: ['latin'],
   display: 'swap',
 });
-
 const robotoMono = Roboto_Mono({
   variable: '--font-geist-mono',
   subsets: ['latin'],
   display: 'swap',
 });
-
 export const metadata: Metadata = {
   title: 'Share',
   description: 'デジタル名刺サービス',
@@ -27,20 +24,17 @@ export const metadata: Metadata = {
     apple: '/pwa/apple-touch-icon.png',
   },
 };
-
 export const viewport: Viewport = {
   width: 'device-width',
   initialScale: 1.0,
   colorScheme: 'light dark',
 };
-
 export default function RootLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
 }>) {
   const isDevelopment = process.env.NODE_ENV === 'development';
-
   return (
     <html lang="ja">
       <head>

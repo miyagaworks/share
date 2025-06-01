@@ -1,18 +1,15 @@
 // app/api/auth/signin/route.ts
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { LoginSchema } from '@/schemas/auth';
-
+import { logger } from '@/lib/utils/logger';
 export async function POST(req: Request) {
   try {
     const body = await req.json();
     const { email, password } = body;
-
-    console.log('API route - サインイン試行:', email);
-
+    logger.info('サインイン試行:', { email });
     // バリデーション
     const validatedFields = LoginSchema.safeParse({ email, password });
     if (!validatedFields.success) {
@@ -23,7 +20,6 @@ export async function POST(req: Request) {
         { status: 400 },
       );
     }
-
     // ユーザーを直接データベースで検索
     const user = await prisma.user.findUnique({
       where: { email },
@@ -33,7 +29,6 @@ export async function POST(req: Request) {
         password: true,
       },
     });
-
     if (!user || !user.password) {
       return NextResponse.json(
         {
@@ -42,7 +37,6 @@ export async function POST(req: Request) {
         { status: 401 },
       );
     }
-
     // パスワード検証
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
@@ -53,7 +47,6 @@ export async function POST(req: Request) {
         { status: 401 },
       );
     }
-
     // 認証成功
     return NextResponse.json({
       success: true,
@@ -63,12 +56,10 @@ export async function POST(req: Request) {
   } catch (error: unknown) {
     // エラータイプの明示
     const errorMessage = error instanceof Error ? error.message : '不明なエラー';
-    console.error('API route - サインインエラー詳細:', {
+    logger.error('サインインエラー:', error, {
       errorType: error instanceof Error ? error.constructor.name : typeof error,
       message: errorMessage,
-      stack: error instanceof Error ? error.stack : undefined,
     });
-
     return NextResponse.json(
       {
         error: 'ログイン処理中にエラーが発生しました',

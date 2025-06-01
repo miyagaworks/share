@@ -1,9 +1,7 @@
 // app/support/contact/page.tsx
 'use client';
-
 import { Suspense } from 'react';
 import ContactPageContent from './ContactPageContent';
-
 export default function ContactPage() {
   return (
     <Suspense

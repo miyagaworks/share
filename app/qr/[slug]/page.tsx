@@ -1,13 +1,11 @@
 // app/qr/[slug]/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { QRCodeSVG } from 'qrcode.react';
 import { useParams } from 'next/navigation';
 import { Spinner } from '@/components/ui/Spinner';
 import Image from 'next/image';
-
 // QRCodePageインターフェースを実際のモデルに合わせて修正
 interface QrCodePage {
   id: string;
@@ -25,7 +23,6 @@ interface QrCodePage {
   createdAt: Date;
   updatedAt: Date;
 }
-
 export default function QrCodeViewPage() {
   const params = useParams();
   const slug = params.slug as string;
@@ -37,76 +34,55 @@ export default function QrCodeViewPage() {
   const [headerText, setHeaderText] = useState<string>('シンプルにつながる、スマートにシェア。');
   const [textColor, setTextColor] = useState<string>('#FFFFFF');
   const [nameEn, setNameEn] = useState<string>('Taro Yamada'); // 英語名の状態変数
-
   useEffect(() => {
     const fetchQrCodeData = async () => {
       try {
-        console.log(`Fetching QR code data for slug: ${slug}`);
-
         // QRコード情報を取得
         const response = await fetch(`/api/qrcode/${slug}`);
         if (!response.ok) {
           throw new Error(`QRコードの取得に失敗しました: ${response.status}`);
         }
-
         const data = await response.json();
-        console.log('QR code data received:', data.qrCode);
-
         setQrData(data.qrCode);
-
         // textColorはQRCodePageから取得
         if (data.qrCode && data.qrCode.textColor) {
-          console.log(`Setting text color from QR data: ${data.qrCode.textColor}`);
           setTextColor(data.qrCode.textColor);
         } else {
-          console.log('No text color in QR data, using default #FFFFFF');
           setTextColor('#FFFFFF');
         }
-
         // QRコードの所有者のプロフィール情報を取得
         if (data.qrCode && data.qrCode.userId) {
           try {
-            console.log(`Fetching user profile for userId: ${data.qrCode.userId}`);
-
             const userResponse = await fetch(`/api/user/${data.qrCode.userId}/profile`);
             if (!userResponse.ok) {
               throw new Error(`ユーザープロフィール取得エラー: ${userResponse.status}`);
             }
-
             const userData = await userResponse.json();
-            console.log('User data received:', userData.user);
-
             // ユーザー情報を設定
             if (userData.user) {
               // プロフィール画像
               if (userData.user.image) {
                 setUserProfileImage(userData.user.image);
               }
-
               // 英語名
               if (userData.user.nameEn) {
                 setNameEn(userData.user.nameEn);
-                console.log(`Name En set from user data: ${userData.user.nameEn}`);
               }
-
               // ヘッダーテキストはユーザーモデルから取得
               if (userData.user.headerText) {
                 setHeaderText(userData.user.headerText);
-                console.log(`Header text set from user data: ${userData.user.headerText}`);
               }
             }
           } catch (userError) {
-            console.error('ユーザー情報取得エラー:', userError);
+            // ユーザー情報取得エラー（サイレント失敗）
           }
         }
       } catch (error) {
-        console.error('データ取得エラー:', error);
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     if (slug) {
       fetchQrCodeData();
     } else {
@@ -114,25 +90,20 @@ export default function QrCodeViewPage() {
       setIsLoading(false);
     }
   }, [slug]);
-
   // 画面の向きが変わったときにFlipの状態をリセット
   useEffect(() => {
     const handleOrientationChange = () => {
       setIsFlipped(false);
     };
-
     window.addEventListener('orientationchange', handleOrientationChange);
-
     return () => {
       window.removeEventListener('orientationchange', handleOrientationChange);
     };
   }, []);
-
   // 反転ボタンのクリックハンドラ
   const handleFlip = () => {
     setIsFlipped(!isFlipped);
   };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen bg-gray-100">
@@ -140,7 +111,6 @@ export default function QrCodeViewPage() {
       </div>
     );
   }
-
   if (error || !qrData) {
     return (
       <div className="flex flex-col justify-center items-center min-h-screen bg-gray-100 p-4">
@@ -151,29 +121,17 @@ export default function QrCodeViewPage() {
       </div>
     );
   }
-
   // メインカラーとテキストカラーを設定
   const mainColor = qrData.primaryColor || '#3b82f6';
-
-  // ログ出力
-  console.log('==== QR CODE PAGE RENDER DATA ====');
-  console.log('Main color:', mainColor);
-  console.log('Text color state:', textColor);
-  console.log('Text color from QR data:', qrData.textColor);
-  console.log('Header text state:', headerText);
-  console.log('Name En state:', nameEn);
-  console.log('=================================');
-
+  // デバッグ情報表示のためのログ出力を削除
   const containerStyle = {
     transform: isFlipped ? 'rotate(180deg)' : 'rotate(0deg)',
     transition: 'transform 0.5s ease-in-out',
   };
-
   const buttonContentStyle = {
     transform: isFlipped ? 'rotate(180deg)' : 'rotate(0deg)',
     transition: 'transform 0.5s ease-in-out',
   };
-
   return (
     <>
       <Head>
@@ -209,7 +167,6 @@ export default function QrCodeViewPage() {
                 {headerText}
               </p>
             </div>
-
             <div style={{ padding: '1.5rem' }}>
               {/* プロフィール部分 */}
               <div className="text-center mt-4 mb-6">
@@ -243,13 +200,11 @@ export default function QrCodeViewPage() {
                     </svg>
                   )}
                 </div>
-
                 {/* ユーザー名 */}
                 <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{qrData.userName}</h1>
                 {/* 英語名 - 状態変数から取得 */}
                 <p style={{ color: '#4B5563', fontSize: '1rem' }}>{nameEn}</p>
               </div>
-
               {/* QRコード */}
               <div className="flex justify-center my-6">
                 <div
@@ -268,7 +223,6 @@ export default function QrCodeViewPage() {
                   />
                 </div>
               </div>
-
               {/* 反転ボタン - テキストカラーを適用 */}
               <div className="mt-8">
                 <button
@@ -299,7 +253,6 @@ export default function QrCodeViewPage() {
             </div>
           </div>
         </div>
-
         {/* 開発環境用のデバッグ情報表示 */}
         {process.env.NODE_ENV === 'development' && (
           <div className="fixed bottom-0 left-0 bg-black bg-opacity-75 text-white p-2 text-xs max-w-xs overflow-auto max-h-40">

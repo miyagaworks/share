@@ -1,11 +1,10 @@
 // app/api/subscription/route.ts
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 // import { stripe } from "@/lib/stripe";
-
 // ご利用プラン情報の型定義
 interface MockSubscription {
   id: string;
@@ -20,7 +19,6 @@ interface MockSubscription {
   isMockData?: boolean;
   interval?: string; // 追加: 更新間隔（month または year）
 }
-
 // prismaから取得するサブスクリプションに動的プロパティを追加する型
 interface ExtendedSubscription {
   id: string;
@@ -38,7 +36,6 @@ interface ExtendedSubscription {
   originalPlan?: string; // 追加: 元のプラン
   [key: string]: unknown;
 }
-
 // 請求履歴の型定義（使用するため残します）
 interface BillingRecord {
   id: string;
@@ -49,7 +46,6 @@ interface BillingRecord {
   paidAt: Date | null;
   createdAt: Date;
 }
-
 // レガシープランから新プランへのマッピング関数
 function mapLegacyPlanToNew(legacyPlan: string): string {
   switch (legacyPlan) {
@@ -62,58 +58,47 @@ function mapLegacyPlanToNew(legacyPlan: string): string {
       return legacyPlan; // その他はそのまま
   }
 }
-
 // ご利用プラン情報取得API
 export async function GET() {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-
     // データベースからご利用プラン情報を取得
     let userSubscription = null;
     let userBillingHistory: BillingRecord[] = []; // 明示的に型を指定
-
     try {
       userSubscription = await prisma.subscription.findUnique({
         where: { userId: session.user.id },
       });
-
       // 請求履歴の取得（型を明示的に指定）
       const billingRecords = await prisma.billingRecord.findMany({
         where: { userId: session.user.id },
         orderBy: { createdAt: 'desc' },
         take: 10, // 最新10件のみ取得
       });
-
       userBillingHistory = billingRecords as BillingRecord[];
     } catch (dbError) {
-      console.error('データベースクエリエラー:', dbError);
+      logger.error('データベースクエリエラー:', dbError);
       // エラーが発生した場合はモックデータを使用
     }
-
     // ユーザー情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: { trialEndsAt: true, subscriptionStatus: true },
     });
-
     // 永久利用権ユーザーの場合
     const isPermanentUser = user?.subscriptionStatus === 'permanent';
-
     // ご利用プラン情報が存在する場合、必要なプラン情報を追加
     if (userSubscription) {
       // データベースから取得したサブスクリプションを拡張した型として扱う
       const extendedSubscription = userSubscription as ExtendedSubscription;
-
       // 古いプランIDを新システムにマッピング
       if (['business', 'business-plus', 'business_plus'].includes(extendedSubscription.plan)) {
         extendedSubscription.originalPlan = extendedSubscription.plan; // 元のプランを保存
         extendedSubscription.plan = mapLegacyPlanToNew(extendedSubscription.plan);
       }
-
       // プランの更新間隔を設定（データベースにintervalフィールドがない場合のフォールバック）
       if (!extendedSubscription.interval) {
         // プランIDから更新間隔を推測
@@ -129,17 +114,14 @@ export async function GET() {
           extendedSubscription.interval = 'month';
         }
       }
-
       // userSubscriptionに代入
       userSubscription = extendedSubscription;
     }
-
     // モックデータ部分を修正
     if (!userSubscription) {
       const now = new Date();
       const trialEndsAt = user?.trialEndsAt ? new Date(user.trialEndsAt) : null;
       const isTrialActive = trialEndsAt && now < trialEndsAt;
-
       // 永久利用権ユーザーの場合は特別なモックデータを作成
       if (isPermanentUser) {
         // 永久利用権ユーザー用のモックデータ
@@ -154,8 +136,7 @@ export async function GET() {
           cancelAtPeriodEnd: false,
           interval: 'permanent', // 永久プランの場合
         };
-
-        console.warn('永久利用権ユーザーのモックデータを使用します:', session.user.id);
+        logger.warn('永久利用権ユーザーのモックデータを使用します:', session.user.id);
         userSubscription = mockSubscription;
       } else {
         // 通常ユーザー用のモックデータ
@@ -171,18 +152,15 @@ export async function GET() {
           isMockData: true,
           interval: isTrialActive ? 'trial' : 'month', // トライアルまたはデフォルトの更新間隔
         };
-
-        console.warn('WARNING: Using mock subscription data for user:', session.user.id);
+        logger.warn('WARNING: Using mock subscription data for user:', session.user.id);
         userSubscription = mockSubscription;
       }
     }
-
     // 永久利用権ユーザーなら、サブスクリプションデータも修正
     if (isPermanentUser && userSubscription) {
       userSubscription.plan = 'permanent'; // 永久利用プランに設定
       userSubscription.interval = 'permanent'; // 永久利用には更新間隔なし
     }
-
     // トライアル期間の残り日数を計算
     let trialDaysRemaining = 0;
     if (user?.trialEndsAt) {
@@ -194,7 +172,6 @@ export async function GET() {
         );
       }
     }
-
     // モックデータをレスポンスとして返す
     return NextResponse.json({
       success: true,
@@ -212,7 +189,7 @@ export async function GET() {
       message: 'ご利用のプラン情報を取得しました',
     });
   } catch (error) {
-    console.error('ご利用のプラン取得エラー:', error);
+    logger.error('ご利用のプラン取得エラー:', error);
     const errorMessage =
       error instanceof Error ? error.message : 'ご利用のプラン情報の取得に失敗しました';
     return NextResponse.json({ error: errorMessage }, { status: 500 });

@@ -1,6 +1,5 @@
 // app/dashboard/corporate/users/invite/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -8,13 +7,11 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { HiMail, HiArrowLeft, HiInformationCircle } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
-
 // 部署情報の型定義
 interface Department {
   id: string;
   name: string;
 }
-
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -23,7 +20,6 @@ interface TenantData {
   currentUserCount: number;
   departments: Department[];
 }
-
 export default function InviteUserPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -35,37 +31,27 @@ export default function InviteUserPage() {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
-
   // テナント情報と部署情報を取得
   useEffect(() => {
     const fetchTenantData = async () => {
       if (!session?.user?.id) return;
-
       try {
         setIsLoading(true);
-
         // テナント情報取得API
         const tenantResponse = await fetch('/api/corporate/tenant');
-
         if (!tenantResponse.ok) {
           throw new Error('テナント情報の取得に失敗しました');
         }
-
         const tenantData = await tenantResponse.json();
-
         // 管理者権限がない場合はリダイレクト
         if (tenantData.userRole !== 'admin') {
           router.push('/dashboard/corporate/users');
           return;
         }
-
         // 部署情報取得API
         const deptResponse = await fetch('/api/corporate/departments');
-
         if (!deptResponse.ok) {
-          console.error('部署情報取得エラー:', await deptResponse.json().catch(() => ({})));
           toast.error('部署情報の取得に失敗しました。一部の機能が制限されます');
-
           setTenantData({
             ...tenantData.tenant,
             currentUserCount: tenantData.tenant.users?.length || 0,
@@ -74,7 +60,6 @@ export default function InviteUserPage() {
         } else {
           const deptData = await deptResponse.json();
           const departments = deptData.departments || [];
-
           setDepartments(departments);
           setTenantData({
             ...tenantData.tenant,
@@ -82,41 +67,33 @@ export default function InviteUserPage() {
             departments: departments,
           });
         }
-
         setError(null);
       } catch (err) {
-        console.error('テナント情報取得エラー:', err);
         setError('テナント情報を読み込めませんでした');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchTenantData();
   }, [session, router]);
-
   // ユーザー招待を送信する処理
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!emails.trim()) {
       toast.error('メールアドレスを入力してください');
       return;
     }
-
     // 複数のメールアドレスを配列に変換（カンマまたは改行で区切り）
     const emailList = emails
       .split(/[,\n]/)
       .map((email) => email.trim())
       .filter((email) => email.length > 0);
-
     // メールアドレスの形式を検証
     const invalidEmails = emailList.filter((email) => !validateEmail(email));
     if (invalidEmails.length > 0) {
       toast.error(`無効なメールアドレスがあります: ${invalidEmails.join(', ')}`);
       return;
     }
-
     // テナントのユーザー上限を超えるかどうかをチェック
     if (tenantData && tenantData.currentUserCount + emailList.length > tenantData.maxUsers) {
       toast.error(
@@ -124,10 +101,8 @@ export default function InviteUserPage() {
       );
       return;
     }
-
     try {
       setIsSending(true);
-
       // 招待APIを呼び出す
       const response = await fetch('/api/corporate/users/invite', {
         method: 'POST',
@@ -138,14 +113,11 @@ export default function InviteUserPage() {
           departmentId: departmentId || null,
         }),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.message || data.error || '招待の送信に失敗しました');
       }
-
       const result = await response.json();
-
       // 招待結果の処理
       if (result.errors && result.errors.length > 0) {
         // エラーがあるが一部成功した場合
@@ -160,22 +132,18 @@ export default function InviteUserPage() {
         // すべて成功した場合
         toast.success(`${result.invitedCount}人のユーザーに招待を送信しました`);
       }
-
       // ユーザー一覧ページに戻る
       router.push('/dashboard/corporate/users');
     } catch (err) {
-      console.error('招待送信エラー:', err);
       toast.error(err instanceof Error ? err.message : '招待の送信に失敗しました');
     } finally {
       setIsSending(false);
     }
   };
-
   // メールアドレスの検証
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
-
   // 読み込み中
   if (isLoading) {
     return (
@@ -184,7 +152,6 @@ export default function InviteUserPage() {
       </div>
     );
   }
-
   // エラー表示
   if (error) {
     return (
@@ -197,7 +164,6 @@ export default function InviteUserPage() {
       </div>
     );
   }
-
   // テナントデータがない場合
   if (!tenantData) {
     return (
@@ -214,10 +180,7 @@ export default function InviteUserPage() {
       </div>
     );
   }
-
   // 部署情報のデバッグ出力
-  console.log('使用可能な部署:', departments || []);
-
   return (
     <div className="space-y-6">
       {/* ヘッダー部分 */}
@@ -237,7 +200,6 @@ export default function InviteUserPage() {
           </p>
         </div>
       </div>
-
       {/* 招待フォーム */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
         <form onSubmit={handleInviteSubmit}>
@@ -259,7 +221,6 @@ export default function InviteUserPage() {
                 required
               ></textarea>
             </div>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <label htmlFor="role" className="block text-sm font-medium text-gray-700 mb-1">
@@ -275,7 +236,6 @@ export default function InviteUserPage() {
                   <option value="admin">管理者（全ての権限）</option>
                 </select>
               </div>
-
               <div>
                 <label
                   htmlFor="department"
@@ -307,7 +267,6 @@ export default function InviteUserPage() {
                 )}
               </div>
             </div>
-
             {/* 残りユーザー数の警告表示 */}
             {tenantData.maxUsers - tenantData.currentUserCount <= 5 && (
               <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
@@ -317,7 +276,6 @@ export default function InviteUserPage() {
                 </p>
               </div>
             )}
-
             <div className="flex justify-end space-x-4">
               <Button
                 type="button"
@@ -349,7 +307,6 @@ export default function InviteUserPage() {
           </div>
         </form>
       </div>
-
       {/* ヘルプセクション - スタイルクラスを変更 */}
       <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 w-full">
         <div className="flex flex-row items-start">

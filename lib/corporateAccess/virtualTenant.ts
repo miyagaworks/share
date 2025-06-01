@@ -1,13 +1,12 @@
 // lib/corporateAccess/virtualTenant.ts
+import { logger } from "@/lib/utils/logger";
 import { isClient, logDebug } from './state';
 import { getFromStorage, saveToStorage, StorageKey, StorageType } from './storage';
-
 interface UserData {
   id: string;
   name?: string | null;
   subscriptionStatus?: string;
 }
-
 export interface VirtualTenantData {
   id: string;
   name: string;
@@ -36,10 +35,8 @@ export interface VirtualTenantData {
   };
   plan?: string;
 }
-
 // グローバルな仮想テナントデータを保持する変数
 let virtualTenantDataCache: VirtualTenantData | null = null;
-
 /**
  * 永久利用権ユーザー用の仮想テナントデータを生成
  *
@@ -90,7 +87,6 @@ export function generateVirtualTenantData(
     plan: 'business_plus',
   };
 }
-
 /**
  * 仮想テナントデータを取得
  *
@@ -101,12 +97,10 @@ export function getVirtualTenantData(): VirtualTenantData | null {
   if (virtualTenantDataCache) {
     return virtualTenantDataCache;
   }
-
   // サーバーサイドの場合は早期リターン
   if (!isClient()) {
     return null;
   }
-
   // LocalStorageから復元を試みる
   try {
     const savedData = getFromStorage<VirtualTenantData>(StorageKey.VIRTUAL_TENANT);
@@ -117,26 +111,20 @@ export function getVirtualTenantData(): VirtualTenantData | null {
   } catch (e) {
     logDebug('仮想テナントデータの復元エラー', e);
   }
-
   // データがない場合は新規作成を試みる
   try {
     const permanentUser = getFromStorage<UserData>(StorageKey.USER_DATA, StorageType.SESSION);
-
     if (permanentUser && permanentUser.subscriptionStatus === 'permanent') {
       virtualTenantDataCache = generateVirtualTenantData(permanentUser.id, permanentUser.name);
-
       // 新しく生成したデータをLocalStorageに保存
       saveToStorage(StorageKey.VIRTUAL_TENANT, virtualTenantDataCache);
-
       return virtualTenantDataCache;
     }
   } catch (e) {
     logDebug('仮想テナント生成エラー', e);
   }
-
   return null;
 }
-
 /**
  * 仮想テナントデータを更新
  *
@@ -148,21 +136,16 @@ export function updateVirtualTenantData(
 ): VirtualTenantData | null {
   const currentData = getVirtualTenantData();
   if (!currentData) return null;
-
   // 更新関数を適用して新しいデータを生成
   const updatedData = updater(currentData);
-
   // グローバル変数を更新
   virtualTenantDataCache = updatedData;
-
   // LocalStorageに保存（ページリロード間で保持するため）
   if (isClient()) {
     saveToStorage(StorageKey.VIRTUAL_TENANT, updatedData);
   }
-
   return updatedData;
 }
-
 /**
  * 仮想テナントデータから部署情報を取得
  *
@@ -176,7 +159,6 @@ export function getVirtualDepartments(): Array<{
   const data = getVirtualTenantData();
   return data?.departments || [];
 }
-
 /**
  * 仮想テナントデータからSNSリンク情報を取得
  *
@@ -193,7 +175,6 @@ export function getVirtualSnsLinks(): Array<{
   const data = getVirtualTenantData();
   return data?.snsLinks || [];
 }
-
 /**
  * 仮想テナントデータからユーザー情報を取得
  *
@@ -203,7 +184,6 @@ export function getVirtualUsers(): Array<{ id: string; role: string; name?: stri
   const data = getVirtualTenantData();
   return data?.users || [];
 }
-
 /**
  * 仮想テナントデータから設定情報を取得
  *

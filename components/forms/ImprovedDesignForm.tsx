@@ -1,6 +1,5 @@
 // components/forms/ImprovedDesignForm.tsx
 'use client';
-
 import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +11,6 @@ import { toast } from 'react-hot-toast';
 import { updateProfile } from '@/actions/profile';
 import type { User } from '@prisma/client';
 import tinycolor from 'tinycolor2';
-
 // 型拡張
 interface ExtendedUser extends User {
   // nullを許容する型として明示的に定義
@@ -20,7 +18,6 @@ interface ExtendedUser extends User {
   headerText: string | null;
   textColor: string | null;
 }
-
 // シンプルなスキーマ
 const DesignSchema = z.object({
   mainColor: z.string(),
@@ -28,14 +25,11 @@ const DesignSchema = z.object({
   headerText: z.string().max(38, { message: '最大38文字（全角19文字）までです' }).optional(),
   textColor: z.string().optional(),
 });
-
 type FormData = z.infer<typeof DesignSchema>;
-
 interface ImprovedDesignFormProps {
   user: User;
   onUpdate?: () => Promise<void> | void;
 }
-
 export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) {
   const extendedUser = user as ExtendedUser;
   const [isPending, setIsPending] = useState(false);
@@ -44,13 +38,10 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
   const [useOriginalColors, setUseOriginalColors] = useState(
     extendedUser.snsIconColor === 'original',
   );
-
   // 定数定義
   const MAX_CHARS = 38; // 最大文字数（半角38文字・全角19文字相当）
-
   // 状態の追加
   const [remainingChars, setRemainingChars] = useState(MAX_CHARS);
-
   const {
     handleSubmit,
     setValue,
@@ -66,12 +57,10 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
       textColor: extendedUser.textColor || '#FFFFFF',
     },
   });
-
   const watchedMainColor = watch('mainColor');
   const watchedSnsIconColor = watch('snsIconColor');
   const watchedHeaderText = watch('headerText');
   const watchedTextColor = watch('textColor');
-
   // 文字数カウント処理
   useEffect(() => {
     if (watchedHeaderText) {
@@ -79,90 +68,69 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
       const count = [...watchedHeaderText].reduce((acc, char) => {
         return acc + (char.match(/[^\x01-\x7E]/) ? 2 : 1);
       }, 0);
-
       // 残り文字数の計算
       setRemainingChars(MAX_CHARS - count);
     } else {
       setRemainingChars(MAX_CHARS);
     }
   }, [watchedHeaderText]);
-
   // メインカラーの明度に基づくテキストカラーの推奨
   const isLightMainColor = useMemo(() => {
     const color = tinycolor(watchedMainColor);
     return color.isLight();
   }, [watchedMainColor]);
-
   // エラーがクリアされたらエラーメッセージをリセット
   useEffect(() => {
     if (errorMessage) {
       setErrorMessage(null);
     }
   }, [watchedMainColor, watchedSnsIconColor, watchedHeaderText, watchedTextColor, errorMessage]);
-
   // トグルスイッチの変更を処理
   useEffect(() => {
     setValue('snsIconColor', useOriginalColors ? 'original' : '#333333');
   }, [useOriginalColors, setValue]);
-
   const onSubmit = async (data: FormData) => {
     try {
       setIsPending(true);
       setErrorMessage(null);
       setIsSubmitting(true);
-
-      console.log('🎨 [Form] デザイン更新開始:', data);
-
       const response = await updateProfile({
         mainColor: data.mainColor,
         snsIconColor: data.snsIconColor,
         headerText: data.headerText,
         textColor: data.textColor,
       });
-
       if (response.error) {
         setErrorMessage(response.error);
         throw new Error(response.error);
       }
-
-      console.log('🎨 [Form] デザイン更新成功');
-
       // 🚀 修正: 更新コールバックを最初に実行
       if (onUpdate) {
-        console.log('🎨 [Form] プレビュー更新開始');
         await onUpdate();
-        console.log('🎨 [Form] プレビュー更新完了');
       }
-
       // 🚀 修正: 成功メッセージはプレビュー更新後に表示
       toast.success('デザイン設定を更新しました');
-
       // 🚀 修正: router.refreshは最後に実行（必要に応じて）
       // router.refresh();
     } catch (error) {
-      console.error('🎨 [Form] Error:', error);
       toast.error(errorMessage || 'デザイン設定の更新に失敗しました');
     } finally {
       setIsPending(false);
       setIsSubmitting(false);
     }
   };
-
   // カラーピッカーでの色変更処理
   const handleMainColorChange = (color: string) => {
     setValue('mainColor', color);
   };
-
   // テキストカラーの変更処理
   const handleTextColorChange = (color: string) => {
     setValue('textColor', color);
   };
-
   // SNSアイコンカラーのトグル切り替え
   const handleSnsIconColorToggle = () => {
     setUseOriginalColors(!useOriginalColors);
   };
-
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-4">
@@ -182,7 +150,6 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
             <p className="text-sm text-destructive mt-1">{errors.mainColor.message}</p>
           )}
         </div>
-
         <div>
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             ヘッダーテキスト
@@ -208,7 +175,6 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
             <p className="text-sm text-destructive mt-1">{errors.headerText.message}</p>
           )}
         </div>
-
         <div>
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             テキストカラー
@@ -233,7 +199,6 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
             <p className="text-sm text-destructive mt-1">{errors.textColor.message}</p>
           )}
         </div>
-
         <div>
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
             SNSアイコンカラー
@@ -241,7 +206,6 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
           <p className="text-xs text-muted-foreground mt-1 mb-2 text-justify">
             SNSアイコンのカラーを設定します
           </p>
-
           {/* トグルスイッチ */}
           <div className="relative h-14 rounded-md border border-b-black bg-white mt-3">
             <div
@@ -266,7 +230,6 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
                 </div>
               </div>
             </div>
-
             <div className="absolute inset-0 flex justify-between pointer-events-none">
               <div className="w-1/2 h-full flex items-center justify-center text-sm text-gray-400">
                 <div className="flex items-center opacity-50">
@@ -284,7 +247,6 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
               </div>
             </div>
           </div>
-
           {/* SNSアイコンプレビュー */}
           <div className="mt-4">
             <label className="text-xs text-muted-foreground">SNSアイコンプレビュー</label>
@@ -302,7 +264,6 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
                 </div>
                 <span className="text-xs mt-1">LINE</span>
               </div>
-
               <div className="flex flex-col items-center">
                 <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center">
                   <svg
@@ -316,7 +277,6 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
                 </div>
                 <span className="text-xs mt-1">YouTube</span>
               </div>
-
               <div className="flex flex-col items-center">
                 <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center">
                   <svg
@@ -330,7 +290,6 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
                 </div>
                 <span className="text-xs mt-1">X</span>
               </div>
-
               <div className="flex flex-col items-center">
                 <div className="w-12 h-12 rounded-xl bg-white shadow-sm flex items-center justify-center">
                   <svg
@@ -352,13 +311,11 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
               </div>
             </div>
           </div>
-
           {errors.snsIconColor?.message && (
             <p className="text-sm text-destructive mt-1">{errors.snsIconColor.message}</p>
           )}
           {errorMessage && <p className="text-sm text-destructive mt-1">{errorMessage}</p>}
         </div>
-
         {/* 将来的な拡張のためのプレースホルダー */}
         <div className="border-t border-gray-300 pt-4 mt-4">
           <p className="text-sm text-muted-foreground text-justify">
@@ -366,14 +323,12 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
           </p>
         </div>
       </div>
-
       <Button type="submit" disabled={isPending} className="w-full relative overflow-hidden group">
         <span
           className={`transition-all duration-300 ${isSubmitting ? 'opacity-0' : 'opacity-100'}`}
         >
           {isPending ? '更新中...' : 'デザインを更新'}
         </span>
-
         {isSubmitting && (
           <span className="absolute inset-0 flex items-center justify-center">
             <svg

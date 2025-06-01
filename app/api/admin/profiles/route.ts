@@ -1,29 +1,23 @@
 // app/api/admin/profiles/route.ts
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { isAdminUser } from '@/lib/utils/admin-access-server';
-
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
-
 export async function GET() {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-
     // 管理者チェック
     const isAdmin = await isAdminUser(session.user.id);
-
     if (!isAdmin) {
       return NextResponse.json({ error: '管理者権限がありません' }, { status: 403 });
     }
-
     // すべてのユーザーとそのプロフィール、QRコード情報を取得
     const users = await prisma.user.findMany({
       select: {
@@ -106,7 +100,6 @@ export async function GET() {
       },
       orderBy: { createdAt: 'desc' },
     });
-
     // レスポンス用にデータを整形
     const formattedUsers = users.map((user) => ({
       id: user.id,
@@ -142,10 +135,9 @@ export async function GET() {
       tenant: user.tenant || user.adminOfTenant || null,
       department: user.department,
     }));
-
     return NextResponse.json({ users: formattedUsers });
   } catch (error) {
-    console.error('プロフィール一覧取得エラー:', error);
+    logger.error('プロフィール一覧取得エラー:', error);
     return NextResponse.json({ error: 'プロフィール一覧の取得に失敗しました' }, { status: 500 });
   }
 }

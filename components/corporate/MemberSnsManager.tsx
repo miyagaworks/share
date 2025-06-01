@@ -16,7 +16,6 @@ import {
   HiX,
   HiInformationCircle,
 } from 'react-icons/hi';
-
 // 型定義
 interface SnsLink {
   id: string;
@@ -25,14 +24,12 @@ interface SnsLink {
   url: string;
   displayOrder: number;
 }
-
 interface CustomLink {
   id: string;
   name: string;
   url: string;
   displayOrder: number;
 }
-
 interface TenantData {
   id: string;
   name: string;
@@ -41,7 +38,6 @@ interface TenantData {
   corporatePrimary?: string | null;
   corporateSecondary?: string | null;
 }
-
 // props型の定義を更新
 interface MemberSnsManagerProps {
   personalSnsLinks: SnsLink[];
@@ -58,7 +54,6 @@ interface MemberSnsManagerProps {
   onSnsLinkUpdate: (updatedLinks: SnsLink[]) => void;
   onCustomLinkUpdate: (updatedLinks: CustomLink[]) => void;
 }
-
 export function MemberSnsManager({
   personalSnsLinks,
   customLinks,
@@ -71,40 +66,32 @@ export function MemberSnsManager({
   // テナントカラーの取得（優先順位を考慮）
   const primaryColor =
     tenantData?.primaryColor || tenantData?.corporatePrimary || 'var(--color-corporate-primary)';
-
   // 以下を追加 - corporatePlatformUrlsの参照を保存
   const corporatePlatformUrlsRef = useRef(corporatePlatformUrls);
-
   // props変更時に参照を更新
   useEffect(() => {
     corporatePlatformUrlsRef.current = corporatePlatformUrls;
   }, [corporatePlatformUrls]);
-
   // 編集モード状態
   const [editingSnsId, setEditingSnsId] = useState<string | null>(null);
   const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
-
   // 新規追加モード状態
   const [isAddingSns, setIsAddingSns] = useState(false);
   const [isSelectingSnsType, setIsSelectingSnsType] = useState(false);
   const [isAddingCustom, setIsAddingCustom] = useState(false);
-
   // SNS詳細ガイド
   const [showSnsGuide, setShowSnsGuide] = useState(false);
   const [guidePlatform, setGuidePlatform] = useState<SnsPlatform | null>(null);
-
   // フォーム状態
   const [snsForm, setSnsForm] = useState({
     platform: '',
     username: '',
     url: '',
   });
-
   const [customForm, setCustomForm] = useState({
     name: '',
     url: '',
   });
-
   // SNSプラットフォームのリスト（useMemoでラップ）
   const availablePlatforms = useMemo(
     () => [
@@ -122,18 +109,15 @@ export function MemberSnsManager({
     ],
     [],
   );
-
   // 既に使用されているプラットフォームを除外
   const usedPlatforms = useMemo(
     () => [...personalSnsLinks.map((link) => link.platform), ...corporatePlatforms],
     [personalSnsLinks, corporatePlatforms],
   );
-
   const unusedPlatforms = useMemo(
     () => availablePlatforms.filter((p) => !usedPlatforms.includes(p)),
     [availablePlatforms, usedPlatforms],
   );
-
   // プラットフォーム別のURLとユーザー名のプレースホルダー
   const platformPlaceholders = useMemo(
     () => ({
@@ -184,27 +168,19 @@ export function MemberSnsManager({
     }),
     [],
   );
-
   // URLハッシュを処理する関数
   const checkUrlHash = useCallback(() => {
     if (typeof window !== 'undefined') {
       const hash = window.location.hash;
-      console.log('現在のハッシュ:', hash);
       if (hash.startsWith('#add-sns-')) {
         const platformFromHash = decodeURIComponent(hash.replace('#add-sns-', ''));
-        console.log('検出したプラットフォーム:', platformFromHash);
-
         // 大文字小文字を区別せずにチェック
         const matchingPlatform = unusedPlatforms.find(
           (p) => p.toLowerCase() === platformFromHash.toLowerCase(),
         );
-
         if (matchingPlatform) {
-          console.log('対象プラットフォーム:', matchingPlatform);
-
           // 法人共通SNSから該当プラットフォームのURLを取得
           const corporateLink = corporatePlatformUrlsRef.current[matchingPlatform];
-
           setIsAddingSns(true);
           setIsSelectingSnsType(false);
           setSnsForm({
@@ -215,40 +191,32 @@ export function MemberSnsManager({
               platformPlaceholders[matchingPlatform as keyof typeof platformPlaceholders]?.url ||
               '',
           });
-
           // ハッシュをクリア
           setTimeout(() => {
             window.history.replaceState({}, document.title, window.location.pathname);
           }, 100);
         } else {
-          console.log('プラットフォームが未使用リストにありません:', unusedPlatforms);
         }
       }
     }
     // useCallbackの依存配列からcorporatePlatformUrlsを削除（React Hooksのエラー解消）
   }, [unusedPlatforms, platformPlaceholders]);
-
   // コンポーネントマウント時とハッシュ変更時の処理
   useEffect(() => {
     // 初回マウント時にハッシュをチェック
     checkUrlHash();
-
     // ハッシュ変更イベントリスナーを追加
     window.addEventListener('hashchange', checkUrlHash);
-
     return () => {
       window.removeEventListener('hashchange', checkUrlHash);
     };
   }, [checkUrlHash]);
-
   // プラットフォームの選択処理を修正
   const handleSelectPlatform = (platform: string) => {
     setIsSelectingSnsType(false);
     setIsAddingSns(true);
-
     // refから法人共通SNSのURLを取得
     const corporateLink = corporatePlatformUrlsRef.current[platform];
-
     setSnsForm({
       platform,
       username: corporateLink?.username || '',
@@ -258,27 +226,21 @@ export function MemberSnsManager({
         '',
     });
   };
-
   // LINE系のプラットフォームかどうか
   const isLineLink = (platform: string) => platform.toLowerCase() === 'line';
-
   const isOfficialLineLink = (platform: string) => platform.toLowerCase() === '公式line';
-
   // 入力URLの自動補完機能（既存関数を修正）
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const username = e.target.value;
     setSnsForm((prev) => {
       const platform = prev.platform;
-
       // LINE系のリンクの場合は特別な処理
       if (isLineLink(platform) || isOfficialLineLink(platform)) {
         return { ...prev, username };
       }
-
       if (platform && platformPlaceholders[platform as keyof typeof platformPlaceholders]) {
         const baseUrl = platformPlaceholders[platform as keyof typeof platformPlaceholders].url;
         let newUrl = baseUrl;
-
         if (username) {
           if (username.startsWith('@')) {
             newUrl += username.substring(1); // @を除去
@@ -286,13 +248,11 @@ export function MemberSnsManager({
             newUrl += username;
           }
         }
-
         return { ...prev, username, url: newUrl };
       }
       return { ...prev, username };
     });
   };
-
   // LINE URLの直接編集時の処理を追加
   const handleLineUrlChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newUrl = e.target.value;
@@ -301,14 +261,12 @@ export function MemberSnsManager({
       url: newUrl,
     }));
   };
-
   // SNSリンク追加処理
   const handleAddSns = async () => {
     if (!snsForm.platform || !snsForm.url) {
       toast.error('プラットフォームとURLは必須です');
       return;
     }
-
     try {
       const response = await fetch('/api/corporate-member/links/sns', {
         method: 'POST',
@@ -317,39 +275,31 @@ export function MemberSnsManager({
         },
         body: JSON.stringify(snsForm),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'SNSリンクの追加に失敗しました');
       }
-
       const data = await response.json();
-
       // 状態を更新
       onSnsLinkUpdate([...personalSnsLinks, data.snsLink]);
-
       // フォームをリセット
       setSnsForm({
         platform: '',
         username: '',
         url: '',
       });
-
       setIsAddingSns(false);
       toast.success('SNSリンクを追加しました');
     } catch (error) {
-      console.error('SNS追加エラー:', error);
       toast.error(error instanceof Error ? error.message : 'SNSリンクの追加に失敗しました');
     }
   };
-
   // SNSリンク更新処理
   const handleUpdateSns = async (id: string) => {
     if (!snsForm.url) {
       toast.error('URLは必須です');
       return;
     }
-
     try {
       const response = await fetch(`/api/corporate-member/links/sns/${id}`, {
         method: 'PUT',
@@ -358,19 +308,14 @@ export function MemberSnsManager({
         },
         body: JSON.stringify(snsForm),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'SNSリンクの更新に失敗しました');
       }
-
       const data = await response.json();
-
       // 状態を更新
       const updatedLinks = personalSnsLinks.map((link) => (link.id === id ? data.snsLink : link));
-
       onSnsLinkUpdate(updatedLinks);
-
       // 編集モードを終了
       setEditingSnsId(null);
       setSnsForm({
@@ -378,19 +323,15 @@ export function MemberSnsManager({
         username: '',
         url: '',
       });
-
       toast.success('SNSリンクを更新しました');
     } catch (error) {
-      console.error('SNS更新エラー:', error);
       toast.error(error instanceof Error ? error.message : 'SNSリンクの更新に失敗しました');
     }
   };
-
   // 法人必須SNSリンクかどうかを判定する
   const isRequiredCorporateLink = (platform: string) => {
     return corporatePlatforms.includes(platform);
   };
-
   // SNSリンク削除処理に条件を追加
   const handleDeleteSns = async (id: string, platform: string) => {
     // 法人必須リンクは削除不可
@@ -398,40 +339,32 @@ export function MemberSnsManager({
       toast.error('法人共通の必須SNSリンクは削除できません');
       return;
     }
-
     // 削除確認
     if (!confirm('このSNSリンクを削除してもよろしいですか？')) {
       return;
     }
-
     try {
       const response = await fetch(`/api/corporate-member/links/sns/${id}`, {
         method: 'DELETE',
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'SNSリンクの削除に失敗しました');
       }
-
       // 状態を更新
       const updatedLinks = personalSnsLinks.filter((link) => link.id !== id);
       onSnsLinkUpdate(updatedLinks);
-
       toast.success('SNSリンクを削除しました');
     } catch (error) {
-      console.error('SNS削除エラー:', error);
       toast.error(error instanceof Error ? error.message : 'SNSリンクの削除に失敗しました');
     }
   };
-
   // カスタムリンク追加処理
   const handleAddCustom = async () => {
     if (!customForm.name || !customForm.url) {
       toast.error('名前とURLは必須です');
       return;
     }
-
     try {
       const response = await fetch('/api/corporate-member/links/custom', {
         method: 'POST',
@@ -440,38 +373,30 @@ export function MemberSnsManager({
         },
         body: JSON.stringify(customForm),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'カスタムリンクの追加に失敗しました');
       }
-
       const data = await response.json();
-
       // 状態を更新
       onCustomLinkUpdate([...customLinks, data.customLink]);
-
       // フォームをリセット
       setCustomForm({
         name: '',
         url: '',
       });
-
       setIsAddingCustom(false);
       toast.success('カスタムリンクを追加しました');
     } catch (error) {
-      console.error('カスタムリンク追加エラー:', error);
       toast.error(error instanceof Error ? error.message : 'カスタムリンクの追加に失敗しました');
     }
   };
-
   // カスタムリンク更新処理
   const handleUpdateCustom = async (id: string) => {
     if (!customForm.name || !customForm.url) {
       toast.error('名前とURLは必須です');
       return;
     }
-
     try {
       const response = await fetch(`/api/corporate-member/links/custom/${id}`, {
         method: 'PUT',
@@ -480,60 +405,47 @@ export function MemberSnsManager({
         },
         body: JSON.stringify(customForm),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'カスタムリンクの更新に失敗しました');
       }
-
       const data = await response.json();
-
       // 状態を更新
       const updatedLinks = customLinks.map((link) => (link.id === id ? data.customLink : link));
       onCustomLinkUpdate(updatedLinks);
-
       // 編集モードを終了
       setEditingCustomId(null);
       setCustomForm({
         name: '',
         url: '',
       });
-
       toast.success('カスタムリンクを更新しました');
     } catch (error) {
-      console.error('カスタムリンク更新エラー:', error);
       toast.error(error instanceof Error ? error.message : 'カスタムリンクの更新に失敗しました');
     }
   };
-
   // カスタムリンク削除処理
   const handleDeleteCustom = async (id: string) => {
     // 削除確認
     if (!confirm('このカスタムリンクを削除してもよろしいですか？')) {
       return;
     }
-
     try {
       const response = await fetch(`/api/corporate-member/links/custom/${id}`, {
         method: 'DELETE',
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'カスタムリンクの削除に失敗しました');
       }
-
       // 状態を更新
       const updatedLinks = customLinks.filter((link) => link.id !== id);
       onCustomLinkUpdate(updatedLinks);
-
       toast.success('カスタムリンクを削除しました');
     } catch (error) {
-      console.error('カスタムリンク削除エラー:', error);
       toast.error(error instanceof Error ? error.message : 'カスタムリンクの削除に失敗しました');
     }
   };
-
   // 編集を開始する - SNS
   const startEditingSns = (link: SnsLink) => {
     setEditingSnsId(link.id);
@@ -543,7 +455,6 @@ export function MemberSnsManager({
       url: link.url,
     });
   };
-
   // 編集を開始する - カスタム
   const startEditingCustom = (link: CustomLink) => {
     setEditingCustomId(link.id);
@@ -552,7 +463,6 @@ export function MemberSnsManager({
       url: link.url,
     });
   };
-
   // プラットフォーム表示名を取得する関数
   const getPlatformDisplayName = (platform: string): string => {
     if (Object.keys(SNS_METADATA).includes(platform)) {
@@ -560,7 +470,6 @@ export function MemberSnsManager({
     }
     return platform;
   };
-
   // SNSガイドを表示
   const showGuideForPlatform = (platform: string) => {
     // プラットフォーム名を標準化してからガイドを表示
@@ -568,12 +477,10 @@ export function MemberSnsManager({
     setGuidePlatform(normalizedPlatform);
     setShowSnsGuide(true);
   };
-
   // プラットフォーム名を小文字に変換する関数
   const normalizeSnsPlatform = (platform: string): SnsPlatform => {
     // プラットフォーム名の標準化（大文字小文字の違いを吸収）
     const platformLower = platform.toLowerCase();
-
     if (platformLower === 'line') return 'line';
     if (platformLower === '公式line') return 'official-line';
     if (platformLower === 'youtube') return 'youtube';
@@ -585,11 +492,9 @@ export function MemberSnsManager({
     if (platformLower === 'threads') return 'threads';
     if (platformLower === 'note') return 'note';
     if (platformLower === 'bereal') return 'bereal';
-
     // デフォルト値
     return 'line' as SnsPlatform;
   };
-
   return (
     <div id="member-sns-section" className="space-y-6">
       {/* SNSリンク管理セクション */}
@@ -599,7 +504,6 @@ export function MemberSnsManager({
             <HiLink className="mr-2 h-5 w-5 text-gray-600" />
             SNSリンク管理
           </h2>
-
           <Button
             variant="corporate"
             hoverScale="subtle"
@@ -613,11 +517,9 @@ export function MemberSnsManager({
             追加
           </Button>
         </div>
-
         <p className="text-sm text-gray-600 mb-6">
           プロフィールに表示するSNSアカウントを管理します。
         </p>
-
         {/* SNSプラットフォーム選択グリッド */}
         {isSelectingSnsType && (
           <div className="border rounded-md p-4 mb-4" style={{ borderColor: `${primaryColor}20` }}>
@@ -654,7 +556,6 @@ export function MemberSnsManager({
             </div>
           </div>
         )}
-
         {/* SNSリンク追加フォーム */}
         {isAddingSns && (
           <div className="border rounded-md p-4 mb-4" style={{ borderColor: '#e2e8f0' }}>
@@ -707,7 +608,6 @@ export function MemberSnsManager({
                       </button>
                     </div>
                   </div>
-
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
                     <Input
@@ -718,7 +618,6 @@ export function MemberSnsManager({
                   </div>
                 </>
               )}
-
               <div className="flex justify-end space-x-2 pt-2">
                 <Button
                   variant="corporateOutline"
@@ -738,7 +637,6 @@ export function MemberSnsManager({
             </div>
           </div>
         )}
-
         {/* SNSリンクリスト */}
         <div className="space-y-4">
           {personalSnsLinks.map((link) => (
@@ -761,7 +659,6 @@ export function MemberSnsManager({
                     </div>
                     <h3 className="font-medium">{getPlatformDisplayName(link.platform)}</h3>
                   </div>
-
                   {/* LINE系とそれ以外で分岐 */}
                   {link.platform === 'Line' || link.platform === '公式Line' ? (
                     <div>
@@ -796,7 +693,6 @@ export function MemberSnsManager({
                           onChange={handleUsernameChange}
                         />
                       </div>
-
                       <div>
                         <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
                         <Input
@@ -807,7 +703,6 @@ export function MemberSnsManager({
                       </div>
                     </>
                   )}
-
                   <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-2">
                     <Button
                       variant="corporateOutline"
@@ -841,7 +736,6 @@ export function MemberSnsManager({
                       color="original"
                     />
                   </div>
-
                   <div className="flex-1">
                     <h3 className="font-medium">{getPlatformDisplayName(link.platform)}</h3>
                     <a
@@ -853,7 +747,6 @@ export function MemberSnsManager({
                       {link.url}
                       <HiExternalLink className="ml-1 h-3 w-3" />
                     </a>
-
                     <div className="flex flex-col sm:flex-row items-center mt-3 space-y-2 sm:space-y-0 sm:space-x-2">
                       <Button
                         variant="outline"
@@ -864,7 +757,6 @@ export function MemberSnsManager({
                         <HiPencil className="mr-1 h-3 w-3" />
                         編集
                       </Button>
-
                       <Button
                         variant="outline"
                         size="sm"
@@ -882,7 +774,6 @@ export function MemberSnsManager({
           ))}
         </div>
       </div>
-
       {/* カスタムリンク管理セクション */}
       <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -890,7 +781,6 @@ export function MemberSnsManager({
             <HiLink className="mr-2 h-5 w-5 text-gray-600" />
             カスタムリンク管理
           </h2>
-
           <Button
             variant="corporate"
             hoverScale="subtle"
@@ -901,11 +791,9 @@ export function MemberSnsManager({
             追加
           </Button>
         </div>
-
         <p className="text-sm text-gray-600 mb-6">
           SNS以外のカスタムリンクを管理します（ブログ、ポートフォリオなど）。
         </p>
-
         {/* カスタムリンク追加フォーム */}
         {isAddingCustom && (
           <div className="border rounded-md p-4 mb-4" style={{ borderColor: `${primaryColor}20` }}>
@@ -921,7 +809,6 @@ export function MemberSnsManager({
                 <HiX className="h-5 w-5" />
               </button>
             </div>
-
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">表示名</label>
@@ -934,7 +821,6 @@ export function MemberSnsManager({
                   リンクの表示名を入力してください（例：ブログ、ポートフォリオ、会社HP）
                 </p>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
                 <Input
@@ -946,7 +832,6 @@ export function MemberSnsManager({
                   リンク先のURLを入力してください（必ずhttps://から始めてください）
                 </p>
               </div>
-
               <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-2">
                 <Button
                   variant="corporateOutline"
@@ -972,7 +857,6 @@ export function MemberSnsManager({
             </div>
           </div>
         )}
-
         {/* カスタムリンクリスト */}
         <div className="space-y-4">
           {customLinks.length === 0 ? (
@@ -995,7 +879,6 @@ export function MemberSnsManager({
                         onChange={(e) => setCustomForm({ ...customForm, name: e.target.value })}
                       />
                     </div>
-
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
                       <Input
@@ -1004,7 +887,6 @@ export function MemberSnsManager({
                         onChange={(e) => setCustomForm({ ...customForm, url: e.target.value })}
                       />
                     </div>
-
                     <div className="flex justify-end space-x-2 pt-2">
                       <Button
                         variant="corporateOutline"
@@ -1033,7 +915,6 @@ export function MemberSnsManager({
                       {/* カスタムリンクはHiLinkアイコンを使用 */}
                       <HiLink className="h-5 w-5" style={{ color: primaryColor }} />
                     </div>
-
                     <div className="flex-1">
                       <h3 className="font-medium">{link.name}</h3>
                       <a
@@ -1045,7 +926,6 @@ export function MemberSnsManager({
                         {link.url}
                         <HiExternalLink className="ml-1 h-3 w-3" />
                       </a>
-
                       <div className="flex items-center mt-3 space-x-2">
                         <Button
                           variant="outline"
@@ -1056,7 +936,6 @@ export function MemberSnsManager({
                           <HiPencil className="mr-1 h-3 w-3" />
                           編集
                         </Button>
-
                         <Button
                           variant="outline"
                           size="sm"
@@ -1076,7 +955,6 @@ export function MemberSnsManager({
           )}
         </div>
       </div>
-
       {/* SNSガイドモーダル */}
       {showSnsGuide && guidePlatform && (
         <SnsGuideModalWithDescription

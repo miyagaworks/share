@@ -1,6 +1,5 @@
 // app/dashboard/corporate-member/share/qrcode/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams } from 'next/navigation'; // URLパラメータを取得するために使用
@@ -9,7 +8,6 @@ import { QrCodeGenerator } from '@/components/qrcode/QrCodeGenerator';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { Spinner } from '@/components/ui/Spinner';
 import { HiArrowLeft, HiQrcode } from 'react-icons/hi';
-
 // 型定義
 interface ProfileData {
   user?: {
@@ -21,7 +19,6 @@ interface ProfileData {
     profileSlug?: string;
   };
 }
-
 interface TenantData {
   id?: string;
   name?: string;
@@ -30,7 +27,6 @@ interface TenantData {
   headerText?: string;
   logoUrl?: string;
 }
-
 // エラーメッセージコンポーネント
 function ErrorMessage({ message, onRetry }: { message: string; onRetry: () => void }) {
   return (
@@ -45,7 +41,6 @@ function ErrorMessage({ message, onRetry }: { message: string; onRetry: () => vo
     </div>
   );
 }
-
 export default function CorporateMemberQrcodePage() {
   // セッションチェック
   useSession({
@@ -54,17 +49,14 @@ export default function CorporateMemberQrcodePage() {
       window.location.href = '/auth/signin';
     },
   });
-
   // URLパラメータからスラグを取得
   const searchParams = useSearchParams();
   const initialSlug = searchParams.get('slug') || '';
-
   // 状態管理
   const [isLoading, setIsLoading] = useState(true);
   const [profileData, setProfileData] = useState<ProfileData | null>(null);
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [error, setError] = useState<string | null>(null);
-
   // データ取得
   useEffect(() => {
     const fetchData = async () => {
@@ -74,35 +66,28 @@ export default function CorporateMemberQrcodePage() {
           fetch('/api/profile'),
           fetch('/api/corporate-member/share'),
         ]);
-
         // エラーチェック
         if (!profileResponse.ok) {
           throw new Error('プロフィール情報の取得に失敗しました');
         }
-
         if (!shareResponse.ok) {
           throw new Error('共有設定の取得に失敗しました');
         }
-
         // データをパース
         const profileData = await profileResponse.json();
         const shareData = await shareResponse.json();
-
         // 状態を更新
         setProfileData(profileData);
         setTenantData(shareData.tenant);
         setError(null);
       } catch (error) {
-        console.error('データ取得エラー:', error);
         setError(error instanceof Error ? error.message : 'データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, []);
-
   // プロフィールURLの取得
   const getProfileUrl = () => {
     if (!profileData || !profileData.user) return '';
@@ -111,7 +96,6 @@ export default function CorporateMemberQrcodePage() {
     const slug = initialSlug || profileData.user.profileSlug || '';
     return `${baseUrl}/${slug}`;
   };
-
   return (
     <CorporateMemberGuard>
       <div className="space-y-6">
@@ -135,7 +119,6 @@ export default function CorporateMemberQrcodePage() {
             共有設定に戻る
           </Link>
         </div>
-
         {/* ローディングとエラー状態 */}
         {isLoading ? (
           <div className="flex flex-col items-center justify-center min-h-[400px]">

@@ -1,6 +1,5 @@
 // app/dashboard/corporate-member/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -23,7 +22,6 @@ import {
   HiDeviceMobile,
   HiPlus,
 } from 'react-icons/hi';
-
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -32,7 +30,6 @@ interface TenantData {
   primaryColor: string | null;
   secondaryColor: string | null;
 }
-
 // ユーザーデータの型定義
 interface UserWithProfile {
   id: string;
@@ -50,7 +47,6 @@ interface UserWithProfile {
     isPublic: boolean;
   } | null;
 }
-
 export default function CorporateMemberPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -59,7 +55,6 @@ export default function CorporateMemberPage() {
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [snsCount, setSnsCount] = useState(0);
   const [error, setError] = useState<string | null>(null);
-
   // APIからデータを取得する関数
   const fetchData = async () => {
     try {
@@ -69,14 +64,12 @@ export default function CorporateMemberPage() {
         throw new Error('法人プロフィール情報の取得に失敗しました');
       }
       const profileData = await profileResponse.json();
-
       // リンク情報の取得
       const linksResponse = await fetch('/api/links');
       if (!linksResponse.ok) {
         throw new Error('リンク情報の取得に失敗しました');
       }
       const linksData = await linksResponse.json();
-
       return {
         user: profileData.user,
         tenant: profileData.tenant,
@@ -84,20 +77,16 @@ export default function CorporateMemberPage() {
         customLinks: linksData.customLinks || [],
       };
     } catch (error) {
-      console.error('データ取得エラー:', error);
       throw error;
     }
   };
-
   // 初期データ取得
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session) {
       router.push('/auth/signin');
       return;
     }
-
     const loadData = async () => {
       try {
         const data = await fetchData();
@@ -105,16 +94,13 @@ export default function CorporateMemberPage() {
         setTenantData(data.tenant);
         setSnsCount(data.snsLinks.length);
       } catch (error) {
-        console.error('データロードエラー:', error);
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     loadData();
   }, [session, status, router]);
-
   // アニメーション設定
   const pageVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -127,7 +113,6 @@ export default function CorporateMemberPage() {
       },
     },
   };
-
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -135,7 +120,6 @@ export default function CorporateMemberPage() {
       y: 0,
     },
   };
-
   // ローディング表示
   if (isLoading) {
     return (
@@ -156,7 +140,6 @@ export default function CorporateMemberPage() {
       </div>
     );
   }
-
   // エラー表示
   if (error || !userData || !tenantData) {
     return (
@@ -179,18 +162,14 @@ export default function CorporateMemberPage() {
       </div>
     );
   }
-
   // プロフィールURLの取得
   const profileUrl = userData.profile ? `/${userData.profile.slug}` : null;
-
   // 法人テーマカラーを適用するためのスタイル
   // const primaryColor = tenantData.primaryColor || 'var(--color-corporate-primary)';
   // secondaryColorは必要な場合にだけコメントを外して使用
   // const secondaryColor = tenantData.secondaryColor || 'var(--color-corporate-secondary)';
-
   // 管理者権限の確認
   const isAdmin = userData.corporateRole === 'admin' || corporateAccessState.isAdmin;
-
   return (
     <motion.div
       initial="hidden"
@@ -205,7 +184,6 @@ export default function CorporateMemberPage() {
           <p className="text-muted-foreground">法人ブランディングを適用したプロフィール管理</p>
         </div>
       </div>
-
       {/* 法人テナント情報カード */}
       <motion.div
         variants={cardVariants}
@@ -272,7 +250,6 @@ export default function CorporateMemberPage() {
               </div>
             </div>
           </div>
-
           {isAdmin && (
             <Link href="/dashboard/corporate">
               <Button variant="corporateOutline" className="w-full" hoverScale="subtle">
@@ -283,7 +260,6 @@ export default function CorporateMemberPage() {
           )}
         </div>
       </motion.div>
-
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {/* プロフィールカード */}
         <motion.div
@@ -343,7 +319,6 @@ export default function CorporateMemberPage() {
             </Link>
           </div>
         </motion.div>
-
         {/* SNSリンクカード */}
         <motion.div
           variants={cardVariants}
@@ -379,7 +354,6 @@ export default function CorporateMemberPage() {
             </Link>
           </div>
         </motion.div>
-
         {/* 公開プロフィールカード */}
         <motion.div
           variants={cardVariants}
@@ -462,7 +436,6 @@ export default function CorporateMemberPage() {
           </div>
         </motion.div>
       </div>
-
       {/* 公開QRコードカード */}
       <motion.div
         variants={cardVariants}
@@ -536,7 +509,6 @@ export default function CorporateMemberPage() {
           )}
         </div>
       </motion.div>
-
       {/* クイックアクションカード */}
       <motion.div
         variants={cardVariants}
@@ -560,7 +532,6 @@ export default function CorporateMemberPage() {
                 デザインをカスタマイズする
               </Button>
             </Link>
-
             <Link href="/dashboard/corporate-member/links">
               <Button
                 variant="corporateOutline"
@@ -572,7 +543,6 @@ export default function CorporateMemberPage() {
                 SNSを追加する
               </Button>
             </Link>
-
             <Link href="/dashboard/corporate-member/share">
               <Button
                 variant="corporateOutline"

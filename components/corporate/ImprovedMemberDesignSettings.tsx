@@ -1,10 +1,8 @@
 // components/corporate/ImprovedMemberDesignSettings.tsx
-
 import React, { useState, useEffect } from 'react';
 import { HiInformationCircle } from 'react-icons/hi';
 import { Button } from '@/components/ui/Button';
 import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker';
-
 interface DesignSettingsProps {
   initialValues: {
     snsIconColor: string | null;
@@ -24,7 +22,6 @@ interface DesignSettingsProps {
   activeTab?: 'sns' | 'bio';
   onTabChange?: (tab: 'sns' | 'bio') => void;
 }
-
 export function ImprovedMemberDesignSettings({
   initialValues,
   isLoading,
@@ -44,19 +41,16 @@ export function ImprovedMemberDesignSettings({
   const [bioTextColor, setBioTextColor] = useState(initialValues.bioTextColor || '#333333');
   const [isSaving, setIsSaving] = useState(false);
   const [formChanged, setFormChanged] = useState(false);
-
   // タブ状態
   const [internalActiveTab, setInternalActiveTab] = useState<'sns' | 'bio'>(
     externalActiveTab || 'sns',
   );
-
   useEffect(() => {
   // 外部から渡されたタブ状態があり、かつ内部状態と異なる場合のみ更新
   if (externalActiveTab !== undefined && externalActiveTab !== internalActiveTab) {
     setInternalActiveTab(externalActiveTab);
   }
 }, [externalActiveTab, internalActiveTab]);
-
   const handleTabChange = (tab: 'sns' | 'bio') => {
     setInternalActiveTab(tab);
     // 親コンポーネントに通知
@@ -64,12 +58,10 @@ export function ImprovedMemberDesignSettings({
       onTabChange(tab);
     }
   };
-
   // SNSアイコンカラーのトグル切り替え関数
   const handleSnsIconColorToggle = () => {
     setUseOriginalSnsColors(!useOriginalSnsColors);
   };
-
   // 初期値が変更された場合、フォームを更新
   useEffect(() => {
     setSnsIconColor(
@@ -82,7 +74,6 @@ export function ImprovedMemberDesignSettings({
     setBioBackgroundColor(initialValues.bioBackgroundColor || '#FFFFFF');
     setBioTextColor(initialValues.bioTextColor || '#333333');
   }, [initialValues]);
-
   // 変更検知
   useEffect(() => {
     const newSnsIconColor = useOriginalSnsColors ? 'original' : snsIconColor;
@@ -91,32 +82,25 @@ export function ImprovedMemberDesignSettings({
       newSnsIconColor !== (initialValues.snsIconColor || '#333333') ||
       bioBackgroundColor !== (initialValues.bioBackgroundColor || '#FFFFFF') ||
       bioTextColor !== (initialValues.bioTextColor || '#333333');
-
     setFormChanged(isChanged);
   }, [snsIconColor, useOriginalSnsColors, bioBackgroundColor, bioTextColor, initialValues]);
-
   // 保存処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       setIsSaving(true);
-
       await onSave({
         snsIconColor: useOriginalSnsColors ? 'original' : snsIconColor,
         // 追加: 自己紹介ページの設定も保存
         bioBackgroundColor,
         bioTextColor,
       });
-
       setFormChanged(false);
     } catch (error) {
-      console.error('設定保存エラー:', error);
     } finally {
       setIsSaving(false);
     }
   };
-
   return (
     <form onSubmit={handleSubmit}>
       <div className="space-y-6">
@@ -171,7 +155,6 @@ export function ImprovedMemberDesignSettings({
             <p className="text-xs text-gray-500 mt-1 mb-2">
               プロフィールに表示されるSNSアイコンの色を設定します。
             </p>
-
             {/* トグルスイッチ */}
             <div className="relative h-14 rounded-md border border-gray-200 bg-white mt-3">
               <div
@@ -199,7 +182,6 @@ export function ImprovedMemberDesignSettings({
                   </div>
                 </div>
               </div>
-
               <div className="absolute inset-0 flex justify-between pointer-events-none">
                 <div className="w-1/2 h-full flex items-center justify-center text-xs sm:text-sm text-gray-400">
                   <div className="flex items-center opacity-50">
@@ -217,7 +199,6 @@ export function ImprovedMemberDesignSettings({
                 </div>
               </div>
             </div>
-
             {!useOriginalSnsColors && (
               <div className="mt-4">
                 <EnhancedColorPicker
@@ -229,7 +210,6 @@ export function ImprovedMemberDesignSettings({
             )}
           </div>
         )}
-
         {/* 追加: 自己紹介ページ設定 */}
         {internalActiveTab === 'bio' && (
           <div className="space-y-6">
@@ -244,7 +224,6 @@ export function ImprovedMemberDesignSettings({
                 disabled={isLoading || isSaving}
               />
             </div>
-
             <div className="space-y-2">
               <label className="block text-sm font-medium text-gray-700">文字色</label>
               <p className="text-xs text-gray-500 mt-1 mb-2">
@@ -256,7 +235,6 @@ export function ImprovedMemberDesignSettings({
                 disabled={isLoading || isSaving}
               />
             </div>
-
             <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mt-4">
               <div className="flex">
                 <HiInformationCircle className="h-5 w-5 text-blue-700 mr-2 flex-shrink-0 mt-0.5" />
@@ -268,7 +246,6 @@ export function ImprovedMemberDesignSettings({
                 </div>
               </div>
             </div>
-
             <div className="mt-4 p-4 border border-gray-200 rounded-lg bg-gray-50">
               <h3 className="text-sm font-medium text-gray-700 mb-2">プレビュー</h3>
               <div
@@ -285,7 +262,6 @@ export function ImprovedMemberDesignSettings({
             </div>
           </div>
         )}
-
         {/* 法人カラーに関する注意書き - 自己紹介ページのカスタマイズにも言及 */}
         <div className="bg-yellow-50 border border-yellow-100 rounded-md p-3 sm:p-4 mt-6 text-sm">
           <div className="flex">
@@ -298,7 +274,6 @@ export function ImprovedMemberDesignSettings({
             </div>
           </div>
         </div>
-
         {/* 送信ボタン */}
         <div className="flex justify-center sm:justify-end mt-6">
           <Button

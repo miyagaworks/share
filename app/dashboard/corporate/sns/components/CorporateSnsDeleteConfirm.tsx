@@ -4,14 +4,12 @@ import { Button } from '@/components/ui/Button';
 import { DialogContent, DialogHeader, DialogTitle } from '@/components/ui/Dialog';
 import { toast } from 'react-hot-toast';
 import { handleApiError } from '../utils';
-
 interface CorporateSnsDeleteConfirmProps {
   linkId: string;
   onCancel: () => void;
   onSuccess: (deletedId: string) => void;
   isRequired?: boolean;
 }
-
 export function CorporateSnsDeleteConfirm({
   linkId,
   onCancel,
@@ -19,16 +17,13 @@ export function CorporateSnsDeleteConfirm({
   isRequired = false,
 }: CorporateSnsDeleteConfirmProps) {
   const [isDeleting, setIsDeleting] = useState(false);
-
   const handleDelete = async () => {
     if (!linkId) {
       toast.error('削除するリンクが指定されていません');
       return;
     }
-
     try {
       setIsDeleting(true);
-
       // API呼び出し
       const response = await fetch(`/api/corporate/sns/${linkId}`, {
         method: 'DELETE',
@@ -36,28 +31,23 @@ export function CorporateSnsDeleteConfirm({
           'Content-Type': 'application/json',
         },
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '法人共通SNSリンクの削除に失敗しました');
       }
-
       toast.success('法人共通SNSリンクを削除しました');
       onSuccess(linkId);
     } catch (error) {
-      console.error('SNSリンク削除エラー:', error);
       toast.error(handleApiError(error, '法人共通SNSリンクの削除に失敗しました'));
     } finally {
       setIsDeleting(false);
     }
   };
-
   return (
     <DialogContent className="sm:max-w-md bg-white">
       <DialogHeader>
         <DialogTitle className="text-red-600">法人共通SNSリンクを削除</DialogTitle>
       </DialogHeader>
-
       <div className="mt-4 text-gray-700 text-justify">
         <p>
           この法人共通SNSリンクを削除してもよろしいですか？ この操作は元に戻すことができません。
@@ -72,7 +62,6 @@ export function CorporateSnsDeleteConfirm({
           ※すでにユーザーに追加されているSNSリンクは削除されません。
         </p>
       </div>
-
       <div className="flex justify-end space-x-4 mt-6">
         <Button type="button" variant="outline" onClick={onCancel} disabled={isDeleting}>
           キャンセル

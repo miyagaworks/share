@@ -1,6 +1,5 @@
 // components/dashboard/ImprovedSnsLinkList.tsx
 "use client";
-
 import React, { useState, useCallback } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import type { DroppableProvided, DraggableProvided, DraggableStateSnapshot } from "@hello-pangea/dnd";
@@ -11,94 +10,72 @@ import { deleteSnsLink, updateSnsLinkOrder } from "@/actions/sns";
 import { ImprovedSnsIcon } from "@/components/shared/ImprovedSnsIcon";
 import type { SnsLink } from "@prisma/client";
 import { HiPencil, HiTrash, HiDotsVertical } from "react-icons/hi";
-
 // 型キャストヘルパー
 const DroppableComponent = Droppable as React.ComponentType<{
     droppableId: string;
     children: (provided: DroppableProvided) => React.ReactNode;
 }>;
-
 const DraggableComponent = Draggable as React.ComponentType<{
     draggableId: string;
     index: number;
     children: (provided: DraggableProvided, snapshot: DraggableStateSnapshot) => React.ReactNode;
 }>;
-
 interface ImprovedSnsLinkListProps {
     links: SnsLink[];
     onUpdate: () => void;
     onEdit: (id: string) => void;
 }
-
 export function ImprovedSnsLinkList({ links, onUpdate, onEdit }: ImprovedSnsLinkListProps) {
-    console.log("Rendering ImprovedSnsLinkList");
     const [items, setItems] = useState(links);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [isProcessing, setIsProcessing] = useState(false);
-
     // リンク削除ハンドラー
     const handleDelete = useCallback(async (id: string) => {
         try {
             setIsDeleting(id);
             setIsProcessing(true);
-
             const deletingLink = items.find(item => item.id === id);
             const platform = deletingLink ?
                 SNS_METADATA[deletingLink.platform as SnsPlatform]?.name || deletingLink.platform :
                 "SNS";
-
             const response = await deleteSnsLink(id);
-
             if (response.error) {
                 throw new Error(response.error);
             }
-
             setItems(items.filter(item => item.id !== id));
             toast.success(`${platform}を削除しました`);
             onUpdate();
         } catch (error) {
             toast.error("SNSリンクの削除に失敗しました");
-            console.error(error);
         } finally {
             setIsDeleting(null);
             setIsProcessing(false);
         }
     }, [items, onUpdate]);
-
     // ドラッグ&ドロップ完了ハンドラー
     const handleDragEnd = useCallback(async (result: DropResult) => {
-        console.log("Drag End", result);
         if (!result.destination) return;
-
         const reorderedItems = Array.from(items);
         const [removed] = reorderedItems.splice(result.source.index, 1);
         reorderedItems.splice(result.destination.index, 0, removed);
-
         setItems(reorderedItems);
-
         try {
             setIsProcessing(true);
-            console.log("Updating order", reorderedItems.map(i => i.id));
-
             const linkIds = reorderedItems.map(item => item.id);
             const response = await updateSnsLinkOrder(linkIds);
-
             if (response.error) {
                 throw new Error(response.error);
             }
-
             toast.success("表示順を更新しました");
             onUpdate();
         } catch (error) {
             toast.error("表示順の更新に失敗しました");
-            console.error("Order update error:", error);
             // エラー時に元の順序に戻す
             setItems(links);
         } finally {
             setIsProcessing(false);
         }
     }, [items, links, onUpdate]);
-
     if (items.length === 0) {
         return (
             <div className="bg-muted/30 rounded-lg p-6 text-center">
@@ -108,7 +85,6 @@ export function ImprovedSnsLinkList({ links, onUpdate, onEdit }: ImprovedSnsLink
             </div>
         );
     }
-
     return (
         <DragDropContext onDragEnd={handleDragEnd}>
             <DroppableComponent droppableId="sns-links-fixed-id">

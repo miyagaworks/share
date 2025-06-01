@@ -1,23 +1,19 @@
 // components/ui/QuickIntroButton.tsx
 'use client';
-
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
 import { HiSparkles, HiExternalLink } from 'react-icons/hi';
 import { useSession } from 'next-auth/react';
 import { useState, useEffect } from 'react';
-
 export function QuickIntroButton() {
   const { data: session } = useSession();
   const [isCorporateMember, setIsCorporateMember] = useState(false);
-
   // セッションからユーザーが法人メンバーかどうかを確認
   useEffect(() => {
     if (session?.user) {
       setIsCorporateMember(!!session.user.tenantId);
     }
   }, [session]);
-
   return (
     <div className="space-y-2">
       <Link href="/jikogene" target="_blank" rel="noopener noreferrer" className="w-full">

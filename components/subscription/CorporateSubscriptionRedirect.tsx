@@ -1,16 +1,13 @@
 // components/subscription/CorporateSubscriptionRedirect.tsx
 // この新しいコンポーネントは法人プラン申し込み完了後の処理を担当します
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { Spinner } from '@/components/ui/Spinner';
-
 interface CorporateSubscriptionRedirectProps {
   subscriptionId: string;
   tenantId: string;
 }
-
 export default function CorporateSubscriptionRedirect({
   subscriptionId,
   tenantId,
@@ -18,7 +15,6 @@ export default function CorporateSubscriptionRedirect({
   const router = useRouter();
   const [redirectStatus, setRedirectStatus] = useState<'pending' | 'complete' | 'error'>('pending');
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     // 申し込み後の設定ページにリダイレクトするまでに少し待機
     const redirectTimeout = setTimeout(() => {
@@ -27,15 +23,12 @@ export default function CorporateSubscriptionRedirect({
         setRedirectStatus('complete'); // ステータスを更新
         router.push('/dashboard/corporate/onboarding');
       } catch (err) {
-        console.error('リダイレクトエラー:', err);
         setError('ページの移動に失敗しました。ダッシュボードから法人設定を行ってください。');
         setRedirectStatus('error'); // エラー状態に更新
       }
     }, 3000);
-
     return () => clearTimeout(redirectTimeout);
   }, [router, subscriptionId, tenantId]);
-
   if (error) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 my-6">
@@ -50,7 +43,6 @@ export default function CorporateSubscriptionRedirect({
       </div>
     );
   }
-
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-8 my-6 text-center">
       <div className="flex flex-col items-center">

@@ -1,18 +1,15 @@
 // app/jikogene/components/FormSteps/BasicInfo.tsx
 'use client';
-
 import { memo } from 'react';
 import { Input } from '@/components/ui/Input';
 import { FormData, BasicInfo as BasicInfoType } from '@/app/jikogene/types';
 import { cn } from '@/lib/utils';
-
 interface BasicInfoProps {
   formData: FormData;
   updateBasicInfo: (field: keyof BasicInfoType, value: string) => void;
   sectionIcon: React.ReactNode;
   fieldErrors: Record<string, string>;
 }
-
 /**
  * 基本情報入力フォームステップ
  * メモ化してパフォーマンスを最適化
@@ -25,7 +22,6 @@ const BasicInfo = memo(function BasicInfo({
   return (
     <div className="fade-in">
       <p className="text-gray-500 mb-4">自己紹介文に含める基本的な情報を入力してください。</p>
-
       <div className="space-y-4">
         <div>
           <label htmlFor="ageGroup" className="text-sm font-medium text-gray-700 mb-1">
@@ -53,7 +49,6 @@ const BasicInfo = memo(function BasicInfo({
             <p className="mt-1 text-sm text-red-500">{fieldErrors.ageGroup}</p>
           )}
         </div>
-
         <div>
           <label htmlFor="gender" className="text-sm font-medium text-gray-700 mb-1">
             性別（任意）
@@ -71,7 +66,6 @@ const BasicInfo = memo(function BasicInfo({
             <option value="回答しない">回答しない</option>
           </select>
         </div>
-
         <div>
           <label htmlFor="occupation" className="text-sm font-medium text-gray-700 mb-1">
             職業<span className="text-red-500">*</span>
@@ -87,7 +81,6 @@ const BasicInfo = memo(function BasicInfo({
             error={fieldErrors.occupation}
           />
         </div>
-
         <div>
           <label htmlFor="location" className="text-sm font-medium text-gray-700 mb-1">
             居住地域
@@ -106,5 +99,4 @@ const BasicInfo = memo(function BasicInfo({
     </div>
   );
 });
-
 export default BasicInfo;

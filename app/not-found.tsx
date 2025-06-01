@@ -1,21 +1,16 @@
 // app/not-found.tsx
 'use client';
-
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
-
 export default function NotFound() {
   const [mounted, setMounted] = useState(false);
-
   useEffect(() => {
     setMounted(true);
   }, []);
-
   if (!mounted) {
     return null;
   }
-
   return (
     <div className="flex flex-col items-center justify-center min-h-screen bg-gradient-to-b from-gray-50 to-gray-100 px-4">
       <div className="max-w-md w-full text-center">
@@ -38,7 +33,6 @@ export default function NotFound() {
             </div>
           </motion.div>
         </motion.div>
-
         {/* 説明テキスト */}
         <motion.p
           initial={{ y: 20, opacity: 0 }}
@@ -48,7 +42,6 @@ export default function NotFound() {
         >
           お探しのページは存在しないか、プライベート設定になっている可能性があります。
         </motion.p>
-
         {/* ホームページに戻るリンク */}
         <motion.div
           initial={{ y: 20, opacity: 0 }}
@@ -63,7 +56,6 @@ export default function NotFound() {
             ホームページに戻る
           </Link>
         </motion.div>
-
         {/* イラスト部分 */}
         <motion.div
           initial={{ y: 50, opacity: 0 }}
@@ -115,7 +107,6 @@ export default function NotFound() {
           </div>
         </motion.div>
       </div>
-
       {/* フッター */}
       <motion.div
         initial={{ opacity: 0 }}

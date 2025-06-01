@@ -1,12 +1,10 @@
 // app/legal/terms/page.tsx
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
-
 export const metadata: Metadata = {
   title: '利用規約 | Share',
   description: 'Shareサービスの利用規約です。',
 };
-
 export default function TermsPage() {
   return (
     <PageLayout
@@ -23,7 +21,6 @@ export default function TermsPage() {
             この利用規約（以下「本規約」）は、ビイアルファ株式会社（以下「当社」）が提供するサービス「Share」（以下「本サービス」）の利用条件を定めるものです。本サービスをご利用いただく際には、本規約に同意したものとみなされます。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">2. 定義</h2>
           <p className="text-justify">
@@ -42,7 +39,6 @@ export default function TermsPage() {
             </li>
           </ul>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">3. 本規約の適用と変更</h2>
           <p className="text-justify">
@@ -52,7 +48,6 @@ export default function TermsPage() {
             当社は、必要と判断した場合には、ユーザーに通知することなく本規約を変更することができるものとします。変更後の本規約は、当社が別途定める場合を除いて、本サービス上に表示された時点より効力を生じるものとします。変更後に本サービスを継続して利用する場合、ユーザーは変更後の規約に同意したものとみなされます。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">4. 利用登録</h2>
           <p className="text-justify">
@@ -76,7 +71,6 @@ export default function TermsPage() {
             <li>その他、当社が登録を適当でないと判断した場合</li>
           </ul>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">5. アカウント管理</h2>
           <p className="text-justify">
@@ -89,7 +83,6 @@ export default function TermsPage() {
             アカウントの管理不十分、使用上の過誤、第三者の使用等によって生じた損害に関する責任はユーザーが負うものとし、当社は一切の責任を負いません。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">6. 料金および支払方法</h2>
           <p className="text-justify">
@@ -105,7 +98,6 @@ export default function TermsPage() {
             当社は、料金を変更する権利を有します。料金を変更する場合、当社は事前に本サービス上で告知するものとし、告知後、ユーザーが本サービスを継続して利用した場合には、変更後の料金に同意したものとみなします。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">7. 無料トライアル</h2>
           <p className="text-justify">
@@ -118,7 +110,6 @@ export default function TermsPage() {
             猶予期間内に支払い手続きが行われなかった場合、当社はユーザー情報をサーバーから削除する権利を有します。一度削除されたユーザー情報は復元できませんのでご注意ください。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">8. 禁止事項</h2>
           <p className="text-justify">
@@ -146,7 +137,6 @@ export default function TermsPage() {
             <li>その他、当社が不適切と判断する行為</li>
           </ul>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">9. 本サービスの提供の停止等</h2>
           <p className="text-justify">
@@ -164,7 +154,6 @@ export default function TermsPage() {
             当社は、本サービスの提供の停止または中断により、ユーザーまたは第三者が被ったいかなる不利益または損害についても、一切の責任を負わないものとします。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">10. 著作権</h2>
           <p className="text-justify">
@@ -177,14 +166,12 @@ export default function TermsPage() {
             前項本文の定めるものを除き、本サービスおよび本サービスに関連する一切の情報についての著作権およびその他の知的財産権はすべて当社または当社にその利用を許諾した権利者に帰属し、ユーザーは無断で複製、譲渡、貸与、翻訳、改変、転載、公衆送信（送信可能化を含みます）、伝送、配布、出版、営業使用等をしてはならないものとします。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">11. 個人情報の取り扱い</h2>
           <p className="text-justify">
             本サービスの利用によって取得する個人情報については、当社の「プライバシーポリシー」に従い適切に取り扱うものとします。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">12. 保証の否認および免責事項</h2>
           <p className="text-justify">
@@ -194,35 +181,30 @@ export default function TermsPage() {
             当社は、本サービスに起因してユーザーに生じたあらゆる損害について、当社の故意または重過失による場合を除き、一切の責任を負いません。また、当社は、本サービスに関して、ユーザーと他のユーザーまたは第三者との間において生じた取引、連絡または紛争等について一切責任を負いません。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">13. サービス内容の変更等</h2>
           <p className="text-justify">
             当社は、ユーザーに通知することなく、本サービスの内容を変更しまたは本サービスの提供を中止することができるものとし、これによってユーザーに生じた損害について一切の責任を負いません。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">14. 利用規約の変更</h2>
           <p className="text-justify">
             当社は、必要と判断した場合には、ユーザーに通知することなくいつでも本規約を変更することができるものとします。なお、本規約の変更後、本サービスの利用を継続した場合には、ユーザーは変更後の規約に同意したものとみなされます。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">15. 通知または連絡</h2>
           <p className="text-justify">
             ユーザーと当社との間の通知または連絡は、当社の定める方法によって行うものとします。当社は、ユーザーから、当社が別途定める方式に従った変更届け出がない限り、現在登録されている連絡先が有効なものとみなして当該連絡先へ通知または連絡を行い、これらは、発信時にユーザーへ到達したものとみなされます。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">16. 権利義務の譲渡の禁止</h2>
           <p className="text-justify">
             ユーザーは、当社の書面による事前の承諾なく、利用契約上の地位または本規約に基づく権利もしくは義務を第三者に譲渡し、または担保に供することはできません。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-3">17. 準拠法・裁判管轄</h2>
           <p className="text-justify">本規約の解釈にあたっては、日本法を準拠法とします。</p>
@@ -230,7 +212,6 @@ export default function TermsPage() {
             本サービスに関して紛争が生じた場合には、当社の本店所在地を管轄する裁判所を専属的合意管轄とします。
           </p>
         </section>
-
         <div className="mt-8 text-right">
           <p>制定日: 2025年3月1日</p>
           <p>最終更新日: 2025年5月12日</p>

@@ -8,13 +8,19 @@ const nextConfig = {
     optimizeCss: true,
     optimizePackageImports: ['react-icons', 'lucide-react', '@heroicons/react', 'react-hook-form'],
     serverComponentsExternalPackages: ['stripe'],
+    forceSwcTransforms: true,
+    swcTraceProfiling: false,
+    turbotrace: {
+      logLevel: 'error',
+    },
+    webVitalsAttribution: ['CLS', 'LCP'],
   },
 
   typescript: {
-    ignoreBuildErrors: true,
+    ignoreBuildErrors: false,
   },
   eslint: {
-    ignoreDuringBuilds: true,
+    ignoreDuringBuilds: false,
   },
 
   images: {
@@ -53,6 +59,7 @@ const nextConfig = {
     if (!dev && !isServer) {
       config.optimization.splitChunks = {
         chunks: 'all',
+        maxSize: 244000,
         cacheGroups: {
           framework: {
             chunks: 'all',
@@ -63,7 +70,7 @@ const nextConfig = {
           },
           lib: {
             test(module) {
-              return module.size() > 160000 && /node_modules[/\\]/.test(module.identifier());
+              return module.size() > 120000 && /node_modules[/\\]/.test(module.identifier());
             },
             name(module) {
               const packageNameMatch = module.context.match(/[\\/]node_modules[\\/](.*?)([\\/]|$)/);
@@ -87,6 +94,10 @@ const nextConfig = {
           },
         },
       };
+
+      // 本番環境でのパフォーマンス最適化
+      config.optimization.usedExports = true;
+      config.optimization.sideEffects = false;
     }
 
     return config;
@@ -96,9 +107,8 @@ const nextConfig = {
   poweredByHeader: false,
 
   env: {
-    DEBUG: process.env.NODE_ENV === 'development' ? '' : '',
-    PRISMA_CONNECTION_LIMIT: '10',
-    PRISMA_CONNECTION_TIMEOUT: '5000',
+    PRISMA_CONNECTION_LIMIT: '20',
+    PRISMA_CONNECTION_TIMEOUT: '10000',
   },
 
   // 🔥 PWA対応: ヘッダー設定を修正
@@ -118,7 +128,15 @@ const nextConfig = {
         headers: [
           {
             key: 'Cache-Control',
-            value: 'public, max-age=300, s-maxage=300',
+            value: 'no-store, no-cache, must-revalidate, proxy-revalidate',
+          },
+          {
+            key: 'Pragma',
+            value: 'no-cache',
+          },
+          {
+            key: 'Expires',
+            value: '0',
           },
         ],
       },
@@ -189,7 +207,19 @@ const nextConfig = {
           },
           {
             key: 'Referrer-Policy',
-            value: 'origin-when-cross-origin',
+            value: 'strict-origin-when-cross-origin',
+          },
+          {
+            key: 'X-XSS-Protection',
+            value: '1; mode=block',
+          },
+          {
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains',
+          },
+          {
+            key: 'Permissions-Policy',
+            value: 'camera=(), microphone=(), geolocation=()',
           },
         ],
       },
@@ -202,17 +232,18 @@ const nextConfig = {
 
   serverRuntimeConfig: {
     prisma: {
-      connectionLimit: process.env.PRISMA_CONNECTION_LIMIT || 10,
-      connectionTimeout: process.env.PRISMA_CONNECTION_TIMEOUT || 5000,
-      connectionRetryCount: 3,
+      connectionLimit: process.env.PRISMA_CONNECTION_LIMIT || 20,
+      connectionTimeout: process.env.PRISMA_CONNECTION_TIMEOUT || 10000,
+      connectionRetryCount: 5,
     },
   },
 
   transpilePackages: ['styled-jsx'],
   onDemandEntries: {
-    maxInactiveAge: 60 * 1000,
-    pagesBufferLength: 2,
+    maxInactiveAge: 300 * 1000,
+    pagesBufferLength: 5,
   },
+
 };
 
 export default nextConfig;

@@ -1,12 +1,10 @@
 // components/dashboard/PersonalShareSettings.tsx
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { HiEye, HiEyeOff, HiInformationCircle, HiClock, HiUsers } from 'react-icons/hi';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
-
 interface ShareSettingsProps {
   initialValues: {
     isPublic: boolean;
@@ -17,7 +15,6 @@ interface ShareSettingsProps {
   baseUrl: string;
   isLoading: boolean;
 }
-
 export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: ShareSettingsProps) {
   // フォーム状態
   const [isPublic, setIsPublic] = useState(initialValues.isPublic);
@@ -25,45 +22,37 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
   const [slugError, setSlugError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [formChanged, setFormChanged] = useState(false);
-
   // 初期値が変更された場合、フォームを更新
   useEffect(() => {
     setIsPublic(initialValues.isPublic);
     setSlug(initialValues.slug || '');
   }, [initialValues]);
-
   // 変更検知
   useEffect(() => {
     const isChanged = isPublic !== initialValues.isPublic || slug !== (initialValues.slug || '');
     setFormChanged(isChanged);
   }, [isPublic, slug, initialValues]);
-
   // スラッグのバリデーション
   const validateSlug = (value: string) => {
     if (!value.trim()) {
       setSlugError('URLスラッグは必須です');
       return false;
     }
-
     if (value.length < 3) {
       setSlugError('URLスラッグは3文字以上で入力してください');
       return false;
     }
-
     if (value.length > 30) {
       setSlugError('URLスラッグは30文字以内で入力してください');
       return false;
     }
-
     if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
       setSlugError('URLスラッグは英数字、ハイフン、アンダースコアのみ使用可能です');
       return false;
     }
-
     setSlugError(null);
     return true;
   };
-
   // スラッグ変更ハンドラー
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -71,25 +60,16 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
     validateSlug(value);
     setFormChanged(true);
   };
-
   // 保存処理の修正（デバッグログ追加）
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    console.log('🔧 [DEBUG] 保存処理開始:', { slug, isPublic, formChanged, slugError });
-
     // スラッグのバリデーション
     if (!validateSlug(slug)) {
-      console.log('❌ [DEBUG] バリデーションエラー:', slugError);
       return;
     }
-
     try {
       setIsSaving(true);
-
       const requestData = { isPublic, slug };
-      console.log('🚀 [DEBUG] API送信データ:', requestData);
-
       const response = await fetch('/api/profile/share', {
         method: 'POST',
         headers: {
@@ -97,43 +77,29 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
         },
         body: JSON.stringify(requestData),
       });
-
-      console.log('📡 [DEBUG] APIレスポンス:', response.status, response.ok);
-
       if (!response.ok) {
         const data = await response.json();
-        console.log('❌ [DEBUG] APIエラーレスポンス:', data);
         throw new Error(data.error || '共有設定の更新に失敗しました');
       }
-
       const responseData = await response.json();
-      console.log('✅ [DEBUG] API成功レスポンス:', responseData);
-
       toast.success('共有設定を更新しました');
       setFormChanged(false);
-
       // 成功時にページをリフレッシュして最新データを取得
-      console.log('🔄 [DEBUG] ページリロード実行');
       window.location.reload();
     } catch (error) {
-      console.error('❌ [DEBUG] 設定保存エラー:', error);
-
       if (error instanceof Error && error.message.includes('既に使用されています')) {
         setSlugError('このURLスラッグは既に使用されています。別の値を入力してください。');
       } else {
         toast.error(error instanceof Error ? error.message : '共有設定の更新に失敗しました');
       }
-
       setFormChanged(true);
     } finally {
       setIsSaving(false);
     }
   };
-
   // 最終アクセス日時のフォーマット
   const formatLastAccessed = (dateString: string | null) => {
     if (!dateString) return '未アクセス';
-
     const date = new Date(dateString);
     return date.toLocaleString('ja-JP', {
       year: 'numeric',
@@ -143,7 +109,6 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
       minute: '2-digit',
     });
   };
-
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* 公開・非公開設定 */}
@@ -162,7 +127,6 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
             <HiEye className="mr-2 h-5 w-5" />
             公開
           </button>
-
           <button
             type="button"
             className={`flex items-center justify-center px-4 py-2 rounded-md border w-full ${
@@ -176,14 +140,12 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
             非公開
           </button>
         </div>
-
         <p className="text-sm text-gray-500">
           {isPublic
             ? '公開設定にすると、URLを知っている人なら誰でもあなたのプロフィールを閲覧できます。'
             : '非公開設定にすると、プロフィールは外部から閲覧できなくなります。'}
         </p>
       </div>
-
       {/* URLスラッグ設定 */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">カスタムURL</label>
@@ -200,7 +162,6 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
             error={slugError || undefined}
           />
         </div>
-
         {slugError ? (
           <p className="text-sm text-red-600">{slugError}</p>
         ) : (
@@ -209,7 +170,6 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
           </p>
         )}
       </div>
-
       {/* アクセス統計情報 */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex items-center gap-2">
@@ -219,7 +179,6 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
             <div className="font-medium">{initialValues.views.toLocaleString()} 回</div>
           </div>
         </div>
-
         <div className="flex items-center gap-2">
           <HiClock className="h-5 w-5 text-gray-600 flex-shrink-0" />
           <div>
@@ -228,7 +187,6 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
           </div>
         </div>
       </div>
-
       {/* 個人利用に関する注意書き */}
       <div className="bg-blue-50 border border-blue-100 rounded-md p-4">
         <div className="flex">
@@ -241,7 +199,6 @@ export function PersonalShareSettings({ initialValues, baseUrl, isLoading }: Sha
           </div>
         </div>
       </div>
-
       {/* 送信ボタン */}
       <div className="flex justify-center sm:justify-end">
         <Button

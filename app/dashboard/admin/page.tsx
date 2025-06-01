@@ -1,6 +1,5 @@
 // app/dashboard/admin/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -14,13 +13,11 @@ import {
   HiOutlineMail,
   HiEye,
 } from 'react-icons/hi';
-
 export default function AdminDashboardPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
-
   useEffect(() => {
     // 管理者チェック
     const checkAdminAccess = async () => {
@@ -28,12 +25,10 @@ export default function AdminDashboardPage() {
         router.push('/auth/signin');
         return;
       }
-
       try {
         // 管理者APIを呼び出してチェック
         const response = await fetch('/api/admin/access');
         const data = await response.json();
-
         if (data.isSuperAdmin) {
           setIsAdmin(true);
         } else {
@@ -41,16 +36,13 @@ export default function AdminDashboardPage() {
           router.push('/dashboard');
         }
       } catch (error) {
-        console.error('管理者チェックエラー:', error);
         router.push('/dashboard');
       } finally {
         setLoading(false);
       }
     };
-
     checkAdminAccess();
   }, [session, router]);
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -61,11 +53,9 @@ export default function AdminDashboardPage() {
       </div>
     );
   }
-
   if (!isAdmin) {
     return null; // リダイレクト処理中は表示なし
   }
-
   // 管理者メニューカード
   const AdminMenuCard = ({
     title,
@@ -91,7 +81,6 @@ export default function AdminDashboardPage() {
       </div>
     );
   };
-
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-gradient-to-r from-blue-600 to-indigo-700 rounded-lg p-6 mb-6 text-white">
@@ -101,7 +90,6 @@ export default function AdminDashboardPage() {
         </div>
         <p className="mt-2 opacity-90">システム管理者専用のダッシュボードです。</p>
       </div>
-
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         <AdminMenuCard
           title="ユーザー管理"
@@ -109,35 +97,30 @@ export default function AdminDashboardPage() {
           description="すべてのユーザーの一覧と管理"
           onClick={() => router.push('/dashboard/admin/users')}
         />
-
         <AdminMenuCard
           title="プロフィール・QRコード管理"
           icon={<HiEye className="h-6 w-6 text-blue-600" />}
           description="ユーザーの公開プロフィールとQRコードの管理"
           onClick={() => router.push('/dashboard/admin/profiles')}
         />
-
         <AdminMenuCard
           title="サブスクリプション管理"
           icon={<HiCreditCard className="h-6 w-6 text-blue-600" />}
           description="ユーザーのサブスクリプション状態の管理"
           onClick={() => router.push('/dashboard/admin/subscriptions')}
         />
-
         <AdminMenuCard
           title="永久利用権管理"
           icon={<HiKey className="h-6 w-6 text-blue-600" />}
           description="永久利用権の付与と管理"
           onClick={() => router.push('/dashboard/admin/permissions')}
         />
-
         <AdminMenuCard
           title="お知らせ管理"
           icon={<HiBell className="h-6 w-6 text-blue-600" />}
           description="システムお知らせの作成と管理"
           onClick={() => router.push('/dashboard/admin/notifications')}
         />
-
         <AdminMenuCard
           title="メール配信管理"
           icon={<HiOutlineMail className="h-6 w-6 text-blue-600" />}

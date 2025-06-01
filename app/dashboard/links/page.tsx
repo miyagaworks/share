@@ -1,6 +1,5 @@
 // app/dashboard/links/page.tsx (修正版 - リロードなし)
 'use client';
-
 import { useState, useEffect, useCallback } from 'react';
 import { redirect, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -22,7 +21,6 @@ import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import type { SnsLink, CustomLink } from '@prisma/client';
 import { HiLink, HiPlus, HiGlobeAlt, HiPencil } from 'react-icons/hi';
-
 export default function LinksPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -35,43 +33,32 @@ export default function LinksPage() {
   const [isAddingSns, setIsAddingSns] = useState(false);
   const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
-
   const editingSnsLink = snsLinks.find((link) => link.id === editingSnsId);
   const editingCustomLink = customLinks.find((link) => link.id === editingCustomId);
-
   // 編集ダイアログを開く
   const handleEditSnsLink = (id: string) => {
     setEditingSnsId(id);
   };
-
   // カスタムリンク編集ダイアログを開く
   const handleEditCustomLink = (id: string) => {
     setEditingCustomId(id);
   };
-
   // 編集成功時の処理
   const handleEditSuccess = () => {
     setEditingSnsId(null);
     setEditingCustomId(null);
     handleUpdate();
   };
-
   // 🚀 追加: デバッグ用のstate
   const [refreshKey, setRefreshKey] = useState(0);
-
   // 🚀 修正: より確実なfetchLinks関数
   const fetchLinks = useCallback(async () => {
     try {
-      console.log('🔍 fetchLinks開始:', new Date().toISOString());
-
       // より強力なキャッシュバスティング
       const timestamp = Date.now();
       const randomParam = Math.random().toString(36).substring(7);
       const sessionParam = session?.user?.id ? session.user.id.slice(-8) : 'guest';
-
       const url = `/api/links?_t=${timestamp}&_r=${randomParam}&_s=${sessionParam}&_refresh=${refreshKey}`;
-      console.log('🌐 リクエストURL:', url);
-
       const response = await fetch(url, {
         method: 'GET',
         headers: {
@@ -83,39 +70,28 @@ export default function LinksPage() {
         },
         cache: 'no-store',
       });
-
-      console.log('📡 Response status:', response.status);
-      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
-
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: リンクの取得に失敗しました`);
       }
-
       const data = await response.json();
-      console.log('📊 取得データ:', {
         snsCount: data.snsLinks?.length || 0,
         customCount: data.customLinks?.length || 0,
         snsLinks: data.snsLinks,
         customLinks: data.customLinks,
       });
-
       return data;
     } catch (error) {
-      console.error('❌ fetchLinks エラー:', error);
       toast.error('リンクの取得に失敗しました');
       return { snsLinks: [], customLinks: [] };
     }
   }, [session?.user?.id, refreshKey]);
-
   // セッションチェックと初期データ取得
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session) {
       redirect('/auth/signin');
       return;
     }
-
     const loadLinks = async () => {
       setIsLoading(true);
       try {
@@ -123,120 +99,86 @@ export default function LinksPage() {
         setSnsLinks(data.snsLinks || []);
         setCustomLinks(data.customLinks || []);
       } catch (error) {
-        console.error('リンク取得エラー:', error);
         toast.error('リンクの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     loadLinks();
   }, [session, status, router, fetchLinks]);
-
   // 🚀 修正: SNSリンク追加成功時の処理（リロードなし）
   const handleSnsAddSuccess = async () => {
     if (isProcessing) return;
-
     try {
       setIsProcessing(true);
-      console.log('🚀 SNSリンク追加成功 - データ更新開始');
-
       // フォームを閉じる
       setIsAddingSns(false);
-
       // データを再取得
       const data = await fetchLinks();
-
       // 強制的にstateを更新
       setSnsLinks([...(data.snsLinks || [])]);
       setCustomLinks([...(data.customLinks || [])]);
-
       toast.success('SNSリンクを追加しました！');
     } catch (error) {
-      console.error('❌ SNS追加後の処理エラー:', error);
       toast.error('データの更新に失敗しました');
     } finally {
       setIsProcessing(false);
     }
   };
-
   // 🚀 修正: カスタムリンク追加成功時の処理（リロードなし）
   const handleCustomAddSuccess = async () => {
     if (isProcessing) return;
-
     try {
       setIsProcessing(true);
-      console.log('🚀 カスタムリンク追加成功 - 強制データ更新開始');
-
       // フォームを閉じる
       setIsAddingCustom(false);
-
       // refresh keyを更新
       setRefreshKey((prev) => prev + 1);
-
       // 少し待機してからデータ取得
       await new Promise((resolve) => setTimeout(resolve, 200));
-
       // データを再取得
       const data = await fetchLinks();
-
       // 🔥 重要: 強制的にstateを更新
       setSnsLinks([...(data.snsLinks || [])]);
       setCustomLinks([...(data.customLinks || [])]);
-
       toast.success('カスタムリンクを追加しました！');
-
-      console.log('✅ カスタムリンク追加処理完了', {
         newSnsCount: data.snsLinks?.length || 0,
         newCustomCount: data.customLinks?.length || 0,
       });
-
       // コンポーネントの強制再レンダリング
       setTimeout(() => {
         setRefreshKey((prev) => prev + 1);
       }, 100);
     } catch (error) {
-      console.error('❌ カスタムリンク追加後の処理エラー:', error);
       toast.error('データの更新に失敗しました');
     } finally {
       setIsProcessing(false);
     }
   };
-
   // リンク情報の更新処理（削除・編集・並び替え時）
   const handleUpdate = async () => {
     try {
-      console.log('🚀 リンク更新開始');
-
       // refresh keyを更新
       setRefreshKey((prev) => prev + 1);
-
       // データを再取得
       const data = await fetchLinks();
-
       // 強制的にstateを更新
       setSnsLinks([...(data.snsLinks || [])]);
       setCustomLinks([...(data.customLinks || [])]);
-
-      console.log('✅ リンク情報更新完了', {
         snsCount: data.snsLinks?.length || 0,
         customCount: data.customLinks?.length || 0,
       });
     } catch (error) {
-      console.error('❌ リンク再取得エラー:', error);
       toast.error('リンク情報の取得に失敗しました');
     }
   };
-
   // コンテンツのトランジション設定
   const contentVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
   };
-
   // 🚀 追加: デバッグ情報の表示
   useEffect(() => {
-    console.log('🔄 Page state updated:', {
       snsLinksCount: snsLinks.length,
       customLinksCount: customLinks.length,
       refreshKey,
@@ -244,7 +186,6 @@ export default function LinksPage() {
       isProcessing,
     });
   }, [snsLinks, customLinks, refreshKey, isLoading, isProcessing]);
-
   return (
     <div className="space-y-6" key={`links-page-${refreshKey}`}>
       <div className="flex items-center mb-6">
@@ -256,7 +197,6 @@ export default function LinksPage() {
           </p>
         </div>
       </div>
-
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
           <TabsList className="mb-4 sm:mb-0 bg-blue-50 p-1 rounded-lg border border-blue-100">
@@ -297,7 +237,6 @@ export default function LinksPage() {
               </span>
             </TabsTrigger>
           </TabsList>
-
           <div>
             {activeTab === 'sns' && (
               <Button
@@ -321,7 +260,6 @@ export default function LinksPage() {
             )}
           </div>
         </div>
-
         <TabsContent value="sns" className="outline-none">
           <motion.div initial="hidden" animate="visible" variants={contentVariants}>
             {isLoading ? (
@@ -372,7 +310,6 @@ export default function LinksPage() {
                     </div>
                   </DashboardCard>
                 )}
-
                 {snsLinks.length > 0 && !isAddingSns && (
                   <div className="flex justify-center mb-4">
                     <Button
@@ -385,7 +322,6 @@ export default function LinksPage() {
                     </Button>
                   </div>
                 )}
-
                 {snsLinks.length > 0 && (
                   <DashboardCard
                     title="登録済みSNSリンク"
@@ -404,7 +340,6 @@ export default function LinksPage() {
             )}
           </motion.div>
         </TabsContent>
-
         <TabsContent value="custom" className="outline-none">
           <motion.div initial="hidden" animate="visible" variants={contentVariants}>
             {isLoading ? (
@@ -459,7 +394,6 @@ export default function LinksPage() {
                     </div>
                   </DashboardCard>
                 )}
-
                 {customLinks.length > 0 && !isAddingCustom && (
                   <div className="flex justify-center mb-4">
                     <Button
@@ -472,7 +406,6 @@ export default function LinksPage() {
                     </Button>
                   </div>
                 )}
-
                 {customLinks.length > 0 && (
                   <DashboardCard
                     title="登録済みカスタムリンク"
@@ -492,7 +425,6 @@ export default function LinksPage() {
           </motion.div>
         </TabsContent>
       </Tabs>
-
       {/* SNSリンク編集ダイアログ */}
       <Dialog open={!!editingSnsId} onOpenChange={(open) => !open && setEditingSnsId(null)}>
         {editingSnsLink && (
@@ -519,7 +451,6 @@ export default function LinksPage() {
           </DialogContent>
         )}
       </Dialog>
-
       {/* カスタムリンク編集ダイアログ */}
       <Dialog open={!!editingCustomId} onOpenChange={(open) => !open && setEditingCustomId(null)}>
         {editingCustomLink && (
@@ -538,7 +469,6 @@ export default function LinksPage() {
           </DialogContent>
         )}
       </Dialog>
-
       {/* 処理中のオーバーレイ */}
       {isProcessing && (
         <div className="fixed inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">

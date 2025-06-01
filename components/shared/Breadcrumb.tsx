@@ -1,15 +1,12 @@
 // components/shared/Breadcrumb.tsx
 import Link from 'next/link';
-
 type BreadcrumbItem = {
   name: string;
   href: string;
 };
-
 type BreadcrumbProps = {
   items: BreadcrumbItem[];
 };
-
 export function Breadcrumb({ items }: BreadcrumbProps) {
   // ホームのリンク先を/dashboardに変更
   const updatedItems = items.map((item) => {
@@ -18,7 +15,6 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
     }
     return item;
   });
-
   return (
     <nav className="py-4" aria-label="パンくずリスト">
       <ol className="inline-flex items-center space-x-1 md:space-x-3">

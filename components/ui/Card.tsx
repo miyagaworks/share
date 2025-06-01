@@ -1,7 +1,6 @@
 // components/ui/Card.tsx
 import { forwardRef } from "react";
 import { cn } from "@/lib/utils";
-
 // 型エイリアスを使用して、空のインターフェースを回避
 type CardProps = React.HTMLAttributes<HTMLDivElement>;
 type CardHeaderProps = React.HTMLAttributes<HTMLDivElement>;
@@ -9,7 +8,6 @@ type CardTitleProps = React.HTMLAttributes<HTMLHeadingElement>;
 type CardDescriptionProps = React.HTMLAttributes<HTMLParagraphElement>;
 type CardContentProps = React.HTMLAttributes<HTMLDivElement>;
 type CardFooterProps = React.HTMLAttributes<HTMLDivElement>;
-
 const Card = forwardRef<HTMLDivElement, CardProps>(
     ({ className, ...props }, ref) => (
         <div
@@ -23,7 +21,6 @@ const Card = forwardRef<HTMLDivElement, CardProps>(
     )
 );
 Card.displayName = "Card";
-
 const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
     ({ className, ...props }, ref) => (
         <div
@@ -34,7 +31,6 @@ const CardHeader = forwardRef<HTMLDivElement, CardHeaderProps>(
     )
 );
 CardHeader.displayName = "CardHeader";
-
 const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
     ({ className, ...props }, ref) => (
         <h3
@@ -45,7 +41,6 @@ const CardTitle = forwardRef<HTMLHeadingElement, CardTitleProps>(
     )
 );
 CardTitle.displayName = "CardTitle";
-
 const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
     ({ className, ...props }, ref) => (
         <p
@@ -56,14 +51,12 @@ const CardDescription = forwardRef<HTMLParagraphElement, CardDescriptionProps>(
     )
 );
 CardDescription.displayName = "CardDescription";
-
 const CardContent = forwardRef<HTMLDivElement, CardContentProps>(
     ({ className, ...props }, ref) => (
         <div ref={ref} className={cn("p-6 pt-0", className)} {...props} />
     )
 );
 CardContent.displayName = "CardContent";
-
 const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
     ({ className, ...props }, ref) => (
         <div
@@ -74,7 +67,6 @@ const CardFooter = forwardRef<HTMLDivElement, CardFooterProps>(
     )
 );
 CardFooter.displayName = "CardFooter";
-
 export {
     Card,
     CardHeader,

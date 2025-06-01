@@ -1,17 +1,13 @@
 // components/subscription/TrialBanner.tsx - アイコン修正版
 'use client';
-
 import { useState, useEffect } from 'react';
 import { HiClock, HiArrowRight } from 'react-icons/hi';
-
 interface TrialBannerProps {
   trialEndDate: string | null;
 }
-
 export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
   const [visible, setVisible] = useState(true);
-
   useEffect(() => {
     if (trialEndDate) {
       const end = new Date(trialEndDate);
@@ -21,20 +17,14 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
       setDaysRemaining(diffDays);
     }
   }, [trialEndDate]);
-
   // プラン選択のクリックハンドラー
   const handlePlanSelection = (e: React.MouseEvent) => {
     e.preventDefault();
-    console.log('TrialBanner: Plan selection clicked');
-
     // 現在のページが subscription ページかチェック
     if (window.location.pathname === '/dashboard/subscription') {
       // 既に subscription ページにいる場合、直接スクロール
       const targetElement = document.getElementById('subscription-plans');
-      console.log('TrialBanner: Found element:', targetElement);
-
       if (targetElement) {
-        console.log('TrialBanner: Scrolling to element...');
         targetElement.scrollIntoView({
           behavior: 'smooth',
           block: 'start',
@@ -54,17 +44,13 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
         return;
       }
     }
-
     // subscription ページに遷移
     window.location.href = '/dashboard/subscription#subscription-plans';
   };
-
   // 残り日数が0以下またはトライアル期間でない場合は表示しない
   if (!trialEndDate || daysRemaining <= 0 || !visible) return null;
-
   // プログレスバーの幅を計算
   const progressWidth = `${100 - (daysRemaining / 7) * 100}%`;
-
   return (
     <div
       className="shadow-md rounded-lg"
@@ -105,7 +91,6 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
                   </p>
                 </div>
               </div>
-
               <button
                 onClick={() => setVisible(false)}
                 className="text-white/70 hover:text-white ml-2"
@@ -114,7 +99,6 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
                 ×
               </button>
             </div>
-
             <button
               onClick={handlePlanSelection}
               className="w-full bg-white text-blue-600 px-3 py-1.5 rounded-md text-sm font-medium hover:bg-blue-50 transition-colors flex items-center justify-center"
@@ -124,7 +108,6 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
             </button>
           </div>
         </div>
-
         {/* デスクトップ表示 */}
         <div
           className="hidden sm:flex p-4 items-center justify-between"
@@ -142,7 +125,6 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
               </p>
             </div>
           </div>
-
           <div className="flex items-center space-x-4">
             <button
               onClick={handlePlanSelection}
@@ -151,7 +133,6 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
               プランを選択
               <HiArrowRight className="ml-1 h-4 w-4" />
             </button>
-
             <button
               onClick={() => setVisible(false)}
               className="text-white/70 hover:text-white p-1"
@@ -161,7 +142,6 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
             </button>
           </div>
         </div>
-
         {/* プログレスバー - より厳密に制御 */}
         <div
           style={{
@@ -192,7 +172,6 @@ export default function TrialBanner({ trialEndDate }: TrialBannerProps) {
           ></div>
         </div>
       </div>
-
       {/* 余白を埋めるための追加要素 */}
       <div
         style={{

@@ -1,6 +1,5 @@
 // components/subscription/SubscriptionSettings.tsx (法人契約中ユーザー対応版)
 'use client';
-
 import { useState, useEffect } from 'react';
 import { Spinner } from '@/components/ui/Spinner';
 import PaymentMethodForm from '@/components/subscription/PaymentMethodForm';
@@ -10,15 +9,12 @@ import { getPlanNameInJapanese } from '@/lib/utils';
 import { HiCheck, HiOutlineOfficeBuilding, HiExclamationCircle } from 'react-icons/hi';
 import { FiUsers } from 'react-icons/fi';
 import { HiUser, HiOfficeBuilding } from 'react-icons/hi';
-
 // 🔥 新規追加: 法人契約中ユーザーの判定用Hook
 import { useDashboardInfo } from '@/hooks/useDashboardInfo';
-
 // 型定義
 type SubscriptionPlan = 'monthly' | 'yearly' | 'starter' | 'business' | 'enterprise';
 type SubscriptionInterval = 'month' | 'year';
 type PlanPriceIdKey = keyof typeof PLAN_PRICE_IDS;
-
 const PLAN_PRICE_IDS = {
   monthly: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || 'price_monthly_placeholder',
   yearly: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID || 'price_yearly_placeholder',
@@ -26,7 +22,6 @@ const PLAN_PRICE_IDS = {
   business: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID || 'price_business_placeholder',
   enterprise: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise_placeholder',
 };
-
 const renderFeatures = (plan: SubscriptionPlan) => {
   switch (plan) {
     case 'starter':
@@ -39,46 +34,38 @@ const renderFeatures = (plan: SubscriptionPlan) => {
       return [];
   }
 };
-
 const STARTER_FEATURES = [
   '最大10名のユーザー管理',
   '共通カラーテーマ設定',
   '会社ロゴ表示',
   'メールサポート',
 ];
-
 const BUSINESS_FEATURES = [
   '最大30名のユーザー管理',
   '部署/チーム分け機能',
   '高度なカスタマイズ',
   '優先サポート（営業時間内）',
 ];
-
 const ENTERPRISE_FEATURES = [
   '最大50名のユーザー管理',
   '高度なユーザー権限設定',
   'カスタムドメイン設定',
   '専任サポート担当者',
 ];
-
 export default function SubscriptionSettings() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>('monthly');
   const [selectedInterval, setSelectedInterval] = useState<SubscriptionInterval>('month');
   const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [showCorporatePlans, setShowCorporatePlans] = useState(false);
-
   // 🔥 新規追加: 法人契約中ユーザーの状態管理
   const { data: dashboardInfo } = useDashboardInfo();
   const [isCorporateUser, setIsCorporateUser] = useState(false);
   const [showIndividualWarning, setShowIndividualWarning] = useState(false);
-
   // 法人プラン切り替え警告の状態管理
   const [showCorporateWarning, setShowCorporateWarning] = useState(false);
   const [hasIndividualData, setHasIndividualData] = useState(false);
-
   // 🔥 削除: 未使用の状態変数を削除
-
   // 🔥 新規追加: 法人契約中ユーザーの判定とタブ初期設定
   useEffect(() => {
     if (dashboardInfo?.permissions) {
@@ -86,22 +73,17 @@ export default function SubscriptionSettings() {
         dashboardInfo.permissions.userType === 'corporate' ||
         dashboardInfo.permissions.userType === 'invited-member' ||
         dashboardInfo.permissions.hasCorpAccess;
-
-      console.log('🔧 法人契約中ユーザー判定:', {
         userType: dashboardInfo.permissions.userType,
         hasCorpAccess: dashboardInfo.permissions.hasCorpAccess,
         isCorpUser,
       });
-
       setIsCorporateUser(isCorpUser);
-
       // 🔥 法人契約中ユーザーは法人プランタブをデフォルト表示
       if (isCorpUser) {
         setShowCorporatePlans(true);
       }
     }
   }, [dashboardInfo]);
-
   // 個人データの存在チェック
   useEffect(() => {
     const checkIndividualData = async () => {
@@ -117,13 +99,10 @@ export default function SubscriptionSettings() {
           setHasIndividualData(hasData);
         }
       } catch (error) {
-        console.error('個人データチェックエラー:', error);
       }
     };
-
     checkIndividualData();
   }, []);
-
   // 🔥 新規追加: 法人契約中ユーザーが個人プランタブをクリックした場合の処理
   const handleIndividualPlanClick = () => {
     if (isCorporateUser) {
@@ -132,7 +111,6 @@ export default function SubscriptionSettings() {
       setShowCorporatePlans(false);
     }
   };
-
   // 法人プラン切り替え時の警告表示
   const handleCorporatePlanSelection = () => {
     if (isCorporateUser) {
@@ -144,23 +122,19 @@ export default function SubscriptionSettings() {
       setShowCorporatePlans(true);
     }
   };
-
   // 警告承諦後の処理
   const handleAcceptWarning = () => {
     setShowCorporateWarning(false);
     setShowCorporatePlans(true);
   };
-
   // 🔥 新規追加: 法人プラン申し込み処理（簡略版）
   const handleCorporateSubscribe = async () => {
     if (!paymentMethodId) {
       toast.error('支払い方法を入力してください');
       return;
     }
-
     try {
       setProcessing(true);
-
       // 選択されたプランと契約期間に応じたpriceIdを取得
       const getYearlyPriceId = (plan: SubscriptionPlan): string => {
         switch (plan) {
@@ -183,20 +157,16 @@ export default function SubscriptionSettings() {
             return PLAN_PRICE_IDS[plan as PlanPriceIdKey];
         }
       };
-
       const priceId =
         selectedInterval === 'year'
           ? getYearlyPriceId(selectedPlan)
           : PLAN_PRICE_IDS[selectedPlan as keyof typeof PLAN_PRICE_IDS];
-
-      console.log('法人プラン申し込みデータ:', {
         plan: selectedPlan,
         interval: selectedInterval,
         priceId,
         paymentMethodId,
         isCorporate: true,
       });
-
       const response = await fetch('/api/subscription/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -208,17 +178,12 @@ export default function SubscriptionSettings() {
           isCorporate: true,
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'プランの作成に失敗しました');
       }
-
       const data = await response.json();
-      console.log('法人プラン登録レスポンス:', data);
-
       toast.success('法人プランの登録が完了しました！');
-
       // リダイレクト処理
       if (data.redirectUrl) {
         setTimeout(() => {
@@ -230,32 +195,25 @@ export default function SubscriptionSettings() {
         }, 2000);
       }
     } catch (error) {
-      console.error('法人プラン登録エラー:', error);
       const errorMessage = error instanceof Error ? error.message : 'エラーが発生しました';
       toast.error(errorMessage);
     } finally {
       setProcessing(false);
     }
   };
-
   // 個人プラン作成処理
   const handleSubscribe = async () => {
     if (!paymentMethodId) {
       toast.error('支払い方法を入力してください');
       return;
     }
-
     try {
       setProcessing(true);
-
       const priceId = PLAN_PRICE_IDS[selectedPlan];
-
-      console.log('送信するデータ:', {
         plan: selectedPlan,
         priceId,
         paymentMethodId,
       });
-
       const response = await fetch('/api/subscription/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -265,15 +223,11 @@ export default function SubscriptionSettings() {
           paymentMethodId: paymentMethodId,
         }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         const errorCode = data.code || '';
         const declineCode = data.decline_code || '';
-
         let errorMessage = data.error || 'プランの作成に失敗しました';
-
         if (errorCode === 'card_declined') {
           if (declineCode === 'insufficient_funds') {
             errorMessage = 'カードの残高が不足しています。別のカードでお試しください。';
@@ -285,26 +239,19 @@ export default function SubscriptionSettings() {
             errorMessage = 'カードが拒否されました。別のカードでお試しください。';
           }
         }
-
         throw new Error(errorMessage);
       }
-
-      console.log('API response:', data);
-
       toast.success('プランが正常に作成されました');
-
       setTimeout(() => {
         window.location.reload();
       }, 1500);
     } catch (error: unknown) {
-      console.error('ご利用プラン作成エラー:', error);
       const errorMessage = error instanceof Error ? error.message : 'エラーが発生しました';
       toast.error(errorMessage);
     } finally {
       setProcessing(false);
     }
   };
-
   // 🔥 新規追加: 法人→個人への移行不可警告モーダル
   if (showIndividualWarning) {
     return (
@@ -316,7 +263,6 @@ export default function SubscriptionSettings() {
               <HiExclamationCircle className="h-8 w-8 text-blue-500 mr-3" />
               <h2 className="text-xl font-bold text-gray-900">個人プランへの移行について</h2>
             </div>
-
             {/* 警告メッセージ */}
             <div className="mb-6">
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-4">
@@ -335,7 +281,6 @@ export default function SubscriptionSettings() {
                   </p>
                 </div>
               </div>
-
               <div className="bg-gray-50 border-l-4 border-gray-400 p-4">
                 <h3 className="text-lg font-semibold text-gray-800 mb-2">
                   個人プランをご希望の場合
@@ -351,7 +296,6 @@ export default function SubscriptionSettings() {
                 </div>
               </div>
             </div>
-
             {/* 選択肢 */}
             <div className="flex flex-col sm:flex-row gap-3">
               <button
@@ -367,7 +311,6 @@ export default function SubscriptionSettings() {
                 新しいアカウントで個人プラン登録
               </button>
             </div>
-
             {/* 注意書き */}
             <div className="mt-4 p-3 bg-gray-50 rounded-md">
               <p className="text-sm text-gray-600">
@@ -380,7 +323,6 @@ export default function SubscriptionSettings() {
       </div>
     );
   }
-
   // 既存の法人プラン切り替え警告モーダル...
   if (showCorporateWarning) {
     return (
@@ -391,7 +333,6 @@ export default function SubscriptionSettings() {
               <HiExclamationCircle className="h-8 w-8 text-red-500 mr-3" />
               <h2 className="text-xl font-bold text-gray-900">重要なお知らせ</h2>
             </div>
-
             <div className="mb-6">
               <div className="bg-red-50 border-l-4 border-red-500 p-4 mb-4">
                 <h3 className="text-lg font-semibold text-red-800 mb-2">
@@ -415,7 +356,6 @@ export default function SubscriptionSettings() {
                   </ul>
                 </div>
               </div>
-
               <div className="bg-blue-50 border-l-4 border-blue-500 p-4">
                 <h3 className="text-lg font-semibold text-blue-800 mb-2">
                   個人データを保持したい場合
@@ -431,7 +371,6 @@ export default function SubscriptionSettings() {
                 </div>
               </div>
             </div>
-
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => setShowCorporateWarning(false)}
@@ -452,7 +391,6 @@ export default function SubscriptionSettings() {
                 個人データを削除して法人プランに切り替える
               </button>
             </div>
-
             <div className="mt-4 p-3 bg-gray-50 rounded-md">
               <p className="text-sm text-gray-600">
                 <strong>ご注意:</strong> 一度削除された個人データの復旧はできません。
@@ -464,7 +402,6 @@ export default function SubscriptionSettings() {
       </div>
     );
   }
-
   // 法人プラン申し込み完了後のリダイレクト中画面
   if (processing && showCorporatePlans) {
     return (
@@ -481,7 +418,6 @@ export default function SubscriptionSettings() {
       </div>
     );
   }
-
   return (
     <div id="subscription-plans" className="space-y-6">
       <div className="space-y-6">
@@ -514,7 +450,6 @@ export default function SubscriptionSettings() {
             </button>
           </div>
         </div>
-
         {/* 🔥 新規追加: 法人契約中ユーザー向けの情報表示 */}
         {isCorporateUser && !showCorporatePlans && (
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
@@ -529,12 +464,10 @@ export default function SubscriptionSettings() {
             </div>
           </div>
         )}
-
         {/* 個人プラン */}
         {!showCorporatePlans && !isCorporateUser && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <h2 className="text-xl font-semibold mb-4">プランを選択</h2>
-
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
               {/* 月額プラン */}
               <motion.div
@@ -573,7 +506,6 @@ export default function SubscriptionSettings() {
                   )}
                 </div>
               </motion.div>
-
               {/* 年額プラン */}
               <motion.div
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
@@ -618,11 +550,9 @@ export default function SubscriptionSettings() {
                 </div>
               </motion.div>
             </div>
-
             {/* 支払い方法入力 */}
             <h3 className="font-semibold mb-3">お支払い方法</h3>
             <PaymentMethodForm onPaymentMethodChange={setPaymentMethodId} />
-
             {/* 登録/変更ボタン */}
             <div className="mt-6 flex justify-end">
               <button
@@ -642,12 +572,10 @@ export default function SubscriptionSettings() {
             </div>
           </div>
         )}
-
         {/* 法人プラン */}
         {showCorporatePlans && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <h2 className="text-xl font-semibold mb-4">法人プランを選択</h2>
-
             {/* 🔥 修正: 法人プラン注意事項（法人契約中ユーザーには表示しない） */}
             {!isCorporateUser && (
               <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
@@ -663,7 +591,6 @@ export default function SubscriptionSettings() {
                 </div>
               </div>
             )}
-
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
               {/* スタータープラン */}
               <motion.div
@@ -686,7 +613,6 @@ export default function SubscriptionSettings() {
                         /{selectedInterval === 'month' ? '月' : '年'}
                       </span>
                     </p>
-
                     {/* 月額/年額切り替えボタン */}
                     <div className="flex space-x-2 mt-3 mb-3">
                       <button
@@ -718,7 +644,6 @@ export default function SubscriptionSettings() {
                         年額（16%お得）
                       </button>
                     </div>
-
                     <div className="mt-3 mb-3">
                       <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-base font-bold bg-blue-100 text-blue-800">
                         <FiUsers className="mr-2" /> 最大 10 名
@@ -732,7 +657,6 @@ export default function SubscriptionSettings() {
                         </li>
                       ))}
                     </ul>
-
                     {/* 登録ボタン */}
                     <div className="mt-4">
                       <button
@@ -758,7 +682,6 @@ export default function SubscriptionSettings() {
                   )}
                 </div>
               </motion.div>
-
               {/* ビジネスプラン */}
               <motion.div
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
@@ -782,7 +705,6 @@ export default function SubscriptionSettings() {
                         /{selectedInterval === 'month' ? '月' : '年'}
                       </span>
                     </p>
-
                     {/* 月額/年額切り替えボタン */}
                     <div className="flex space-x-2 mt-3 mb-3">
                       <button
@@ -814,7 +736,6 @@ export default function SubscriptionSettings() {
                         年額（16%お得）
                       </button>
                     </div>
-
                     <div className="mt-3 mb-3">
                       <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-base font-bold bg-blue-100 text-blue-800">
                         <FiUsers className="mr-2" /> 最大 30 名
@@ -828,7 +749,6 @@ export default function SubscriptionSettings() {
                         </li>
                       ))}
                     </ul>
-
                     {/* 登録ボタン */}
                     <div className="mt-4">
                       <button
@@ -854,7 +774,6 @@ export default function SubscriptionSettings() {
                   )}
                 </div>
               </motion.div>
-
               {/* エンタープライズプラン */}
               <motion.div
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
@@ -878,7 +797,6 @@ export default function SubscriptionSettings() {
                         /{selectedInterval === 'month' ? '月' : '年'}
                       </span>
                     </p>
-
                     {/* 月額/年額切り替えボタン */}
                     <div className="flex space-x-2 mt-3 mb-3">
                       <button
@@ -910,7 +828,6 @@ export default function SubscriptionSettings() {
                         年額（16%お得）
                       </button>
                     </div>
-
                     <div className="mt-3 mb-3">
                       <span className="inline-flex items-center px-3.5 py-1.5 rounded-full text-base font-bold bg-blue-100 text-blue-800">
                         <FiUsers className="mr-2" /> 最大 50 名
@@ -924,7 +841,6 @@ export default function SubscriptionSettings() {
                         </li>
                       ))}
                     </ul>
-
                     {/* 登録ボタン */}
                     <div className="mt-4">
                       <button
@@ -951,7 +867,6 @@ export default function SubscriptionSettings() {
                 </div>
               </motion.div>
             </div>
-
             {/* 追加オプションの情報 */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
               <h3 className="font-semibold text-gray-800 mb-2">追加オプション</h3>
@@ -982,13 +897,11 @@ export default function SubscriptionSettings() {
                 </li>
               </ul>
             </div>
-
             {/* 支払い方法入力 */}
             {!isCorporateUser && (
               <>
                 <h3 className="font-semibold mb-3">お支払い方法</h3>
                 <PaymentMethodForm onPaymentMethodChange={setPaymentMethodId} />
-
                 {/* 登録/変更ボタン */}
                 <div className="mt-6 flex justify-end">
                   <button
@@ -1008,7 +921,6 @@ export default function SubscriptionSettings() {
                 </div>
               </>
             )}
-
             {/* 法人契約中ユーザー向けメッセージ */}
             {isCorporateUser && (
               <div className="bg-green-50 border-l-4 border-green-500 p-4">

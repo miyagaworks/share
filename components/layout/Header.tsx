@@ -1,6 +1,5 @@
 // components/layout/Header.tsx
 'use client';
-
 import React, { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,7 +7,6 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
-
 // 必要なアイコンのみをインポート
 import {
   HiOutlineInformationCircle,
@@ -16,20 +14,16 @@ import {
   HiOutlineUser,
   HiOutlineCreditCard,
 } from 'react-icons/hi';
-
 interface HeaderProps {
   className?: string;
 }
-
 export function Header({ className }: HeaderProps) {
   const { data: session } = useSession();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-
   // ダッシュボード関連のページで新しいヘッダーを使用
   if (session) {
     return <DashboardHeader />;
   }
-
   // 一般ユーザー向けの既存のヘッダー
   return (
     <header
@@ -64,7 +58,6 @@ export function Header({ className }: HeaderProps) {
             <Image src="/logo.svg" alt="Share Logo" width={145} height={42} priority />
           </Link>
         </div>
-
         <div className="hidden md:flex md:items-center md:space-x-6">
           <Link href="/features" className="text-sm font-medium text-gray-700 hover:text-gray-900">
             機能
@@ -76,7 +69,6 @@ export function Header({ className }: HeaderProps) {
             お問い合わせ
           </Link>
         </div>
-
         <div className="flex items-center space-x-4">
           <Link href="/auth/signin">
             <Button variant="outline" size="sm">
@@ -88,7 +80,6 @@ export function Header({ className }: HeaderProps) {
           </Link>
         </div>
       </div>
-
       {/* モバイルメニュー */}
       <div className={`lg:hidden ${mobileMenuOpen ? 'block' : 'hidden'}`}>
         <div className="space-y-1 px-2 pt-2 pb-3">

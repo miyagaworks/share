@@ -1,22 +1,18 @@
 // app/api/corporate/tenant/route.ts (修正版)
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { generateVirtualTenantData } from '@/lib/corporateAccess';
-
 // プランに応じたmaxUsersを取得する関数（修正版）
 function getMaxUsersByPlan(plan: string | null | undefined): number {
   if (!plan) return 10; // デフォルト
-
   const planLower = plan.toLowerCase();
-
   // スタータープラン: 10ユーザー（最初に判定）
   if (planLower.includes('starter') || planLower === 'business_legacy') {
     return 10;
   }
-
   // エンタープライズプラン: 50ユーザー
   if (
     planLower.includes('enterprise') ||
@@ -25,36 +21,28 @@ function getMaxUsersByPlan(plan: string | null | undefined): number {
   ) {
     return 50;
   }
-
   // ビジネスプラン: 30ユーザー（starterを除外した後に判定）
   if (planLower.includes('business')) {
     return 30;
   }
-
   // プロプラン（旧称の場合）
   if (planLower.includes('pro')) {
     return 30;
   }
-
   // その他: 10ユーザー
   return 10;
 }
-
 export async function GET() {
   try {
-    console.log('[API] /api/corporate/tenant リクエスト受信');
-
+    logger.debug('[API] /api/corporate/tenant リクエスト受信');
     // セッション認証チェック
     const session = await auth();
-
     if (!session || !session.user?.id) {
-      console.log('[API] 認証されていないアクセス');
+      logger.debug('[API] 認証されていないアクセス');
       return NextResponse.json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }, { status: 401 });
     }
-
     const userId = session.user.id;
-    console.log('[API] ユーザーID:', userId);
-
+    logger.debug('[API] ユーザーID:', userId);
     try {
       // ユーザー情報を取得
       const user = await prisma.user.findUnique({
@@ -65,18 +53,15 @@ export async function GET() {
           subscriptionStatus: true,
         },
       });
-
       // ユーザーが見つからない場合
       if (!user) {
-        console.log('[API] ユーザーが見つかりません:', userId);
+        logger.debug('[API] ユーザーが見つかりません:', userId);
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
-
       // 永久利用権ユーザーの場合、仮想テナントデータを生成して返す
       if (user.subscriptionStatus === 'permanent') {
-        console.log('[API] 永久利用権ユーザー用仮想テナントデータを生成:', userId);
+        logger.debug('[API] 永久利用権ユーザー用仮想テナントデータを生成:', userId);
         const virtualTenant = generateVirtualTenantData(userId, user.name);
-
         const responseData = {
           tenant: {
             id: virtualTenant.id,
@@ -100,10 +85,8 @@ export async function GET() {
           isAdmin: true,
           userRole: 'admin',
         };
-
         return NextResponse.json(responseData);
       }
-
       // 管理者としてのテナントを検索（サブスクリプション情報も含む）
       const adminTenant = await prisma.corporateTenant.findUnique({
         where: { adminId: userId },
@@ -134,7 +117,6 @@ export async function GET() {
           },
         },
       });
-
       // 一般メンバーとしてのテナントを検索
       const memberTenant = !adminTenant
         ? await prisma.corporateTenant.findFirst({
@@ -173,51 +155,42 @@ export async function GET() {
             },
           })
         : null;
-
       // テナント情報を取得（管理者または一般メンバー）
       const tenant = adminTenant || memberTenant;
-
       // テナントが見つからない場合
       if (!tenant) {
-        console.log('[API] テナントが見つかりません:', userId);
+        logger.debug('[API] テナントが見つかりません:', userId);
         return NextResponse.json({ error: 'No tenant associated with this user' }, { status: 404 });
       }
-
       // プランに基づいてmaxUsersを動的に計算
       const correctMaxUsers = getMaxUsersByPlan(tenant.subscription?.plan ?? null);
-
-      console.log('[API] プラン解析:', {
+      logger.debug('[API] プラン解析:', {
         originalPlan: tenant.subscription?.plan,
         calculatedMaxUsers: correctMaxUsers,
         currentMaxUsers: tenant.maxUsers,
       });
-
       // データベースのmaxUsersが間違っている場合は修正
       if (tenant.maxUsers !== correctMaxUsers) {
-        console.log(
+        logger.debug(
           `[API] maxUsersを修正: ${tenant.maxUsers} → ${correctMaxUsers} (プラン: ${tenant.subscription?.plan})`,
         );
-
         try {
           await prisma.corporateTenant.update({
             where: { id: tenant.id },
             data: { maxUsers: correctMaxUsers },
           });
-
           // レスポンス用に修正された値を使用
           tenant.maxUsers = correctMaxUsers;
-          console.log('[API] maxUsers更新完了');
+          logger.debug('[API] maxUsers更新完了');
         } catch (updateError) {
-          console.error('[API] maxUsers更新エラー:', updateError);
+          logger.error('[API] maxUsers更新エラー:', updateError);
           // エラーが発生しても処理を続行
         }
       }
-
       // 管理者権限の確認
       const isAdmin = !!adminTenant;
       const userRole = isAdmin ? 'admin' : 'member';
-
-      console.log('[API] テナント情報取得成功:', {
+      logger.debug('[API] テナント情報取得成功:', {
         tenantId: tenant.id,
         isAdmin,
         userRole,
@@ -225,10 +198,9 @@ export async function GET() {
         plan: tenant.subscription?.plan,
         onboardingCompleted: tenant.onboardingCompleted,
       });
-
       // アカウント停止状態確認
       if (tenant.accountStatus === 'suspended') {
-        console.log('[API] テナントは停止状態です:', tenant.id);
+        logger.debug('[API] テナントは停止状態です:', tenant.id);
         return NextResponse.json(
           {
             error: 'Account is suspended',
@@ -244,7 +216,6 @@ export async function GET() {
           { status: 403 },
         );
       }
-
       // レスポンスデータを作成
       const responseData = {
         tenant: {
@@ -270,10 +241,9 @@ export async function GET() {
         isAdmin,
         userRole,
       };
-
       return NextResponse.json(responseData);
     } catch (dbError) {
-      console.error('[API] データベースエラー:', dbError);
+      logger.error('[API] データベースエラー:', dbError);
       return NextResponse.json(
         {
           error: 'Database operation failed',
@@ -285,7 +255,7 @@ export async function GET() {
     }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : String(error);
-    console.error('[API] テナント情報取得エラー:', error);
+    logger.error('[API] テナント情報取得エラー:', error);
     return NextResponse.json(
       {
         error: 'Failed to fetch tenant information',
@@ -298,7 +268,7 @@ export async function GET() {
     try {
       await prisma.$disconnect();
     } catch (e) {
-      console.error('[API] Prisma切断エラー:', e);
+      logger.error('[API] Prisma切断エラー:', e);
     }
   }
 }

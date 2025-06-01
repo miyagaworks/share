@@ -1,11 +1,9 @@
 // components/profile/ProfileCustomLink.tsx の修正
 import type { CustomLink } from "@prisma/client";
-
 interface ProfileCustomLinkProps {
     link: CustomLink;
     mainColor: string;
 }
-
 export function ProfileCustomLink({ link, mainColor }: ProfileCustomLinkProps) {
     return (
       <a
@@ -39,7 +37,6 @@ export function ProfileCustomLink({ link, mainColor }: ProfileCustomLinkProps) {
             <p className="text-sm font-medium text-gray-800 truncate">{link.name}</p>
           </div>
         </div>
-
         {/* 右側の矢印アイコン */}
         <div className="text-gray-400 flex-shrink-0 ml-2">
           <svg

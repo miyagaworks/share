@@ -1,10 +1,8 @@
 // components/providers/SessionProvider.tsx (修正版)
 'use client';
-
 import { SessionProvider as NextAuthSessionProvider, signOut } from 'next-auth/react';
 import { ReactNode, useEffect, useRef } from 'react';
 import { usePathname } from 'next/navigation';
-
 interface EnhancedSessionProviderProps {
   children: ReactNode;
   // セッションタイムアウト時間（分単位）
@@ -16,7 +14,6 @@ interface EnhancedSessionProviderProps {
   // 除外パス（自動ログアウトを無効にするパス）
   excludePaths?: string[];
 }
-
 export function SessionProvider({
   children,
   sessionTimeoutMinutes = 480, // デフォルト8時間
@@ -29,30 +26,23 @@ export function SessionProvider({
   const timeoutIdRef = useRef<NodeJS.Timeout | null>(null);
   const warningTimeoutIdRef = useRef<NodeJS.Timeout | null>(null);
   const lastActivityRef = useRef(Date.now());
-
   // 🚀 現在のパスが除外対象かチェック
   const isExcludedPath = excludePaths.some((path) => pathname?.startsWith(path));
-
   // 🚀 デザイン・リンク関連ページでは自動ログアウトを無効化
   const isDesignOrLinksPage =
     pathname?.includes('/design') ||
     pathname?.includes('/links') ||
     pathname?.includes('/corporate-member');
-
   // 🚀 実際の自動ログアウト有効フラグ
   const shouldEnableAutoLogout = enableAutoLogout && !isExcludedPath && !isDesignOrLinksPage;
-
   useEffect(() => {
     if (!shouldEnableAutoLogout) {
-      console.log('🚀 自動ログアウト無効化:', pathname);
       return;
     }
-
     const setupSessionTimeout = () => {
       // 既存のタイマーをクリア
       if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
       if (warningTimeoutIdRef.current) clearTimeout(warningTimeoutIdRef.current);
-
       // 警告表示のタイマー
       const warningTime = (sessionTimeoutMinutes - warningBeforeMinutes) * 60 * 1000;
       warningTimeoutIdRef.current = setTimeout(() => {
@@ -61,14 +51,12 @@ export function SessionProvider({
           showSessionWarning();
         }
       }, warningTime);
-
       // 自動ログアウトのタイマー
       const logoutTime = sessionTimeoutMinutes * 60 * 1000;
       timeoutIdRef.current = setTimeout(() => {
         handleAutoLogout();
       }, logoutTime);
     };
-
     const showSessionWarning = () => {
       const remainingMinutes = warningBeforeMinutes;
       const shouldContinue = confirm(
@@ -77,7 +65,6 @@ export function SessionProvider({
           `「OK」をクリックするとセッションが延長されます。\n` +
           `「キャンセル」をクリックするか、何もしないとログアウトされます。`,
       );
-
       if (shouldContinue) {
         // セッション更新
         extendSession();
@@ -87,7 +74,6 @@ export function SessionProvider({
         handleAutoLogout();
       }
     };
-
     const extendSession = async () => {
       try {
         // 🚀 修正: セッション延長時の処理を最小限に
@@ -97,37 +83,29 @@ export function SessionProvider({
             'Cache-Control': 'no-cache',
           },
         });
-
         if (response.ok) {
           setupSessionTimeout();
-          console.log('セッションが延長されました');
         } else {
           handleAutoLogout();
         }
       } catch (error) {
-        console.error('セッション延長エラー:', error);
         handleAutoLogout();
       }
     };
-
     const handleAutoLogout = async () => {
       try {
-        console.log('セッションタイムアウトによる自動ログアウト');
         await signOut({
           redirect: true,
           callbackUrl: '/auth/signin?timeout=1',
         });
       } catch (error) {
-        console.error('自動ログアウトエラー:', error);
         window.location.href = '/auth/signin?timeout=1';
       }
     };
-
     // 🚀 修正: アクティビティ監視を大幅に緩和
     const resetSessionTimer = () => {
       const now = Date.now();
       const timeSinceLastActivity = now - lastActivityRef.current;
-
       // 🔥 5分以上経過した場合のみタイマーリセット（頻度を大幅に削減）
       if (timeSinceLastActivity > 5 * 60 * 1000) {
         lastActivityRef.current = now;
@@ -135,36 +113,28 @@ export function SessionProvider({
           warningShownRef.current = false;
         }
         setupSessionTimeout();
-        console.log('ユーザーアクティビティ検出 - セッションタイマーリセット');
       }
     };
-
     // 🚀 修正: 監視するイベントを最小限に削減
     const activityEvents = ['click', 'keypress']; // mousedown, mousemove, scroll, touchstart を削除
-
     const handleUserActivity = () => {
       resetSessionTimer();
     };
-
     // イベントリスナーを追加
     activityEvents.forEach((event) => {
       document.addEventListener(event, handleUserActivity, true);
     });
-
     // 初回タイマー設定
     setupSessionTimeout();
-
     // クリーンアップ
     return () => {
       if (timeoutIdRef.current) clearTimeout(timeoutIdRef.current);
       if (warningTimeoutIdRef.current) clearTimeout(warningTimeoutIdRef.current);
-
       activityEvents.forEach((event) => {
         document.removeEventListener(event, handleUserActivity, true);
       });
     };
   }, [sessionTimeoutMinutes, warningBeforeMinutes, shouldEnableAutoLogout, pathname]);
-
   return (
     <NextAuthSessionProvider
       // 🚀 修正: セッション更新頻度を大幅に削減

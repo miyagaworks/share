@@ -1,30 +1,25 @@
 // app/jikogene/components/FormSteps/Hobbies.tsx
 'use client';
-
 import { useState } from 'react';
 import { FormData, FormDataValue } from '@/app/jikogene/types';
 import { cn } from '@/lib/utils';
 import { hobbyItems } from '@/app/jikogene/lib/constants';
 import { memo } from 'react';
-
 interface HobbiesProps {
   formData: FormData;
   updateFormData: <K extends keyof FormData>(section: K, value: FormDataValue<K>) => void;
   sectionIcon: React.ReactNode;
   fieldErrors: Record<string, string>;
 }
-
 /**
  * 趣味・興味入力フォームステップ
  * 入力フォームと追加ボタンを常に表示
  */
 const Hobbies = memo(function Hobbies({ formData, updateFormData, fieldErrors }: HobbiesProps) {
   const [otherHobby, setOtherHobby] = useState('');
-
   // 趣味の選択/解除を処理
   const handleHobbyChange = (hobby: string) => {
     const currentHobbies = [...formData.hobbies];
-
     if (currentHobbies.includes(hobby)) {
       // すでに選択されている場合は削除
       const updatedHobbies = currentHobbies.filter((h) => h !== hobby);
@@ -35,7 +30,6 @@ const Hobbies = memo(function Hobbies({ formData, updateFormData, fieldErrors }:
       updateFormData('hobbies', updatedHobbies);
     }
   };
-
   // その他の趣味を追加
   const handleAddOtherHobby = () => {
     if (otherHobby.trim() && !formData.hobbies.includes(otherHobby.trim())) {
@@ -44,7 +38,6 @@ const Hobbies = memo(function Hobbies({ formData, updateFormData, fieldErrors }:
       setOtherHobby(''); // 入力をクリア
     }
   };
-
   // Enterキーが押されたときに趣味を追加
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -52,11 +45,9 @@ const Hobbies = memo(function Hobbies({ formData, updateFormData, fieldErrors }:
       handleAddOtherHobby();
     }
   };
-
   return (
     <div className="fade-in">
       <p className="text-gray-500 mb-4">あなたの趣味や興味を選択してください。複数選択可能です。</p>
-
       {/* アイコン付き趣味グリッド */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         {hobbyItems.map((hobby) => (
@@ -79,7 +70,6 @@ const Hobbies = memo(function Hobbies({ formData, updateFormData, fieldErrors }:
           </div>
         ))}
       </div>
-
       {/* その他の趣味入力フォーム - 常に表示 */}
       <div className="mb-6 mt-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">その他の趣味・興味</label>
@@ -108,7 +98,6 @@ const Hobbies = memo(function Hobbies({ formData, updateFormData, fieldErrors }:
           リストにない趣味や興味を入力して「追加」ボタンをクリックしてください
         </p>
       </div>
-
       {/* 選択された趣味のタグ表示 */}
       <div className="mt-4">
         <div className="flex flex-wrap gap-2">
@@ -124,7 +113,6 @@ const Hobbies = memo(function Hobbies({ formData, updateFormData, fieldErrors }:
               // 趣味のアイコンを探す
               const hobbyItem = hobbyItems.find((item) => item.name === hobby);
               const hobbyIcon = hobbyItem ? hobbyItem.icon : null;
-
               return (
                 <span
                   key={hobby}
@@ -149,5 +137,4 @@ const Hobbies = memo(function Hobbies({ formData, updateFormData, fieldErrors }:
     </div>
   );
 });
-
 export default Hobbies;

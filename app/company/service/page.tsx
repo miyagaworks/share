@@ -1,12 +1,10 @@
 // app/company/service/page.tsx
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
-
 export const metadata: Metadata = {
   title: 'サービスについて | Share',
   description: 'Shareサービスの特徴や機能についての詳細情報です。',
 };
-
 export default function ServiceAboutPage() {
   return (
     <PageLayout
@@ -26,7 +24,6 @@ export default function ServiceAboutPage() {
             現代社会では、人々は複数のSNSを使い分け、様々な連絡手段を持っています。それらをいちいち交換するのは手間がかかります。Shareはその問題を解決し、デジタル時代の新しい名刺として機能します。
           </p>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-4">主な特徴</h2>
           <div className="grid md:grid-cols-2 gap-6">
@@ -56,7 +53,6 @@ export default function ServiceAboutPage() {
             </div>
           </div>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-4">利用シーン</h2>
           <div className="space-y-4">
@@ -86,7 +82,6 @@ export default function ServiceAboutPage() {
             </div>
           </div>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-4">料金プラン</h2>
           <div className="grid md:grid-cols-2 gap-6">
@@ -169,7 +164,6 @@ export default function ServiceAboutPage() {
                 ※年間プラン（5,000円/年）もご用意しています。
               </p>
             </div>
-
             <div className="border rounded-lg p-6">
               <h3 className="font-medium text-lg mb-2">法人プラン</h3>
               <div className="text-2xl font-bold mb-4">

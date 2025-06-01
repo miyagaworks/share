@@ -1,21 +1,17 @@
 // actions/sns.ts (修正版 - キャッシュ整合性の改善)
 'use server';
-
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { revalidatePath, revalidateTag } from 'next/cache';
 import { z } from 'zod';
 import { SNS_PLATFORMS } from '@/types/sns';
-
 // SNSリンク追加 (修正版)
 export async function addSnsLink(data: { platform: string; username?: string; url: string }) {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return { error: '認証されていません' };
     }
-
     // データの検証
     const validatedFields = z
       .object({
@@ -24,11 +20,9 @@ export async function addSnsLink(data: { platform: string; username?: string; ur
         url: z.string().url({ message: '有効なURLを入力してください' }),
       })
       .safeParse(data);
-
     if (!validatedFields.success) {
       return { error: '入力データが無効です' };
     }
-
     // プラットフォームが既に存在するか確認
     const existingLink = await prisma.snsLink.findFirst({
       where: {
@@ -36,18 +30,14 @@ export async function addSnsLink(data: { platform: string; username?: string; ur
         platform: data.platform,
       },
     });
-
     if (existingLink) {
       return { error: 'このプラットフォームは既に追加されています' };
     }
-
     // 現在のリンク数を取得して表示順を決定
     const currentLinks = await prisma.snsLink.findMany({
       where: { userId: session.user.id },
     });
-
     const displayOrder = currentLinks.length + 1;
-
     // SNSリンクを追加
     const newLink = await prisma.snsLink.create({
       data: {
@@ -58,50 +48,39 @@ export async function addSnsLink(data: { platform: string; username?: string; ur
         displayOrder,
       },
     });
-
     // 🚀 改善: より包括的なキャッシュクリア
     try {
       // 関連するすべてのパスを無効化
       revalidatePath('/dashboard/links', 'page');
       revalidatePath('/dashboard', 'page');
       revalidatePath('/api/links', 'page');
-
       // ユーザー固有のプロフィールページも無効化
       if (session.user.id) {
         revalidatePath(`/api/user/${session.user.id}/profile`, 'page');
       }
-
       // タグベースの無効化
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('sns-links');
     } catch (revalidateError) {
-      console.error('Revalidation error:', revalidateError);
       // revalidationエラーがあっても処理は継続
     }
-
-    console.log('✅ SNSリンク追加完了:', {
       platform: data.platform,
       userId: session.user.id,
       linkId: newLink.id,
     });
-
     return { success: true, link: newLink };
   } catch (error) {
-    console.error('SNSリンク追加エラー:', error);
     return { error: 'SNSリンクの追加に失敗しました' };
   }
 }
-
 // カスタムリンク追加 (修正版)
 export async function addCustomLink(data: { name: string; url: string }) {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return { error: '認証されていません' };
     }
-
     // データの検証
     const validatedFields = z
       .object({
@@ -109,18 +88,14 @@ export async function addCustomLink(data: { name: string; url: string }) {
         url: z.string().url({ message: '有効なURLを入力してください' }),
       })
       .safeParse(data);
-
     if (!validatedFields.success) {
       return { error: '入力データが無効です' };
     }
-
     // 現在のリンク数を取得して表示順を決定
     const currentLinks = await prisma.customLink.findMany({
       where: { userId: session.user.id },
     });
-
     const displayOrder = currentLinks.length + 1;
-
     // カスタムリンクを追加
     const newLink = await prisma.customLink.create({
       data: {
@@ -130,50 +105,39 @@ export async function addCustomLink(data: { name: string; url: string }) {
         displayOrder,
       },
     });
-
     // 🚀 改善: より包括的なキャッシュクリア
     try {
       // 関連するすべてのパスを無効化
       revalidatePath('/dashboard/links', 'page');
       revalidatePath('/dashboard', 'page');
       revalidatePath('/api/links', 'page');
-
       // ユーザー固有のプロフィールページも無効化
       if (session.user.id) {
         revalidatePath(`/api/user/${session.user.id}/profile`, 'page');
       }
-
       // タグベースの無効化
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('custom-links');
     } catch (revalidateError) {
-      console.error('Revalidation error:', revalidateError);
       // revalidationエラーがあっても処理は継続
     }
-
-    console.log('✅ カスタムリンク追加完了:', {
       name: data.name,
       userId: session.user.id,
       linkId: newLink.id,
     });
-
     return { success: true, link: newLink };
   } catch (error) {
-    console.error('カスタムリンク追加エラー:', error);
     return { error: 'カスタムリンクの追加に失敗しました' };
   }
 }
-
 // SNSリンク削除
 export async function deleteSnsLink(id: string) {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return { error: '認証されていません' };
     }
-
     // リンクが存在するか確認
     const link = await prisma.snsLink.findFirst({
       where: {
@@ -181,22 +145,18 @@ export async function deleteSnsLink(id: string) {
         userId: session.user.id,
       },
     });
-
     if (!link) {
       return { error: 'リンクが見つかりません' };
     }
-
     // リンクを削除
     await prisma.snsLink.delete({
       where: { id },
     });
-
     // 残りのリンクの表示順を再調整
     const remainingLinks = await prisma.snsLink.findMany({
       where: { userId: session.user.id },
       orderBy: { displayOrder: 'asc' },
     });
-
     // 表示順を更新
     for (let i = 0; i < remainingLinks.length; i++) {
       await prisma.snsLink.update({
@@ -204,37 +164,29 @@ export async function deleteSnsLink(id: string) {
         data: { displayOrder: i + 1 },
       });
     }
-
     // キャッシュを更新
     try {
       revalidatePath('/dashboard/links', 'page');
       revalidatePath('/dashboard', 'page');
       revalidatePath('/api/links', 'page');
-
       // タグベースの無効化
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('sns-links');
     } catch (revalidateError) {
-      console.error('Revalidation error:', revalidateError);
     }
-
     return { success: true };
   } catch (error) {
-    console.error('SNSリンク削除エラー:', error);
     return { error: 'SNSリンクの削除に失敗しました' };
   }
 }
-
 // SNSリンクの表示順更新
 export async function updateSnsLinkOrder(linkIds: string[]) {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return { error: '認証されていません' };
     }
-
     // 各リンクのIDを検証
     const links = await prisma.snsLink.findMany({
       where: {
@@ -242,11 +194,9 @@ export async function updateSnsLinkOrder(linkIds: string[]) {
         userId: session.user.id,
       },
     });
-
     if (links.length !== linkIds.length) {
       return { error: '無効なリンクIDが含まれています' };
     }
-
     // トランザクションで一括更新
     await prisma.$transaction(
       linkIds.map((id, index) =>
@@ -256,27 +206,21 @@ export async function updateSnsLinkOrder(linkIds: string[]) {
         }),
       ),
     );
-
     // キャッシュを更新
     try {
       revalidatePath('/dashboard/links', 'page');
       revalidatePath('/dashboard', 'page');
       revalidatePath('/api/links', 'page');
-
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('sns-links');
     } catch (revalidateError) {
-      console.error('Revalidation error:', revalidateError);
     }
-
     return { success: true };
   } catch (error) {
-    console.error('SNSリンク順序更新エラー:', error);
     return { error: 'SNSリンクの順序更新に失敗しました' };
   }
 }
-
 // SNSリンク更新（修正版）
 export async function updateSnsLink(
   id: string,
@@ -287,11 +231,9 @@ export async function updateSnsLink(
 ) {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return { error: '認証されていません' };
     }
-
     // データの検証
     const validatedFields = z
       .object({
@@ -299,11 +241,9 @@ export async function updateSnsLink(
         url: z.string().url({ message: '有効なURLを入力してください' }),
       })
       .safeParse(data);
-
     if (!validatedFields.success) {
       return { error: '入力データが無効です' };
     }
-
     // リンクが存在するか確認
     const link = await prisma.snsLink.findFirst({
       where: {
@@ -311,11 +251,9 @@ export async function updateSnsLink(
         userId: session.user.id,
       },
     });
-
     if (!link) {
       return { error: 'リンクが見つかりません' };
     }
-
     // データベースを更新
     const updatedLink = await prisma.snsLink.update({
       where: { id },
@@ -324,36 +262,28 @@ export async function updateSnsLink(
         url: validatedFields.data.url,
       },
     });
-
     // キャッシュを更新
     try {
       revalidatePath('/dashboard/links', 'page');
       revalidatePath('/dashboard', 'page');
       revalidatePath('/api/links', 'page');
-
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('sns-links');
     } catch (revalidateError) {
-      console.error('Revalidation error:', revalidateError);
     }
-
     return { success: true, link: updatedLink };
   } catch (error) {
-    console.error('SNSリンク更新エラー:', error);
     return { error: 'SNSリンクの更新に失敗しました' };
   }
 }
-
 // カスタムリンク削除
 export async function deleteCustomLink(id: string) {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return { error: '認証されていません' };
     }
-
     // リンクが存在するか確認
     const link = await prisma.customLink.findFirst({
       where: {
@@ -361,22 +291,18 @@ export async function deleteCustomLink(id: string) {
         userId: session.user.id,
       },
     });
-
     if (!link) {
       return { error: 'リンクが見つかりません' };
     }
-
     // リンクを削除
     await prisma.customLink.delete({
       where: { id },
     });
-
     // 残りのリンクの表示順を再調整
     const remainingLinks = await prisma.customLink.findMany({
       where: { userId: session.user.id },
       orderBy: { displayOrder: 'asc' },
     });
-
     // 表示順を更新
     for (let i = 0; i < remainingLinks.length; i++) {
       await prisma.customLink.update({
@@ -384,36 +310,28 @@ export async function deleteCustomLink(id: string) {
         data: { displayOrder: i + 1 },
       });
     }
-
     // キャッシュを更新
     try {
       revalidatePath('/dashboard/links', 'page');
       revalidatePath('/dashboard', 'page');
       revalidatePath('/api/links', 'page');
-
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('custom-links');
     } catch (revalidateError) {
-      console.error('Revalidation error:', revalidateError);
     }
-
     return { success: true };
   } catch (error) {
-    console.error('カスタムリンク削除エラー:', error);
     return { error: 'カスタムリンクの削除に失敗しました' };
   }
 }
-
 // カスタムリンクの表示順更新
 export async function updateCustomLinkOrder(linkIds: string[]) {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return { error: '認証されていません' };
     }
-
     // 各リンクのIDを検証
     const links = await prisma.customLink.findMany({
       where: {
@@ -421,11 +339,9 @@ export async function updateCustomLinkOrder(linkIds: string[]) {
         userId: session.user.id,
       },
     });
-
     if (links.length !== linkIds.length) {
       return { error: '無効なリンクIDが含まれています' };
     }
-
     // トランザクションで一括更新
     await prisma.$transaction(
       linkIds.map((id, index) =>
@@ -435,27 +351,21 @@ export async function updateCustomLinkOrder(linkIds: string[]) {
         }),
       ),
     );
-
     // キャッシュを更新
     try {
       revalidatePath('/dashboard/links', 'page');
       revalidatePath('/dashboard', 'page');
       revalidatePath('/api/links', 'page');
-
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('custom-links');
     } catch (revalidateError) {
-      console.error('Revalidation error:', revalidateError);
     }
-
     return { success: true };
   } catch (error) {
-    console.error('カスタムリンク順序更新エラー:', error);
     return { error: 'カスタムリンクの順序更新に失敗しました' };
   }
 }
-
 // カスタムリンク更新（修正版）
 export async function updateCustomLink(
   id: string,
@@ -466,11 +376,9 @@ export async function updateCustomLink(
 ) {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return { error: '認証されていません' };
     }
-
     // データの検証
     const validatedFields = z
       .object({
@@ -478,11 +386,9 @@ export async function updateCustomLink(
         url: z.string().url({ message: '有効なURLを入力してください' }),
       })
       .safeParse(data);
-
     if (!validatedFields.success) {
       return { error: '入力データが無効です' };
     }
-
     // リンクが存在するか確認
     const link = await prisma.customLink.findFirst({
       where: {
@@ -490,11 +396,9 @@ export async function updateCustomLink(
         userId: session.user.id,
       },
     });
-
     if (!link) {
       return { error: 'リンクが見つかりません' };
     }
-
     // データベースを更新
     const updatedLink = await prisma.customLink.update({
       where: { id },
@@ -503,23 +407,18 @@ export async function updateCustomLink(
         url: validatedFields.data.url,
       },
     });
-
     // キャッシュを更新
     try {
       revalidatePath('/dashboard/links', 'page');
       revalidatePath('/dashboard', 'page');
       revalidatePath('/api/links', 'page');
-
       revalidateTag('user-links');
       revalidateTag(`user-${session.user.id}-links`);
       revalidateTag('custom-links');
     } catch (revalidateError) {
-      console.error('Revalidation error:', revalidateError);
     }
-
     return { success: true, link: updatedLink };
   } catch (error) {
-    console.error('カスタムリンク更新エラー:', error);
     return { error: 'カスタムリンクの更新に失敗しました' };
   }
 }

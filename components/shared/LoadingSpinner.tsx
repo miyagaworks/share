@@ -1,12 +1,10 @@
 // components/shared/LoadingSpinner.tsx
 import React from 'react';
-
 type LoadingSpinnerProps = {
   size?: 'sm' | 'md' | 'lg';
   color?: string;
   className?: string;
 };
-
 export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
   size = 'md',
   color = 'currentColor',
@@ -17,7 +15,6 @@ export const LoadingSpinner: React.FC<LoadingSpinnerProps> = ({
     md: 'w-6 h-6',
     lg: 'w-8 h-8',
   }[size];
-
   return (
     <div className={`inline-block ${sizeClass} ${className}`} role="status">
       <svg

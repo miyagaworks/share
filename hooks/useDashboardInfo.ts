@@ -1,7 +1,6 @@
 // hooks/useDashboardInfo.ts (修正版)
 import { useQuery } from '@tanstack/react-query';
 import { useSession } from 'next-auth/react';
-
 // 🔧 型定義をこのファイル内に移動
 export interface DashboardInfo {
   user: {
@@ -44,37 +43,28 @@ export interface DashboardInfo {
     secondaryColor: string | null;
   } | null;
 }
-
 export function useDashboardInfo() {
   const { data: session } = useSession();
-
   return useQuery({
     queryKey: ['dashboardInfo', session?.user?.id],
     queryFn: async (): Promise<DashboardInfo> => {
-      console.log('🚀 Dashboard API呼び出し');
-
       const response = await fetch('/api/user/dashboard-info', {
         headers: {
           'Cache-Control': 'no-cache',
           Accept: 'application/json',
         },
       });
-
       if (!response.ok) {
         const errorText = await response.text();
-        console.error('🚀 Dashboard API Error:', response.status, errorText);
         throw new Error(`API Error: ${response.status} - ${errorText}`);
       }
-
       const data = await response.json();
-      console.log('✅ Dashboard Info取得成功:', {
         userType: data.permissions?.userType,
         hasMenuItems: !!data.navigation?.menuItems?.length,
         hasTenant: !!data.tenant,
         shouldRedirect: data.navigation?.shouldRedirect,
         redirectPath: data.navigation?.redirectPath,
       });
-
       return data;
     },
     enabled: !!session?.user?.id,
@@ -83,52 +73,41 @@ export function useDashboardInfo() {
     refetchOnWindowFocus: true,
     refetchOnMount: true,
     retry: (failureCount, error) => {
-      console.log('🚀 Dashboard Info リトライ判定:', failureCount, error);
-
       if (failureCount >= 2) return false;
-
       if (error instanceof Error) {
         if (error.message.includes('401')) return false;
         if (error.message.includes('404')) return false;
       }
-
       return true;
     },
     retryDelay: 1000,
   });
 }
-
 // 特定権限チェック用フック
 export function useIsInvitedMember() {
   const { data } = useDashboardInfo();
   return data?.permissions.userType === 'invited-member';
 }
-
 export function useIsCorporateAdmin() {
   const { data } = useDashboardInfo();
   return data?.permissions.isCorpAdmin === true;
 }
-
 export function useUserType() {
   const { data } = useDashboardInfo();
   return data?.permissions.userType || null;
 }
-
 export function useHasCorporateAccess() {
   const { data } = useDashboardInfo();
   return data?.permissions.hasCorpAccess === true;
 }
-
 export function useIsAdmin() {
   const { data } = useDashboardInfo();
   return data?.permissions.isAdmin === true;
 }
-
 export function useIsSuperAdmin() {
   const { data } = useDashboardInfo();
   return data?.permissions.isSuperAdmin === true;
 }
-
 export function usePlanInfo() {
   const { data } = useDashboardInfo();
   return {
@@ -138,14 +117,11 @@ export function usePlanInfo() {
     planDisplayName: data?.permissions.planDisplayName || '不明',
   };
 }
-
 // デバッグ用フック
 export function useDebugDashboardInfo() {
   const result = useDashboardInfo();
-
   // デバッグ情報をコンソールに出力
   if (typeof window !== 'undefined' && process.env.NODE_ENV === 'development') {
-    console.log('🔍 Dashboard Info Debug:', {
       isLoading: result.isLoading,
       isError: result.isError,
       error: result.error,
@@ -161,6 +137,5 @@ export function useDebugDashboardInfo() {
       },
     });
   }
-
   return result;
 }

@@ -1,18 +1,15 @@
 // app/jikogene/components/FormSteps/Keywords.tsx
 'use client';
-
 import { cn } from '@/lib/utils';
 import { FormData, FormDataValue } from '@/app/jikogene/types';
 import { suggestedKeywords } from '@/app/jikogene/lib/constants';
 import { memo } from 'react';
-
 interface KeywordsProps {
   formData: FormData;
   updateFormData: <K extends keyof FormData>(section: K, value: FormDataValue<K>) => void;
   sectionIcon: React.ReactNode;
   fieldErrors: Record<string, string>;
 }
-
 /**
  * キーワード入力フォームステップ
  * メモ化してパフォーマンスを最適化
@@ -22,7 +19,6 @@ const Keywords = memo(function Keywords({ formData, updateFormData }: KeywordsPr
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     updateFormData('keywords', e.target.value);
   };
-
   // キーワード提案をクリックしたときの処理
   const handleKeywordSuggestion = (keyword: { id: string; name: string }) => {
     // 現在のキーワードをカンマ区切りで配列に変換
@@ -30,7 +26,6 @@ const Keywords = memo(function Keywords({ formData, updateFormData }: KeywordsPr
       .split(',')
       .map((k) => k.trim())
       .filter((k) => k !== '');
-
     // すでに含まれていないか確認
     if (!currentKeywords.includes(keyword.name)) {
       // 新しいキーワードを追加
@@ -38,7 +33,6 @@ const Keywords = memo(function Keywords({ formData, updateFormData }: KeywordsPr
       updateFormData('keywords', newKeywords);
     }
   };
-
   // キーワードがすでに含まれているかチェック
   const isKeywordIncluded = (keywordName: string): boolean => {
     return formData.keywords
@@ -46,7 +40,6 @@ const Keywords = memo(function Keywords({ formData, updateFormData }: KeywordsPr
       .map((k) => k.trim())
       .includes(keywordName);
   };
-
   return (
     <div className="fade-in">
       {/* キーワード入力フィールド */}
@@ -81,7 +74,6 @@ const Keywords = memo(function Keywords({ formData, updateFormData }: KeywordsPr
           入力したキーワードは、AIが自己紹介文を生成する際の参考にされます。
         </p>
       </div>
-
       {/* キーワード提案 */}
       <div className="mb-6">
         <p className="text-sm font-medium text-gray-700 mb-3">キーワード提案:</p>
@@ -104,7 +96,6 @@ const Keywords = memo(function Keywords({ formData, updateFormData }: KeywordsPr
           ))}
         </div>
       </div>
-
       {/* キーワードのヒント */}
       <div className="rounded-md bg-blue-50 p-4">
         <div className="flex">
@@ -133,5 +124,4 @@ const Keywords = memo(function Keywords({ formData, updateFormData }: KeywordsPr
     </div>
   );
 });
-
 export default Keywords;

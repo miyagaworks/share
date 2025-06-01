@@ -1,6 +1,5 @@
 // components/dashboard/SubscriptionOverview.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -16,7 +15,6 @@ import {
   HiOfficeBuilding,
 } from 'react-icons/hi';
 import { motion } from 'framer-motion';
-
 // ご利用プランデータの型定義
 interface SubscriptionData {
   id: string;
@@ -30,7 +28,6 @@ interface SubscriptionData {
   // 追加: 表示用のステータス（オプショナル）
   displayStatus?: string;
 }
-
 // APIレスポンスの型定義
 interface SubscriptionResponse {
   success: boolean;
@@ -46,45 +43,37 @@ interface SubscriptionResponse {
   message?: string;
   error?: string;
 }
-
 interface SubscriptionOverviewProps {
   userId: string;
 }
-
 export default function SubscriptionOverview({ userId }: SubscriptionOverviewProps) {
   const [isLoading, setIsLoading] = useState(true);
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionResponse | null>(null);
   const [trialEndDate, setTrialEndDate] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
   useEffect(() => {
     const fetchSubscriptionData = async () => {
       try {
         setIsLoading(true);
-
         // ユーザープロファイル情報を取得
         const profileResponse = await fetch('/api/profile');
         if (!profileResponse.ok) {
           throw new Error('プロフィール情報の取得に失敗しました');
         }
         const profileData = await profileResponse.json();
-
         // トライアル終了日を設定
         if (profileData.user && profileData.user.trialEndsAt) {
           setTrialEndDate(profileData.user.trialEndsAt);
         }
-
         // 永久利用権ステータスをチェック
         const isPermanentUser =
           profileData.user && profileData.user.subscriptionStatus === 'permanent';
-
         // ご利用プラン情報を取得
         const subscriptionResponse = await fetch('/api/subscription');
         if (!subscriptionResponse.ok) {
           throw new Error('プラン情報の取得に失敗しました');
         }
         const subscriptionData = await subscriptionResponse.json();
-
         // 永久利用権ユーザーの場合、サブスクリプションデータを修正
         if (isPermanentUser && subscriptionData.subscription) {
           // isPermanentUser 変数を使用
@@ -92,21 +81,17 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
           // 表示用のステータスを設定
           subscriptionData.subscription.displayStatus = '永久利用';
         }
-
         setSubscriptionData(subscriptionData);
         setError(null);
       } catch (err) {
-        console.error('データ取得エラー:', err);
         const errorMessage = err instanceof Error ? err.message : '情報の取得に失敗しました';
         setError(errorMessage);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchSubscriptionData();
   }, [userId]);
-
   // 読み込み中
   if (isLoading) {
     return (
@@ -119,7 +104,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
       </DashboardCard>
     );
   }
-
   // エラー発生時
   if (error) {
     return (
@@ -138,7 +122,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
       </DashboardCard>
     );
   }
-
   // トライアル中
   if (
     trialEndDate &&
@@ -147,7 +130,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
     return (
       <>
         <TrialBanner trialEndDate={trialEndDate} />
-
         <DashboardCard title="無料トライアル">
           <div className="flex items-start">
             <div className="rounded-full bg-blue-100 p-3 mr-4">
@@ -160,7 +142,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                 までトライアル期間をお楽しみください。
                 すべての機能を引き続きご利用いただくには、有料プランにアップグレードしてください。
               </p>
-
               {/* プラン選択の説明 */}
               <div className="space-y-4">
                 <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -179,7 +160,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                     <li>• 全機能利用可能・いつでもキャンセル可能</li>
                   </ul>
                 </div>
-
                 <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
                   <div className="flex items-center mb-2">
                     <HiOfficeBuilding className="h-5 w-5 text-purple-600 mr-2" />
@@ -216,7 +196,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                   <p className="text-xs text-purple-600 mt-2">※年間プランは16%お得です</p>
                 </div>
               </div>
-
               <Link href="/dashboard/subscription" className="inline-block mt-4">
                 <Button variant="outline" className="flex items-center" size="sm">
                   <HiCreditCard className="mr-2 h-4 w-4" />
@@ -230,7 +209,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
       </>
     );
   }
-
   // アクティブなご利用プラン
   if (
     subscriptionData?.subscription &&
@@ -250,10 +228,8 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
               : subscription.plan === 'enterprise'
                 ? '法人エンタープライズプラン'
                 : 'カスタムプラン';
-
     // 永久利用権ユーザーかどうか
     const isPermanentUser = subscription.isPermanentUser === true;
-
     return (
       <motion.div
         initial={{ opacity: 0, y: 10 }}
@@ -278,7 +254,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                   {isPermanentUser ? '永久利用' : 'アクティブ'}
                 </span>
               </div>
-
               {!isPermanentUser && (
                 <div className="flex items-center text-sm text-gray-500 mb-4">
                   <HiCalendar className="h-4 w-4 mr-1" />
@@ -288,7 +263,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                   </span>
                 </div>
               )}
-
               <Link href="/dashboard/subscription" className="inline-block">
                 <Button variant="outline" className="flex items-center" size="sm" type="button">
                   <HiCreditCard className="mr-2 h-4 w-4" />
@@ -302,7 +276,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
       </motion.div>
     );
   }
-
   // キャンセル済みまたはその他のステータス
   return (
     <DashboardCard title="ご利用プラン">
@@ -315,7 +288,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
           <p className="text-sm text-gray-500 mb-6">
             現在アクティブなプランはありません。有料プランにアップグレードして、すべての機能をご利用ください。
           </p>
-
           {/* プラン選択の説明 */}
           <div className="space-y-4 mb-6">
             <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
@@ -332,7 +304,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                 <li>• 全機能利用可能・いつでもキャンセル可能</li>
               </ul>
             </div>
-
             <div className="bg-purple-50 border border-purple-200 rounded-lg p-4">
               <div className="flex items-center mb-2">
                 <HiOfficeBuilding className="h-5 w-5 text-purple-600 mr-2" />
@@ -358,7 +329,6 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
               <p className="text-xs text-purple-600 mt-2">※年間プランは16%お得です</p>
             </div>
           </div>
-
           <Link href="/dashboard/subscription" className="inline-block">
             <Button className="flex items-center" size="sm" type="button">
               <HiCreditCard className="mr-2 h-4 w-4" />

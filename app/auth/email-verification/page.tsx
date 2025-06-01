@@ -1,13 +1,11 @@
 // app/auth/email-verification/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
-
 export default function EmailVerificationPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -15,7 +13,6 @@ export default function EmailVerificationPage() {
   const [resendMessage, setResendMessage] = useState<string | null>(null);
   const [resendError, setResendError] = useState<string | null>(null);
   const [countdown, setCountdown] = useState(0);
-
   // 認証済みの場合はダッシュボードにリダイレクト
   useEffect(() => {
     if (status === 'authenticated') {
@@ -24,19 +21,15 @@ export default function EmailVerificationPage() {
         try {
           const response = await fetch('/api/user/check-email-verification');
           const data = await response.json();
-
           if (data.verified) {
             router.push('/dashboard');
           }
-        } catch (error) {
-          console.error('認証状況確認エラー:', error);
+        } catch {
         }
       };
-
       checkVerificationStatus();
     }
   }, [status, router]);
-
   // カウントダウン開始
   useEffect(() => {
     if (countdown > 0) {
@@ -44,14 +37,12 @@ export default function EmailVerificationPage() {
       return () => clearTimeout(timer);
     }
   }, [countdown]);
-
   // 未認証の場合はログイン画面にリダイレクト
   useEffect(() => {
     if (status === 'unauthenticated') {
       router.push('/auth/signin');
     }
   }, [status, router]);
-
   // ローディング中
   if (status === 'loading') {
     return (
@@ -60,20 +51,16 @@ export default function EmailVerificationPage() {
       </div>
     );
   }
-
   // 未認証の場合（リダイレクト処理中）
   if (status === 'unauthenticated') {
     return null;
   }
-
   // 認証メール再送信
   const handleResendEmail = async () => {
     if (countdown > 0) return;
-
     setIsResending(true);
     setResendError(null);
     setResendMessage(null);
-
     try {
       const response = await fetch('/api/auth/send-verification-email', {
         method: 'POST',
@@ -81,23 +68,19 @@ export default function EmailVerificationPage() {
           'Content-Type': 'application/json',
         },
       });
-
       const data = await response.json();
-
       if (response.ok) {
         setResendMessage('認証メールを再送信しました。メールをご確認ください。');
         setCountdown(60); // 60秒のクールダウン
       } else {
         setResendError(data.message || '再送信に失敗しました。');
       }
-    } catch (error) {
-      console.error('メール再送信エラー:', error);
+    } catch {
       setResendError('再送信中にエラーが発生しました。');
     } finally {
       setIsResending(false);
     }
   };
-
   return (
     <div className="flex min-h-screen">
       {/* 左側：デコレーション部分 */}
@@ -120,7 +103,6 @@ export default function EmailVerificationPage() {
           </div>
         </div>
       </div>
-
       {/* 右側：認証待ち画面 */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-6 py-12 bg-white">
         <div className="w-full max-w-md">
@@ -149,7 +131,6 @@ export default function EmailVerificationPage() {
             <h2 className="text-3xl font-bold text-gray-900">メールアドレスの認証</h2>
             <p className="mt-2 text-gray-600">登録したメールアドレスに認証リンクを送信しました</p>
           </div>
-
           <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
             <div className="flex items-start">
               <div className="flex-shrink-0">
@@ -170,7 +151,7 @@ export default function EmailVerificationPage() {
                 <h3 className="text-sm font-medium text-blue-800">認証手順</h3>
                 <div className="mt-2 text-sm text-blue-700">
                   <ol className="list-decimal list-inside space-y-1">
-                    <li>登録されたメールアドレス（{session?.user?.email}）をご確認ください</li>
+                    <li>登録されたメールアドレス（{session?.user?.email || 'メールアドレス'}）をご確認ください</li>
                     <li>「メールアドレスを認証する」ボタンをクリックしてください</li>
                     <li>認証が完了すると、自動的にダッシュボードに移動します</li>
                   </ol>
@@ -178,7 +159,6 @@ export default function EmailVerificationPage() {
               </div>
             </div>
           </div>
-
           {resendMessage && (
             <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
               <div className="flex items-center">
@@ -198,7 +178,6 @@ export default function EmailVerificationPage() {
               </div>
             </div>
           )}
-
           {resendError && (
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
               <div className="flex items-center">
@@ -218,7 +197,6 @@ export default function EmailVerificationPage() {
               </div>
             </div>
           )}
-
           <div className="space-y-4">
             <Button
               onClick={handleResendEmail}
@@ -255,7 +233,6 @@ export default function EmailVerificationPage() {
                 '認証メールを再送信'
               )}
             </Button>
-
             <div className="text-center text-sm text-gray-500 space-y-2">
               <p>メールが届かない場合は、迷惑メールフォルダもご確認ください。</p>
               <p>

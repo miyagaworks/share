@@ -1,6 +1,5 @@
 // components/layout/Sidebar.tsx (修正版)
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
@@ -16,7 +15,6 @@ import {
 import { motion } from 'framer-motion';
 import { cn } from '@/lib/utils';
 import { corporateAccessState, PermanentPlanType } from '@/lib/corporateAccess';
-
 // サイドバー項目の型定義
 interface SidebarItem {
   title: string;
@@ -24,58 +22,44 @@ interface SidebarItem {
   icon: React.ReactNode;
   isDivider?: boolean;
 }
-
 interface SidebarProps {
   items: SidebarItem[];
   onToggleCollapse: (collapsed: boolean) => void;
 }
-
 export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
   const [collapsed, setCollapsed] = useState(false);
   const pathname = usePathname();
   const [isMounted, setIsMounted] = useState(false);
-
   // 永久利用権関連の状態
   const [isPermanentUser, setIsPermanentUser] = useState(false);
   const [permanentPlanType, setPermanentPlanType] = useState<string | null>(null);
-
   // 🔧 招待メンバー判定を状態管理に変更（重要な修正）
   const [isInvitedMember, setIsInvitedMember] = useState(false);
   const [isUserTypeResolved, setIsUserTypeResolved] = useState(false);
-
   // 現在の URL パスをチェック
   const isCorporateSection = pathname?.startsWith('/dashboard/corporate');
   const isCorporateMemberSection = pathname?.startsWith('/dashboard/corporate-member');
   const isCorporateRelated = isCorporateSection || isCorporateMemberSection;
-
   useEffect(() => {
     setIsMounted(true);
-
     // 🔧 初期状態の設定とイベントリスナーを統合
     const updateMemberStatus = () => {
       // 招待メンバー判定（corporateAccessStateから）
       const isInvited = corporateAccessState.userRole === 'member' && !corporateAccessState.isAdmin;
-
-      console.log('🔧 招待メンバー状態更新:', {
         userRole: corporateAccessState.userRole,
         isAdmin: corporateAccessState.isAdmin,
         hasAccess: corporateAccessState.hasAccess,
         isInvited,
         lastChecked: corporateAccessState.lastChecked,
       });
-
       setIsInvitedMember(isInvited);
-
       // 🔧 ユーザータイプ解決判定をより柔軟に
       const isResolved =
         corporateAccessState.lastChecked > 0 || // APIが一度でも実行された
         corporateAccessState.hasAccess === true || // 明確にアクセス権あり
         corporateAccessState.hasAccess === false || // 明確にアクセス権なし
         corporateAccessState.error !== null; // エラーが発生した場合も解決済み
-
       setIsUserTypeResolved(isResolved);
-
-      console.log('🔧 ユーザータイプ解決状態:', {
         isResolved,
         reason:
           corporateAccessState.lastChecked > 0
@@ -93,10 +77,8 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
         error: corporateAccessState.error,
       });
     };
-
     // 初期状態をチェック
     updateMemberStatus();
-
     // クライアントサイドでのみ永久利用権のチェック
     if (typeof window !== 'undefined' && typeof sessionStorage !== 'undefined') {
       try {
@@ -106,49 +88,37 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
           const userData = JSON.parse(userDataStr);
           setIsPermanentUser(userData.subscriptionStatus === 'permanent');
         }
-
         // corporateAccessStateからのプラン種別チェック
         if (corporateAccessState.isPermanentUser) {
           setPermanentPlanType(corporateAccessState.permanentPlanType);
         }
       } catch (e) {
-        console.error('永久利用権チェックエラー:', e);
       }
     }
-
     // アクセス状態変更イベントのリスナー
     const handleAccessChange = () => {
-      console.log('🔧 corporateAccessChanged イベント受信');
-
       // 永久利用権状態の更新
       if (corporateAccessState.isPermanentUser) {
         setIsPermanentUser(true);
         setPermanentPlanType(corporateAccessState.permanentPlanType);
       }
-
       // 招待メンバー状態の更新
       updateMemberStatus();
     };
-
     window.addEventListener('corporateAccessChanged', handleAccessChange);
-
     // 🔧 安全措置: 5秒後に強制的に解決済みにする
     const safetyTimer = setTimeout(() => {
-      console.log('🔧 安全措置: タイムアウトによりユーザータイプを解決済みに設定');
       setIsUserTypeResolved(true);
     }, 5000);
-
     return () => {
       window.removeEventListener('corporateAccessChanged', handleAccessChange);
       clearTimeout(safetyTimer);
     };
   }, []);
-
   const toggleCollapse = () => {
     setCollapsed(!collapsed);
     onToggleCollapse(!collapsed);
   };
-
   if (!isMounted) {
     // ハイドレーション不一致を避けるためにサーバーサイドレンダリング時は最小限の内容を返す
     return (
@@ -160,10 +130,8 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       </div>
     );
   }
-
   // 🔧 ユーザータイプが解決されていない場合は最小限の表示
   if (!isUserTypeResolved) {
-    console.log('🔧 ユーザータイプ未解決のため最小限表示');
     return (
       <motion.div
         initial={false}
@@ -193,7 +161,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
               )}
             </button>
           </div>
-
           {/* メインメニュー項目のみ表示（追加リンクは表示しない） */}
           <nav className="space-y-1 px-2">
             {items.map((item) => {
@@ -219,16 +186,13 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                   </div>
                 );
               }
-
               // アクティブなリンクかどうか
               const isActive = pathname === item.href;
               // 法人関連のリンクかどうか
               const isCorporateLink = item.href.includes('/corporate');
-
               // 条件に応じたクラス生成
               let itemClass = '';
               let iconClass = '';
-
               if (isActive) {
                 if (isCorporateRelated || isCorporateLink) {
                   // 法人セクションまたは法人関連リンクのアクティブスタイル
@@ -244,7 +208,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                 itemClass = 'text-gray-600 hover:bg-blue-50 hover:text-blue-700';
                 iconClass = 'text-gray-600 group-hover:text-blue-700';
               }
-
               return (
                 <Link
                   key={item.href}
@@ -272,11 +235,8 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       </motion.div>
     );
   }
-
   // 法人メンバーセクションにいて、招待メンバーの場合は専用のメニューを表示
   if (isCorporateMemberSection && isInvitedMember) {
-    console.log('🔧 招待メンバー専用メニューを表示');
-
     // 招待メンバー向けの専用メニュー（上部メニューと同じ項目）
     const memberMenuItems: SidebarItem[] = [
       {
@@ -305,7 +265,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
         icon: <HiShare className="h-5 w-5 text-corporate-primary" />,
       },
     ];
-
     // 招待メンバー向けのサイドバーを表示
     return (
       <motion.div
@@ -336,7 +295,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
               )}
             </button>
           </div>
-
           {/* 招待メンバー向けのメニュー項目のみ（個人機能へのリンクなし） */}
           <nav className="space-y-1 px-2">
             {memberMenuItems.map((item, index) => {
@@ -362,14 +320,11 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                   </div>
                 );
               }
-
               // アクティブなリンクかどうか
               const isActive = pathname === item.href;
-
               // 法人メンバー専用のスタイル
               let itemClass = '';
               let iconClass = '';
-
               if (isActive) {
                 itemClass = 'corporate-menu-active';
                 iconClass = 'corporate-icon-active';
@@ -377,7 +332,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                 itemClass = 'text-gray-600 hover:corporate-menu-active';
                 iconClass = 'text-gray-600 group-hover:corporate-icon-active';
               }
-
               return (
                 <Link
                   key={`${item.href}-${index}`}
@@ -405,33 +359,25 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       </motion.div>
     );
   }
-
   // 通常のユーザー向け表示
-  console.log('🔧 通常ユーザー向け表示', {
     isInvitedMember,
     isUserTypeResolved,
     userRole: corporateAccessState.userRole,
     hasAccess: corporateAccessState.hasAccess,
   });
-
   // メインメニュー項目
   const mainMenuItems = [...items];
-
   // 追加リンク用配列
   const additionalLinks: SidebarItem[] = [];
-
   // メニュー項目のURLを取得する関数
   const getItemUrls = (items: SidebarItem[]): Set<string> => {
     return new Set(items.map((item) => item.href));
   };
-
   // 既存のメニューURLのセット
   const existingUrls = getItemUrls(mainMenuItems);
-
   // 永久利用権ユーザーの法人アクセス判定
   const isPermanentBusinessUser =
     isPermanentUser && permanentPlanType && permanentPlanType !== PermanentPlanType.PERSONAL;
-
   // 🔧 修正: 追加リンクの生成を招待メンバーでない場合のみに制限し、順序を修正
   if (!isInvitedMember) {
     // 法人セクションにいる場合
@@ -448,7 +394,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
           icon: <></>,
           isDivider: true,
         });
-
         // 法人メンバープロフィールを追加
         additionalLinks.push({
           title: '法人メンバープロフィール',
@@ -457,7 +402,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
         });
       }
     }
-
     // 法人メンバーセクションにいる場合
     else if (isCorporateMemberSection) {
       // 法人管理者または永久利用権ユーザーの場合、法人管理ダッシュボードも表示
@@ -472,7 +416,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
         });
       }
     }
-
     // 個人セクションにいて法人アクセス権がある場合
     else if (
       !isCorporateSection &&
@@ -488,7 +431,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
           icon: <HiUser className="h-5 w-5" />,
         });
       }
-
       // 法人管理者または法人プラン永久利用権ユーザーの場合、法人管理ダッシュボードも表示
       if (
         (corporateAccessState.isAdmin || isPermanentBusinessUser) &&
@@ -502,7 +444,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
       }
     }
   }
-
   return (
     <motion.div
       initial={false}
@@ -532,7 +473,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
             )}
           </button>
         </div>
-
         {/* メインメニュー項目 */}
         <nav className="space-y-1 px-2">
           {mainMenuItems.map((item) => {
@@ -558,20 +498,16 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                 </div>
               );
             }
-
             // アクティブなリンクかどうか
             const isActive = pathname === item.href;
             // 法人関連のリンクかどうか
             const isCorporateLink = item.href.includes('/corporate');
-
             // 特別処理が必要なリンク（ご利用プラン）
             const isSpecialLink =
               item.href === '/dashboard/subscription' || item.href === '/dashboard';
-
             // 条件に応じたクラス生成
             let itemClass = '';
             let iconClass = '';
-
             if (isActive) {
               if (isCorporateRelated || isCorporateLink) {
                 // 法人セクションまたは法人関連リンクのアクティブスタイル
@@ -600,7 +536,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                 iconClass = 'text-gray-600 group-hover:text-blue-700';
               }
             }
-
             return (
               <Link
                 key={item.href}
@@ -624,7 +559,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
             );
           })}
         </nav>
-
         {/* 区切り線と追加リンク */}
         {additionalLinks.length > 0 && (
           <div className="mt-4">
@@ -653,20 +587,16 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                     </div>
                   );
                 }
-
                 // アクティブなリンクかどうか
                 const isActive = pathname === link.href;
                 // 法人関連のリンクかどうか
                 const isCorporateLink = link.href.includes('/corporate');
-
                 // 特別処理が必要なリンク（ご利用プラン）
                 const isSpecialLink =
                   link.href === '/dashboard/subscription' || link.href === '/dashboard';
-
                 // 条件に応じたクラス生成
                 let itemClass = '';
                 let iconClass = '';
-
                 if (isActive) {
                   if (isCorporateRelated || isCorporateLink) {
                     // 法人セクションまたは法人関連リンクのアクティブスタイル
@@ -695,7 +625,6 @@ export function Sidebar({ items, onToggleCollapse }: SidebarProps) {
                     iconClass = 'text-gray-600 group-hover:text-blue-700';
                   }
                 }
-
                 return (
                   <Link
                     key={`${link.href}-${index}`}

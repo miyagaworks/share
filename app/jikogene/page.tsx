@@ -1,9 +1,7 @@
 // app/jikogene/page.tsx
 'use client';
-
 import { Suspense } from 'react';
 import JikogeneContent from './components/JikogeneContent';
-
 export default function JikogenePage() {
   return (
     <Suspense

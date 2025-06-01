@@ -1,6 +1,5 @@
 // app/jikogene/components/JikogeneContent.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
 import Image from 'next/image';
@@ -12,7 +11,6 @@ import { generateIntroductionAction } from '@/actions/jikogene';
 import { Card } from '@/components/ui/Card';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
-
 export default function JikogeneContent() {
   const [result, setResult] = useState<string | null>(null);
   const [warning, setWarning] = useState<string | null>(null);
@@ -30,7 +28,6 @@ export default function JikogeneContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const fromProfile = searchParams.get('fromProfile');
-
   // ユーザー情報を取得
   useEffect(() => {
     async function fetchUserInfo() {
@@ -38,34 +35,26 @@ export default function JikogeneContent() {
         // fromProfileパラメータがある場合のみユーザー情報を取得
         if (fromProfile === 'true') {
           const response = await fetch('/api/jikogene');
-
           if (!response.ok) {
             throw new Error('ユーザー情報の取得に失敗しました');
           }
-
           const data = await response.json();
-
           if (data.success && data.user) {
             setUserInfo(data.user);
           }
         }
       } catch (error) {
-        console.error('ユーザー情報取得エラー:', error);
-        // エラーがあっても処理は続行
+        // ユーザー情報取得エラーは処理を続行（必須ではないため）
       } finally {
         setInitialLoading(false);
       }
     }
-
     fetchUserInfo();
   }, [fromProfile]);
-
   const handleFormSubmit = async (data: FormData) => {
-    console.log('フォーム送信開始', data);
     setLoading(true);
     setError(null);
     setWarning(null);
-
     try {
       // 必須フィールドの検証
       if (!data.basicInfo.ageGroup || !data.basicInfo.occupation) {
@@ -83,19 +72,13 @@ export default function JikogeneContent() {
       if (!data.length) {
         throw new Error('文章の長さを選択してください');
       }
-
       // サーバーアクションの呼び出し
-      console.log('サーバーアクション呼び出し開始');
       const response = await generateIntroductionAction(data);
-      console.log('サーバーアクション応答', response);
-
       if ('error' in response) {
         throw new Error(response.error);
       }
-
       if (response.success && response.data) {
         setResult(response.data.generatedText);
-
         // 警告メッセージがある場合
         if (response.data.warning) {
           setWarning(response.data.warning);
@@ -106,17 +89,10 @@ export default function JikogeneContent() {
         } else {
           toast.success('自己紹介文を生成しました！');
         }
-
-        console.log('生成成功', {
-          textLength: response.data.generatedText.length,
-          hasWarning: !!response.data.warning,
-        });
       } else {
         throw new Error('自己紹介文の生成に失敗しました。');
       }
     } catch (err: unknown) {
-      console.error('生成エラー:', err);
-
       const errorMessage =
         err instanceof Error ? err.message : '自己紹介文の生成中にエラーが発生しました。';
       setError(errorMessage);
@@ -125,18 +101,15 @@ export default function JikogeneContent() {
       setLoading(false);
     }
   };
-
   const handleReset = () => {
     setResult(null);
     setWarning(null);
     setError(null);
   };
-
   const handleRetry = () => {
     setRetryCount((prev) => prev + 1);
     setError(null);
   };
-
   const handleCopyAndReturn = () => {
     if (result) {
       navigator.clipboard
@@ -153,7 +126,6 @@ export default function JikogeneContent() {
         });
     }
   };
-
   // 初期ロード中の表示
   if (initialLoading) {
     return (
@@ -179,7 +151,6 @@ export default function JikogeneContent() {
       </div>
     );
   }
-
   return (
     <div className="min-h-screen flex flex-col py-8">
       <div className="container mx-auto px-4">
@@ -193,7 +164,6 @@ export default function JikogeneContent() {
             priority
           />
         </div>
-
         {!result && !loading && !error && (
           <div className="animate-fadeIn">
             <div className="bg-white rounded-md shadow-md max-w-3xl mx-auto p-6">
@@ -205,7 +175,6 @@ export default function JikogeneContent() {
             </div>
           </div>
         )}
-
         {loading && (
           <div className="bg-white rounded-md shadow-md max-w-3xl mx-auto p-6 animate-fadeIn">
             <div className="flex flex-col items-center justify-center py-12">
@@ -215,7 +184,6 @@ export default function JikogeneContent() {
             </div>
           </div>
         )}
-
         {error && (
           <Card className="max-w-3xl mx-auto p-6 animate-fadeIn">
             <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
@@ -262,11 +230,9 @@ export default function JikogeneContent() {
             </div>
           </Card>
         )}
-
         {result && !loading && (
           <>
             <Result text={result} warning={warning || undefined} onReset={handleReset} />
-
             {/* プロフィールページから来た場合のボタン表示 */}
             {fromProfile === 'true' && (
               <div className="max-w-3xl mx-auto mt-6 text-center">

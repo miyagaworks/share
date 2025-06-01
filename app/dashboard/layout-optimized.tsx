@@ -1,13 +1,11 @@
 // app/dashboard/layout-optimized.tsx
 'use client';
-
 import React, { ReactNode, useEffect, useMemo } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useDashboardInfo } from '@/hooks/useDashboardInfo';
 import { DashboardLayout } from '@/components/layout/DashboardLayout';
 import { Spinner } from '@/components/ui/Spinner';
-
 // 🚀 静的アイコンマッピング（動的インポート削除で高速化）
 import {
   HiHome,
@@ -25,7 +23,6 @@ import {
   HiBell,
   HiOutlineMail,
 } from 'react-icons/hi';
-
 const iconMap: Record<string, React.ReactNode> = {
   HiHome: <HiHome className="h-5 w-5" />,
   HiUser: <HiUser className="h-5 w-5" />,
@@ -42,30 +39,23 @@ const iconMap: Record<string, React.ReactNode> = {
   HiBell: <HiBell className="h-5 w-5" />,
   HiOutlineMail: <HiOutlineMail className="h-5 w-5" />,
 };
-
 interface DashboardLayoutWrapperProps {
   children: ReactNode;
 }
-
 export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrapperProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
   const router = useRouter();
-
   // 🚀 統合APIから全データを1回で取得
   const { data: dashboardInfo, isLoading, error } = useDashboardInfo();
-
   // 🚀 メモ化されたアクセスチェック（再計算を最小化）
   const accessCheck = useMemo(() => {
     if (!dashboardInfo || !pathname) return { hasAccess: true };
-
     const { permissions } = dashboardInfo;
-
     // 管理者ページチェック
     if (pathname.startsWith('/dashboard/admin') && !permissions.isSuperAdmin) {
       return { hasAccess: false, redirectTo: '/dashboard' };
     }
-
     // 法人ページチェック
     if (
       pathname.startsWith('/dashboard/corporate') &&
@@ -74,7 +64,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     ) {
       return { hasAccess: false, redirectTo: '/dashboard' };
     }
-
     // 🎯 招待メンバーの即座判定
     if (
       permissions.userType === 'invited-member' &&
@@ -82,37 +71,29 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     ) {
       return { hasAccess: false, redirectTo: '/dashboard/corporate-member' };
     }
-
     return { hasAccess: true };
   }, [dashboardInfo, pathname]);
-
   // 🚀 効率的なリダイレクト処理
   useEffect(() => {
     if (status !== 'loading' && !session) {
       router.push('/auth/signin');
       return;
     }
-
     if (!dashboardInfo) return;
-
     // 初期リダイレクト（ダッシュボードルートのみ）
     if (
       dashboardInfo.navigation.shouldRedirect &&
       dashboardInfo.navigation.redirectPath &&
       pathname === '/dashboard'
     ) {
-      console.log('🚀 リダイレクト実行:', dashboardInfo.navigation.redirectPath);
       router.push(dashboardInfo.navigation.redirectPath);
       return;
     }
-
     // アクセス権チェックによるリダイレクト
     if (accessCheck.redirectTo) {
-      console.log('🚀 アクセス権リダイレクト:', accessCheck.redirectTo);
       router.push(accessCheck.redirectTo);
     }
   }, [session, status, dashboardInfo, pathname, accessCheck, router]);
-
   // 🚀 早期リターンによる高速化
   if (status === 'loading') {
     return (
@@ -122,7 +103,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       </div>
     );
   }
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -131,7 +111,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -148,7 +127,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       </div>
     );
   }
-
   if (!dashboardInfo) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -156,18 +134,14 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       </div>
     );
   }
-
   // 🚀 静的マッピングによる高速アイコン変換
   const menuItems = dashboardInfo.navigation.menuItems.map((item) => ({
     ...item,
     icon: iconMap[item.icon] || iconMap.HiHome,
   }));
-
-  console.log('🚀 レンダリング完了:', {
     userType: dashboardInfo.permissions.userType,
     menuCount: menuItems.length,
     hasAccess: accessCheck.hasAccess,
   });
-
   return <DashboardLayout items={menuItems}>{children}</DashboardLayout>;
 }

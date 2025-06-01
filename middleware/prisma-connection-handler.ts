@@ -1,7 +1,7 @@
 // middleware/prisma-connection-handler.ts
+import { logger } from "@/lib/utils/logger";
 import type { NextRequest, NextResponse } from 'next/server';
 import { disconnectPrisma } from '@/lib/prisma';
-
 /**
  * Prisma接続プールを管理するミドルウェア
  */
@@ -18,10 +18,8 @@ export async function handlePrismaConnections(
     await disconnectPrisma();
   }
 }
-
 // 型定義を追加
 type ApiHandler = (req: Request, res: Response) => Promise<Response>;
-
 // APIルートエンドポイントのラッパー関数
 export function withPrismaConnection(handler: ApiHandler): ApiHandler {
   return async (req: Request, res: Response) => {

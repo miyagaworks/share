@@ -1,6 +1,5 @@
 // app/qrcode/page.tsx
 'use client';
-
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -9,7 +8,6 @@ import { QrCodeGenerator } from '@/components/qrcode/QrCodeGenerator';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
-
 export default function QrCodePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -28,7 +26,6 @@ export default function QrCodePage() {
   const [headerText, setHeaderText] = useState<string | null>(null);
   // PWAインストールプロンプト用の状態
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
-
   // 法人アクセス権チェック
   useEffect(() => {
     const checkAccess = async () => {
@@ -40,24 +37,20 @@ export default function QrCodePage() {
           setIsCorporateMember(data.hasAccess === true);
         }
       } catch (err) {
-        console.error('法人アクセス権チェックエラー:', err);
+        // 法人アクセス権チェックエラーは無視（非重要）
       }
     };
-
     if (session) {
       checkAccess();
     }
   }, [session]);
-
   // 法人データの取得
   const fetchCorporateData = useCallback(async () => {
     if (!isCorporateMember) return;
-
     try {
       const response = await fetch('/api/corporate-member/profile');
       if (response.ok) {
         const data = await response.json();
-
         // 法人テナントデータを設定
         if (data.tenant) {
           setCorporateData({
@@ -67,13 +60,11 @@ export default function QrCodePage() {
             headerText: data.tenant.headerText || 'シンプルにつながる、スマートにシェア。',
           });
         }
-
         // ユーザー情報を設定
         if (data.user) {
           if (data.user.name) setUserName(data.user.name);
           if (data.user.nameEn) setNameEn(data.user.nameEn);
           if (data.user.image) setProfileImage(data.user.image);
-
           // プロフィールがあれば設定
           if (data.user.profile?.slug) {
             const url = `${window.location.origin}/${data.user.profile.slug}`;
@@ -82,32 +73,27 @@ export default function QrCodePage() {
         }
       }
     } catch (err) {
-      console.error('法人データ取得エラー:', err);
+      // 法人データ取得エラーは無視（非重要）
     }
   }, [isCorporateMember]);
-
   // 一般プロフィールの確認
   const checkProfileExists = useCallback(async () => {
     try {
       const response = await fetch('/api/profile');
       if (response.ok) {
         const data = await response.json();
-
         if (data.user) {
           // 既存の処理...
           if (data.user.name) setUserName(data.user.name);
           if (data.user.nameEn) setNameEn(data.user.nameEn);
           if (data.user.image) setProfileImage(data.user.image);
-
           // ヘッダーテキストを設定（追加）
           if (data.user.headerText) {
             setHeaderText(data.user.headerText);
           }
-
           // その他の情報があれば設定（オプショナル）
           if (data.user.nameEn) setNameEn(data.user.nameEn);
           if (data.user.image) setProfileImage(data.user.image);
-
           // プロフィールURLがあれば設定
           if (data.user.profile?.slug) {
             const url = `${window.location.origin}/${data.user.profile.slug}`;
@@ -116,7 +102,6 @@ export default function QrCodePage() {
             // スラグがない場合はデフォルトのURLを設定
             setProfileUrl(`${window.location.origin}/user/${data.user.id}`);
           }
-
           // headerTextの設定部分も修正が必要
           if (data.user.headerText) {
             // setCorporateDataを含むロジックを修正
@@ -144,14 +129,12 @@ export default function QrCodePage() {
         toast.error('プロフィール情報の取得に失敗しました');
       }
     } catch (error) {
-      console.error('Profile check error:', error);
       toast.error('エラーが発生しました。再度お試しください。');
     } finally {
       setIsLoading(false);
     }
     // 修正: corporateDataを依存配列から削除し、setCorporateDataを追加
   }, [router, isCorporateMember, setCorporateData]);
-
   // 適切な戻り先URLを取得
   const getBackToShareUrl = () => {
     // 法人メンバーの場合は法人メンバー共有設定ページへ
@@ -161,16 +144,13 @@ export default function QrCodePage() {
     // 通常ユーザーの場合は個人共有設定ページへ
     return '/dashboard/share';
   };
-
   // 初期データ読み込み
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session?.user) {
       router.push('/auth/signin');
       return;
     }
-
     // 法人メンバーかどうかで処理を分岐
     if (isCorporateMember) {
       fetchCorporateData().then(() => {
@@ -181,7 +161,6 @@ export default function QrCodePage() {
       // 一般ユーザーの場合はプロフィール確認のみ
       checkProfileExists();
     }
-
     // Service Worker の登録 (PWA対応)
     if ('serviceWorker' in navigator) {
       window.addEventListener('load', () => {
@@ -194,29 +173,25 @@ export default function QrCodePage() {
           manifestLink.href = '/manifest.json'; // 正しいパスを指定
           document.head.appendChild(manifestLink);
         }
-
         navigator.serviceWorker
           .register('/sw.js')
-          .then((registration) => {
-            console.log('ServiceWorker registration successful:', registration.scope);
+          .then(() => {
+            // Service Worker登録成功
           })
-          .catch((error) => {
-            console.log('ServiceWorker registration failed:', error);
+          .catch(() => {
+            // Service Worker登録失敗（サイレント失敗）
           });
       });
     }
   }, [session, status, router, isCorporateMember, fetchCorporateData, checkProfileExists]);
-
   // ユーザー固有のQRコードパスを記憶
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
     // 現在のURLパスが /qr/ から始まるかチェック
     const pathMatch = window.location.pathname.match(/\/qr\/([a-zA-Z0-9-]+)/);
     if (pathMatch) {
       const userQrPath = '/qr/' + pathMatch[1];
       localStorage.setItem('userQrPath', userQrPath);
-
       // Service Workerにパスを通知
       if ('serviceWorker' in navigator && navigator.serviceWorker.controller) {
         navigator.serviceWorker.controller.postMessage({
@@ -225,7 +200,6 @@ export default function QrCodePage() {
         });
       }
     }
-
     // Service Workerからのメッセージリスナー
     if ('serviceWorker' in navigator) {
       navigator.serviceWorker.addEventListener('message', (event) => {
@@ -240,7 +214,6 @@ export default function QrCodePage() {
         }
       });
     }
-
     // ホーム画面から開かれた場合の処理
     const isStandalone =
       window.matchMedia('(display-mode: standalone)').matches ||
@@ -253,41 +226,34 @@ export default function QrCodePage() {
       }
     }
   }, []);
-
   // ホーム画面追加の効果をより強調
   const handleInstallClick = () => {
     setShowInstallPrompt(false);
     localStorage.setItem('installPromptShown', 'true');
-
     // PWAインストール後の通知
     toast.success('ホーム画面に追加すると、常にQRコードページが表示されます', {
       duration: 5000,
       icon: '📱',
     });
   };
-
   // iOSホーム画面追加プロンプト表示の useEffect (追加)
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
     // iOSデバイス判定
     const isIOS =
       /iPad|iPhone|iPod/.test(navigator.userAgent) &&
       !(window as unknown as { MSStream: unknown }).MSStream === undefined;
     // 既にスタンドアロンモードで実行されているかチェック
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
-
     // インストールバナーを表示するかの判定
     if (isIOS && !isStandalone && !localStorage.getItem('installPromptShown')) {
       // 数秒後に表示
       const timer = setTimeout(() => {
         setShowInstallPrompt(true);
       }, 3000);
-
       return () => clearTimeout(timer);
     }
   }, []);
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -295,7 +261,6 @@ export default function QrCodePage() {
       </div>
     );
   }
-
   return (
     <div className={`container mx-auto py-8 px-4 ${isCorporateMember ? 'corporate-theme' : ''}`}>
       <div className="mb-6">
@@ -310,7 +275,6 @@ export default function QrCodePage() {
           共有設定に戻る
         </Link>
       </div>
-
       {/* PWA インストールプロンプト */}
       {showInstallPrompt && (
         <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5 shadow-sm">
@@ -348,7 +312,6 @@ export default function QrCodePage() {
           </div>
         </div>
       )}
-
       <QrCodeGenerator
         corporateBranding={
           isCorporateMember

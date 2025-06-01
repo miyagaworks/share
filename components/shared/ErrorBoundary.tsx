@@ -1,21 +1,17 @@
 // components/shared/ErrorBoundary.tsx
 'use client';
-
 import React, { Component, ReactNode } from 'react';
 import { logger } from '@/lib/utils/logger';
-
 interface ErrorBoundaryState {
   hasError: boolean;
   error: Error | null;
   errorInfo: React.ErrorInfo | null;
 }
-
 interface ErrorBoundaryProps {
   children: ReactNode;
   fallback?: React.ComponentType<{ error: Error; retry: () => void }>;
   onError?: (error: Error, errorInfo: React.ErrorInfo) => void;
 }
-
 export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundaryState> {
   constructor(props: ErrorBoundaryProps) {
     super(props);
@@ -25,29 +21,24 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       errorInfo: null,
     };
   }
-
   static getDerivedStateFromError(error: Error): Partial<ErrorBoundaryState> {
     return {
       hasError: true,
       error,
     };
   }
-
   componentDidCatch(error: Error, errorInfo: React.ErrorInfo): void {
     // エラーログ
     logger.error('ErrorBoundary caught an error', error, errorInfo);
-
     this.setState({
       error,
       errorInfo,
     });
-
     // 外部エラーレポートサービスに送信
     if (this.props.onError) {
       this.props.onError(error, errorInfo);
     }
   }
-
   handleRetry = (): void => {
     this.setState({
       hasError: false,
@@ -55,7 +46,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
       errorInfo: null,
     });
   };
-
   render(): ReactNode {
     if (this.state.hasError && this.state.error) {
       // カスタムフォールバックコンポーネントがある場合
@@ -63,7 +53,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         const FallbackComponent = this.props.fallback;
         return <FallbackComponent error={this.state.error} retry={this.handleRetry} />;
       }
-
       // デフォルトのエラー表示
       return (
         <div className="min-h-[400px] flex items-center justify-center p-6">
@@ -87,7 +76,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
             <p className="text-sm text-gray-500 mb-4">
               申し訳ありませんが、予期しないエラーが発生しました。
             </p>
-
             {process.env.NODE_ENV === 'development' && this.state.error && (
               <details className="text-left mb-4 p-3 bg-red-50 rounded-md">
                 <summary className="cursor-pointer text-sm font-medium text-red-700">
@@ -104,7 +92,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
                 </pre>
               </details>
             )}
-
             <div className="flex justify-center space-x-3">
               <button
                 onClick={this.handleRetry}
@@ -123,7 +110,6 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
         </div>
       );
     }
-
     return this.props.children;
   }
 }

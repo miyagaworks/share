@@ -1,9 +1,7 @@
 // components/ui/OptimizedMenuCard.tsx
 import React, { memo, useMemo, useCallback } from 'react';
 import { cn } from '@/lib/utils';
-
 type CardColor = 'blue' | 'green' | 'indigo' | 'purple' | 'gray';
-
 interface OptimizedMenuCardProps {
   icon: React.ReactNode;
   title: string;
@@ -12,7 +10,6 @@ interface OptimizedMenuCardProps {
   color?: CardColor;
   className?: string;
 }
-
 // カラーマップをコンポーネント外で定義（再作成を防ぐ）
 const colorMap: Record<CardColor, { bg: string; text: string; iconBg: string }> = {
   blue: {
@@ -41,17 +38,14 @@ const colorMap: Record<CardColor, { bg: string; text: string; iconBg: string }> 
     iconBg: 'bg-gray-50',
   },
 };
-
 export const OptimizedMenuCard = memo<OptimizedMenuCardProps>(
   ({ icon, title, content, onClick, color = 'blue', className }) => {
     // カラースタイルをメモ化
     const colorStyles = useMemo(() => colorMap[color], [color]);
-
     // クリックハンドラーをメモ化
     const handleClick = useCallback(() => {
       onClick();
     }, [onClick]);
-
     // クラス名をメモ化
     const cardClasses = useMemo(
       () =>
@@ -62,23 +56,19 @@ export const OptimizedMenuCard = memo<OptimizedMenuCardProps>(
         ),
       [className],
     );
-
     const headerClasses = useMemo(
       () => cn('border-b border-gray-200 px-2 sm:px-4 py-2 sm:py-3 bg-opacity-30', colorStyles.bg),
       [colorStyles.bg],
     );
-
     const iconContainerClasses = useMemo(
       () =>
         cn('p-2 sm:p-3 rounded-full mb-2 sm:mb-3 flex items-center justify-center', colorStyles.bg),
       [colorStyles.bg],
     );
-
     const iconClasses = useMemo(
       () => cn('h-5 w-5 sm:h-6 sm:w-6 flex items-center justify-center', colorStyles.text),
       [colorStyles.text],
     );
-
     return (
       <div className={cardClasses} onClick={handleClick}>
         <div className={headerClasses}>
@@ -99,5 +89,4 @@ export const OptimizedMenuCard = memo<OptimizedMenuCardProps>(
     );
   },
 );
-
 OptimizedMenuCard.displayName = 'OptimizedMenuCard';

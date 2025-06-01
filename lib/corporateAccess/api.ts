@@ -1,7 +1,7 @@
 // lib/corporateAccess/api.ts
+import { logger } from "@/lib/utils/logger";
 import { corporateAccessState, updateState, logDebug, isClient } from './state';
 import { saveToStorage, StorageKey, StorageType } from './storage';
-
 export interface ApiResult {
   hasCorporateAccess: boolean;
   isAdmin: boolean;
@@ -17,12 +17,10 @@ export interface ApiResult {
   userRole?: string | null;
   error?: string | null;
 }
-
 interface CheckCorporateAccessOptions {
   force?: boolean;
   userId?: string;
 }
-
 /**
  * 法人アクセス権をチェックする（クライアントサイド専用）
  * サーバーサイドのAPIを呼び出してデータを取得
@@ -31,7 +29,6 @@ export async function checkCorporateAccess(
   options: CheckCorporateAccessOptions = {},
 ): Promise<ApiResult> {
   const { force = false } = options;
-
   // サーバーサイドでは実行しない
   if (!isClient()) {
     return {
@@ -40,14 +37,11 @@ export async function checkCorporateAccess(
       error: 'サーバーサイドでは実行できません',
     };
   }
-
   logDebug('法人アクセス権チェック開始', options);
-
   // キャッシュ確認（強制でない場合）
   if (!force && corporateAccessState.lastChecked > 0) {
     const cacheExpiry = 5 * 60 * 1000; // 5分
     const timeSinceLastCheck = Date.now() - corporateAccessState.lastChecked;
-
     if (timeSinceLastCheck < cacheExpiry && corporateAccessState.hasAccess !== null) {
       logDebug('キャッシュから法人アクセス権を返却', corporateAccessState);
       return {
@@ -62,7 +56,6 @@ export async function checkCorporateAccess(
       };
     }
   }
-
   try {
     // APIエンドポイントを呼び出し
     const response = await fetch('/api/corporate/access', {
@@ -71,13 +64,10 @@ export async function checkCorporateAccess(
         'Content-Type': 'application/json',
       },
     });
-
     if (!response.ok) {
       throw new Error(`API呼び出しエラー: ${response.status}`);
     }
-
     const result: ApiResult = await response.json();
-
     // 状態を更新
     updateState({
       hasAccess: result.hasCorporateAccess,
@@ -88,7 +78,6 @@ export async function checkCorporateAccess(
       lastChecked: Date.now(),
       error: result.error || null,
     });
-
     // ストレージにも保存
     if (result.hasCorporateAccess) {
       saveToStorage(
@@ -102,14 +91,11 @@ export async function checkCorporateAccess(
         StorageType.LOCAL,
       );
     }
-
     logDebug('法人アクセス権チェック完了', result);
     return result;
   } catch (error) {
     logDebug('法人アクセス権チェックエラー', error);
-
     const errorMessage = error instanceof Error ? error.message : '不明なエラー';
-
     // エラー状態を更新
     updateState({
       hasAccess: false,
@@ -120,7 +106,6 @@ export async function checkCorporateAccess(
       lastChecked: Date.now(),
       error: errorMessage,
     });
-
     return {
       hasCorporateAccess: false,
       isAdmin: false,
@@ -129,7 +114,6 @@ export async function checkCorporateAccess(
     };
   }
 }
-
 /**
  * ユーザーが法人管理者かどうかを判定（クライアントサイド専用）
  */

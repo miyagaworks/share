@@ -1,6 +1,5 @@
 // app/auth/reset-password/page.tsx
 'use client';
-
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -10,7 +9,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-
 // フォームのバリデーションスキーマ
 const ResetPasswordSchema = z
   .object({
@@ -21,9 +19,7 @@ const ResetPasswordSchema = z
     message: 'パスワードが一致しません',
     path: ['confirmPassword'],
   });
-
 type ResetPasswordFormData = z.infer<typeof ResetPasswordSchema>;
-
 // useSearchParamsを使用する内部コンポーネント
 function ResetPasswordContent() {
   const router = useRouter();
@@ -31,7 +27,6 @@ function ResetPasswordContent() {
   // トークンの取得と強化された正規化
   const rawToken = searchParams.get('token') || '';
   let token = rawToken;
-
   // 複数レベルの入れ子URLに対応
   while (token.includes('http') && token.includes('?token=')) {
     try {
@@ -49,20 +44,14 @@ function ResetPasswordContent() {
         break;
       }
     } catch (e) {
-      console.error('トークン解析エラー:', e);
       break;
     }
   }
-
-  console.log('受け取ったトークン:', rawToken);
-  console.log('処理後のトークン:', token);
-
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
   const [isValidToken, setIsValidToken] = useState(false);
   const [isTokenChecking, setIsTokenChecking] = useState(true);
-
   const {
     register,
     handleSubmit,
@@ -75,7 +64,6 @@ function ResetPasswordContent() {
     },
     mode: 'onChange', // リアルタイムバリデーション
   });
-
   // トークンの有効性をチェック
   useEffect(() => {
     const verifyToken = async () => {
@@ -84,29 +72,23 @@ function ResetPasswordContent() {
         setIsTokenChecking(false);
         return;
       }
-
       try {
         const response = await fetch(`/api/auth/verify-reset-token?token=${token}`);
         setIsValidToken(response.ok);
       } catch (error) {
-        console.error('トークン検証エラー:', error);
         setIsValidToken(false);
       } finally {
         setIsTokenChecking(false);
       }
     };
-
     verifyToken();
   }, [token]);
-
   const onSubmit = async (data: ResetPasswordFormData) => {
     if (!token) return;
-
     try {
       setError(null);
       setSuccess(null);
       setIsPending(true);
-
       const response = await fetch('/api/auth/reset-password', {
         method: 'POST',
         headers: {
@@ -117,28 +99,22 @@ function ResetPasswordContent() {
           password: data.password,
         }),
       });
-
       const responseData = await response.json();
-
       if (!response.ok) {
         setError(responseData.message || 'パスワードのリセット中にエラーが発生しました。');
         return;
       }
-
       setSuccess('パスワードが正常にリセットされました。新しいパスワードでログインしてください。');
-
       // 数秒後にログインページにリダイレクト
       setTimeout(() => {
         router.push('/auth/signin');
       }, 3000);
     } catch (error) {
-      console.error('パスワードリセットエラー:', error);
       setError('リクエスト処理中にエラーが発生しました。');
     } finally {
       setIsPending(false);
     }
   };
-
   // トークンチェック中はローディング表示
   if (isTokenChecking) {
     return (
@@ -169,7 +145,6 @@ function ResetPasswordContent() {
       </div>
     );
   }
-
   // トークンが無効な場合
   if (!isValidToken) {
     return (
@@ -202,7 +177,6 @@ function ResetPasswordContent() {
       </div>
     );
   }
-
   return (
     <div className="flex min-h-screen">
       {/* 左側：デコレーション部分 */}
@@ -225,7 +199,6 @@ function ResetPasswordContent() {
           </div>
         </div>
       </div>
-
       {/* 右側：パスワードリセットフォーム */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-6 py-12 bg-white">
         <div className="w-full max-w-md">
@@ -236,7 +209,6 @@ function ResetPasswordContent() {
             <h2 className="text-3xl font-bold text-gray-900">新しいパスワード設定</h2>
             <p className="mt-2 text-gray-600">新しいパスワードを入力してください。</p>
           </div>
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
               <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200 shadow-sm">
@@ -257,7 +229,6 @@ function ResetPasswordContent() {
                 </div>
               </div>
             )}
-
             {success && (
               <div className="rounded-lg bg-green-50 p-4 text-sm text-green-600 border border-green-200 shadow-sm">
                 <div className="flex items-center">
@@ -277,7 +248,6 @@ function ResetPasswordContent() {
                 </div>
               </div>
             )}
-
             <div>
               <Input
                 label="新しいパスワード"
@@ -289,7 +259,6 @@ function ResetPasswordContent() {
                 className="bg-white shadow-sm"
               />
             </div>
-
             <div>
               <Input
                 label="パスワード確認"
@@ -301,7 +270,6 @@ function ResetPasswordContent() {
                 className="bg-white shadow-sm"
               />
             </div>
-
             <div>
               <Button
                 type="submit"
@@ -342,7 +310,6 @@ function ResetPasswordContent() {
               </Button>
             </div>
           </form>
-
           <div className="text-center text-sm mt-8">
             <Link
               href="/auth/signin"
@@ -356,7 +323,6 @@ function ResetPasswordContent() {
     </div>
   );
 }
-
 // メインコンポーネント
 export default function ResetPasswordPage() {
   return (

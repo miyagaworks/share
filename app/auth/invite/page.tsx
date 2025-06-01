@@ -1,6 +1,5 @@
 // app/auth/invite/page.tsx
 'use client';
-
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -8,13 +7,11 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { signIn } from 'next-auth/react';
-
 // useSearchParamsを使用するコンテンツコンポーネント
 function InvitePageContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
-
   const [isLoading, setIsLoading] = useState(true);
   const [isValid, setIsValid] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -29,7 +26,6 @@ function InvitePageContent() {
   const [isFormValid, setIsFormValid] = useState(false);
   // userIdは実際に使用する場合のみコメントを外してください
   // const [userId, setUserId] = useState('');
-
   useEffect(() => {
     const isValid =
       lastName.trim() !== '' &&
@@ -38,10 +34,8 @@ function InvitePageContent() {
       firstNameKana.trim() !== '' &&
       password.length >= 8 &&
       password === confirmPassword;
-
     setIsFormValid(isValid);
   }, [lastName, firstName, lastNameKana, firstNameKana, password, confirmPassword]);
-  
   // トークンの検証
   useEffect(() => {
     const verifyToken = async () => {
@@ -51,11 +45,9 @@ function InvitePageContent() {
         setIsLoading(false);
         return;
       }
-
       try {
         // トークンを検証し、関連するユーザー情報を取得
         const response = await fetch(`/api/auth/verify-reset-token?token=${token}`);
-
         if (!response.ok) {
           const data = await response.json();
           setIsValid(false);
@@ -63,21 +55,17 @@ function InvitePageContent() {
           setIsLoading(false);
           return;
         }
-
         // 有効なトークンの場合、関連するユーザー情報を取得
         const userResponse = await fetch(`/api/corporate/users/invite/info?token=${token}`);
         const userData = await userResponse.json();
-
         if (!userResponse.ok) {
           setIsValid(false);
           setError('ユーザー情報の取得に失敗しました');
           setIsLoading(false);
           return;
         }
-
         // ユーザー情報をセット
         setEmail(userData.email || '');
-
         // 名前情報がある場合は分割して設定 - ここを修正
         if (userData.name) {
           const nameParts = userData.name.split(' ');
@@ -93,38 +81,30 @@ function InvitePageContent() {
           setLastName('');
           setFirstName('');
         }
-
         // ここでuserIdを設定するため、setUserIdを使用
         // setUserId(userData.userId || '');
         setIsValid(true);
         setIsLoading(false);
       } catch (error) {
-        console.error('招待検証エラー:', error);
         setIsValid(false);
         setError('招待の検証中にエラーが発生しました');
         setIsLoading(false);
       }
     };
-
     verifyToken();
   }, [token]);
-
   // フォーム送信処理
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (password !== confirmPassword) {
       setError('パスワードが一致しません');
       return;
     }
-
     if (password.length < 8) {
       setError('パスワードは8文字以上必要です');
       return;
     }
-
     setIsLoading(true);
-
     try {
       // パスワードを設定し、招待を完了する
       const response = await fetch('/api/corporate/users/invite/accept', {
@@ -142,24 +122,19 @@ function InvitePageContent() {
           name: `${lastName} ${firstName}`.trim(),
         }),
       });
-
       const data = await response.json();
-
       if (!response.ok) {
         throw new Error(data.message || '招待の受け入れに失敗しました');
       }
-
       // 招待完了後、自動ログイン
       const result = await signIn('credentials', {
         email,
         password,
         redirect: false,
       });
-
       if (result?.error) {
         throw new Error('自動ログインに失敗しました');
       }
-
       // 重要：セッションの更新を強制的に実行
       // これにより最新のユーザー情報がセッションに反映される
       setTimeout(async () => {
@@ -169,22 +144,18 @@ function InvitePageContent() {
             method: 'GET',
             headers: { 'Cache-Control': 'no-cache' },
           });
-
           // 法人メンバーダッシュボードへリダイレクト
           router.push('/dashboard/corporate-member');
         } catch (sessionError) {
-          console.error('セッション更新エラー:', sessionError);
           // エラーが発生してもリダイレクトは実行
           router.push('/dashboard/corporate-member');
         }
       }, 500); // 500ms待機してからセッション更新
     } catch (error) {
-      console.error('招待受け入れエラー:', error);
       setError(error instanceof Error ? error.message : '招待の受け入れに失敗しました');
       setIsLoading(false);
     }
   };
-
   // ローディング表示
   if (isLoading) {
     return (
@@ -211,7 +182,6 @@ function InvitePageContent() {
       </div>
     );
   }
-
   // 無効なトークンの場合
   if (!isValid) {
     return (
@@ -242,7 +212,6 @@ function InvitePageContent() {
       </div>
     );
   }
-
   // 有効なトークンの場合、アカウント設定フォームを表示
   return (
     <div className="flex min-h-screen">
@@ -261,7 +230,6 @@ function InvitePageContent() {
             <h2 className="text-3xl mt-8 font-bold text-gray-900">招待を受け入れる</h2>
             <p className="mt-2 text-gray-600">アカウント情報を入力して設定を完了してください</p>
           </div>
-
           {error && (
             <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200 shadow-sm mb-6">
               <div className="flex items-center">
@@ -281,7 +249,6 @@ function InvitePageContent() {
               </div>
             </div>
           )}
-
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <Input
@@ -293,7 +260,6 @@ function InvitePageContent() {
               />
               <p className="mt-1 text-xs text-gray-500">招待時のメールアドレスが設定されています</p>
             </div>
-
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <Input
@@ -340,7 +306,6 @@ function InvitePageContent() {
                 />
               </div>
             </div>
-
             <div>
               <Input
                 label="パスワード"
@@ -353,7 +318,6 @@ function InvitePageContent() {
               />
               <p className="mt-1 text-xs text-gray-500">8文字以上で入力してください</p>
             </div>
-
             <div>
               <Input
                 label="パスワード（確認）"
@@ -365,7 +329,6 @@ function InvitePageContent() {
                 placeholder="********"
               />
             </div>
-
             <Button
               type="submit"
               className="w-full bg-blue-600 text-white hover:bg-blue-800 transform hover:-translate-y-0.5 transition-all"
@@ -405,7 +368,6 @@ function InvitePageContent() {
     </div>
   );
 }
-
 // メインコンポーネント - Suspenseでラップ
 export default function InvitePage() {
   return (

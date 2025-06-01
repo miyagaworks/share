@@ -1,6 +1,5 @@
 // components/corporate/MemberProfileForm.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Input, Textarea, FormGroup } from '@/components/ui/Input';
@@ -9,7 +8,6 @@ import { QuickIntroButton } from '@/components/ui/QuickIntroButton';
 import { Spinner } from '@/components/ui/Spinner';
 import { toast } from 'react-hot-toast';
 import { UserData, ProfileUpdateData } from '@/types/profiles';
-
 import {
   HiUser,
   HiMail,
@@ -19,7 +17,6 @@ import {
   HiSparkles,
   HiBriefcase,
 } from 'react-icons/hi';
-
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -28,14 +25,12 @@ interface TenantData {
   corporatePrimary: string | null;
   corporateSecondary: string | null;
 }
-
 interface MemberProfileFormProps {
   userData: UserData | null;
   tenantData: TenantData | null;
   isLoading: boolean;
   onSave: (data: ProfileUpdateData) => Promise<void>;
 }
-
 export function MemberProfileForm({
   userData,
   tenantData,
@@ -55,45 +50,36 @@ export function MemberProfileForm({
     phone: '',
     position: '',
   });
-
   // テナントのカラー設定
   const corporatePrimary = tenantData?.corporatePrimary || 'var(--color-corporate-primary)';
-
   // Reactの状態でホバーを管理
   const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
-
   // 姓名とフリガナを分割する関数
   const splitNameAndKana = (user: UserData) => {
     // 姓名の分割
     let lastName = user.lastName || '';
     let firstName = user.firstName || '';
-
     // 分割されたフィールドがない場合は結合されたフィールドから分割
     if (!lastName && !firstName && user.name) {
       const nameParts = user.name.split(' ');
       lastName = nameParts[0] || '';
       firstName = nameParts.length > 1 ? nameParts.slice(1).join(' ') : '';
     }
-
     // フリガナの分割
     let lastNameKana = user.lastNameKana || '';
     let firstNameKana = user.firstNameKana || '';
-
     // 分割されたフィールドがない場合は結合されたフィールドから分割
     if (!lastNameKana && !firstNameKana && user.nameKana) {
       const kanaParts = user.nameKana.split(' ');
       lastNameKana = kanaParts[0] || '';
       firstNameKana = kanaParts.length > 1 ? kanaParts.slice(1).join(' ') : '';
     }
-
     return { lastName, firstName, lastNameKana, firstNameKana };
   };
-
   // 初期データの設定
   useEffect(() => {
     if (userData) {
       const { lastName, firstName, lastNameKana, firstNameKana } = splitNameAndKana(userData);
-
       setFormData({
         lastName,
         firstName,
@@ -108,20 +94,16 @@ export function MemberProfileForm({
       setImage(userData.image);
     }
   }, [userData]);
-
   // 入力フォーム変更のハンドリング
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
   // フォーム送信
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     try {
       setIsSaving(true);
-
       // 各フィールドの処理
       const processedLastName = formData.lastName.trim() || undefined;
       const processedFirstName = formData.firstName.trim() || undefined;
@@ -131,7 +113,6 @@ export function MemberProfileForm({
       const processedBio = formData.bio.trim() || undefined;
       const processedPhone = formData.phone.trim() || undefined;
       const processedPosition = formData.position.trim() || undefined;
-
       // データを準備
       const updateData: ProfileUpdateData = {
         lastName: processedLastName,
@@ -144,19 +125,15 @@ export function MemberProfileForm({
         position: processedPosition,
         image: image !== userData?.image ? image : undefined,
       };
-
       // 親コンポーネントの保存関数を呼び出し
       await onSave(updateData);
-
       toast.success('プロフィールを更新しました');
     } catch (error) {
-      console.error('更新エラー:', error);
       toast.error('プロフィールの更新に失敗しました');
     } finally {
       setIsSaving(false);
     }
   };
-
   // ローディング表示
   if (isLoading) {
     return (
@@ -166,7 +143,6 @@ export function MemberProfileForm({
       </div>
     );
   }
-
   // データがない場合のエラー表示
   if (!userData || !tenantData) {
     return (
@@ -178,7 +154,6 @@ export function MemberProfileForm({
       </div>
     );
   }
-
   return (
     <form onSubmit={handleSubmit}>
       {/* 基本プロフィール */}
@@ -201,7 +176,6 @@ export function MemberProfileForm({
         <p className="text-sm text-gray-500 mb-6 text-justify">
           あなたの基本情報を入力してください。これらの情報は自己紹介ページに表示されます。
         </p>
-
         <FormGroup>
           <div className="flex flex-col items-center space-y-4 mb-6">
             <div className="relative">
@@ -231,7 +205,6 @@ export function MemberProfileForm({
               </span>
             </p>
           </div>
-
           {/* 姓名分割フィールド */}
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2">
             <div className="space-y-2">
@@ -259,7 +232,6 @@ export function MemberProfileForm({
               />
             </div>
           </div>
-
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">
               <HiUser className="mr-2 h-4 w-4 text-gray-500" />
@@ -273,7 +245,6 @@ export function MemberProfileForm({
               disabled={isSaving}
             />
           </div>
-
           {/* フリガナ分割フィールド */}
           <div className="grid gap-6 grid-cols-1 sm:grid-cols-2">
             <div className="space-y-2">
@@ -306,7 +277,6 @@ export function MemberProfileForm({
           <p className="text-xs text-gray-500 mt-1">
             スマートフォンの連絡先に登録する際のフリガナです。
           </p>
-
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">
               <HiAnnotation className="mr-2 h-4 w-4 text-gray-500" />
@@ -321,7 +291,6 @@ export function MemberProfileForm({
               helperText="あなたのプロフィールページに表示される自己紹介文です。最大300文字まで入力できます。"
             />
           </div>
-
           {/* かんたん自己紹介ボタンを追加 */}
           <div
             className="mt-6 mb-4 border rounded-lg p-4"
@@ -344,7 +313,6 @@ export function MemberProfileForm({
           </div>
         </FormGroup>
       </div>
-
       {/* 連絡先情報 */}
       <div
         className="rounded-lg border border-gray-200 bg-white p-6 mb-6 shadow-sm"
@@ -357,7 +325,6 @@ export function MemberProfileForm({
         <p className="text-sm text-gray-500 mb-6">
           あなたの連絡先情報を入力してください。これらの情報は共有されたプロフィールで利用できます。
         </p>
-
         <FormGroup>
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">
@@ -370,7 +337,6 @@ export function MemberProfileForm({
               helperText="メールアドレスは変更できません。認証情報として使用されています。"
             />
           </div>
-
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">
               <HiOfficeBuilding className="mr-2 h-4 w-4 text-gray-500" />
@@ -382,7 +348,6 @@ export function MemberProfileForm({
               helperText="部署の変更は管理者にお問い合わせください。"
             />
           </div>
-
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">
               <HiBriefcase className="mr-2 h-4 w-4 text-gray-500" />
@@ -397,7 +362,6 @@ export function MemberProfileForm({
               helperText="あなたの役職や職位を入力してください。"
             />
           </div>
-
           <div className="space-y-2">
             <label className="flex items-center text-sm font-medium text-gray-700">
               <HiPhone className="mr-2 h-4 w-4 text-gray-500" />
@@ -413,7 +377,6 @@ export function MemberProfileForm({
           </div>
         </FormGroup>
       </div>
-
       <div className="mt-6 flex flex-col sm:flex-row justify-end space-y-3 sm:space-y-0 sm:space-x-3">
         {/* セカンダリーボタン */}
         <Button
@@ -432,7 +395,6 @@ export function MemberProfileForm({
         >
           キャンセル
         </Button>
-
         {/* プライマリーボタン */}
         <Button
           variant="corporate"

@@ -1,6 +1,5 @@
 // app/dashboard/admin/subscriptions/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -14,7 +13,6 @@ import {
   HiSortDescending
 } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
-
 // サブスクリプション情報の型定義
 interface UserSubscription {
   id: string;
@@ -31,10 +29,8 @@ interface UserSubscription {
   } | null;
   subscriptionStatus: string | null;
 }
-
 // 並び替えのタイプ
 type SortType = 'created_asc' | 'created_desc' | 'nameKana_asc' | 'nameKana_desc' | 'plan_asc' | 'plan_desc' | 'status';
-
 export default function AdminSubscriptionsPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -43,7 +39,6 @@ export default function AdminSubscriptionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [sortType, setSortType] = useState<SortType>('status');
-
   // 管理者チェック
   useEffect(() => {
     const checkAdminAccess = async () => {
@@ -51,11 +46,9 @@ export default function AdminSubscriptionsPage() {
         router.push('/auth/signin');
         return;
       }
-
       try {
         const response = await fetch('/api/admin/access');
         const data = await response.json();
-
         if (data.isSuperAdmin) {
           setIsAdmin(true);
           fetchUsers();
@@ -63,14 +56,11 @@ export default function AdminSubscriptionsPage() {
           router.push('/dashboard');
         }
       } catch (error) {
-        console.error('管理者チェックエラー:', error);
         router.push('/dashboard');
       }
     };
-
     checkAdminAccess();
   }, [session, router]);
-
   // ユーザーサブスクリプション一覧の取得
   const fetchUsers = async () => {
     setLoading(true);
@@ -80,22 +70,18 @@ export default function AdminSubscriptionsPage() {
         const data = await response.json();
         setUsers(data.users || []);
       } else {
-        console.error('サブスクリプション一覧取得エラー');
         toast.error('サブスクリプション一覧の取得に失敗しました');
       }
     } catch (error) {
-      console.error('サブスクリプション一覧取得エラー:', error);
       toast.error('サブスクリプション情報の取得中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
   };
-
   // 並び替え関数
   const handleSort = (type: SortType) => {
     setSortType(type);
   };
-
   // 検索結果のフィルタリング
   const filteredUsers = users.filter(
     (user) =>
@@ -105,7 +91,6 @@ export default function AdminSubscriptionsPage() {
       (user.subscription?.plan || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.subscription?.status || '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
-
   // ユーザーの並び替え
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     // サブスクリプション状態で並び替え（アクティブ > トライアル > その他）
@@ -117,51 +102,40 @@ export default function AdminSubscriptionsPage() {
         if (status === 'canceled') return 4;
         return 5;
       };
-
       const statusPriorityA = getStatusPriority(a.subscription?.status);
       const statusPriorityB = getStatusPriority(b.subscription?.status);
-
       if (statusPriorityA !== statusPriorityB) {
         return statusPriorityA - statusPriorityB;
       }
-
       // 同じステータスならフリガナの順
       return (a.nameKana || '').localeCompare(b.nameKana || '');
     }
-
     // 登録日の新しい順
     if (sortType === 'created_desc') {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }
-
     // 登録日の古い順
     if (sortType === 'created_asc') {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     }
-
     // フリガナの昇順
     if (sortType === 'nameKana_asc') {
       return (a.nameKana || '').localeCompare(b.nameKana || '');
     }
-
     // フリガナの降順
     if (sortType === 'nameKana_desc') {
       return (b.nameKana || '').localeCompare(a.nameKana || '');
     }
-
     // プランの昇順
     if (sortType === 'plan_asc') {
       return (a.subscription?.plan || '').localeCompare(b.subscription?.plan || '');
     }
-
     // プランの降順
     if (sortType === 'plan_desc') {
       return (b.subscription?.plan || '').localeCompare(a.subscription?.plan || '');
     }
-
     return 0;
   });
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -172,11 +146,9 @@ export default function AdminSubscriptionsPage() {
       </div>
     );
   }
-
   if (!isAdmin) {
     return null; // リダイレクト処理中は表示なし
   }
-
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
@@ -184,7 +156,6 @@ export default function AdminSubscriptionsPage() {
           <HiCreditCard className="h-6 w-6 text-blue-600 mr-3" />
           <h1 className="text-2xl font-bold">サブスクリプション管理</h1>
         </div>
-
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <div className="relative w-full sm:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -198,7 +169,6 @@ export default function AdminSubscriptionsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
           <div className="flex space-x-2">
             <div className="dropdown">
               <Button variant="outline" className="flex items-center">
@@ -262,7 +232,6 @@ export default function AdminSubscriptionsPage() {
             </Button>
           </div>
         </div>
-
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
             <thead className="bg-gray-50">
@@ -356,7 +325,6 @@ export default function AdminSubscriptionsPage() {
             </tbody>
           </table>
         </div>
-
         {filteredUsers.length === 0 && (
           <div className="text-center py-6">
             <p className="text-gray-500">該当するユーザーが見つかりません</p>

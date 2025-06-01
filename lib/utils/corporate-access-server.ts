@@ -2,7 +2,6 @@
 // サーバーサイド専用の法人アクセス機能
 import { prisma } from '@/lib/prisma';
 import { logger } from './logger';
-
 /**
  * ユーザーが法人アクセス権を持っているかどうかを確認する（サーバーサイド専用）
  * この関数は API Routes、Server Components、Middleware でのみ使用してください
@@ -35,7 +34,6 @@ export async function checkCorporateAccess(userId: string) {
         subscriptionStatus: true, // 永久利用権ステータス
       },
     });
-
     if (!user) {
       logger.warn('法人アクセスチェック：ユーザー未検出', { userId });
       return {
@@ -43,7 +41,6 @@ export async function checkCorporateAccess(userId: string) {
         error: 'ユーザーが見つかりません',
       };
     }
-
     // 永久利用権ユーザーの場合は常に法人アクセス権あり
     if (user.subscriptionStatus === 'permanent') {
       logger.info('永久利用権ユーザーに法人アクセス権を付与', { userId });
@@ -65,15 +62,12 @@ export async function checkCorporateAccess(userId: string) {
         error: null,
       };
     }
-
     // 法人テナントが存在するかチェック
     const hasTenant = !!user.adminOfTenant || !!user.tenant;
-
     // テナントが停止状態かチェック
     const isTenantSuspended =
       (user.adminOfTenant && user.adminOfTenant.accountStatus === 'suspended') ||
       (user.tenant && user.tenant.accountStatus === 'suspended');
-
     // 法人サブスクリプションが有効かチェック - 判定ロジックを拡張
     const hasCorporateSubscription =
       user.subscription &&
@@ -98,10 +92,8 @@ export async function checkCorporateAccess(userId: string) {
         (user.subscription.plan || '').toLowerCase().includes('enterprise') || // enterprise を含むかどうかをチェック
         (user.subscription.plan || '').toLowerCase().includes('starter')) && // starter を含むかどうかをチェック
       user.subscription.status === 'active';
-
     // テナントが存在し、停止されておらず、有効なサブスクリプションがある場合のみアクセス権あり
     const hasCorporateAccess = hasTenant && !isTenantSuspended && hasCorporateSubscription;
-
     if (!hasCorporateAccess) {
       logger.info('法人アクセス拒否', {
         userId,
@@ -110,7 +102,6 @@ export async function checkCorporateAccess(userId: string) {
         hasCorporateSubscription,
       });
     }
-
     return {
       hasCorporateAccess,
       isAdmin: !!user.adminOfTenant,

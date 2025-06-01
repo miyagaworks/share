@@ -1,19 +1,16 @@
 // app/jikogene/components/FormSteps/Personality.tsx
 'use client';
-
 import { useState } from 'react';
 import { FormData, FormDataValue } from '@/app/jikogene/types';
 import { cn } from '@/lib/utils';
 import { personalityItems } from '@/app/jikogene/lib/constants';
 import { memo } from 'react';
-
 interface PersonalityProps {
   formData: FormData;
   updateFormData: <K extends keyof FormData>(section: K, value: FormDataValue<K>) => void;
   sectionIcon: React.ReactNode;
   fieldErrors: Record<string, string>;
 }
-
 /**
  * 性格・特性入力フォームステップ
  * 入力フォームと追加ボタンを常に表示
@@ -24,11 +21,9 @@ const Personality = memo(function Personality({
   fieldErrors,
 }: PersonalityProps) {
   const [otherTrait, setOtherTrait] = useState('');
-
   // 特性の選択/解除を処理
   const handleTraitChange = (trait: string) => {
     const currentTraits = [...formData.personalityTraits];
-
     if (currentTraits.includes(trait)) {
       // すでに選択されている場合は削除
       const updatedTraits = currentTraits.filter((t) => t !== trait);
@@ -39,7 +34,6 @@ const Personality = memo(function Personality({
       updateFormData('personalityTraits', updatedTraits);
     }
   };
-
   // その他の特性を追加
   const handleAddOtherTrait = () => {
     if (otherTrait.trim() && !formData.personalityTraits.includes(otherTrait.trim())) {
@@ -48,7 +42,6 @@ const Personality = memo(function Personality({
       setOtherTrait(''); // 入力をクリア
     }
   };
-
   // Enterキーが押されたときに特性を追加
   const handleKeyPress = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter') {
@@ -56,13 +49,11 @@ const Personality = memo(function Personality({
       handleAddOtherTrait();
     }
   };
-
   return (
     <div className="fade-in">
       <p className="text-gray-500 mb-4">
         あなたの性格や特性を選択してください。自己紹介に反映させたい特徴を3〜5つ程度選ぶとバランスが良いでしょう。
       </p>
-
       {/* アイコン付き性格特性グリッド */}
       <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mb-6">
         {personalityItems.map((trait) => (
@@ -85,7 +76,6 @@ const Personality = memo(function Personality({
           </div>
         ))}
       </div>
-
       {/* その他の特性入力フォーム - 常に表示 */}
       <div className="mb-6 mt-4">
         <label className="block text-sm font-medium text-gray-700 mb-2">その他の性格・特性</label>
@@ -114,7 +104,6 @@ const Personality = memo(function Personality({
           リストにない性格や特性を入力して「追加」ボタンをクリックしてください
         </p>
       </div>
-
       {/* 選択された特性のタグ表示 */}
       <div className="mt-4">
         <div className="flex flex-wrap gap-2">
@@ -130,7 +119,6 @@ const Personality = memo(function Personality({
               // 特性のアイコンを探す
               const traitItem = personalityItems.find((item) => item.name === trait);
               const traitIcon = traitItem ? traitItem.icon : null;
-
               return (
                 <span
                   key={trait}
@@ -155,5 +143,4 @@ const Personality = memo(function Personality({
     </div>
   );
 });
-
 export default Personality;

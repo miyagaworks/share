@@ -1,18 +1,15 @@
 // app/api/corporate-profile/route.ts (修正版)
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-
 export async function GET() {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-
     // ユーザー情報とテナント情報を取得
     const userData = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -55,22 +52,18 @@ export async function GET() {
         },
       },
     });
-
     if (!userData) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
-
     // テナント情報（管理者または一般メンバーのいずれか）
     const tenantData = userData.adminOfTenant || userData.tenant;
-
     // テナントがない場合のエラーハンドリング
     if (!tenantData) {
-      console.log('テナント情報が見つかりません:', {
+      logger.debug('テナント情報が見つかりません:', {
         userId: userData.id,
         hasTenant: !!userData.tenant,
         isAdmin: !!userData.adminOfTenant,
       });
-
       // 永久利用権ユーザーの場合は仮想テナントを返す
       if (userData.subscriptionStatus === 'permanent') {
         return NextResponse.json({
@@ -106,25 +99,20 @@ export async function GET() {
           },
         });
       }
-
       return NextResponse.json({ error: 'テナント情報が見つかりません' }, { status: 404 });
     }
-
     // テナントが停止されているかチェック
     if (tenantData.accountStatus === 'suspended') {
       return NextResponse.json({ error: 'テナントが停止されています' }, { status: 403 });
     }
-
     // SNSリンク数を取得
     const snsLinksCount = await prisma.snsLink.count({
       where: { userId: userData.id },
     });
-
     // カスタムリンク数を取得
     const customLinksCount = await prisma.customLink.count({
       where: { userId: userData.id },
     });
-
     return NextResponse.json({
       user: {
         id: userData.id,
@@ -150,7 +138,7 @@ export async function GET() {
       tenant: tenantData,
     });
   } catch (error) {
-    console.error('法人プロフィール取得エラー:', error);
+    logger.error('法人プロフィール取得エラー:', error);
     return NextResponse.json({ error: 'プロフィール情報の取得に失敗しました' }, { status: 500 });
   }
 }

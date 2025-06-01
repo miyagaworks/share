@@ -1,0 +1,16 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(find:*)",
+      "Bash(grep:*)",
+      "Bash(chmod:*)",
+      "Bash(/Users/miyagawakiyomi/Projects/share/scripts/remove-frontend-console.sh:*)",
+      "Bash(/Users/miyagawakiyomi/Projects/share/scripts/replace-api-console.sh:*)",
+      "Bash(/Users/miyagawakiyomi/Projects/share/scripts/fix-remaining-console.sh:*)",
+      "Bash(/Users/miyagawakiyomi/Projects/share/scripts/fix-client-console.sh:*)",
+      "Bash(/Users/miyagawakiyomi/Projects/share/scripts/final-console-cleanup.sh)",
+      "mcp__ide__getDiagnostics"
+    ],
+    "deny": []
+  }
+}

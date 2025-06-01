@@ -1,13 +1,11 @@
 // components/layout/MobileMenuButton.tsx
 'use client';
-
 import React, { useState, useEffect } from 'react';
 import { HiMenu, HiX, HiOfficeBuilding, HiUser } from 'react-icons/hi';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccess';
-
 interface MenuItemType {
   title: string;
   href: string;
@@ -15,21 +13,17 @@ interface MenuItemType {
   isDivider?: boolean;
   adminOnly?: boolean;
 }
-
 interface MobileMenuButtonProps {
   items: MenuItemType[];
 }
-
 export function MobileMenuButton({ items }: MobileMenuButtonProps) {
   const [isOpen, setIsOpen] = useState(false);
   const pathname = usePathname();
   // 強制再レンダリング用
   const [, setRenderKey] = useState(0);
-
   // 🔧 招待メンバー判定の状態を追加
   const [isInvitedMember, setIsInvitedMember] = useState(false);
   const [isUserTypeResolved, setIsUserTypeResolved] = useState(false);
-
   // 法人アクセス権を確認
   useEffect(() => {
     const initAccess = async () => {
@@ -37,80 +31,60 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
       if (corporateAccessState.hasAccess !== null) {
         return;
       }
-
       try {
         await checkCorporateAccess();
         // 状態が変更されたら再レンダリング
         setRenderKey((prev) => prev + 1);
       } catch (error) {
-        console.error('法人アクセスチェックエラー:', error);
       }
     };
-
     initAccess();
-
     // 🔧 メンバー状態更新関数
     const updateMemberStatus = () => {
       // 招待メンバー判定（corporateAccessStateから）
       const isInvited = corporateAccessState.userRole === 'member' && !corporateAccessState.isAdmin;
-
-      console.log('🔧 MobileMenu: 招待メンバー状態更新:', {
         userRole: corporateAccessState.userRole,
         isAdmin: corporateAccessState.isAdmin,
         hasAccess: corporateAccessState.hasAccess,
         isInvited,
         lastChecked: corporateAccessState.lastChecked,
       });
-
       setIsInvitedMember(isInvited);
-
       // ユーザータイプ解決判定
       const isResolved =
         corporateAccessState.lastChecked > 0 ||
         corporateAccessState.hasAccess === true ||
         corporateAccessState.hasAccess === false ||
         corporateAccessState.error !== null;
-
       setIsUserTypeResolved(isResolved);
     };
-
     // 初期状態をチェック
     updateMemberStatus();
-
     // アクセス状態変更イベントのリスナー
     const handleAccessChange = () => {
-      console.log('🔧 MobileMenu: corporateAccessChanged イベント受信');
       updateMemberStatus();
       setRenderKey((prev) => prev + 1);
     };
-
     window.addEventListener('corporateAccessChanged', handleAccessChange);
-
     // 🔧 安全措置: 5秒後に強制的に解決済みにする
     const safetyTimer = setTimeout(() => {
-      console.log('🔧 MobileMenu: 安全措置によりユーザータイプを解決済みに設定');
       setIsUserTypeResolved(true);
     }, 5000);
-
     return () => {
       window.removeEventListener('corporateAccessChanged', handleAccessChange);
       clearTimeout(safetyTimer);
     };
   }, []);
-
   // メニュー項目
   const mainMenuItems = [...items];
   // 現在のURLのセクションをチェック
   const isCorporateSection = pathname?.startsWith('/dashboard/corporate');
   const isCorporateMemberSection = pathname?.startsWith('/dashboard/corporate-member');
   const isCorporateRelated = isCorporateSection || isCorporateMemberSection;
-
   // メインメニューに存在するリンクのパスを収集
   const mainItemPaths = new Set(mainMenuItems.map((item) => item.href));
-
   // 追加リンク処理
   const additionalLinks: MenuItemType[] = [];
-
   // リンクを追加する関数（重複チェック付き）
   const addLink = (link: MenuItemType) => {
     // すでにメインメニューに存在する場合は追加しない
@@ -118,12 +92,10 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
       additionalLinks.push(link);
     }
   };
-
   // 🔧 招待メンバーでない場合のみ追加リンクを生成
   if (!isInvitedMember && isUserTypeResolved) {
     // 法人セクションにいる場合、法人メンバーダッシュボードへのリンクを追加
     if (isCorporateSection) {
-
       // 法人管理者は法人メンバーダッシュボードも表示
       if (corporateAccessState.hasAccess) {
         addLink({
@@ -133,10 +105,8 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
         });
       }
     }
-
     // 法人メンバーセクションにいる場合、法人ダッシュボードへのリンクを追加
     else if (isCorporateMemberSection) {
-
       // 法人管理者の場合は法人管理ダッシュボードへのリンクも表示
       if (corporateAccessState.isAdmin) {
         addLink({
@@ -146,7 +116,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
         });
       }
     }
-
     // 個人セクションにいて法人アクセス権がある場合、法人関連リンクを追加
     else if (
       !isCorporateSection &&
@@ -160,7 +129,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
         href: '/dashboard/corporate-member',
         icon: <HiUser className="h-5 w-5" />,
       });
-
       // 法人管理者の場合は法人管理ダッシュボードへのリンクも追加
       if (corporateAccessState.isAdmin) {
         addLink({
@@ -171,12 +139,10 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
       }
     }
   }
-
   // 管理者権限によるフィルタリング
   const filteredMainItems = mainMenuItems.filter(
     (item) => !item.adminOnly || corporateAccessState.isAdmin,
   );
-
   // 法人セクション関連のメニューボタンスタイル
   const getMenuButtonStyle = () => {
     if (isCorporateRelated) {
@@ -185,7 +151,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
     }
     return 'lg:hidden fixed bottom-6 right-3 z-50 bg-blue-600 text-white p-5 rounded-full shadow-lg focus:outline-none';
   };
-
   return (
     <>
       {/* メニューボタン */}
@@ -197,7 +162,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
       >
         <HiMenu className="h-8 w-8" />
       </button>
-
       {/* オーバーレイ */}
       {isOpen && (
         <div
@@ -206,7 +170,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
           onClick={() => setIsOpen(false)}
         />
       )}
-
       {/* メニュー */}
       <div
         className={`fixed inset-y-0 left-0 z-50 w-full max-w-xs bg-white transform transition-transform duration-300 ease-in-out lg:hidden ${
@@ -229,7 +192,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
               <HiX className="h-7 w-7" />
             </button>
           </div>
-
           {/* メニュー項目 */}
           <div className="flex-1 overflow-y-auto p-4">
             <nav className="space-y-3">
@@ -249,16 +211,13 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
                     </div>
                   );
                 }
-
                 // アクティブなリンクかどうか
                 const isActive = pathname === item.href;
                 // 法人関連のリンクかどうか
                 const isCorporateLink = item.href.includes('/corporate');
-
                 // 条件に応じたクラス生成
                 let itemClass = '';
                 let iconClass = '';
-
                 if (isActive) {
                   if (isCorporateRelated || isCorporateLink) {
                     // 法人セクションまたは法人関連リンクのアクティブスタイル
@@ -281,7 +240,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
                     iconClass = 'text-gray-600 group-hover:text-blue-700';
                   }
                 }
-
                 return (
                   <Link
                     key={item.href}
@@ -297,7 +255,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
                   </Link>
                 );
               })}
-
               {/* 追加リンク - 招待メンバーでない場合のみ表示 */}
               {!isInvitedMember && additionalLinks.length > 0 && (
                 <div className="pt-4">
@@ -312,7 +269,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
                       </span>
                     </div>
                   </div>
-
                   {additionalLinks.map((link, index) => {
                     // 区切り線の場合は特別な表示を行う
                     if (link.isDivider) {
@@ -329,16 +285,13 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
                         </div>
                       );
                     }
-
                     // アクティブなリンクかどうか
                     const isActive = pathname === link.href;
                     // 法人関連のリンクかどうか
                     const isCorporateLink = link.href.includes('/corporate');
-
                     // 条件に応じたクラス生成
                     let itemClass = '';
                     let iconClass = '';
-
                     if (isActive) {
                       if (isCorporateRelated || isCorporateLink) {
                         // 法人セクションまたは法人関連リンクのアクティブスタイル
@@ -361,7 +314,6 @@ export function MobileMenuButton({ items }: MobileMenuButtonProps) {
                         iconClass = 'text-gray-600 group-hover:text-blue-700';
                       }
                     }
-
                     return (
                       <Link
                         key={`add-${link.href}-${index}`}

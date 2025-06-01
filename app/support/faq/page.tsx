@@ -3,12 +3,10 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { FaqSection } from '@/components/shared/FaqSection';
 import { Metadata } from 'next';
 import Link from 'next/link';
-
 export const metadata: Metadata = {
   title: 'よくある質問 | Share',
   description: 'Shareサービスに関するよくある質問と回答です。',
 };
-
 // FAQ データの定義
 const generalFaqs = [
   {
@@ -81,7 +79,6 @@ const generalFaqs = [
     ),
   },
 ];
-
 const accountFaqs = [
   {
     question: 'アカウントの作成方法を教えてください',
@@ -108,7 +105,6 @@ const accountFaqs = [
     ),
   },
 ];
-
 const billingFaqs = [
   {
     question: '支払い方法は何がありますか？',
@@ -136,7 +132,6 @@ const billingFaqs = [
     ),
   },
 ];
-
 export default function FaqPage() {
   return (
     <PageLayout
@@ -155,7 +150,6 @@ export default function FaqPage() {
           </Link>
           からお気軽にお問い合わせください。
         </p>
-
         <div className="space-y-8">
           <FaqSection title="サービスについて" faqs={generalFaqs} />
           <FaqSection title="アカウント関連" faqs={accountFaqs} />

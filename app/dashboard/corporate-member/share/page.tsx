@@ -1,6 +1,5 @@
 // app/dashboard/corporate-member/share/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -19,7 +18,6 @@ import { Spinner } from '@/components/ui/Spinner';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { QrCodeGenerator } from '@/components/corporate/QrCodeGenerator';
 import { MemberShareSettings } from '@/components/corporate/MemberShareSettings';
-
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -30,7 +28,6 @@ interface TenantData {
   textColor?: string | null;
   headerText?: string | null;
 }
-
 // 共有設定の型定義
 interface ShareSettings {
   isPublic: boolean;
@@ -38,7 +35,6 @@ interface ShareSettings {
   views: number;
   lastAccessed: string | null;
 }
-
 export default function CorporateMemberSharePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -47,37 +43,30 @@ export default function CorporateMemberSharePage() {
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [hasProfile, setHasProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   // QRコード用のカスタムURLスラグ管理
   const [qrCodeSlug, setQrCodeSlug] = useState('');
   const [isCheckingQrSlug, setIsCheckingQrSlug] = useState(false);
   const [isQrSlugAvailable, setIsQrSlugAvailable] = useState(false);
-
   // データ取得
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session) {
       router.push('/auth/signin');
       return;
     }
-
     const fetchData = async () => {
       try {
         setIsLoading(true);
-
         // 共有設定情報を取得
         const response = await fetch('/api/corporate-member/share');
         if (!response.ok) {
           throw new Error('共有設定の取得に失敗しました');
         }
-
         const data = await response.json();
         setShareSettings(data.shareSettings);
         setTenantData(data.tenant);
         setHasProfile(data.hasProfile);
         setError(null);
-
         // 既存のQRコードがあれば取得
         try {
           const qrResponse = await fetch('/api/qrcode');
@@ -90,54 +79,44 @@ export default function CorporateMemberSharePage() {
             }
           }
         } catch (qrError) {
-          console.error('QRコード情報取得エラー:', qrError);
           // エラーがあっても処理は続行
         }
       } catch (err) {
-        console.error('データ取得エラー:', err);
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, [session, status, router]);
-
   // スラグの利用可能性をチェック
   const checkQrSlugAvailability = async (slug: string) => {
     if (!slug || slug.length < 3) {
       setIsQrSlugAvailable(false);
       return;
     }
-
     setIsCheckingQrSlug(true);
     try {
       const response = await fetch(`/api/qrcode/check-slug?slug=${slug}`);
       const data = await response.json();
-
       // 自分のものか新規作成可能な場合
       setIsQrSlugAvailable(data.available || data.ownedByCurrentUser);
     } catch (error) {
-      console.error('スラグチェックエラー:', error);
       setIsQrSlugAvailable(false);
     } finally {
       setIsCheckingQrSlug(false);
     }
   };
-
   // QRコードスラグ変更ハンドラー
   const handleQrCodeSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
     setQrCodeSlug(newSlug);
-
     if (newSlug.length >= 3) {
       checkQrSlugAvailability(newSlug);
     } else {
       setIsQrSlugAvailable(false);
     }
   };
-
   // 共有設定保存処理
   const handleSaveShareSettings = async (values: { isPublic?: boolean; slug?: string | null }) => {
     try {
@@ -148,37 +127,31 @@ export default function CorporateMemberSharePage() {
         },
         body: JSON.stringify(values),
       });
-
       if (!response.ok) {
         const data = await response.json();
         // エラーをスローする代わりに、メッセージをカスタマイズして再スロー
         throw new Error(data.error || '共有設定の更新に失敗しました');
       }
-
       const updatedData = await response.json();
       setShareSettings(updatedData.shareSettings);
       setHasProfile(true);
       toast.success('共有設定を更新しました');
       return updatedData; // 成功時はデータを返す
     } catch (error) {
-      console.error('設定更新エラー:', error);
       toast.error(error instanceof Error ? error.message : '共有設定の更新に失敗しました');
       // エラーを再スローして、子コンポーネントでもキャッチできるようにする
       throw error;
     }
   };
-
   // プロフィールURLの生成
   const getProfileUrl = () => {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     return `${baseUrl}/${shareSettings?.slug || ''}`;
   };
-
   // ベースURLの取得
   const getBaseUrl = () => {
     return typeof window !== 'undefined' ? window.location.origin : '';
   };
-
   // URLをクリップボードにコピー
   const copyUrlToClipboard = () => {
     navigator.clipboard
@@ -186,7 +159,6 @@ export default function CorporateMemberSharePage() {
       .then(() => toast.success('URLをコピーしました'))
       .catch(() => toast.error('URLのコピーに失敗しました'));
   };
-
   return (
     <CorporateMemberGuard>
       <div className="space-y-6">
@@ -197,7 +169,6 @@ export default function CorporateMemberSharePage() {
             <p className="text-muted-foreground">プロフィールの公開設定とQRコード生成</p>
           </div>
         </div>
-
         {isLoading ? (
           <div className="flex flex-col items-center justify-center min-h-[400px]">
             <Spinner size="lg" />
@@ -225,7 +196,6 @@ export default function CorporateMemberSharePage() {
                 <p className="text-sm text-gray-500 mb-6">
                   プロフィールの公開範囲とURLを設定します。
                 </p>
-
                 {shareSettings && tenantData && (
                   <MemberShareSettings
                     initialValues={shareSettings}
@@ -235,7 +205,6 @@ export default function CorporateMemberSharePage() {
                     onSave={handleSaveShareSettings}
                   />
                 )}
-
                 {/* URLコピーボタンを追加 - 保存ボタンの下部 */}
                 {hasProfile && shareSettings?.slug && (
                   <div className="mt-8 border-t border-gray-200 pt-6">
@@ -256,7 +225,6 @@ export default function CorporateMemberSharePage() {
                   </div>
                 )}
               </div>
-
               {/* 右: QRコードジェネレーター */}
               <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
                 <h2 className="text-lg font-semibold mb-4 flex items-center">
@@ -266,7 +234,6 @@ export default function CorporateMemberSharePage() {
                 <p className="text-sm text-gray-500 mb-6">
                   プロフィールのQRコードを生成して共有できます。
                 </p>
-
                 {hasProfile && shareSettings?.slug ? (
                   <>
                     {/* QRコードカスタムURL設定フォーム（1つのみ） */}
@@ -302,7 +269,6 @@ export default function CorporateMemberSharePage() {
                         <p className="text-xs text-gray-500 mt-1">3文字以上入力してください</p>
                       )}
                     </div>
-
                     {/* QRコードデザイナーボタン */}
                     <div className="mb-6">
                       <Link
@@ -315,16 +281,13 @@ export default function CorporateMemberSharePage() {
                         <HiExternalLink className="ml-2 h-4 w-4 text-white" />
                       </Link>
                     </div>
-
                     {/* 区切り線 */}
                     <div className="border-t border-gray-200 my-6"></div>
-
                     {/* QRコードのみダウンロードのタイトル */}
                     <h2 className="text-lg font-semibold mb-4 flex items-center">
                       <HiQrcode className="mr-2 h-5 w-5 text-gray-600" />
                       QRコードのみダウンロード
                     </h2>
-
                     {/* QrCodeGenerator - URLスラグ入力部分を非表示 */}
                     <QrCodeGenerator
                       profileUrl={getProfileUrl()}
@@ -361,7 +324,6 @@ export default function CorporateMemberSharePage() {
                 )}
               </div>
             </div>
-
             {/* 共有のヒント */}
             <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold mb-4 flex items-center text-[#1E3A8A]">
@@ -369,7 +331,6 @@ export default function CorporateMemberSharePage() {
                 共有のヒント
               </h2>
               <p className="text-sm text-gray-600 mb-4">効果的なプロフィール共有のためのヒント:</p>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div className="border rounded-md p-4" style={{ borderColor: '#1E3A8A30' }}>
                   <h3 className="font-medium mb-2 flex items-center">
@@ -382,7 +343,6 @@ export default function CorporateMemberSharePage() {
                     <li>• ビジネスカードやメール署名に追加する</li>
                   </ul>
                 </div>
-
                 <div className="border rounded-md p-4" style={{ borderColor: '#1E3A8A30' }}>
                   <h3 className="font-medium mb-2 flex items-center">
                     <HiQrcode className="mr-2 h-4 w-4 text-[#1E3A8A]" />
@@ -395,7 +355,6 @@ export default function CorporateMemberSharePage() {
                   </ul>
                 </div>
               </div>
-
               <div
                 className="mt-6 rounded-md p-4"
                 style={{

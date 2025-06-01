@@ -3,12 +3,10 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
 import React from 'react';
 import Link from 'next/link';
-
 export const metadata: Metadata = {
   title: 'ビイアルファ株式会社 | Share',
   description: 'Shareを運営するビイアルファ株式会社についての情報です。',
 };
-
 export default function CompanyAboutPage() {
   return (
     <PageLayout
@@ -95,7 +93,6 @@ export default function CompanyAboutPage() {
             </tbody>
           </table>
         </section>
-
         <section>
           <h2 className="text-xl font-semibold mb-4">企業理念</h2>
           <p className="mb-4 text-justify">

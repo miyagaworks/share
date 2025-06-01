@@ -1,6 +1,5 @@
 // components/forms/ProfileForm.tsx
 'use client';
-
 import { useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -14,7 +13,6 @@ import type { User, Profile } from '@prisma/client';
 import { updateProfile } from '@/actions/profile';
 import { ProfileUpdateData } from '@/types/user';
 import { z } from 'zod';
-
 // 拡張されたProfileSchemaを定義
 const ExtendedProfileSchema = ProfileSchema.extend({
   // 姓名とフリガナを分離
@@ -37,18 +35,14 @@ const ExtendedProfileSchema = ProfileSchema.extend({
     .nullable(),
   companyLabel: z.string().optional().nullable(),
 });
-
 type FormData = z.infer<typeof ExtendedProfileSchema>;
-
 interface ProfileFormProps {
   user: User & { profile?: Profile | null };
 }
-
 export function ProfileForm({ user }: ProfileFormProps) {
   const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [image, setImage] = useState<string | null>(user.image || null);
-
   // 名前とフリガナを分割して初期値を設定
   const splitName = () => {
     if (user.lastName && user.firstName) {
@@ -73,7 +67,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
     }
     return { lastName: '', firstName: '' };
   };
-
   // フリガナも同様に分割
   const splitNameKana = () => {
     if (user.lastNameKana && user.firstNameKana) {
@@ -96,10 +89,8 @@ export function ProfileForm({ user }: ProfileFormProps) {
     }
     return { lastNameKana: '', firstNameKana: '' };
   };
-
   const { lastName, firstName } = splitName();
   const { lastNameKana, firstNameKana } = splitNameKana();
-
   const {
     register,
     handleSubmit,
@@ -119,28 +110,23 @@ export function ProfileForm({ user }: ProfileFormProps) {
       companyLabel: (user as unknown as { companyLabel?: string | null }).companyLabel || '会社HP',
     },
   });
-
   const onSubmit = async (data: FormData) => {
     try {
       setIsPending(true);
-
       // 会社URLの処理
       let processedCompanyUrl = data.companyUrl?.trim() || null;
       if (processedCompanyUrl && !/^https?:\/\//i.test(processedCompanyUrl)) {
         processedCompanyUrl = `https://${processedCompanyUrl}`;
       }
-
       // 姓名とフリガナを結合して互換性のある形式にする
       const name =
         data.lastName && data.firstName
           ? `${data.lastName} ${data.firstName}`
           : data.lastName || data.firstName || undefined;
-
       const nameKana =
         data.lastNameKana && data.firstNameKana
           ? `${data.lastNameKana} ${data.firstNameKana}`
           : data.lastNameKana || data.firstNameKana || undefined;
-
       // 画像が変更されていたら、imageも送信
       const profileData: ProfileUpdateData = {
         // 分割されたフィールド
@@ -159,23 +145,18 @@ export function ProfileForm({ user }: ProfileFormProps) {
         companyLabel: data.companyLabel,
         image: image !== user.image ? image : undefined,
       };
-
       const response = await updateProfile(profileData); // 適切な型でanyを使用しない
-
       if (response.error) {
         throw new Error(response.error);
       }
-
       toast.success('プロフィールを更新しました');
       router.refresh();
     } catch (error) {
       toast.error('プロフィールの更新に失敗しました');
-      console.error(error);
     } finally {
       setIsPending(false);
     }
   };
-
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
       <div className="space-y-4">
@@ -189,7 +170,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
             クリックして画像をアップロード（JPG, PNG, 最大1MB）
           </p>
         </div>
-
         {/* 姓名を分割したフィールド */}
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -211,7 +191,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
             />
           </div>
         </div>
-
         <div>
           <Input
             label="名前（英語/ローマ字）"
@@ -221,7 +200,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
             disabled={isPending}
           />
         </div>
-
         {/* フリガナ入力欄も姓名分離 */}
         <div className="grid grid-cols-2 gap-4">
           <div>
@@ -246,7 +224,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
         <p className="text-xs text-muted-foreground mt-1">
           スマートフォンの連絡先に登録する際のフリガナです。
         </p>
-
         {/* 残りのフィールドは変更なし */}
         <div>
           <label className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70">
@@ -262,7 +239,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
             <p className="text-sm text-destructive mt-1">{errors.bio.message}</p>
           )}
         </div>
-
         <div>
           <Input
             label="電話番号"
@@ -272,7 +248,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
             disabled={isPending}
           />
         </div>
-
         <div>
           <Input
             label="会社/組織名"
@@ -282,7 +257,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
             disabled={isPending}
           />
         </div>
-
         <div>
           <Input
             label="会社/組織のWebサイトURL"
@@ -292,7 +266,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
             disabled={isPending}
           />
         </div>
-
         <div>
           <Input
             label="会社/組織のリンク表示名"
@@ -306,7 +279,6 @@ export function ProfileForm({ user }: ProfileFormProps) {
           </p>
         </div>
       </div>
-
       <Button type="submit" disabled={isPending} className="w-full">
         {isPending ? '更新中...' : 'プロフィールを更新'}
       </Button>

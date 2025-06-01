@@ -3,13 +3,11 @@ import React, { memo, useMemo } from 'react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useOptimizedActivity } from '@/hooks/useOptimizedActivity';
 import { formatRelativeTime } from '@/lib/utils';
-
 interface OptimizedActivityFeedProps {
   limit?: number;
   className?: string;
   autoRefresh?: boolean;
 }
-
 // アクションアイコンマップをコンポーネント外で定義
 const actionIconMap: Record<string, string> = {
   create_user: '👤+',
@@ -23,7 +21,6 @@ const actionIconMap: Record<string, string> = {
   logout: '🔒',
   invite_user: '✉️',
 };
-
 // 個別のアクティビティアイテムコンポーネント
 const ActivityItem = memo<{
   activity: {
@@ -35,9 +32,7 @@ const ActivityItem = memo<{
   };
 }>(({ activity }) => {
   const icon = useMemo(() => actionIconMap[activity.action] || '📝', [activity.action]);
-
   const timeText = useMemo(() => formatRelativeTime(activity.createdAt), [activity.createdAt]);
-
   return (
     <div className="flex p-2 hover:bg-gray-50 rounded-md">
       <div className="mr-3 text-lg">{icon}</div>
@@ -51,9 +46,7 @@ const ActivityItem = memo<{
     </div>
   );
 });
-
 ActivityItem.displayName = 'ActivityItem';
-
 export const OptimizedActivityFeed = memo<OptimizedActivityFeedProps>(
   ({ limit = 5, className = '', autoRefresh = false }) => {
     const {
@@ -66,14 +59,12 @@ export const OptimizedActivityFeed = memo<OptimizedActivityFeedProps>(
       autoRefresh,
       refreshInterval: 5 * 60 * 1000, // 5分
     });
-
     const handleRefresh = useMemo(
       () => () => {
         refetch();
       },
       [refetch],
     );
-
     if (isLoading) {
       return (
         <div className="flex justify-center items-center py-4">
@@ -81,7 +72,6 @@ export const OptimizedActivityFeed = memo<OptimizedActivityFeedProps>(
         </div>
       );
     }
-
     if (error) {
       return (
         <div className="bg-red-50 border border-red-200 rounded-md p-3 text-center text-red-600">
@@ -95,7 +85,6 @@ export const OptimizedActivityFeed = memo<OptimizedActivityFeedProps>(
         </div>
       );
     }
-
     return (
       <div className={className}>
         <div className="mb-3 flex justify-between items-center">
@@ -121,7 +110,6 @@ export const OptimizedActivityFeed = memo<OptimizedActivityFeedProps>(
             更新
           </button>
         </div>
-
         {activities.length === 0 ? (
           <div className="text-center text-gray-500 py-4">活動データはありません</div>
         ) : (
@@ -135,5 +123,4 @@ export const OptimizedActivityFeed = memo<OptimizedActivityFeedProps>(
     );
   },
 );
-
 OptimizedActivityFeed.displayName = 'OptimizedActivityFeed';

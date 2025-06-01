@@ -1,6 +1,5 @@
 // app/dashboard/corporate-member/links/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -9,7 +8,6 @@ import { Spinner } from '@/components/ui/Spinner';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { CorporateSnsIntegration } from '@/components/corporate/CorporateSnsIntegration';
 import { MemberSnsManager } from '@/components/corporate/MemberSnsManager';
-
 // SNSリンクの型定義
 interface SnsLink {
   id: string;
@@ -18,12 +16,10 @@ interface SnsLink {
   url: string;
   displayOrder: number;
 }
-
 // 法人SNSリンクの型定義
 interface CorporateSnsLink extends SnsLink {
   isRequired: boolean;
 }
-
 // カスタムリンクの型定義
 interface CustomLink {
   id: string;
@@ -31,7 +27,6 @@ interface CustomLink {
   url: string;
   displayOrder: number;
 }
-
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -39,14 +34,12 @@ interface TenantData {
   primaryColor: string | null;
   secondaryColor: string | null;
 }
-
 interface CorporatePlatformUrls {
   [key: string]: {
     username: string | null;
     url: string;
   };
 }
-
 interface CorporateSnsLink {
   id: string;
   platform: string;
@@ -56,12 +49,10 @@ interface CorporateSnsLink {
   isRequired: boolean;
   description: string | null;
 }
-
 export default function CorporateMemberLinksPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const searchParams = useSearchParams();
-
   const [isLoading, setIsLoading] = useState(true);
   const [corporateSnsLinks, setCorporateSnsLinks] = useState<CorporateSnsLink[]>([]);
   const [personalSnsLinks, setPersonalSnsLinks] = useState<SnsLink[]>([]);
@@ -69,58 +60,44 @@ export default function CorporateMemberLinksPage() {
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [corporatePlatformUrls, setCorporatePlatformUrls] = useState<CorporatePlatformUrls>({});
-
   // ここに挿入 - 個人SNSリンク更新時のハンドラ
   const handleSnsLinkUpdate = (updatedLinks: SnsLink[]) => {
     setPersonalSnsLinks(updatedLinks);
     // 必要に応じてここでページ全体のリロードなども可能
   };
-
   // 初期データ取得
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session) {
       router.push('/auth/signin');
       return;
     }
-
     const fetchData = async () => {
       try {
         setIsLoading(true);
-
         // APIを並列に呼び出し
         const [profileResponse, linksResponse, corporateSnsResponse] = await Promise.all([
           fetch('/api/corporate-profile'),
           fetch('/api/corporate-member/links'),
           fetch('/api/corporate/sns'), // 法人共通SNS情報を取得
         ]);
-
         // 各レスポンスを処理
         if (!profileResponse.ok) {
           throw new Error('法人プロフィール情報の取得に失敗しました');
         }
-
         if (!linksResponse.ok) {
           throw new Error('リンク情報の取得に失敗しました');
         }
-
         if (!corporateSnsResponse.ok) {
           throw new Error('法人共通SNS情報の取得に失敗しました');
         }
-
         const profileData = await profileResponse.json();
         const linksData = await linksResponse.json();
-        console.log('リンクデータ:', JSON.stringify(linksData, null, 2));
-
         const corporateSnsData = await corporateSnsResponse.json();
-        console.log('法人SNSデータ:', JSON.stringify(corporateSnsData, null, 2));
-        
         setTenantData(profileData.tenant);
         setCorporateSnsLinks(linksData.corporateSnsLinks || []);
         setPersonalSnsLinks(linksData.personalSnsLinks);
         setCustomLinks(linksData.customLinks);
-
         // 法人共通SNSのURLマップを作成
         const urlMap: CorporatePlatformUrls = {};
         (corporateSnsData.snsLinks as CorporateSnsLink[]).forEach((link) => {
@@ -130,19 +107,15 @@ export default function CorporateMemberLinksPage() {
           };
         });
         setCorporatePlatformUrls(urlMap);
-
         setError(null);
       } catch (err) {
-        console.error('データ取得エラー:', err);
         setError('リンク情報の取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, [session, status, router]);
-
   // URL上のハッシュフラグメントを処理
   useEffect(() => {
     // URL上のハッシュフラグメントをチェック
@@ -157,7 +130,6 @@ export default function CorporateMemberLinksPage() {
       }
     }
   }, [searchParams]);
-
   // テナントデータを変換して渡す
   const adjustedTenantData = tenantData
     ? {
@@ -166,7 +138,6 @@ export default function CorporateMemberLinksPage() {
         corporateSecondary: tenantData.secondaryColor || 'var(--color-corporate-secondary)',
       }
     : null;
-
   return (
     <CorporateMemberGuard>
       <div className="space-y-6 corporate-theme">
@@ -179,7 +150,6 @@ export default function CorporateMemberLinksPage() {
             </p>
           </div>
         </div>
-
         {isLoading ? (
           <div className="flex flex-col items-center justify-center min-h-[400px]">
             <Spinner size="lg" />
@@ -203,7 +173,6 @@ export default function CorporateMemberLinksPage() {
               personalSnsLinks={personalSnsLinks}
               tenantData={adjustedTenantData}
             />
-
             {/* 個人SNS管理コンポーネント */}
             <MemberSnsManager
               personalSnsLinks={personalSnsLinks}

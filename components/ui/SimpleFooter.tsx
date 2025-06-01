@@ -1,9 +1,7 @@
 // components/ui/SimpleFooter.tsx
 import React from 'react';
-
 export function SimpleFooter() {
   const currentYear = new Date().getFullYear();
-
   return (
     <footer className="bg-white py-6">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -14,5 +12,4 @@ export function SimpleFooter() {
     </footer>
   );
 }
-
 export default SimpleFooter;

@@ -1,18 +1,16 @@
 // app/api/user/permanent-plan-type/route.ts
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { PermanentPlanType, PLAN_TYPE_DISPLAY_NAMES } from '@/lib/corporateAccess';
-
 // プラン種別ごとの機能・制限を定義
 interface PlanFeatures {
   maxUsers: number;
   allowedFeatures: string[];
   restrictions: string[];
 }
-
 // プラン種別ごとの機能・制限マッピング
 const PLAN_FEATURES: Record<PermanentPlanType, PlanFeatures> = {
   [PermanentPlanType.PERSONAL]: {
@@ -54,7 +52,6 @@ const PLAN_FEATURES: Record<PermanentPlanType, PlanFeatures> = {
     restrictions: ['最大50名までのユーザー登録に制限されます'],
   },
 };
-
 export async function GET() {
   try {
     // セッション認証チェック
@@ -62,7 +59,6 @@ export async function GET() {
     if (!session || !session.user?.id) {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
-
     // ユーザーが存在するか確認（metadataを削除）
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -71,19 +67,15 @@ export async function GET() {
         // metadataテーブルは存在しないので削除
       },
     });
-
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
-
     // 永久利用権ユーザーでない場合
     if (user.subscriptionStatus !== 'permanent') {
       return NextResponse.json({ isPermanent: false });
     }
-
     // 現在はプラン種別情報がないため、デフォルト値を返す
     const planType = PermanentPlanType.PERSONAL;
-
     // 拡張された情報を返す
     return NextResponse.json({
       isPermanent: true,
@@ -94,7 +86,7 @@ export async function GET() {
       restrictions: PLAN_FEATURES[planType].restrictions,
     });
   } catch (error) {
-    console.error('永久利用権プラン取得エラー:', error);
+    logger.error('永久利用権プラン取得エラー:', error);
     return NextResponse.json({ error: '内部サーバーエラー' }, { status: 500 });
   }
 }

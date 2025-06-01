@@ -1,40 +1,32 @@
 // components/dashboard/ShareOptionClient.tsx
 'use client';
-
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { FaLink, FaFacebook, FaLine } from 'react-icons/fa';
 import { RiTwitterXFill } from 'react-icons/ri';
 import { HiMail } from 'react-icons/hi';
-
 interface ShareOptionClientProps {
   profileUrl: string;
 }
-
 export function ShareOptionClient({ profileUrl }: ShareOptionClientProps) {
   const [isCopied, setIsCopied] = useState(false);
-
   const handleCopyUrl = async () => {
     try {
       await navigator.clipboard.writeText(profileUrl);
       setIsCopied(true);
       toast.success('URLをコピーしました');
-
       // 2秒後にコピー状態をリセット
       setTimeout(() => {
         setIsCopied(false);
       }, 2000);
     } catch (error) {
       toast.error('URLのコピーに失敗しました');
-      console.error('Copy failed:', error);
     }
   };
-
   const handleShare = (platform: string) => {
     let shareUrl = '';
     const text = '私のプロフィールをチェックしてください！';
-
     switch (platform) {
       case 'line':
         shareUrl = `https://social-plugins.line.me/lineit/share?url=${encodeURIComponent(profileUrl)}`;
@@ -51,10 +43,8 @@ export function ShareOptionClient({ profileUrl }: ShareOptionClientProps) {
       default:
         return;
     }
-
     window.open(shareUrl, '_blank', 'noopener,noreferrer');
   };
-
   return (
     <div className="space-y-4">
       <Button
@@ -64,7 +54,6 @@ export function ShareOptionClient({ profileUrl }: ShareOptionClientProps) {
         <FaLink className="h-4 w-4" />
         {isCopied ? 'コピーしました！' : 'URLをコピー'}
       </Button>
-
       <div className="grid grid-cols-4 gap-2">
         <Button variant="outline" className="p-2 h-auto" onClick={() => handleShare('line')}>
           <FaLine className="h-5 w-5" />

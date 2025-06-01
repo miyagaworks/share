@@ -1,6 +1,5 @@
 // app/dashboard/share/page.tsx (更新版)
 'use client';
-
 import { Suspense, useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -10,7 +9,6 @@ import { ShareOptionClient } from '@/components/dashboard/ShareOptionClient';
 import { QrCodeClient } from '@/components/dashboard/QrCodeClient';
 import { PersonalShareSettings } from '@/components/dashboard/PersonalShareSettings';
 import { HiShare, HiLink, HiQrcode, HiExclamation, HiExternalLink, HiCog } from 'react-icons/hi';
-
 export default function SharePage() {
   return (
     <div className="space-y-6">
@@ -23,14 +21,12 @@ export default function SharePage() {
           </p>
         </div>
       </div>
-
       <Suspense fallback={<SharePageSkeleton />}>
         <SharePageContent />
       </Suspense>
     </div>
   );
 }
-
 // 共有設定の型定義
 interface ShareSettings {
   isPublic: boolean;
@@ -38,7 +34,6 @@ interface ShareSettings {
   views: number;
   lastAccessed: string | null;
 }
-
 function SharePageContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -46,56 +41,45 @@ function SharePageContent() {
   const [shareSettings, setShareSettings] = useState<ShareSettings | null>(null);
   const [hasProfile, setHasProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   // データ取得
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session) {
       router.push('/auth/signin');
       return;
     }
-
     const fetchData = async () => {
       try {
         setIsLoading(true);
-
         // 共有設定情報を取得
         const response = await fetch('/api/profile/share');
         if (!response.ok) {
           throw new Error('共有設定の取得に失敗しました');
         }
-
         const data = await response.json();
         setShareSettings(data.shareSettings);
         setHasProfile(data.hasProfile);
         setError(null);
       } catch (err) {
-        console.error('データ取得エラー:', err);
         setError('データの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchData();
   }, [session, status, router]);
-
   // ベースURLの取得
   const getBaseUrl = () => {
     return typeof window !== 'undefined' ? window.location.origin : '';
   };
-
   // プロフィールURLの生成
   const getProfileUrl = () => {
     const baseUrl = getBaseUrl();
     return `${baseUrl}/${shareSettings?.slug || ''}`;
   };
-
   if (isLoading) {
     return <SharePageSkeleton />;
   }
-
   if (error) {
     return (
       <div className="rounded-lg border border-red-200 bg-red-50 p-6">
@@ -109,7 +93,6 @@ function SharePageContent() {
       </div>
     );
   }
-
   if (!shareSettings) {
     return (
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
@@ -129,7 +112,6 @@ function SharePageContent() {
       </div>
     );
   }
-
   return (
     <div className="grid gap-6 lg:grid-cols-2">
       {/* 左側: 共有設定 */}
@@ -141,13 +123,11 @@ function SharePageContent() {
         <p className="text-sm text-muted-foreground mb-6 text-justify">
           プロフィールの公開範囲とカスタムURLを設定します
         </p>
-
         <PersonalShareSettings
           initialValues={shareSettings}
           baseUrl={getBaseUrl()}
           isLoading={isLoading}
         />
-
         {/* URLコピーセクション - 設定が完了している場合のみ表示 */}
         {hasProfile && shareSettings?.slug && shareSettings.isPublic && (
           <div className="mt-8 border-t border-gray-200 pt-6">
@@ -165,7 +145,6 @@ function SharePageContent() {
           </div>
         )}
       </div>
-
       {/* 右側: QRコード生成 */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex items-center mb-4">
@@ -175,7 +154,6 @@ function SharePageContent() {
         <p className="text-sm text-muted-foreground mb-4 text-justify">
           プロフィールのQRコードを生成して共有できます。
         </p>
-
         {hasProfile && shareSettings?.slug && shareSettings.isPublic ? (
           <>
             {/* QRコードデザイナーボタン - 上部に移動 */}
@@ -189,21 +167,17 @@ function SharePageContent() {
                 <HiExternalLink className="ml-2 h-4 w-4" />
               </Link>
             </div>
-
             {/* 区切り線 */}
             <div className="border-t border-gray-200 my-6"></div>
-
             {/* QRコードのみダウンロードのタイトル - 追加 */}
             <h2 className="text-lg font-semibold mb-4 flex items-center">
               <HiQrcode className="mr-2 h-5 w-5 text-gray-600" />
               QRコードのみダウンロード
             </h2>
-
             <p className="text-sm text-muted-foreground mb-4 text-justify">
               このQRコードをスキャンすると、あなたのプロフィールページにアクセスできます。
               読み取りやすくするために、黒または濃い色を選択してください。
             </p>
-
             <QrCodeClient profileUrl={getProfileUrl()} />
           </>
         ) : (
@@ -219,7 +193,6 @@ function SharePageContent() {
     </div>
   );
 }
-
 function SharePageSkeleton() {
   return (
     <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">

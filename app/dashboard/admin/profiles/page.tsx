@@ -1,6 +1,5 @@
 // app/dashboard/admin/profiles/page.tsx
 'use client';
-
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -20,7 +19,6 @@ import {
 } from 'react-icons/hi';
 import Image from 'next/image';
 import QRCode from 'qrcode';
-
 // ユーザープロフィール情報の型定義
 interface UserProfileData {
   id: string;
@@ -59,7 +57,6 @@ interface UserProfileData {
     name: string;
   } | null;
 }
-
 // QRコードページの型定義
 interface QRCodePageData {
   id: string;
@@ -68,7 +65,6 @@ interface QRCodePageData {
   primaryColor: string;
   lastAccessed: string | null;
 }
-
 // 並び替えのタイプ
 type SortType =
   | 'created_asc'
@@ -79,7 +75,6 @@ type SortType =
   | 'email_desc'
   | 'views_desc'
   | 'views_asc';
-
 export default function AdminProfilesPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -89,14 +84,12 @@ export default function AdminProfilesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [sortType, setSortType] = useState<SortType>('views_desc');
-
   // モーダル関連の状態
   const [selectedUser, setSelectedUser] = useState<UserProfileData | null>(null);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrCodeDataUrl, setQrCodeDataUrl] = useState<string>('');
   const [selectedQRCode, setSelectedQRCode] = useState<QRCodePageData | null>(null);
-
   // ユーザープロフィール一覧の取得
   const fetchUsers = useCallback(async () => {
     setLoading(true);
@@ -106,17 +99,14 @@ export default function AdminProfilesPage() {
         const data = await response.json();
         setUsers(data.users || []);
       } else {
-        console.error('プロファイル一覧取得エラー');
         toast.error('プロファイル一覧の取得に失敗しました');
       }
     } catch (error) {
-      console.error('プロファイル一覧取得エラー:', error);
       toast.error('プロファイル情報の取得中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
   }, []);
-
   // 管理者チェック
   useEffect(() => {
     const checkAdminAccess = async () => {
@@ -124,11 +114,9 @@ export default function AdminProfilesPage() {
         router.push('/auth/signin');
         return;
       }
-
       try {
         const response = await fetch('/api/admin/access');
         const data = await response.json();
-
         if (data.isSuperAdmin) {
           setIsAdmin(true);
           await fetchUsers();
@@ -136,14 +124,11 @@ export default function AdminProfilesPage() {
           router.push('/dashboard');
         }
       } catch (error) {
-        console.error('管理者チェックエラー:', error);
         router.push('/dashboard');
       }
     };
-
     checkAdminAccess();
   }, [session, router, fetchUsers]);
-
   // 検索とフィルタリング
   useEffect(() => {
     const filtered = users.filter(
@@ -153,7 +138,6 @@ export default function AdminProfilesPage() {
         user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.company?.toLowerCase().includes(searchTerm.toLowerCase()),
     );
-
     // 並び替え
     filtered.sort((a, b) => {
       switch (sortType) {
@@ -185,32 +169,26 @@ export default function AdminProfilesPage() {
           return 0;
       }
     });
-
     setFilteredUsers(filtered);
   }, [users, searchTerm, sortType]);
-
   // 並び替え変更
   const handleSort = (type: SortType) => {
     setSortType(type);
   };
-
   // URLをコピー
   const copyUrl = (url: string, type: string) => {
     navigator.clipboard.writeText(url);
     toast.success(`${type}URLをコピーしました`);
   };
-
   // プロフィール詳細を表示
   const showProfileDetails = (user: UserProfileData) => {
     setSelectedUser(user);
     setShowProfileModal(true);
   };
-
   // QRコード詳細を表示
   const showQRDetails = async (user: UserProfileData, qrCode: QRCodePageData) => {
     setSelectedUser(user);
     setSelectedQRCode(qrCode);
-
     // QRコードを生成
     try {
       const qrUrl = `${window.location.origin}/qr/${qrCode.slug}`;
@@ -225,11 +203,9 @@ export default function AdminProfilesPage() {
       setQrCodeDataUrl(qrDataUrl);
       setShowQRModal(true);
     } catch (error) {
-      console.error('QRコード生成エラー:', error);
       toast.error('QRコードの生成に失敗しました');
     }
   };
-
   // QRコードをダウンロード
   const downloadQRCode = () => {
     if (qrCodeDataUrl && selectedQRCode && selectedUser) {
@@ -239,20 +215,17 @@ export default function AdminProfilesPage() {
       link.click();
     }
   };
-
   // 日付フォーマット
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
     return new Date(dateString).toLocaleDateString('ja-JP');
   };
-
   // 合計閲覧数を計算
   const getTotalViews = (user: UserProfileData) => {
     const profileViews = user.profile?.views || 0;
     const qrViews = user.qrCodePages?.reduce((sum, qr) => sum + qr.views, 0) || 0;
     return profileViews + qrViews;
   };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -263,11 +236,9 @@ export default function AdminProfilesPage() {
       </div>
     );
   }
-
   if (!isAdmin) {
     return null;
   }
-
   return (
     <div className="max-w-7xl mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
@@ -275,7 +246,6 @@ export default function AdminProfilesPage() {
           <HiUsers className="h-6 w-6 text-blue-600 mr-3" />
           <h1 className="text-2xl font-bold">プロフィール・QRコード管理</h1>
         </div>
-
         {/* 検索・操作エリア */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <div className="relative w-full sm:w-64">
@@ -290,7 +260,6 @@ export default function AdminProfilesPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
           <div className="flex space-x-2">
             {/* 並び替えドロップダウン */}
             <div className="relative">
@@ -309,14 +278,12 @@ export default function AdminProfilesPage() {
                 <option value="email_desc">メール (Z→A)</option>
               </select>
             </div>
-
             <Button onClick={fetchUsers} variant="outline">
               <HiRefresh className="mr-2 h-4 w-4" />
               更新
             </Button>
           </div>
         </div>
-
         {/* プロフィール一覧テーブル */}
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
@@ -370,7 +337,6 @@ export default function AdminProfilesPage() {
                       </div>
                     </div>
                   </td>
-
                   <td className="py-4 px-4 whitespace-nowrap">
                     {user.profile && user.profile.isPublic ? (
                       <div className="space-y-1">
@@ -388,7 +354,6 @@ export default function AdminProfilesPage() {
                       </span>
                     )}
                   </td>
-
                   <td className="py-4 px-4 whitespace-nowrap">
                     {user.qrCodePages && user.qrCodePages.length > 0 ? (
                       <div className="space-y-1">
@@ -407,13 +372,11 @@ export default function AdminProfilesPage() {
                       </span>
                     )}
                   </td>
-
                   <td className="py-4 px-4 whitespace-nowrap text-center">
                     <span className="text-lg font-semibold text-gray-900">
                       {getTotalViews(user)}
                     </span>
                   </td>
-
                   <td className="py-4 px-4 whitespace-nowrap text-center">
                     <div className="flex items-center justify-center space-x-2">
                       {/* プロフィール確認 */}
@@ -442,7 +405,6 @@ export default function AdminProfilesPage() {
                           </Button>
                         </>
                       )}
-
                       {/* QRコード確認 */}
                       {user.qrCodePages && user.qrCodePages.length > 0 && (
                         <div className="relative group">
@@ -509,14 +471,12 @@ export default function AdminProfilesPage() {
             </tbody>
           </table>
         </div>
-
         {filteredUsers.length === 0 && (
           <div className="text-center py-6">
             <p className="text-gray-500">該当するユーザーが見つかりません</p>
           </div>
         )}
       </div>
-
       {/* プロフィール詳細モーダル */}
       {showProfileModal && selectedUser && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -530,7 +490,6 @@ export default function AdminProfilesPage() {
                 <HiX className="h-6 w-6" />
               </button>
             </div>
-
             <div className="p-6">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* 基本情報 */}
@@ -558,7 +517,6 @@ export default function AdminProfilesPage() {
                     </div>
                   </div>
                 </div>
-
                 {/* プロフィール情報 */}
                 <div>
                   <h4 className="font-medium text-gray-900 mb-3">プロフィール情報</h4>
@@ -601,7 +559,6 @@ export default function AdminProfilesPage() {
                   </div>
                 </div>
               </div>
-
               {/* 自己紹介 */}
               {selectedUser.bio && (
                 <div className="mt-6">
@@ -609,7 +566,6 @@ export default function AdminProfilesPage() {
                   <p className="text-sm text-gray-600 whitespace-pre-wrap">{selectedUser.bio}</p>
                 </div>
               )}
-
               {/* SNSリンク */}
               {selectedUser.snsLinks && selectedUser.snsLinks.length > 0 && (
                 <div className="mt-6">
@@ -631,7 +587,6 @@ export default function AdminProfilesPage() {
                   </div>
                 </div>
               )}
-
               {/* アクションボタン */}
               <div className="mt-6 flex justify-end space-x-3">
                 {selectedUser.profile && selectedUser.profile.isPublic && (
@@ -666,7 +621,6 @@ export default function AdminProfilesPage() {
           </div>
         </div>
       )}
-
       {/* QRコード詳細モーダル */}
       {showQRModal && selectedUser && selectedQRCode && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -680,7 +634,6 @@ export default function AdminProfilesPage() {
                 <HiX className="h-6 w-6" />
               </button>
             </div>
-
             <div className="p-6">
               {/* QRコード画像 */}
               <div className="text-center mb-6">
@@ -694,7 +647,6 @@ export default function AdminProfilesPage() {
                   />
                 )}
               </div>
-
               {/* QRコード情報 */}
               <div className="space-y-3 text-sm">
                 <div>
@@ -728,7 +680,6 @@ export default function AdminProfilesPage() {
                   {formatDate(selectedQRCode.lastAccessed)}
                 </div>
               </div>
-
               {/* アクションボタン */}
               <div className="mt-6 flex justify-end space-x-3">
                 <Button

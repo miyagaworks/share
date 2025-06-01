@@ -2,7 +2,6 @@
 import React from 'react';
 import { FormStep } from '../types';
 import { HiEmojiHappy, HiLightBulb, HiTag, HiAdjustments } from 'react-icons/hi';
-
 // カスタムユーザーアイコンをSVGで定義
 const CustomUserIcon = () => (
   <svg
@@ -20,7 +19,6 @@ const CustomUserIcon = () => (
     <circle cx="12" cy="7" r="4" />
   </svg>
 );
-
 // フォームのステップ定義（react-iconsを使用）
 export const formSteps: FormStep[] = [
   {
@@ -49,7 +47,6 @@ export const formSteps: FormStep[] = [
     icon: <HiAdjustments />,
   },
 ];
-
 // キーワード提案の定義をシンプルに
 export const suggestedKeywords = [
   {
@@ -118,7 +115,6 @@ export const suggestedKeywords = [
     icon: '💪',
   },
 ];
-
 // 趣味アイテムの定義をシンプルに - グルメを追加
 export const hobbyItems = [
   {
@@ -182,7 +178,6 @@ export const hobbyItems = [
     icon: '🍽️',
   },
 ];
-
 // 性格特性アイテムの定義をシンプルに
 export const personalityItems = [
   {

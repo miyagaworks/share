@@ -1,6 +1,5 @@
 // app/auth/forgot-password/page.tsx
 'use client';
-
 import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
@@ -9,19 +8,15 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-
 // フォームのバリデーションスキーマ
 const ForgotPasswordSchema = z.object({
   email: z.string().email('有効なメールアドレスを入力してください'),
 });
-
 type ForgotPasswordFormData = z.infer<typeof ForgotPasswordSchema>;
-
 export default function ForgotPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
-
   const {
     register,
     handleSubmit,
@@ -33,13 +28,11 @@ export default function ForgotPasswordPage() {
     },
     mode: 'onChange', // リアルタイムバリデーション
   });
-
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
       setError(null);
       setSuccess(null);
       setIsPending(true);
-
       const response = await fetch('/api/auth/forgot-password', {
         method: 'POST',
         headers: {
@@ -47,23 +40,18 @@ export default function ForgotPasswordPage() {
         },
         body: JSON.stringify(data),
       });
-
       const responseData = await response.json();
-
       if (!response.ok) {
         setError(responseData.message || 'パスワードリセットリクエスト中にエラーが発生しました。');
         return;
       }
-
       setSuccess('パスワードリセット用のリンクをメールで送信しました。メールをご確認ください。');
     } catch (error) {
-      console.error('パスワードリセットエラー:', error);
       setError('リクエスト処理中にエラーが発生しました。');
     } finally {
       setIsPending(false);
     }
   };
-
   return (
     <div className="flex min-h-screen">
       {/* 左側：デコレーション部分 */}
@@ -86,7 +74,6 @@ export default function ForgotPasswordPage() {
           </div>
         </div>
       </div>
-
       {/* 右側：パスワードリセットフォーム */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-6 py-12 bg-white">
         <div className="w-full max-w-md">
@@ -99,7 +86,6 @@ export default function ForgotPasswordPage() {
               登録したメールアドレスを入力してください。パスワードリセット用のリンクをお送りします。
             </p>
           </div>
-
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
             {error && (
               <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200 shadow-sm">
@@ -120,7 +106,6 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
             )}
-
             {success && (
               <div className="rounded-lg bg-green-50 p-4 text-sm text-green-600 border border-green-200 shadow-sm">
                 <div className="flex items-center">
@@ -146,7 +131,6 @@ export default function ForgotPasswordPage() {
                 </div>
               </div>
             )}
-
             <div>
               <Input
                 label="メールアドレス"
@@ -158,7 +142,6 @@ export default function ForgotPasswordPage() {
                 className="bg-white shadow-sm"
               />
             </div>
-
             <div>
               <Button
                 type="submit"
@@ -199,7 +182,6 @@ export default function ForgotPasswordPage() {
               </Button>
             </div>
           </form>
-
           <div className="text-center text-sm mt-8">
             <Link
               href="/auth/signin"

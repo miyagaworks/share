@@ -1,10 +1,8 @@
 // app/error.tsx
 'use client';
-
 import { useEffect } from 'react';
 import { ErrorMessage } from '@/components/shared/ErrorMessage';
 import { logger } from '@/lib/utils/logger';
-
 export default function GlobalErrorComponent({
   error,
   reset,
@@ -16,10 +14,8 @@ export default function GlobalErrorComponent({
     // エラーをロギング
     logger.error('予期しないエラーが発生しました', error);
   }, [error]);
-
   // 本番環境ではエラーメッセージを表示しない
   const errorDetails = process.env.NODE_ENV === 'production' ? undefined : error.message;
-
   return (
     <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -29,7 +25,6 @@ export default function GlobalErrorComponent({
           onRetry={() => reset()}
           className="mb-4"
         />
-
         <div className="text-center mt-4">
           <button
             onClick={() => reset()}

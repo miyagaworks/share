@@ -1,6 +1,5 @@
 // app/dashboard/corporate/sns/page.tsx
 'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -25,16 +24,13 @@ import { CorporateSnsLink } from './types';
 import { CorporateSnsAddForm, CorporateSnsEditForm, CorporateSnsDeleteConfirm } from './components';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
-
 // ドラッグアイテムの型定義
 interface DragItem {
   id: string;
   index: number;
 }
-
 // ドラッグアイテムタイプ
 const ITEM_TYPE = 'snsLink';
-
 // ドラッグ可能なSNSリンク項目コンポーネント
 const DraggableSnsItem = ({
   link,
@@ -54,7 +50,6 @@ const DraggableSnsItem = ({
   onDragEnd: () => void;
 }) => {
   const ref = useRef<HTMLTableRowElement>(null);
-
   // ドラッグの設定
   const [{ isDragging }, drag] = useDrag({
     type: ITEM_TYPE,
@@ -67,7 +62,6 @@ const DraggableSnsItem = ({
       onDragEnd(); // ドラッグ終了時に呼び出す
     },
   });
-
   // ドロップの設定
   const [, drop] = useDrop({
     accept: ITEM_TYPE,
@@ -77,23 +71,18 @@ const DraggableSnsItem = ({
       }
       const dragIndex = item.index;
       const hoverIndex = index;
-
       // 自分自身の上にドラッグしている場合は何もしない
       if (dragIndex === hoverIndex) {
         return;
       }
-
       // ドラッグしている要素の位置を更新
       moveItem(dragIndex, hoverIndex);
-
       // 監視しているインデックスを更新
       item.index = hoverIndex;
     },
   });
-
   // ドラッグとドロップの参照を結合
   drag(drop(ref));
-
   return (
     <tr
       ref={ref}
@@ -148,7 +137,6 @@ const DraggableSnsItem = ({
         >
           <HiPencil className="h-4 w-4" />
         </Button>
-
         <Button
           variant="ghost"
           size="sm"
@@ -161,7 +149,6 @@ const DraggableSnsItem = ({
     </tr>
   );
 };
-
 // ドラッグ可能なSNSリンクカードコンポーネント（モバイル用）
 const DraggableSnsCard = ({
   link,
@@ -181,7 +168,6 @@ const DraggableSnsCard = ({
   onDragEnd: () => void;
 }) => {
   const ref = useRef<HTMLTableRowElement>(null);
-
   // ドラッグの設定
   const [{ isDragging }, drag] = useDrag({
     type: ITEM_TYPE,
@@ -194,7 +180,6 @@ const DraggableSnsCard = ({
       onDragEnd(); // ドラッグ終了時に呼び出す
     },
   });
-
   // ドロップの設定
   const [, drop] = useDrop({
     accept: ITEM_TYPE,
@@ -204,23 +189,18 @@ const DraggableSnsCard = ({
       }
       const dragIndex = item.index;
       const hoverIndex = index;
-
       // 自分自身の上にドラッグしている場合は何もしない
       if (dragIndex === hoverIndex) {
         return;
       }
-
       // ドラッグしている要素の位置を更新
       moveItem(dragIndex, hoverIndex);
-
       // 監視しているインデックスを更新
       item.index = hoverIndex;
     },
   });
-
   // ドラッグとドロップの参照を結合
   drag(drop(ref));
-
   return (
     <div
       ref={ref}
@@ -285,7 +265,6 @@ const DraggableSnsCard = ({
     </div>
   );
 };
-
 export default function CorporateSnsMangementPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -298,35 +277,28 @@ export default function CorporateSnsMangementPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
   // 法人共通SNSリンク情報を取得
   useEffect(() => {
     const fetchCorporateSnsLinks = async () => {
       if (!session?.user?.id) return;
-
       try {
         setIsLoading(true);
         const response = await fetch('/api/corporate/sns');
-
         if (!response.ok) {
           throw new Error('法人共通SNSリンク情報の取得に失敗しました');
         }
-
         const data = await response.json();
         setCorporateSnsLinks(data.snsLinks || []);
         setIsAdmin(data.isAdmin);
         setError(null);
       } catch (err) {
-        console.error('法人共通SNSリンク取得エラー:', err);
         setError('法人共通SNSリンク情報を読み込めませんでした');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchCorporateSnsLinks();
   }, [session]);
-
   // アイテムの順序を変更する関数
   const moveItem = (fromIndex: number, toIndex: number) => {
     setCorporateSnsLinks((prevLinks) => {
@@ -336,12 +308,10 @@ export default function CorporateSnsMangementPage() {
       return updatedLinks;
     });
   };
-
   // SNSリンク編集を開始
   const handleEditLink = (link: CorporateSnsLink) => {
     setEditingLink(link);
   };
-
   // SNSリンク削除確認ダイアログを表示
   const handleDeleteConfirm = (linkId: string) => {
     // 削除するリンクのオブジェクトを検索
@@ -350,18 +320,15 @@ export default function CorporateSnsMangementPage() {
       toast.error('リンクが見つかりません');
       return;
     }
-
     setDeletingLinkId(linkId);
     setIsDeleteConfirmOpen(true);
   };
-
   // 削除成功時のコールバック
   const handleDeleteSuccess = (deletedId: string) => {
     setCorporateSnsLinks(corporateSnsLinks.filter((link) => link.id !== deletedId));
     setIsDeleteConfirmOpen(false);
     setDeletingLinkId(null);
   };
-
   // SNSリンクの同期
   const handleSyncToUsers = async () => {
     try {
@@ -375,22 +342,18 @@ export default function CorporateSnsMangementPage() {
           operation: 'sync',
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'SNSリンクの同期に失敗しました');
       }
-
       const data = await response.json();
       toast.success(data.message || 'SNSリンクを同期しました');
     } catch (error) {
-      console.error('SNSリンク同期エラー:', error);
       toast.error(error instanceof Error ? error.message : 'SNSリンクの同期に失敗しました');
     } finally {
       setIsSyncing(false);
     }
   };
-
   // ドラッグ終了時に呼び出される関数
   const handleDragEnd = async () => {
     try {
@@ -405,17 +368,13 @@ export default function CorporateSnsMangementPage() {
           data: corporateSnsLinks.map((item) => item.id),
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '表示順の更新に失敗しました');
       }
-
       toast.success('SNSリンクの表示順を更新しました');
     } catch (error) {
-      console.error('表示順更新エラー:', error);
       toast.error(error instanceof Error ? error.message : '表示順の更新に失敗しました');
-
       // エラーの場合は元の順序に戻す
       const response = await fetch('/api/corporate/sns');
       if (response.ok) {
@@ -424,7 +383,6 @@ export default function CorporateSnsMangementPage() {
       }
     }
   };
-
   // 読み込み中
   if (isLoading) {
     return (
@@ -433,7 +391,6 @@ export default function CorporateSnsMangementPage() {
       </div>
     );
   }
-
   // エラー表示
   if (error) {
     return (
@@ -455,7 +412,6 @@ export default function CorporateSnsMangementPage() {
       </div>
     );
   }
-
   // 管理者権限がない場合
   if (!isAdmin) {
     return (
@@ -479,7 +435,6 @@ export default function CorporateSnsMangementPage() {
       </div>
     );
   }
-
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="space-y-6 max-w-full overflow-hidden px-2 sm:px-4 corporate-theme">
@@ -489,7 +444,6 @@ export default function CorporateSnsMangementPage() {
             <h1 className="text-2xl font-bold">法人共通SNS設定</h1>
             <p className="text-gray-500 mt-1">全社員に共通のSNSリンクを設定・管理します</p>
           </div>
-
           <div className="flex gap-2 flex-wrap">
             <Button
               variant="corporate"
@@ -519,7 +473,6 @@ export default function CorporateSnsMangementPage() {
             </Button>
           </div>
         </div>
-
         {/* SNSリンク一覧 - PC表示用テーブル */}
         {corporateSnsLinks.length > 0 ? (
           <>
@@ -566,7 +519,6 @@ export default function CorporateSnsMangementPage() {
                 </div>
               </div>
             </div>
-
             {/* SNSリンク一覧 - スマホ表示用カード */}
             <div className="block sm:hidden space-y-4 w-full">
               {corporateSnsLinks.map((link, index) => (
@@ -582,7 +534,6 @@ export default function CorporateSnsMangementPage() {
                 />
               ))}
             </div>
-
             {/* 説明セクション */}
             <div
               className="mt-6 rounded-md p-4"
@@ -625,7 +576,6 @@ export default function CorporateSnsMangementPage() {
             </Button>
           </div>
         )}
-
         {/* SNSリンク追加ダイアログ */}
         <Dialog open={isAddFormOpen} onOpenChange={setIsAddFormOpen}>
           {isAddFormOpen && (
@@ -639,7 +589,6 @@ export default function CorporateSnsMangementPage() {
             />
           )}
         </Dialog>
-
         {/* SNSリンク編集ダイアログ */}
         <Dialog open={!!editingLink} onOpenChange={(open) => !open && setEditingLink(null)}>
           {editingLink && (
@@ -657,7 +606,6 @@ export default function CorporateSnsMangementPage() {
             />
           )}
         </Dialog>
-
         {/* 削除確認ダイアログ */}
         <Dialog
           open={isDeleteConfirmOpen}

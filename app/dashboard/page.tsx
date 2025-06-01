@@ -1,6 +1,5 @@
 // app/dashboard/page.tsx
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -8,13 +7,10 @@ import { Spinner } from '@/components/ui/Spinner';
 import Link from 'next/link';
 import Image from 'next/image';
 import { HiUser, HiLink, HiColorSwatch, HiShare, HiQrcode } from 'react-icons/hi';
-
 export default function DashboardPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(true);
-  const [redirectComplete, setRedirectComplete] = useState(false);
-
   // 型定義を追加
   interface UserData {
     id: string;
@@ -26,10 +22,8 @@ export default function DashboardPage() {
       isPublic?: boolean;
     } | null;
   }
-
   const [userData, setUserData] = useState<UserData | null>(null);
   const [snsCount, setSnsCount] = useState(0);
-
   // ログイン状態と特別なユーザーのリダイレクト処理
   useEffect(() => {
     const checkUserAndRedirect = async () => {
@@ -37,61 +31,48 @@ export default function DashboardPage() {
       if (status === 'loading') {
         return;
       }
-
       // 未認証ならログインページへ
       if (!session) {
-        console.log('未認証ユーザー - ログインページへリダイレクト');
         router.push('/auth/signin');
         return;
       }
-
       // 特定の管理者メールアドレスは強制的に管理者ページへ
       if (session.user?.email === 'admin@sns-share.com') {
-        console.log('管理者ユーザーを検出、管理者ページへリダイレクト');
         router.push('/dashboard/admin');
         return;
       }
-
       // ユーザープロフィール情報を取得
       try {
         const [profileResponse, linksResponse] = await Promise.all([
-          fetch('/api/profile'),
-          fetch('/api/links'),
+          fetch('/api/profile', { 
+            cache: 'no-cache',
+            headers: {
+              'Cache-Control': 'no-cache',
+            }
+          }),
+          fetch('/api/links', { 
+            cache: 'no-cache',
+            headers: {
+              'Cache-Control': 'no-cache',
+            }
+          }),
         ]);
-
         if (profileResponse.ok) {
           const profileData = await profileResponse.json();
           setUserData(profileData.user);
-          console.log('プロフィールデータ取得:', profileData.user);
         }
-
         if (linksResponse.ok) {
           const linksData = await linksResponse.json();
           setSnsCount(linksData.snsLinks?.length || 0);
         }
       } catch (error) {
-        console.error('データ取得エラー:', error);
+        // エラー処理
       }
-
       // ダッシュボードの表示を許可
-      console.log('ダッシュボード表示の準備完了');
       setIsLoading(false);
-      setRedirectComplete(true);
     };
-
     checkUserAndRedirect();
   }, [session, status, router]);
-
-  // デバッグ用ログ
-  useEffect(() => {
-    if (session) {
-      console.log('セッション情報:', session);
-      console.log('ユーザーデータ:', userData);
-      console.log('ローディング状態:', isLoading);
-      console.log('リダイレクト完了状態:', redirectComplete);
-    }
-  }, [session, userData, isLoading, redirectComplete]);
-
   // ページの内容
   if (status === 'loading' || isLoading) {
     return (
@@ -101,12 +82,10 @@ export default function DashboardPage() {
       </div>
     );
   }
-
   // 未認証
   if (!session) {
     return null; // useEffectでリダイレクト処理済み
   }
-
   return (
     <div className="space-y-6">
       <div className="flex items-center mb-6">
@@ -115,7 +94,6 @@ export default function DashboardPage() {
           <p className="text-muted-foreground">あなたのプロフィールの概要と管理</p>
         </div>
       </div>
-
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* プロフィールカード */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
@@ -155,7 +133,6 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
-
         {/* SNSリンクカード */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="border-b border-gray-200 px-6 py-4">
@@ -178,7 +155,6 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
-
         {/* デザイン設定カード */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="border-b border-gray-200 px-6 py-4">
@@ -195,7 +171,6 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
-
         {/* 共有設定カード */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="border-b border-gray-200 px-6 py-4">
@@ -212,7 +187,6 @@ export default function DashboardPage() {
             </Link>
           </div>
         </div>
-
         {/* QRコードカード */}
         <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
           <div className="border-b border-gray-200 px-6 py-4">

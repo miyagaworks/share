@@ -1,12 +1,10 @@
 // components/layout/NotificationBell.tsx
 'use client';
-
 import React, { useState, useEffect, useRef } from 'react';
 import { HiBell } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
 import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
-
 // お知らせの型定義
 interface Notification {
   id: string;
@@ -20,7 +18,6 @@ interface Notification {
   isRead: boolean;
   createdAt: string;
 }
-
 export default function NotificationBell() {
   const [notifications, setNotifications] = useState<Notification[]>([]);
   const [unreadCount, setUnreadCount] = useState<number>(0);
@@ -29,7 +26,6 @@ export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState<boolean>(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
-
   // 初回読み込み
   useEffect(() => {
     fetchNotifications();
@@ -37,7 +33,6 @@ export default function NotificationBell() {
     const interval = setInterval(fetchNotifications, 5 * 60 * 1000);
     return () => clearInterval(interval);
   }, []);
-
   // クリックイベントハンドラを設定
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -50,13 +45,11 @@ export default function NotificationBell() {
         setIsOpen(false);
       }
     };
-
     document.addEventListener('mousedown', handleClickOutside);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
-
   // お知らせ取得
   const fetchNotifications = async () => {
     setLoading(true);
@@ -69,34 +62,25 @@ export default function NotificationBell() {
         },
         credentials: 'include', // クッキー（認証情報）を含める
       });
-
       if (!response.ok) {
         const errorData = await response.json().catch(() => ({}));
-        console.error('お知らせAPI応答エラー:', response.status, errorData);
         throw new Error(`API応答エラー: ${response.status}`);
       }
-
       const data = await response.json();
-      console.log('お知らせデータ取得成功:', data);
-
       if (!data.notifications) {
-        console.warn('お知らせデータが不正な形式です:', data);
         setNotifications([]);
         setUnreadCount(0);
         return;
       }
-
       setNotifications(data.notifications || []);
       setUnreadCount(data.unreadCount || 0);
     } catch (err) {
       const errorMessage = err instanceof Error ? err.message : '不明なエラー';
-      console.error('お知らせ取得エラー:', errorMessage);
       setError('お知らせの取得に失敗しました');
     } finally {
       setLoading(false);
     }
   };
-
   // お知らせを既読にする
   const markAsRead = async (notificationId: string) => {
     // UIを先に更新（UX向上のため）
@@ -107,7 +91,6 @@ export default function NotificationBell() {
     );
     // 未読カウントを減らす
     setUnreadCount((prev) => Math.max(0, prev - 1));
-
     try {
       const response = await fetch('/api/notifications/read', {
         method: 'POST',
@@ -116,24 +99,19 @@ export default function NotificationBell() {
         },
         body: JSON.stringify({ notificationId }),
       });
-
       if (!response.ok) {
-        console.error('既読API応答エラー:', response.status);
         // エラーが発生してもUI側の表示は変更しない（UX向上のため）
       }
     } catch (err) {
-      console.error('お知らせ既読設定エラー:', err);
       // エラーが発生してもUI側の表示は変更しない（UX向上のため）
     }
   };
-
   // お知らせクリック処理
   const handleNotificationClick = (notification: Notification) => {
     if (!notification.isRead) {
       markAsRead(notification.id);
     }
   };
-
   // お知らせの種類に応じたアイコンクラス
   const getNotificationTypeClass = (type: string) => {
     switch (type) {
@@ -149,7 +127,6 @@ export default function NotificationBell() {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   // 日付のフォーマット
   const formatDate = (dateString: string) => {
     try {
@@ -161,7 +138,6 @@ export default function NotificationBell() {
       return dateString;
     }
   };
-
   return (
     <div className="relative">
       <button
@@ -177,7 +153,6 @@ export default function NotificationBell() {
           </span>
         )}
       </button>
-
       {/* お知らせドロップダウン */}
       {isOpen && (
         <div
@@ -187,7 +162,6 @@ export default function NotificationBell() {
           <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
             <h3 className="text-sm font-semibold">お知らせ</h3>
           </div>
-
           <div className="overflow-y-auto flex-grow">
             {loading && (
               <div className="text-center py-6">
@@ -195,15 +169,12 @@ export default function NotificationBell() {
                 <p className="mt-2 text-sm text-gray-500">読み込み中...</p>
               </div>
             )}
-
             {error && <div className="px-4 py-3 text-sm text-red-500">{error}</div>}
-
             {!loading && !error && notifications.length === 0 && (
               <div className="px-4 py-6 text-center text-sm text-gray-500">
                 お知らせはありません
               </div>
             )}
-
             {!loading &&
               !error &&
               notifications.map((notification) => (
@@ -242,7 +213,6 @@ export default function NotificationBell() {
                 </div>
               ))}
           </div>
-
           <div className="px-4 py-2 bg-gray-50 border-t border-gray-200 text-right">
             <span
               onClick={fetchNotifications}
@@ -256,6 +226,5 @@ export default function NotificationBell() {
     </div>
   );
 }
-
 // 名前付きエクスポートも追加
 export { NotificationBell };

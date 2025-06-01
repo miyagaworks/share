@@ -2,13 +2,11 @@
 import React from 'react';
 import { Spinner } from '@/components/ui/Spinner';
 import { useActivityFeed } from '@/hooks/useActivityFeed';
-
 interface ActivityFeedProps {
   limit?: number;
   className?: string;
   autoRefresh?: boolean;
 }
-
 // アクションアイコンのマッピング
 function getActionIcon(action: string): string {
   switch (action) {
@@ -36,19 +34,16 @@ function getActionIcon(action: string): string {
       return '📝';
   }
 }
-
 // 日付フォーマット用の関数
 function formatRelativeTime(dateString: string): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
-
   // 経過時間を計算
   const diffSec = Math.floor(diffMs / 1000);
   const diffMin = Math.floor(diffSec / 60);
   const diffHour = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHour / 24);
-
   // 相対時間を返す
   if (diffDay > 30) {
     return `${date.getFullYear()}/${date.getMonth() + 1}/${date.getDate()}`;
@@ -62,7 +57,6 @@ function formatRelativeTime(dateString: string): string {
     return `${diffSec}秒前`;
   }
 }
-
 export function ActivityFeed({
   limit = 5,
   className = '',
@@ -73,12 +67,10 @@ export function ActivityFeed({
     autoRefresh,
     refreshInterval: 300000, // 5分ごとに更新（60秒→300秒に変更）
   });
-
   // 更新ボタンをクリックしたときの処理
   const handleRefresh = () => {
     refresh();
   };
-
   if (isLoading) {
     return (
       <div className="flex justify-center items-center py-4">
@@ -86,7 +78,6 @@ export function ActivityFeed({
       </div>
     );
   }
-
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-md p-3 text-center text-red-600">
@@ -100,7 +91,6 @@ export function ActivityFeed({
       </div>
     );
   }
-
   return (
     <div className={className}>
       <div className="mb-3 flex justify-between items-center">
@@ -126,7 +116,6 @@ export function ActivityFeed({
           更新
         </button>
       </div>
-
       {activities.length === 0 ? (
         <div className="text-center text-gray-500 py-4">活動データはありません</div>
       ) : (

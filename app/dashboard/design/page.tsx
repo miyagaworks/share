@@ -1,6 +1,5 @@
 // app/dashboard/design/page.tsx
 'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -11,7 +10,6 @@ import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import type { User } from '@prisma/client';
 import { HiColorSwatch, HiEye, HiAdjustments } from 'react-icons/hi';
-
 // UserWithProfile型を定義
 interface UserWithProfile extends User {
   profile?: {
@@ -25,7 +23,6 @@ interface UserWithProfile extends User {
     updatedAt: Date;
   } | null;
 }
-
 export default function ImprovedDesignPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -34,32 +31,25 @@ export default function ImprovedDesignPage() {
   const [error, setError] = useState<string | null>(null);
   const previewRef = useRef<HTMLDivElement>(null);
   const [shouldScroll, setShouldScroll] = useState(false);
-
   // ユーザーデータを取得する関数
   const fetchUserData = async (): Promise<UserWithProfile> => {
     try {
       const response = await fetch('/api/profile');
-
       if (!response.ok) {
         throw new Error('プロフィール情報の取得に失敗しました');
       }
-
       const data = await response.json();
       return data.user as UserWithProfile;
     } catch (error) {
-      console.error('プロフィール取得エラー:', error);
+      // エラー情報はトーストで表示
       throw error;
     }
   };
-
   // データが更新されたときに再取得する関数
   const handleUpdate = async () => {
     try {
-      console.log('🎨 [Page] handleUpdate開始');
-
       // 🚀 修正: ローディング状態にしない（プレビューの体験向上）
       // setIsLoading(true);
-
       // 🚀 修正: キャッシュ回避を強化
       const timestamp = Date.now();
       const response = await fetch(`/api/profile?_t=${timestamp}`, {
@@ -69,38 +59,24 @@ export default function ImprovedDesignPage() {
           Pragma: 'no-cache',
         },
       });
-
       if (!response.ok) {
         throw new Error('プロフィール情報の取得に失敗しました');
       }
-
       const data = await response.json();
       const userData = data.user as UserWithProfile;
-
-      console.log('🎨 [Page] 新しいユーザーデータ:', {
-        mainColor: userData.mainColor,
-        snsIconColor: userData.snsIconColor,
-        headerText: userData.headerText,
-        textColor: userData.textColor,
-      });
-
       // 🚀 修正: 状態を即座に更新
       setUser(userData);
-
       // モバイルビューでスクロールするようにフラグを設定
       if (typeof window !== 'undefined' && window.innerWidth < 1024) {
         setShouldScroll(true);
       }
-
-      console.log('🎨 [Page] handleUpdate完了');
     } catch (error) {
-      console.error('🎨 [Page] データ再取得エラー:', error);
+      // エラーはトーストで表示済み
       setError('プロフィール情報の再取得に失敗しました');
       toast.error('プロフィール情報の再取得に失敗しました');
     }
     // 🚀 修正: finally句を削除（ローディング状態を変更しないため）
   };
-
   // スクロールフラグが変更されたらスクロール実行
   useEffect(() => {
     if (shouldScroll && !isLoading) {
@@ -108,11 +84,9 @@ export default function ImprovedDesignPage() {
       const timer = setTimeout(() => {
         // プレビュー要素の存在を確認
         if (!previewRef.current) {
-          console.warn('プレビュー要素が見つかりません');
           setShouldScroll(false);
           return;
         }
-
         try {
           // 直接DOM要素を使用してスクロール
           const previewElement = document.getElementById('preview-section');
@@ -129,48 +103,39 @@ export default function ImprovedDesignPage() {
             });
           }
         } catch (e) {
-          console.error('スクロールエラー:', e);
         }
-
         // フラグをリセット
         setShouldScroll(false);
       }, 500); // 500msの遅延を設定
-
       return () => clearTimeout(timer);
     }
   }, [shouldScroll, isLoading]);
-
   // 初期データ取得
   useEffect(() => {
     if (status === 'loading') return;
-
     if (!session) {
       router.push('/auth/signin');
       return;
     }
-
     const loadUserData = async () => {
       try {
         const userData = await fetchUserData();
         setUser(userData);
       } catch (error) {
-        console.error('データ取得エラー:', error);
+        // エラー情報はトーストで表示
         setError('プロフィール情報の取得に失敗しました');
         toast.error('プロフィール情報の取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
     };
-
     loadUserData();
   }, [session, status, router]);
-
   const pageVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
     exit: { opacity: 0, y: -20, transition: { duration: 0.3 } },
   };
-
   if (isLoading) {
     return (
       <div className="space-y-6">
@@ -194,7 +159,6 @@ export default function ImprovedDesignPage() {
       </div>
     );
   }
-
   if (error || !user) {
     return (
       <div className="space-y-6">
@@ -221,7 +185,6 @@ export default function ImprovedDesignPage() {
       </div>
     );
   }
-
   return (
     <motion.div
       className="space-y-6"
@@ -239,7 +202,6 @@ export default function ImprovedDesignPage() {
           </p>
         </div>
       </div>
-
       <div className="grid gap-6 lg:grid-cols-2">
         <motion.div
           className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
@@ -256,7 +218,6 @@ export default function ImprovedDesignPage() {
           </p>
           <ImprovedDesignForm user={user} onUpdate={handleUpdate} />
         </motion.div>
-
         <motion.div
           className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
           initial={{ opacity: 0, y: 20 }}

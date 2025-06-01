@@ -1,19 +1,14 @@
 // app/page.tsx
-
 'use client';
-
 import React from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-
 export default function HomePage() {
   const router = useRouter();
-
   const handleNavigate = (path: string) => {
     router.push(path);
   };
-
   const useCases = [
     {
       title: "ビジネスシーン",
@@ -76,7 +71,6 @@ export default function HomePage() {
       ),
     },
   ];
-
   return (
     <div className="min-h-screen flex flex-col">
       {/* ヒーローセクション */}
@@ -88,7 +82,6 @@ export default function HomePage() {
             <div className="flex justify-center mb-4">
               <Image src="/logo_blue.svg" alt="Share Logo" width={90} height={90} priority />
             </div>
-
             {/* テキストロゴ */}
             <div className="text-center mb-6">
               <Image
@@ -100,7 +93,6 @@ export default function HomePage() {
               />
               <p className="mt-2 text-gray-600">シンプルにつながる、スマートにシェア。</p>
             </div>
-
             {/* CTA ボタン */}
             <div className="pt-8 space-y-4">
               <button
@@ -109,7 +101,6 @@ export default function HomePage() {
               >
                 ログイン
               </button>
-
               <button
                 onClick={() => handleNavigate('/auth/signup')}
                 className="w-full bg-white hover:bg-gray-50 text-blue-600 font-medium py-3 px-4 rounded-lg border border-blue-600 transition-all transform hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
@@ -117,7 +108,6 @@ export default function HomePage() {
                 新規登録
               </button>
             </div>
-
             {/* サービス特徴のリスト */}
             <div className="pt-12">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-justify">
@@ -137,7 +127,6 @@ export default function HomePage() {
                     <p className="text-sm text-blue-600">複数SNSを一つのプロフィールに連携</p>
                   </div>
                 </div>
-
                 <div className="p-4 rounded-lg bg-blue-50 flex items-start space-x-3">
                   <div className="rounded-full bg-blue-100 p-2 mt-1">
                     <svg
@@ -158,7 +147,6 @@ export default function HomePage() {
                     <p className="text-sm text-blue-600">スキャン一つで必要情報をすぐ交換</p>
                   </div>
                 </div>
-
                 <div className="p-4 rounded-lg bg-blue-50 flex items-start space-x-3">
                   <div className="rounded-full bg-blue-100 p-2 mt-1">
                     <svg
@@ -179,7 +167,6 @@ export default function HomePage() {
                     <p className="text-sm text-blue-600">あなた好みのデザインに変更可能</p>
                   </div>
                 </div>
-
                 <div className="p-4 rounded-lg bg-blue-50 flex items-start space-x-3">
                   <div className="rounded-full bg-blue-100 p-2 mt-1">
                     <svg
@@ -200,13 +187,11 @@ export default function HomePage() {
             </div>
           </div>
         </div>
-
         {/* 右側：デコレーション背景 */}
         <div className="hidden md:block md:w-1/2 bg-gradient-to-br from-blue-600 to-blue-800 blue-section-protection relative overflow-hidden">
           <div className="absolute inset-0 bg-blue-700 opacity-20">
             <div className="absolute inset-0 bg-pattern opacity-10"></div>
           </div>
-
           {/* 大きなロゴを背景に */}
           <div className="absolute inset-0 flex items-center justify-center opacity-10">
             <Image
@@ -217,11 +202,9 @@ export default function HomePage() {
               className="brightness-0 invert"
             />
           </div>
-
           {/* フローティング要素 */}
           <div className="absolute top-1/5 left-1/4 transform -translate-x-1/2 -translate-y-1/2 w-42 h-42 bg-white/10 backdrop-blur-sm rounded-2xl rotate-12 shadow-xl"></div>
           <div className="absolute bottom-1/5 right-1/4 transform translate-x-1/2 translate-y-1/2 w-60 h-60 bg-white/10 backdrop-blur-sm rounded-2xl -rotate-6 shadow-xl"></div>
-
           {/* コンテンツ */}
           <div className="absolute inset-0 flex flex-col justify-center items-center p-8">
             <div className="max-w-md text-center z-10">
@@ -243,7 +226,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-
       {/* ユースケースセクション */}
       <div className="pt-24 pb-16 bg-gray-50 mt-0 md:mt-0">
         <div className="container mx-auto px-4">
@@ -253,7 +235,6 @@ export default function HomePage() {
               あらゆるシーンで活躍するShare。ビジネスからプライベートまで、人とのつながりをもっとスマートに。
             </p>
           </div>
-
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {useCases.map((useCase, index) => (
               <div
@@ -278,7 +259,6 @@ export default function HomePage() {
                     <h3 className="text-xl font-bold text-gray-900">{useCase.title}</h3>
                   </div>
                   <p className="text-gray-600 mb-6 text-justify">{useCase.description}</p>
-
                   {useCase.imagePath && (
                     <div className="mt-6 rounded-lg overflow-hidden">
                       <Image
@@ -296,7 +276,6 @@ export default function HomePage() {
           </div>
         </div>
       </div>
-
       {/* フッター */}
       <footer className="py-6 bg-gray-100 mt-auto">
         <div className="container mx-auto px-4">

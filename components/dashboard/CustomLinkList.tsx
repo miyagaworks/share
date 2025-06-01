@@ -1,6 +1,5 @@
 // components/dashboard/CustomLinkList.tsx
 "use client";
-
 import { useState } from "react";
 import { DragDropContext, Droppable, Draggable, DropResult } from "@hello-pangea/dnd";
 import type { DroppableProvided, DraggableProvided } from "@hello-pangea/dnd";
@@ -10,87 +9,70 @@ import { HiLink, HiPencil, HiTrash } from "react-icons/hi";
 import { deleteCustomLink, updateCustomLinkOrder } from "@/actions/sns";
 import { CustomLinkEditForm } from "@/app/dashboard/links/components/CustomLinkEditForm";
 import type { CustomLink } from "@prisma/client";
-
 // 型キャストヘルパー - より明示的な型を使用
 const DroppableComponent = Droppable as React.ComponentType<{
     droppableId: string;
     children: (provided: DroppableProvided) => React.ReactNode;
 }>;
-
 const DraggableComponent = Draggable as React.ComponentType<{
     draggableId: string;
     index: number;
     children: (provided: DraggableProvided) => React.ReactNode;
 }>;
-
 interface CustomLinkListProps {
     links: CustomLink[];
     onUpdate: () => void;
     onEdit?: (id: string) => void;
 }
-
 export function CustomLinkList({ links, onUpdate, onEdit }: CustomLinkListProps) {
     const [items, setItems] = useState(links);
     const [isReordering, setIsReordering] = useState(false);
     const [isDeleting, setIsDeleting] = useState<string | null>(null);
     const [editingLinkId, setEditingLinkId] = useState<string | null>(null);
-
     // リンク削除ハンドラー
     const handleDelete = async (id: string) => {
         try {
             setIsDeleting(id);
             const response = await deleteCustomLink(id);
-
             if (response.error) {
                 throw new Error(response.error);
             }
-
             setItems(items.filter(item => item.id !== id));
             toast.success("カスタムリンクを削除しました");
             onUpdate();
         } catch (error) {
             toast.error("カスタムリンクの削除に失敗しました");
-            console.error(error);
         } finally {
             setIsDeleting(null);
         }
     };
-
     // 編集完了時の処理
     const handleEditSuccess = () => {
         setEditingLinkId(null);
         onUpdate();
     };
-
     // ドラッグ&ドロップ完了ハンドラー
     const handleDragEnd = async (result: DropResult) => {
         if (!result.destination) return;
-
         const reorderedItems = Array.from(items);
         const [removed] = reorderedItems.splice(result.source.index, 1);
         reorderedItems.splice(result.destination.index, 0, removed);
-
         setItems(reorderedItems);
-
         try {
             setIsReordering(true);
             const linkIds = reorderedItems.map(item => item.id);
             const response = await updateCustomLinkOrder(linkIds);
-
             if (response.error) {
                 throw new Error(response.error);
             }
-
             toast.success("表示順を更新しました");
             onUpdate();
         } catch (error) {
             toast.error("表示順の更新に失敗しました");
-            console.error(error);
         } finally {
             setIsReordering(false);
         }
     };
-
     if (items.length === 0) {
         return (
             <div className="bg-muted/30 rounded-lg p-6 text-center">
@@ -100,7 +82,6 @@ export function CustomLinkList({ links, onUpdate, onEdit }: CustomLinkListProps)
             </div>
         );
     }
-
     return (
         <DragDropContext onDragEnd={handleDragEnd}>
             <DroppableComponent droppableId="custom-links">

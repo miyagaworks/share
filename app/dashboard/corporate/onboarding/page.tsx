@@ -1,6 +1,5 @@
 // app/dashboard/corporate/onboarding/page.tsx
 'use client';
-
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -16,20 +15,17 @@ import {
   HiArrowRight,
   HiOutlineExclamation,
 } from 'react-icons/hi';
-
 interface Department {
   id: string;
   name: string;
   description: string | null;
 }
-
 interface User {
   id: string;
   name: string | null;
   email: string;
   corporateRole: string | null;
 }
-
 interface TenantData {
   id: string;
   name: string;
@@ -44,7 +40,6 @@ interface TenantData {
   departments: Department[];
   onboardingCompleted?: boolean;
 }
-
 interface OnboardingState {
   companyName: string;
   setupComplete: boolean;
@@ -55,7 +50,6 @@ interface OnboardingState {
     branding: boolean;
   };
 }
-
 export default function CorporateOnboardingPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -74,16 +68,12 @@ export default function CorporateOnboardingPage() {
   const [activeStep, setActiveStep] = useState('welcome');
   const [companyName, setCompanyName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-
   // テナント情報を取得
   useEffect(() => {
     const fetchTenantData = async () => {
       if (!session?.user?.id) return;
-
       try {
         setIsLoading(true);
-        console.log('テナント情報取得開始');
-
         // テナント情報取得API - キャッシュを無効化
         const response = await fetch('/api/corporate/tenant', {
           headers: {
@@ -92,40 +82,29 @@ export default function CorporateOnboardingPage() {
           },
           cache: 'no-store',
         });
-
         if (!response.ok) {
           throw new Error('テナント情報の取得に失敗しました');
         }
-
         const data = await response.json();
-        console.log('テナント情報取得成功:', data);
-
         // テナントデータを設定
         setTenantData({
           ...data.tenant,
           textColor: data.tenant.textColor || null,
           headerText: data.tenant.headerText || null,
         });
-
         // onboardingCompletedの値を明示的に確認する
-        console.log('onboardingCompleted flag:', data.tenant?.onboardingCompleted);
-        console.log('テナントデータ詳細:', JSON.stringify(data.tenant, null, 2));
-
         // オンボーディングが既に完了している場合はダッシュボードにリダイレクト
         // 厳密な比較 (===) ではなく、緩い比較 (==) を使用して truthy な値もチェック
         if (data.tenant?.onboardingCompleted) {
-          console.log('オンボーディングは既に完了しています。ダッシュボードにリダイレクトします。');
           // 非同期関数内でのリダイレクトをより確実にするために、少し遅延させる
           setTimeout(() => {
             window.location.href = '/dashboard/corporate';
           }, 100);
           return;
         } else {
-          console.log(
             'オンボーディングは未完了または不明な状態です。オンボーディングページを表示します。',
           );
         }
-
         // 会社名の初期値設定
         if (data.tenant?.name && !data.tenant.name.includes('の会社')) {
           setCompanyName(data.tenant.name);
@@ -135,20 +114,16 @@ export default function CorporateOnboardingPage() {
           }));
         }
       } catch (err) {
-        console.error('テナント情報取得エラー:', err);
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchTenantData();
   }, [session, router]);
-
   // オンボーディング完了時のフラグ設定関数
   const completeOnboarding = async () => {
     try {
       setIsSaving(true);
-
       // オンボーディング完了フラグを設定
       const response = await fetch('/api/corporate/settings', {
         method: 'PUT',
@@ -160,27 +135,20 @@ export default function CorporateOnboardingPage() {
           type: 'general',
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '設定の保存に失敗しました');
       }
-
-      console.log('オンボーディング完了フラグを設定しました');
-
       // ダッシュボードへリダイレクト
       router.push('/dashboard/corporate');
     } catch (error) {
-      console.error('オンボーディング完了設定エラー:', error);
       toast.error('設定の保存に失敗しました');
-
       // エラーが発生してもダッシュボードに移動
       router.push('/dashboard/corporate');
     } finally {
       setIsSaving(false);
     }
   };
-
   // ステップを完了としてマーク
   const completeStep = (step: keyof OnboardingState['steps']) => {
     setOnboardingState((prev) => ({
@@ -191,7 +159,6 @@ export default function CorporateOnboardingPage() {
       },
     }));
   };
-
   // 次のステップに進む
   const goToNextStep = () => {
     switch (activeStep) {
@@ -218,14 +185,12 @@ export default function CorporateOnboardingPage() {
         break;
     }
   };
-
   // saveCompanyInfo関数の修正
   const saveCompanyInfo = async () => {
     if (!companyName.trim()) {
       toast.error('会社名を入力してください');
       return;
     }
-
     setIsSaving(true);
     try {
       // 実際のAPI呼び出し
@@ -239,27 +204,22 @@ export default function CorporateOnboardingPage() {
           type: 'general',
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '設定の保存に失敗しました');
       }
-
       toast.success('会社情報を保存しました');
       goToNextStep();
     } catch (error) {
-      console.error('会社情報保存エラー:', error);
       toast.error('会社情報の保存に失敗しました');
     } finally {
       setIsSaving(false);
     }
   };
-
   // スキップしてダッシュボードへ
   const skipToFinish = async () => {
     try {
       setIsSaving(true);
-
       // オンボーディング完了フラグを設定
       await fetch('/api/corporate/settings', {
         method: 'PUT',
@@ -271,18 +231,13 @@ export default function CorporateOnboardingPage() {
           type: 'general',
         }),
       });
-
-      console.log('オンボーディングをスキップし、完了フラグを設定しました');
     } catch (error) {
-      console.error('オンボーディングスキップエラー:', error);
     } finally {
       setIsSaving(false);
-
       // ダッシュボードへリダイレクト
       router.push('/dashboard/corporate');
     }
   };
-
   // 読み込み中
   if (isLoading) {
     return (
@@ -291,7 +246,6 @@ export default function CorporateOnboardingPage() {
       </div>
     );
   }
-
   // テナントデータがない場合
   if (!tenantData) {
     return (
@@ -314,7 +268,6 @@ export default function CorporateOnboardingPage() {
       </div>
     );
   }
-
   return (
     <div className="w-full max-w-3xl mx-auto px-4 sm:px-6 box-border overflow-x-hidden">
       {/* ヘッダー */}
@@ -327,7 +280,6 @@ export default function CorporateOnboardingPage() {
           簡単なセットアップで、チームメンバーと共に効率的に利用を開始しましょう
         </p>
       </div>
-
       {/* 進行状況 - モバイルでは完全に最適化 */}
       <div className="mb-8 -mx-4 px-4 overflow-x-auto pb-2">
         <div className="flex justify-between items-center min-w-[280px] w-full max-w-full mb-2">
@@ -351,10 +303,8 @@ export default function CorporateOnboardingPage() {
               </div>
               <span className="text-xs mt-1 hidden sm:inline">概要</span>
             </div>
-
             {/* ライン1 */}
             <div className="h-1 w-12 sm:w-16 bg-gray-200 mx-1 sm:mx-2"></div>
-
             {/* ステップ2 */}
             <div className="flex flex-col items-center">
               <div
@@ -374,10 +324,8 @@ export default function CorporateOnboardingPage() {
               </div>
               <span className="text-xs mt-1 hidden sm:inline">会社情報</span>
             </div>
-
             {/* ライン2 */}
             <div className="h-1 w-12 sm:w-16 bg-gray-200 mx-1 sm:mx-2"></div>
-
             {/* ステップ3 */}
             <div className="flex flex-col items-center">
               <div
@@ -397,10 +345,8 @@ export default function CorporateOnboardingPage() {
               </div>
               <span className="text-xs mt-1 hidden sm:inline">招待</span>
             </div>
-
             {/* ライン3 */}
             <div className="h-1 w-12 sm:w-16 bg-gray-200 mx-1 sm:mx-2"></div>
-
             {/* ステップ4 */}
             <div className="flex flex-col items-center">
               <div
@@ -423,7 +369,6 @@ export default function CorporateOnboardingPage() {
           </div>
         </div>
       </div>
-
       {/* ステップコンテンツ */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-8 mb-6 w-full box-border">
         {/* ステップ1: ようこそ */}
@@ -433,7 +378,6 @@ export default function CorporateOnboardingPage() {
             <p className="text-gray-600 mb-6 text-justify">
               法人プランへのご登録ありがとうございます。この初期設定ウィザードでは、以下のステップを通じてチーム全体で効率的に利用を開始するための準備を行います。
             </p>
-
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 mb-6 sm:mb-8">
               <div className="border border-gray-200 rounded-lg p-4 text-center">
                 <div className="bg-blue-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
@@ -444,7 +388,6 @@ export default function CorporateOnboardingPage() {
                   貴社の基本情報を登録し、社内共有の基盤を作ります
                 </p>
               </div>
-
               <div className="border border-gray-200 rounded-lg p-4 text-center">
                 <div className="bg-green-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
                   <HiUsers className="h-6 w-6 text-green-600" />
@@ -454,7 +397,6 @@ export default function CorporateOnboardingPage() {
                   チームメンバーを招待し、情報共有を始めましょう
                 </p>
               </div>
-
               <div className="border border-gray-200 rounded-lg p-4 text-center">
                 <div className="bg-purple-100 rounded-full w-12 h-12 flex items-center justify-center mx-auto mb-3">
                   <HiColorSwatch className="h-6 w-6 text-purple-600" />
@@ -465,14 +407,12 @@ export default function CorporateOnboardingPage() {
                 </p>
               </div>
             </div>
-
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-700">
                 <strong>このウィザードの目的:</strong>{' '}
                 法人アカウントの基本設定を行い、チームメンバーが統一されたブランディングのもとでSNS情報を共有できる環境を整えます。各ステップは後からでも変更可能です。
               </p>
             </div>
-
             <div className="flex justify-between">
               <Button variant="outline" onClick={skipToFinish}>
                 スキップして後で設定
@@ -483,7 +423,6 @@ export default function CorporateOnboardingPage() {
             </div>
           </div>
         )}
-
         {/* ステップ2: 会社情報 */}
         {activeStep === 'companyInfo' && (
           <div>
@@ -491,7 +430,6 @@ export default function CorporateOnboardingPage() {
             <p className="text-gray-600 mb-6 text-justify">
               基本的な会社情報を入力して、法人アカウントを設定しましょう。
             </p>
-
             <div className="space-y-4 mb-8">
               <div>
                 <label
@@ -510,7 +448,6 @@ export default function CorporateOnboardingPage() {
                   required
                 />
               </div>
-
               <div>
                 <label htmlFor="industry" className="block text-sm font-medium text-gray-700 mb-1">
                   業種（任意）
@@ -530,7 +467,6 @@ export default function CorporateOnboardingPage() {
                   <option value="other">その他</option>
                 </select>
               </div>
-
               <div>
                 <label
                   htmlFor="employeeCount"
@@ -552,7 +488,6 @@ export default function CorporateOnboardingPage() {
                 </select>
               </div>
             </div>
-
             <div className="flex justify-between">
               <Button variant="outline" onClick={skipToFinish}>
                 スキップ
@@ -572,7 +507,6 @@ export default function CorporateOnboardingPage() {
             </div>
           </div>
         )}
-
         {/* ステップ3: メンバー招待 */}
         {activeStep === 'inviteUsers' && (
           <div>
@@ -581,7 +515,6 @@ export default function CorporateOnboardingPage() {
               チームメンバーを招待して、一緒に利用を始めましょう。
               後からいつでもメンバーを追加できます。
             </p>
-
             <div className="mb-8">
               <label htmlFor="emails" className="block text-sm font-medium text-gray-700 mb-1">
                 メールアドレス（任意）
@@ -596,7 +529,6 @@ export default function CorporateOnboardingPage() {
                 placeholder="例: yamada@example.com, tanaka@example.com"
               ></textarea>
             </div>
-
             <div className="flex justify-between">
               <Button variant="outline" onClick={skipToFinish}>
                 スキップ
@@ -607,7 +539,6 @@ export default function CorporateOnboardingPage() {
             </div>
           </div>
         )}
-
         {/* ステップ4: ブランディング設定 */}
         {activeStep === 'branding' && (
           <div>
@@ -616,14 +547,12 @@ export default function CorporateOnboardingPage() {
               企業カラーやロゴを会社プロフィールに反映させることができます。
               今すぐ設定するか、後からダッシュボードで設定することもできます。
             </p>
-
             <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6">
               <p className="text-sm text-blue-700 text-justify">
                 詳細なブランディング設定は、この後「ブランディング設定」メニューからいつでも行えます。
                 今は基本設定を完了し、詳細は後から調整することもできます。
               </p>
             </div>
-
             <div className="flex justify-between">
               <Button variant="outline" onClick={skipToFinish}>
                 スキップして完了

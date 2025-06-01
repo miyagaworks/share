@@ -1,22 +1,18 @@
 // app/api/notifications/route.ts
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-
 export async function GET() {
   try {
     const session = await auth();
-
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-
     // ここを修正: ユーザーIDを文字列として確実に扱う
     const userId = String(session.user.id);
-    console.log('認証済みユーザー:', userId);
-
+    logger.debug('認証済みユーザー:', userId);
     try {
       // 有効期限内のお知らせを取得
       const activeNotifications = await prisma.notification.findMany({
@@ -33,9 +29,7 @@ export async function GET() {
           createdAt: 'desc',
         },
       });
-
-      console.log('取得したお知らせ:', activeNotifications.length);
-
+      logger.debug('取得したお知らせ:', activeNotifications.length);
       try {
         // 既読ステータス確認
         const readStatuses = await prisma.notificationRead.findMany({
@@ -46,25 +40,20 @@ export async function GET() {
             notificationId: true,
           },
         });
-
-        console.log('既読ステータス取得:', readStatuses.length);
-
+        logger.debug('既読ステータス取得:', readStatuses.length);
         // 既読情報を含むお知らせリストを作成
         const readStatusMap = new Map(readStatuses.map((status) => [status.notificationId, true]));
-
         const notificationsWithReadStatus = activeNotifications.map((notification) => ({
           ...notification,
           isRead: readStatusMap.has(notification.id),
         }));
-
-        console.log('未読数:', notificationsWithReadStatus.filter((n) => !n.isRead).length);
-
+        logger.debug('未読数:', notificationsWithReadStatus.filter((n) => !n.isRead).length);
         return NextResponse.json({
           notifications: notificationsWithReadStatus,
           unreadCount: notificationsWithReadStatus.filter((n) => !n.isRead).length,
         });
       } catch (readError) {
-        console.error('既読状態取得エラー:', readError);
+        logger.error('既読状態取得エラー:', readError);
         // 既読状態がなくてもお知らせは返す
         return NextResponse.json({
           notifications: activeNotifications.map((n) => ({ ...n, isRead: false })),
@@ -73,7 +62,7 @@ export async function GET() {
         });
       }
     } catch (dbError) {
-      console.error('データベースクエリエラー:', dbError);
+      logger.error('データベースクエリエラー:', dbError);
       return NextResponse.json(
         {
           error: 'お知らせの取得に失敗しました',
@@ -83,7 +72,7 @@ export async function GET() {
       );
     }
   } catch (error) {
-    console.error('お知らせ取得エラー:', error);
+    logger.error('お知らせ取得エラー:', error);
     return NextResponse.json(
       {
         error: 'お知らせの取得に失敗しました',

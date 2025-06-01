@@ -1,21 +1,17 @@
 'use client';
-
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
-
 // SearchParamsを取得するコンポーネントを分離
 function ErrorContent() {
   // useSearchParamsを正しくインポートして使用
   const searchParams = useSearchParams();
   const error = searchParams.get('error');
-
   // エラータイプに基づいてメッセージを設定
   let errorMessage = '認証中にエラーが発生しました。もう一度お試しください。';
   let errorDetails = 'ブラウザのCookieをクリアして、再度ログインをお試しください。';
-
   switch (error) {
     case 'Configuration':
       errorMessage = 'サーバー設定エラーが発生しました。';
@@ -62,14 +58,12 @@ function ErrorContent() {
       errorDetails = 'ログインしてから再度アクセスしてください。';
       break;
   }
-
   const handleClearSessionAndRedirect = () => {
     // セッション関連のデータをクリア
     if (typeof window !== 'undefined') {
       // LocalStorageとSessionStorageをクリア
       window.localStorage.clear();
       window.sessionStorage.clear();
-
       // 認証関連のCookieを削除
       const cookies = document.cookie.split(';');
       for (let i = 0; i < cookies.length; i++) {
@@ -79,11 +73,9 @@ function ErrorContent() {
         document.cookie = `${name}=;expires=Thu, 01 Jan 1970 00:00:00 GMT;path=/`;
       }
     }
-
     // ログインページにリダイレクト
     window.location.href = '/auth/signin';
   };
-
   return (
     <div className="flex min-h-screen">
       {/* 左側：デコレーション部分 */}
@@ -106,7 +98,6 @@ function ErrorContent() {
           </div>
         </div>
       </div>
-
       {/* 右側：エラーメッセージ */}
       <div className="w-full md:w-1/2 flex flex-col justify-center items-center px-6 py-12 bg-white">
         <div className="w-full max-w-md">
@@ -117,7 +108,6 @@ function ErrorContent() {
             <h2 className="text-3xl font-bold text-gray-900">エラーが発生しました</h2>
             <p className="mt-2 text-gray-600">認証処理中に問題が発生しました</p>
           </div>
-
           <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200 shadow-sm mb-6">
             <div className="flex items-center mb-2">
               <svg
@@ -137,7 +127,6 @@ function ErrorContent() {
             <p className="ml-7 text-red-500">{errorDetails}</p>
             {error && <div className="mt-3 text-xs text-gray-500">エラーコード: {error}</div>}
           </div>
-
           <div className="flex flex-col space-y-4">
             <Button
               className="w-full bg-blue-600 text-white hover:bg-blue-800 transform hover:-translate-y-0.5 transition shadow-md"
@@ -145,7 +134,6 @@ function ErrorContent() {
             >
               セッションをクリアしてログインページに戻る
             </Button>
-
             <Link
               href="/"
               className="text-center text-blue-600 hover:text-blue-500 hover:underline mt-4"
@@ -153,7 +141,6 @@ function ErrorContent() {
               トップページに戻る
             </Link>
           </div>
-
           <div className="mt-8 text-xs text-gray-500 text-center">
             <p>問題が解決しない場合は、別のブラウザを試すか、</p>
             <p>システム管理者にお問い合わせください。</p>
@@ -163,7 +150,6 @@ function ErrorContent() {
     </div>
   );
 }
-
 // ローディング表示コンポーネント
 function LoadingFallback() {
   return (
@@ -172,7 +158,6 @@ function LoadingFallback() {
     </div>
   );
 }
-
 export default function ErrorPage() {
   return (
     <Suspense fallback={<LoadingFallback />}>

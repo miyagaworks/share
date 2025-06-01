@@ -1,7 +1,6 @@
 // app/qrcode/layout.tsx
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
-
 export const metadata: Metadata = {
   title: 'QRコード | Share',
   description: 'スタイリッシュなQRコードを作成',
@@ -36,14 +35,12 @@ export const metadata: Metadata = {
     'mobile-web-app-capable': 'yes',
   },
 };
-
 export const viewport: Viewport = {
   themeColor: '#ffffff',
   width: 'device-width',
   initialScale: 1,
   viewportFit: 'cover',
 };
-
 export default function QrCodeLayout({ children }: { children: React.ReactNode }) {
   return (
     <>
@@ -54,14 +51,11 @@ export default function QrCodeLayout({ children }: { children: React.ReactNode }
           window.addEventListener('load', function() {
             navigator.serviceWorker.register('/qr-sw.js')
               .then(function(registration) {
-                console.log('QR ServiceWorker registration successful');
-                
+                // QR ServiceWorker登録成功
                 // スタンドアロンモードで実行されているか確認
                 if (window.matchMedia('(display-mode: standalone)').matches || 
                     navigator.standalone === true) {
                   // PWAモードで実行中
-                  console.log('Running as PWA');
-                  
                   // 現在のURLパスが/qrではない場合は/qrにリダイレクト
                   if (window.location.pathname !== '/qr') {
                     window.location.href = '/qr';
@@ -69,13 +63,12 @@ export default function QrCodeLayout({ children }: { children: React.ReactNode }
                 }
               })
               .catch(function(err) {
-                console.log('QR ServiceWorker registration failed', err);
+                // QR ServiceWorker登録失敗（サイレント失敗）
               });
           });
         }
       `}
       </Script>
-
       {children}
     </>
   );

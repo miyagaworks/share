@@ -2,6 +2,7 @@
 export const dynamic = 'force-dynamic';
 
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
@@ -74,7 +75,7 @@ export async function GET() {
       session,
     });
   } catch (error) {
-    console.error('デバッグAPI エラー:', error);
+    logger.error('デバッグAPI エラー:', error);
 
     return NextResponse.json(
       {

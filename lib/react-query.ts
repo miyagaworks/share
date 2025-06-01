@@ -1,6 +1,5 @@
 // lib/react-query.ts (元の状態)
 import { QueryClient } from '@tanstack/react-query';
-
 export const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -26,7 +25,6 @@ export const queryClient = new QueryClient({
     },
   },
 });
-
 // 開発環境でのデバッグ用設定
 if (process.env.NODE_ENV === 'development') {
   queryClient.setQueryDefaults(['dashboardInfo'], {

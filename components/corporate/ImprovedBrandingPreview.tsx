@@ -4,7 +4,6 @@ import Image from 'next/image';
 import { HiUser, HiGlobe, HiMail, HiPhone, HiPlus } from 'react-icons/hi';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
-
 // SNSリンクタイプ
 interface SnsLink {
   id: string;
@@ -13,13 +12,11 @@ interface SnsLink {
   url: string;
   displayOrder: number;
 }
-
 // 法人SNSリンクタイプ
 interface CorporateSnsLink extends SnsLink {
   isRequired: boolean;
   description: string | null;
 }
-
 interface ImprovedBrandingPreviewProps {
   primaryColor: string;
   secondaryColor: string;
@@ -39,7 +36,6 @@ interface ImprovedBrandingPreviewProps {
   department?: string | null;
   position?: string | null;
 }
-
 export function ImprovedBrandingPreview({
   primaryColor,
   secondaryColor,
@@ -62,7 +58,6 @@ export function ImprovedBrandingPreview({
   // null チェックを行い、デフォルト値を設定
   const safeTextColor = textColor || '#FFFFFF';
   const safeSnsIconColor = snsIconColor === 'original' ? 'original' : snsIconColor || '#333333';
-
   // プラットフォーム名を正規化する関数
   const normalizeSnsPlatform = (platform: string): SnsPlatform => {
     const platformMap: { [key: string]: SnsPlatform } = {
@@ -78,10 +73,8 @@ export function ImprovedBrandingPreview({
       note: 'note',
       bereal: 'bereal',
     };
-
     return platformMap[platform.toLowerCase()] || 'line';
   };
-
   // プラットフォーム名を表示用に変換
   const getPlatformDisplayName = (platform: string) => {
     const platformMap: { [key: string]: string } = {
@@ -99,18 +92,15 @@ export function ImprovedBrandingPreview({
     };
     return platformMap[platform.toLowerCase()] || platform;
   };
-
   // 全SNSリンク
   const allSnsLinks = [
     ...corporateSnsLinks.map((link) => ({ ...link, isCorporate: true })),
     ...personalSnsLinks.map((link) => ({ ...link, isCorporate: false })),
   ].sort((a, b) => a.displayOrder - b.displayOrder);
-
   // SNSアイコン表示用の最大数
   const maxSnsDisplayCount = 4;
   const displaySnsLinks = allSnsLinks.slice(0, maxSnsDisplayCount);
   const moreSnsCount = allSnsLinks.length - maxSnsDisplayCount;
-
   return (
     <div className="border border-gray-200 rounded-lg overflow-hidden bg-white shadow-sm max-w-xs mx-auto">
       {/* ヘッダー部分 */}
@@ -123,7 +113,6 @@ export function ImprovedBrandingPreview({
             </span>
           </div>
         )}
-
         {/* 会社ロゴと名前 */}
         <div className="px-4 pb-6 pt-4 text-center flex justify-center items-center">
           {logoUrl ? (
@@ -162,7 +151,6 @@ export function ImprovedBrandingPreview({
           )}
         </div>
       </div>
-
       {/* プロフィール情報 */}
       <div className="p-4 bg-white">
         {/* 部署情報 */}
@@ -170,13 +158,11 @@ export function ImprovedBrandingPreview({
           <p className="text-sm text-gray-600">{department}</p>
           {position && <p className="text-sm text-gray-600">{position}</p>}
         </div>
-
         {/* 名前 */}
         <h3 className="text-xl font-bold text-center break-words" style={{ color: primaryColor }}>
           {userName || '名前未設定'}
         </h3>
         {userNameEn && <p className="text-sm text-gray-500 text-center">{userNameEn}</p>}
-
         {/* ユーザー画像の表示 */}
         {userImage && (
           <div className="flex justify-center mt-3 mb-3">
@@ -189,14 +175,12 @@ export function ImprovedBrandingPreview({
             />
           </div>
         )}
-
         {/* 自己紹介文の表示 */}
         {bio && (
           <div className="mt-3 mb-3 px-2">
             <p className="text-sm text-gray-600 text-center">{bio}</p>
           </div>
         )}
-
         {/* SNSアイコン */}
         {displaySnsLinks.length > 0 && (
           <div className="mt-4 grid grid-cols-4 gap-2 px-2">
@@ -217,7 +201,6 @@ export function ImprovedBrandingPreview({
                 </span>
               </div>
             ))}
-
             {/* さらに表示するSNSがある場合 */}
             {moreSnsCount > 0 && (
               <div className="flex flex-col items-center">
@@ -234,7 +217,6 @@ export function ImprovedBrandingPreview({
             )}
           </div>
         )}
-
         {/* 追加機能アイコン */}
         <div className="mt-5 grid grid-cols-4 gap-2 px-2">
           <div className="flex flex-col items-center">
@@ -246,7 +228,6 @@ export function ImprovedBrandingPreview({
             </div>
             <span className="text-xs">自己紹介</span>
           </div>
-
           <div className="flex flex-col items-center">
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center mb-1"
@@ -256,7 +237,6 @@ export function ImprovedBrandingPreview({
             </div>
             <span className="text-xs">会社HP</span>
           </div>
-
           <div className="flex flex-col items-center">
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center mb-1"
@@ -266,7 +246,6 @@ export function ImprovedBrandingPreview({
             </div>
             <span className="text-xs">メール</span>
           </div>
-
           <div className="flex flex-col items-center">
             <div
               className="w-14 h-14 rounded-full flex items-center justify-center mb-1"
@@ -277,7 +256,6 @@ export function ImprovedBrandingPreview({
             <span className="text-xs">電話</span>
           </div>
         </div>
-
         {/* コンタクトボタン */}
         <div className="mt-5 space-y-3 px-4">
           <button
@@ -288,7 +266,6 @@ export function ImprovedBrandingPreview({
             電話をかける
           </button>
         </div>
-
         {/* 連絡先追加ボタン */}
         <div className="mt-3 px-4">
           <button
@@ -303,7 +280,6 @@ export function ImprovedBrandingPreview({
             連絡先に追加
           </button>
         </div>
-
         {/* フッター */}
         <div className="mt-6 pt-2 text-center">
           <p className="text-xs text-gray-400 mt-2">Powered by Share</p>

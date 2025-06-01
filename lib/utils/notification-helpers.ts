@@ -1,7 +1,7 @@
 // lib/utils/notification-helpers.ts
+import { logger } from "@/lib/utils/logger";
 import { v4 as uuidv4 } from 'uuid';
 import { prisma } from '@/lib/prisma';
-
 /**
  * 通知を既読にするヘルパー関数
  */
@@ -14,7 +14,6 @@ export async function markNotificationAsRead(notificationId: string, userId: str
         user_id: userId,
       },
     });
-
     if (!existingRead) {
       // 既読レコードがなければ作成
       return await prisma.notificationRead.create({
@@ -26,10 +25,9 @@ export async function markNotificationAsRead(notificationId: string, userId: str
         },
       });
     }
-
     return existingRead;
   } catch (error) {
-    console.error('既読設定ヘルパーエラー:', error);
+    logger.error('既読設定ヘルパーエラー:', error);
     throw error;
   }
 }

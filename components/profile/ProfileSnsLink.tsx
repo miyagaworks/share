@@ -1,21 +1,17 @@
 // components/profile/ProfileSnsLink.tsx (Android対応版)
 'use client';
-
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import type { SnsLink } from '@prisma/client';
 import type { SnsPlatform } from '@/types/sns';
 import { SNS_METADATA } from '@/types/sns';
-
 interface ProfileSnsLinkProps {
   link: SnsLink;
   snsIconColor?: string;
 }
-
 export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
   // プラットフォーム名の標準化（大文字小文字の違いを吸収）
   const normalizeSnsPlatform = (platform: string): SnsPlatform => {
     const platformLower = platform.toLowerCase();
-
     if (platformLower === 'line') return 'line';
     if (platformLower === '公式line' || platformLower === 'official-line') return 'official-line';
     if (platformLower === 'youtube') return 'youtube';
@@ -27,22 +23,17 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
     if (platformLower === 'threads') return 'threads';
     if (platformLower === 'note') return 'note';
     if (platformLower === 'bereal') return 'bereal';
-
     // デフォルト値
     return 'line' as SnsPlatform;
   };
-
   // プラットフォームを標準化
   const normalizedPlatform = normalizeSnsPlatform(link.platform);
-
   // 正しい表示名を取得（SNS_METADATAから取得することが重要）
   const displayName = SNS_METADATA[normalizedPlatform]?.name || link.platform;
-
   // ネイティブアプリ起動のために最適な形式でURLを生成
   const getOptimizedUrl = () => {
     // 元のURL（これがなければ表示しない）
     if (!link.url) return '#';
-
     // プラットフォーム固有の処理
     switch (normalizedPlatform) {
       case 'line':
@@ -98,36 +89,28 @@ export function ProfileSnsLink({ link, snsIconColor }: ProfileSnsLinkProps) {
         // その他のプラットフォームはURLをそのまま使用
         return link.url;
     }
-
     // デフォルトはブラウザで開く
     return link.url;
   };
-
   // クリックイベントハンドラを追加（ネイティブアプリ起動用）
   const handleClick = (e: React.MouseEvent) => {
     const optimizedUrl = getOptimizedUrl();
-
     // 特殊なURLスキームを持つ場合、まずネイティブアプリの起動を試みる
     if (optimizedUrl !== link.url) {
       try {
         window.location.href = optimizedUrl;
-
         // フォールバック: 一定時間後にブラウザで開く
         setTimeout(() => {
           window.open(link.url, '_blank');
         }, 500);
-
         e.preventDefault();
       } catch (error) {
         // エラーが発生した場合はブラウザで開く
-        console.error('Failed to open app:', error);
       }
     }
   };
-
   // snsIconColorに基づいてアイコンの色を設定
   const iconColor = snsIconColor === 'original' ? 'original' : snsIconColor || '#333333';
-
   // 🔥 Android対応: Tailwindクラスをインラインスタイルに変更
   return (
     <a

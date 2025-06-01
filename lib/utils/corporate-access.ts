@@ -1,7 +1,7 @@
 // lib/utils/corporate-access.ts
+import { logger } from "@/lib/utils/logger";
 // ⚠️ 警告: このファイルはクライアントサイドでは使用できません
 // サーバーサイドでの使用は lib/utils/corporate-access-server.ts を推奨
-
 /**
  * クライアントサイドでの使用を防ぐガード関数
  */
@@ -14,7 +14,6 @@ function ensureServerSide(functionName: string) {
     );
   }
 }
-
 /**
  * 法人アクセス権チェック（サーバーサイド専用）
  *
@@ -34,14 +33,12 @@ function ensureServerSide(functionName: string) {
  */
 export async function checkCorporateAccess(userId: string) {
   ensureServerSide('checkCorporateAccess');
-
   // サーバー専用版にリダイレクト
   const { checkCorporateAccess: serverCheckCorporateAccess } = await import(
     './corporate-access-server'
   );
   return serverCheckCorporateAccess(userId);
 }
-
 /**
  * @deprecated このファイルは非推奨です
  *
@@ -52,5 +49,4 @@ export async function checkCorporateAccess(userId: string) {
 const corporateAccessUtils = {
   checkCorporateAccess,
 };
-
 export default corporateAccessUtils;

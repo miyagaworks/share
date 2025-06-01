@@ -5,12 +5,10 @@ export interface ProfileUpdateData {
   firstName?: string | null;
   lastNameKana?: string | null;
   firstNameKana?: string | null;
-
   // 結合されたフィールド（従来形式、互換性のため）
   name?: string | null;
   nameEn?: string | null;
   nameKana?: string | null;
-
   // その他の共通フィールド
   bio?: string | null;
   image?: string | null;

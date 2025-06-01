@@ -1,6 +1,5 @@
 // app/dashboard/corporate/page.tsx (プラン名修正版)
 'use client';
-
 import React, { memo, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
@@ -11,13 +10,10 @@ import { useOptimizedTenant, useRefreshTenant } from '@/hooks/useOptimizedTenant
 import { ErrorMessage } from '@/components/shared/ErrorMessage';
 // Lucide Reactアイコンを使用
 import { Building2, Users, Layout, Palette, Link, Settings, AlertTriangle } from 'lucide-react';
-
 // プラン名を日本語に変換する関数
 const getPlanDisplayName = (planId: string | undefined): string => {
   if (!planId) return '';
-
   const plan = planId.toLowerCase();
-
   if (plan.includes('starter')) {
     return 'スタータープラン';
   } else if (plan.includes('business') && !plan.includes('enterprise')) {
@@ -25,24 +21,19 @@ const getPlanDisplayName = (planId: string | undefined): string => {
   } else if (plan.includes('enterprise')) {
     return 'エンタープライズプラン';
   }
-
   // 古いプランIDとの互換性
   if (plan === 'business_legacy') {
     return 'スタータープラン';
   } else if (plan === 'business_plus' || plan === 'business-plus') {
     return 'ビジネスプラン';
   }
-
   // デフォルト
   return planId;
 };
-
 // プランIDからユーザー数を取得する関数
 const getMaxUsersByPlan = (planId: string | undefined): number => {
   if (!planId) return 0;
-
   const plan = planId.toLowerCase();
-
   if (plan.includes('starter') || plan === 'business_legacy') {
     return 10; // スタータープラン
   } else if (plan.includes('business') && !plan.includes('enterprise')) {
@@ -52,11 +43,9 @@ const getMaxUsersByPlan = (planId: string | undefined): number => {
   } else if (plan === 'business_plus' || plan === 'business-plus') {
     return 30; // 旧ビジネスプラスは30名
   }
-
   // デフォルト
   return 0;
 };
-
 // デバッグ情報のプロパティ型定義
 interface DebugInfoProps {
   data:
@@ -74,7 +63,6 @@ interface DebugInfoProps {
   isLoading: boolean;
   error: Error | null;
 }
-
 // スケルトンUIコンポーネント
 const TenantSkeleton = memo(() => (
   <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mb-4 sm:mb-5 mx-1 sm:mx-2 animate-pulse">
@@ -88,9 +76,7 @@ const TenantSkeleton = memo(() => (
     </div>
   </div>
 ));
-
 TenantSkeleton.displayName = 'TenantSkeleton';
-
 const MenuSkeleton = memo(() => (
   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mx-1 sm:mx-2 mb-4 sm:mb-5">
     {Array.from({ length: 5 }, (_, i) => (
@@ -107,13 +93,10 @@ const MenuSkeleton = memo(() => (
     ))}
   </div>
 ));
-
 MenuSkeleton.displayName = 'MenuSkeleton';
-
 // デバッグ情報表示コンポーネント（開発環境のみ）
 const DebugInfo = memo<DebugInfoProps>(({ data, isLoading, error }) => {
   if (process.env.NODE_ENV !== 'development') return null;
-
   return (
     <div className="mx-1 sm:mx-2 mb-4 p-3 bg-gray-100 rounded-lg text-xs">
       <h3 className="font-semibold mb-2">デバッグ情報:</h3>
@@ -134,9 +117,7 @@ const DebugInfo = memo<DebugInfoProps>(({ data, isLoading, error }) => {
     </div>
   );
 });
-
 DebugInfo.displayName = 'DebugInfo';
-
 // 警告バナーコンポーネント
 const RetryableWarningBanner = memo<{
   message: string;
@@ -157,15 +138,12 @@ const RetryableWarningBanner = memo<{
     </div>
   </div>
 ));
-
 RetryableWarningBanner.displayName = 'RetryableWarningBanner';
-
 // メインダッシュボードコンポーネント
 export default function OptimizedCorporateDashboardPage() {
   const router = useRouter();
   const { data: tenantResponse, isLoading, error } = useOptimizedTenant();
   const refreshTenant = useRefreshTenant();
-
   // メニューアクション（メモ化）
   const menuActions = useMemo(
     () => ({
@@ -177,21 +155,16 @@ export default function OptimizedCorporateDashboardPage() {
     }),
     [router],
   );
-
   // テナントデータの取得
   const tenant = useMemo(() => tenantResponse?.tenant || null, [tenantResponse?.tenant]);
-
   // プラン表示名の計算（メモ化）
   const planDisplayName = useMemo(() => {
     return getPlanDisplayName(tenant?.subscriptionPlan);
   }, [tenant?.subscriptionPlan]);
-
   // 正しいユーザー数上限の計算（メモ化）
   const correctMaxUsers = useMemo(() => {
     return getMaxUsersByPlan(tenant?.subscriptionPlan);
   }, [tenant?.subscriptionPlan]);
-
-  console.log('CorporateDashboard - レンダリング:', {
     isLoading,
     hasError: !!error,
     hasTenant: !!tenant,
@@ -199,7 +172,6 @@ export default function OptimizedCorporateDashboardPage() {
     subscriptionPlan: tenant?.subscriptionPlan,
     planDisplayName,
   });
-
   // ローディング中の表示
   if (isLoading) {
     return (
@@ -210,7 +182,6 @@ export default function OptimizedCorporateDashboardPage() {
       </div>
     );
   }
-
   // エラー時の表示
   if (error || !tenant) {
     return (
@@ -226,11 +197,9 @@ export default function OptimizedCorporateDashboardPage() {
       </div>
     );
   }
-
   return (
     <div className="max-w-full px-1 sm:px-0">
       <DebugInfo data={tenantResponse || null} isLoading={isLoading} error={error} />
-
       {/* テナント概要 */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mb-4 sm:mb-5 mx-1 sm:mx-2">
         <CorporateBranding
@@ -275,7 +244,6 @@ export default function OptimizedCorporateDashboardPage() {
           </div>
         </CorporateBranding>
       </div>
-
       {/* メニューグリッド */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5 mx-1 sm:mx-2 mb-4 sm:mb-5">
         <OptimizedMenuCard
@@ -285,7 +253,6 @@ export default function OptimizedCorporateDashboardPage() {
           onClick={menuActions.users}
           color="blue"
         />
-
         <OptimizedMenuCard
           icon={<Layout className="h-5 w-5" />}
           title="部署管理"
@@ -293,7 +260,6 @@ export default function OptimizedCorporateDashboardPage() {
           onClick={menuActions.departments}
           color="green"
         />
-
         <OptimizedMenuCard
           icon={<Link className="h-5 w-5" />}
           title="共通SNS設定"
@@ -301,7 +267,6 @@ export default function OptimizedCorporateDashboardPage() {
           onClick={menuActions.sns}
           color="indigo"
         />
-
         <OptimizedMenuCard
           icon={<Palette className="h-5 w-5" />}
           title="ブランディング設定"
@@ -309,7 +274,6 @@ export default function OptimizedCorporateDashboardPage() {
           onClick={menuActions.branding}
           color="purple"
         />
-
         <OptimizedMenuCard
           icon={<Settings className="h-5 w-5" />}
           title="設定"
@@ -318,7 +282,6 @@ export default function OptimizedCorporateDashboardPage() {
           color="gray"
         />
       </div>
-
       {/* 最近の活動 */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mx-1 sm:mx-2">
         <OptimizedActivityFeed limit={5} autoRefresh={false} />

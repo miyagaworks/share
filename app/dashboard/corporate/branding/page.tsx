@@ -1,6 +1,5 @@
 // app/dashboard/corporate/branding/page.tsx
 'use client';
-
 import { useState, useEffect, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -13,7 +12,6 @@ import { HiSave, HiRefresh, HiInformationCircle, HiUpload, HiX } from 'react-ico
 import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccess';
 import Image from 'next/image';
 import tinycolor from 'tinycolor2';
-
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -26,7 +24,6 @@ interface TenantData {
   headerText?: string | null; // 追加
   textColor?: string | null; // 追加
 }
-
 export default function ImprovedCorporateBrandingPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -53,14 +50,12 @@ export default function ImprovedCorporateBrandingPage() {
   const [headerText, setHeaderText] = useState<string>('');
   const [textColor, setTextColor] = useState<string>('#FFFFFF');
   const [remainingChars, setRemainingChars] = useState(60);
-
   // ファイル選択トリガー
   const triggerFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
-
   // ロゴの削除
   const handleRemoveLogo = () => {
     setLogoUrl(null);
@@ -72,27 +67,22 @@ export default function ImprovedCorporateBrandingPage() {
     // originalLogoSize をリセット
     originalLogoSize.current = null;
   };
-
   // ファイルアップロード処理
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     // 画像タイプの検証
     if (!file.type.startsWith('image/')) {
       setUploadError('画像ファイルのみアップロードできます');
       return;
     }
-
     // ファイルサイズの検証（5MB以下）
     if (file.size > 5 * 1024 * 1024) {
       setUploadError('ファイルサイズは5MB以下にしてください');
       return;
     }
-
     setIsUploading(true);
     setUploadError(null);
-
     try {
       // FileReaderでファイルをBase64に変換
       const reader = new FileReader();
@@ -100,32 +90,26 @@ export default function ImprovedCorporateBrandingPage() {
         if (typeof event.target?.result === 'string') {
           // ロゴURLを設定
           setLogoUrl(event.target.result);
-
           // 新しい画像のサイズを取得
           const img = new window.Image();
           img.onload = () => {
             // 最大サイズを制限（例: 最大幅400px）
             let width = img.width;
             let height = img.height;
-
             if (width > 400) {
               const ratio = height / width;
               width = 400;
               height = Math.round(width * ratio);
             }
-
             // ここが重要: originalLogoSize を設定
             originalLogoSize.current = { width, height };
-
             setLogoSize({ width, height });
             setCustomWidth(width);
             setCustomHeight(height);
-
             // スライダーをリセット
             setSizeSlider(100);
           };
           img.src = event.target.result;
-
           toast.success('ロゴをアップロードしました');
         }
         setIsUploading(false);
@@ -140,30 +124,23 @@ export default function ImprovedCorporateBrandingPage() {
       setIsUploading(false);
     }
   };
-
   // テナント情報とユーザー情報を取得
   useEffect(() => {
     const fetchTenantData = async () => {
       if (!session?.user?.id) return;
-
       try {
         setIsLoading(true);
-
         // まずグローバル状態をチェック
         await checkCorporateAccess({ force: true }); // 強制的に最新の状態を取得
-
         // テナント情報取得API
         const response = await fetch('/api/corporate/tenant');
-
         if (!response.ok) {
           throw new Error('テナント情報の取得に失敗しました');
         }
-
         const data = await response.json();
         setTenantData(data.tenant);
         // APIから直接isAdminフラグを取得
         setIsAdmin(data.isAdmin === true);
-
         // 色情報を設定
         if (data.tenant.primaryColor) {
           setPrimaryColor(data.tenant.primaryColor);
@@ -171,7 +148,6 @@ export default function ImprovedCorporateBrandingPage() {
         if (data.tenant.secondaryColor) {
           setSecondaryColor(data.tenant.secondaryColor);
         }
-
         // ヘッダーテキストとテキストカラーを設定
         if (data.tenant.headerText) {
           setHeaderText(data.tenant.headerText);
@@ -179,10 +155,8 @@ export default function ImprovedCorporateBrandingPage() {
         if (data.tenant.textColor) {
           setTextColor(data.tenant.textColor);
         }
-
         // ロゴURLを設定
         setLogoUrl(data.tenant.logoUrl);
-
         // ロゴURLが変更された時に画像サイズを取得
         if (data.tenant.logoUrl && (!data.tenant.logoWidth || !data.tenant.logoHeight)) {
           // 画像のサイズを取得するためのHelper関数
@@ -198,40 +172,33 @@ export default function ImprovedCorporateBrandingPage() {
               img.src = url;
             });
           };
-
           // 画像サイズの取得を試みる
           getImageDimensions(data.tenant.logoUrl)
             .then((dimensions) => {
               // 最大サイズを制限（例: 最大幅400px）
               let width = dimensions.width;
               let height = dimensions.height;
-
               if (width > 400) {
                 const ratio = height / width;
                 width = 400;
                 height = Math.round(width * ratio);
               }
-
               setLogoSize({ width, height });
               setCustomWidth(width);
               setCustomHeight(height);
             })
             .catch((err) => {
-              console.error('画像サイズ取得エラー:', err);
               // デフォルトサイズを設定
               setLogoSize({ width: 400, height: 400 });
               setCustomWidth(400);
               setCustomHeight(400);
             });
         }
-
         // ロゴサイズが保存されている場合は設定
         if (data.tenant.logoWidth && data.tenant.logoHeight) {
-          console.log('取得したロゴサイズ:', {
             width: data.tenant.logoWidth,
             height: data.tenant.logoHeight,
           });
-
           // ロゴサイズを設定
           setLogoSize({
             width: data.tenant.logoWidth,
@@ -239,31 +206,24 @@ export default function ImprovedCorporateBrandingPage() {
           });
           setCustomWidth(data.tenant.logoWidth);
           setCustomHeight(data.tenant.logoHeight);
-
           // 元のサイズも記録（スライダーの基準にするため）
           originalLogoSize.current = {
             width: data.tenant.logoWidth,
             height: data.tenant.logoHeight,
           };
         }
-
         // ユーザー情報取得API（追加）
         try {
           const userResponse = await fetch('/api/corporate-member/profile');
           if (userResponse.ok) {
             const userData = await userResponse.json();
             setCurrentUser(userData.user);
-            console.log('取得したユーザー情報:', userData.user); // デバッグ用
           }
         } catch (userError) {
-          console.error('ユーザー情報取得エラー:', userError);
           // ユーザー情報取得エラーは致命的ではないので、エラー表示はしない
         }
-
         setError(null);
       } catch (err) {
-        console.error('テナント情報取得エラー:', err);
-
         // グローバル状態から取得
         if (corporateAccessState.hasAccess && corporateAccessState.tenantId) {
           setIsAdmin(corporateAccessState.isAdmin);
@@ -283,10 +243,8 @@ export default function ImprovedCorporateBrandingPage() {
         setIsLoading(false);
       }
     };
-
     fetchTenantData();
   }, [session]);
-
   // 文字数カウント用のuseEffect
   useEffect(() => {
     if (headerText) {
@@ -299,20 +257,14 @@ export default function ImprovedCorporateBrandingPage() {
       setRemainingChars(60);
     }
   }, [headerText]);
-
   // ブランディング設定を保存
   const handleSaveBranding = async () => {
     if (!tenantData) return;
-
     try {
       setIsSaving(true);
-
       // 数値型であることを確認
       const logoWidth = Number(logoSize.width);
       const logoHeight = Number(logoSize.height);
-
-      console.log('送信するロゴサイズ:', { logoWidth, logoHeight });
-
       // ブランディング設定更新API
       const response = await fetch('/api/corporate/branding', {
         method: 'PUT',
@@ -327,29 +279,21 @@ export default function ImprovedCorporateBrandingPage() {
           textColor, // 追加
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'ブランディング設定の更新に失敗しました');
       }
-
       const data = await response.json();
-      console.log('API応答:', data);
-
       toast.success('ブランディング設定を保存しました');
-
       // テナントデータを更新
       if (data.tenant) {
         // 保存後のロゴサイズを確認
-        console.log('保存後のロゴサイズ:', {
           width: data.tenant.logoWidth,
           height: data.tenant.logoHeight,
         });
-
         // undefined の場合は現在のサイズを使用
         const savedLogoWidth = data.tenant.logoWidth || logoSize.width;
         const savedLogoHeight = data.tenant.logoHeight || logoSize.height;
-
         // テナントデータを更新
         setTenantData({
           ...tenantData,
@@ -359,7 +303,6 @@ export default function ImprovedCorporateBrandingPage() {
           logoWidth: savedLogoWidth,
           logoHeight: savedLogoHeight,
         });
-
         // ロゴサイズも保存された値で更新
         setLogoSize({
           width: savedLogoWidth,
@@ -367,7 +310,6 @@ export default function ImprovedCorporateBrandingPage() {
         });
         setCustomWidth(savedLogoWidth);
         setCustomHeight(savedLogoHeight);
-
         // 元のサイズも更新
         originalLogoSize.current = {
           width: savedLogoWidth,
@@ -375,13 +317,11 @@ export default function ImprovedCorporateBrandingPage() {
         };
       }
     } catch (err) {
-      console.error('ブランディング更新エラー:', err);
       toast.error(err instanceof Error ? err.message : 'ブランディング設定の更新に失敗しました');
     } finally {
       setIsSaving(false);
     }
   };
-
   // ユーザー情報の状態を追加
   const [currentUser, setCurrentUser] = useState<{
     name: string | null;
@@ -393,7 +333,6 @@ export default function ImprovedCorporateBrandingPage() {
     position?: string | null;
     // 他に必要なプロパティがあれば追加
   } | null>(null);
-
   // 読み込み中
   if (isLoading) {
     return (
@@ -402,7 +341,6 @@ export default function ImprovedCorporateBrandingPage() {
       </div>
     );
   }
-
   // エラー表示
   if (error) {
     return (
@@ -415,7 +353,6 @@ export default function ImprovedCorporateBrandingPage() {
       </div>
     );
   }
-
   // テナントデータがない場合
   if (!tenantData) {
     return (
@@ -428,7 +365,6 @@ export default function ImprovedCorporateBrandingPage() {
       </div>
     );
   }
-
   return (
     <div className="space-y-6">
       {/* ヘッダー部分 */}
@@ -446,7 +382,6 @@ export default function ImprovedCorporateBrandingPage() {
             </p>
           )}
         </div>
-
         {isAdmin && (
           <Button
             variant="corporate"
@@ -468,7 +403,6 @@ export default function ImprovedCorporateBrandingPage() {
           </Button>
         )}
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 設定フォーム */}
         <div className="space-y-6">
@@ -482,7 +416,6 @@ export default function ImprovedCorporateBrandingPage() {
               プロフィールのカラースキームを設定します。
               プライマリーカラーはヘッダーやボタンに、セカンダリーカラーはアクセントに使用されます。
             </p>
-
             <div className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
@@ -494,7 +427,6 @@ export default function ImprovedCorporateBrandingPage() {
                   disabled={!isAdmin}
                 />
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
                   セカンダリーカラー
@@ -506,7 +438,6 @@ export default function ImprovedCorporateBrandingPage() {
                 />
               </div>
             </div>
-
             {/* カラーリセットボタン */}
             {isAdmin && (
               <div className="mt-4">
@@ -525,7 +456,6 @@ export default function ImprovedCorporateBrandingPage() {
               </div>
             )}
           </div>
-
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mt-6">
             <h2 className="text-lg font-medium mb-4 flex items-center">
               <HiColorSwatch className="mr-2 h-5 w-5 text-gray-600" />
@@ -535,7 +465,6 @@ export default function ImprovedCorporateBrandingPage() {
               プロフィールのヘッダーテキストとその色を設定します。
               ヘッダーテキストはすべてのメンバーのプロフィールページに統一して表示されます。
             </p>
-
             <div className="space-y-4">
               {/* ヘッダーテキスト設定 */}
               <div className="space-y-2">
@@ -564,7 +493,6 @@ export default function ImprovedCorporateBrandingPage() {
                   disabled={!isAdmin || isLoading || isSaving}
                 />
               </div>
-
               {/* テキストカラー設定 */}
               <div className="space-y-2">
                 <label className="block text-sm font-medium text-gray-700">テキストカラー</label>
@@ -587,7 +515,6 @@ export default function ImprovedCorporateBrandingPage() {
               </div>
             </div>
           </div>
-
           {/* ロゴ設定 */}
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <h2 className="text-lg font-medium mb-4 flex items-center">
@@ -598,7 +525,6 @@ export default function ImprovedCorporateBrandingPage() {
               プロフィールに表示する企業ロゴをアップロードしてください。
               サイズをカスタマイズすることも可能です。
             </p>
-
             {/* 現在のロゴ表示 */}
             {logoUrl && (
               <div className="relative border border-gray-200 rounded-lg p-4 flex justify-center bg-white mb-4">
@@ -629,7 +555,6 @@ export default function ImprovedCorporateBrandingPage() {
                 )}
               </div>
             )}
-
             {/* ロゴアップロード機能 */}
             <div className="space-y-4">
               <input
@@ -640,7 +565,6 @@ export default function ImprovedCorporateBrandingPage() {
                 accept="image/*"
                 disabled={!isAdmin || isUploading}
               />
-
               <div className="flex space-x-2">
                 <Button
                   type="button"
@@ -662,13 +586,11 @@ export default function ImprovedCorporateBrandingPage() {
                   )}
                 </Button>
               </div>
-
               {/* ロゴサイズ設定 */}
               <div className="mt-4">
                 <label className="block text-sm font-medium text-gray-700 mb-2">
                   ロゴサイズ調整
                 </label>
-
                 {/* スライダー */}
                 <div className="mb-4">
                   <label className="block text-xs text-gray-600 mb-1">サイズ: {sizeSlider}%</label>
@@ -680,7 +602,6 @@ export default function ImprovedCorporateBrandingPage() {
                     onChange={(e) => {
                       const newSize = Number(e.target.value);
                       setSizeSlider(newSize);
-
                       // ロゴが存在する場合のみ処理
                       if (logoUrl) {
                         // originalLogoSize が未設定の場合は現在のサイズを保存
@@ -689,19 +610,14 @@ export default function ImprovedCorporateBrandingPage() {
                             width: customWidth,
                             height: customHeight,
                           };
-                          console.log('基準サイズを設定:', originalLogoSize.current);
                         }
-
                         const scale = newSize / 100;
                         const newWidth = Math.round(originalLogoSize.current.width * scale);
                         const newHeight = Math.round(originalLogoSize.current.height * scale);
-
-                        console.log('サイズ変更:', {
                           scale,
                           original: originalLogoSize.current,
                           new: { width: newWidth, height: newHeight },
                         });
-
                         setCustomWidth(newWidth);
                         setCustomHeight(newHeight);
                         setLogoSize({
@@ -714,7 +630,6 @@ export default function ImprovedCorporateBrandingPage() {
                     disabled={!isAdmin || !logoUrl}
                   />
                 </div>
-
                 {/* アスペクト比維持オプション */}
                 <div className="flex items-center mb-4">
                   <input
@@ -729,7 +644,6 @@ export default function ImprovedCorporateBrandingPage() {
                     アスペクト比を維持する
                   </label>
                 </div>
-
                 {/* 数値入力 */}
                 <div className="flex items-end gap-2">
                   <div>
@@ -742,7 +656,6 @@ export default function ImprovedCorporateBrandingPage() {
                       onChange={(e) => {
                         const newWidth = Number(e.target.value);
                         setCustomWidth(newWidth);
-
                         if (maintainAspectRatio && logoSize.width > 0) {
                           // アスペクト比を維持
                           const aspectRatio = logoSize.height / logoSize.width;
@@ -767,7 +680,6 @@ export default function ImprovedCorporateBrandingPage() {
                       onChange={(e) => {
                         const newHeight = Number(e.target.value);
                         setCustomHeight(newHeight);
-
                         if (maintainAspectRatio && logoSize.height > 0) {
                           // アスペクト比を維持
                           const aspectRatio = logoSize.width / logoSize.height;
@@ -784,15 +696,12 @@ export default function ImprovedCorporateBrandingPage() {
                   </div>
                 </div>
               </div>
-
               {uploadError && <p className="text-sm text-red-600">{uploadError}</p>}
-
               <p className="text-xs text-gray-500">
                 推奨形式: PNG, JPG, SVG (透過背景推奨)
                 <br />
                 最大サイズ: 5MB
               </p>
-
               {!isAdmin && (
                 <p className="text-sm text-amber-600 mt-2">
                   ※ブランディング設定の変更には管理者権限が必要です
@@ -801,7 +710,6 @@ export default function ImprovedCorporateBrandingPage() {
             </div>
           </div>
         </div>
-
         {/* プレビュー */}
         <div className="space-y-6">
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -812,7 +720,6 @@ export default function ImprovedCorporateBrandingPage() {
             <p className="text-sm text-gray-500 mb-6 text-center">
               設定がユーザープロフィールにどのように表示されるかのプレビューです
             </p>
-
             <BrandingPreview
               primaryColor={primaryColor}
               secondaryColor={secondaryColor}
@@ -828,7 +735,6 @@ export default function ImprovedCorporateBrandingPage() {
               department={currentUser?.department?.name || null}
               position={currentUser?.position || null}
             />
-
             {/* 保存ボタン（プレビューの下に移動） */}
             {isAdmin && (
               <div className="mt-6 flex justify-center">
@@ -853,7 +759,6 @@ export default function ImprovedCorporateBrandingPage() {
               </div>
             )}
           </div>
-
           {/* ブランディングの活用方法 */}
           <div
             className="mt-6 rounded-md p-4"
@@ -878,7 +783,6 @@ export default function ImprovedCorporateBrandingPage() {
     </div>
   );
 }
-
 // HiColorSwatch, HiEyeコンポーネント
 function HiColorSwatch(props: { className: string }) {
   return (
@@ -898,7 +802,6 @@ function HiColorSwatch(props: { className: string }) {
     </svg>
   );
 }
-
 function HiEye(props: { className: string }) {
   return (
     <svg

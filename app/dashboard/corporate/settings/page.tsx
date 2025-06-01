@@ -1,6 +1,5 @@
 // app/dashboard/corporate/settings/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -17,7 +16,6 @@ import {
 } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
 import { getPlanNameFromId } from '@/lib/stripe';
-
 // 型定義
 interface PasswordPolicy {
   minLength: number;
@@ -26,7 +24,6 @@ interface PasswordPolicy {
   requireSpecialChars: boolean;
   expiryDays: number;
 }
-
 interface EmailNotifications {
   userAdded: boolean;
   userRemoved: boolean;
@@ -34,7 +31,6 @@ interface EmailNotifications {
   securityAlerts: boolean;
   weeklyReports: boolean;
 }
-
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -62,17 +58,14 @@ interface TenantData {
   billingContact?: string;
   accountStatus?: string;
 }
-
 interface SubscriptionData {
   id: string;
   plan: string;
   status: string;
   currentPeriodEnd: string;
 }
-
 // 設定タブの型定義
 type SettingsTab = 'general' | 'security' | 'notifications' | 'billing' | 'advanced';
-
 export default function CorporateSettingsPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -82,7 +75,6 @@ export default function CorporateSettingsPage() {
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<SettingsTab>('general');
-
   // フォーム状態
   const [companyName, setCompanyName] = useState('');
   const [billingName, setBillingName] = useState('');
@@ -104,21 +96,16 @@ export default function CorporateSettingsPage() {
     expiryDays: 90,
   });
   const [isSaving, setIsSaving] = useState(false);
-
   // テナント情報を取得
   useEffect(() => {
     const fetchTenantData = async () => {
       if (!session?.user?.id) return;
-
       try {
         setIsLoading(true);
-
         // まず設定情報を直接取得してみる
         const settingsResponse = await fetch('/api/corporate/settings');
-
         if (settingsResponse.ok) {
           const settingsData = await settingsResponse.json();
-
           // 模擬テナントデータを作成
           const defaultTenant = {
             id: 'temp-id',
@@ -135,60 +122,45 @@ export default function CorporateSettingsPage() {
             billingContact: settingsData.settings.billingContact,
             accountStatus: settingsData.settings.accountStatus,
           };
-
           setTenantData(defaultTenant);
           setIsAdmin(settingsData.isAdmin);
-
           // フォーム初期値を設定
           setCompanyName(defaultTenant.name);
-
           // passwordPolicyの初期値を設定
           if (defaultTenant.securitySettings?.passwordPolicy) {
             setPasswordPolicy(defaultTenant.securitySettings.passwordPolicy);
           }
-
           // フォーム初期値を設定
           if (defaultTenant.notificationSettings?.adminEmail) {
             setAdminEmail(defaultTenant.notificationSettings.adminEmail);
           }
-
           if (defaultTenant.notificationSettings?.email) {
             setEmailNotifications(defaultTenant.notificationSettings.email);
           }
-
           if (defaultTenant.billingContact) {
             setBillingName(defaultTenant.billingContact);
           }
-
           if (defaultTenant.billingEmail) {
             setBillingEmail(defaultTenant.billingEmail);
           }
-
           if (defaultTenant.billingAddress) {
             setBillingAddress(defaultTenant.billingAddress.address || '');
           }
-
           setError(null);
         } else {
           // 設定APIが失敗した場合は元の処理を試みる
-          console.log('設定APIでの取得に失敗、テナント情報の取得を試みます');
-
           try {
             const response = await fetch('/api/corporate/tenant');
-
             if (!response.ok) {
               throw new Error('テナント情報の取得に失敗しました');
             }
-
             const responseData = await response.json();
             setTenantData(responseData.tenant);
             setIsAdmin(responseData.userRole === 'admin');
           } catch (tenantError) {
-            console.error('テナント情報取得エラー:', tenantError);
             throw new Error('テナント情報を読み込めませんでした');
           }
         }
-
         // サブスクリプション情報を取得（エラーが発生しても致命的ではない）
         try {
           const subResponse = await fetch('/api/subscription');
@@ -199,32 +171,25 @@ export default function CorporateSettingsPage() {
             }
           }
         } catch (subError) {
-          console.error('サブスクリプション情報取得エラー:', subError);
           // サブスクリプション情報の取得失敗は致命的エラーではないのでスルー
         }
       } catch (err) {
-        console.error('アカウント設定取得エラー:', err);
         setError('テナント情報を読み込めませんでした');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchTenantData();
   }, [session]);
-
   // 設定を保存
   const handleSaveSettings = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!companyName.trim()) {
       toast.error('会社名を入力してください');
       return;
     }
-
     try {
       setIsSaving(true);
-
       // テナント設定更新API
       const response = await fetch('/api/corporate/settings', {
         method: 'PUT',
@@ -234,29 +199,21 @@ export default function CorporateSettingsPage() {
           type: 'general',
         }),
       });
-
       // エラーレスポンスの詳細な処理
       if (!response.ok) {
         const data = await response.json();
-        console.error('設定更新APIエラー詳細:', data);
-
         // 権限エラーの場合は特別なメッセージを表示
         if (response.status === 403) {
           setIsAdmin(false); // 権限がないとAPIが判断した場合、UI状態も更新
           throw new Error(data.error || '管理者権限がありません');
         }
-
         throw new Error(data.error || '設定の更新に失敗しました');
       }
-
       const responseData = await response.json();
-      console.log('設定更新成功:', responseData);
-
       // APIからisAdminが返ってくる場合はそれを使用
       if (responseData.isAdmin !== undefined) {
         setIsAdmin(responseData.isAdmin);
       }
-
       // テナントデータを更新
       if (tenantData && responseData.tenant) {
         // 必須フィールドを明示的に指定
@@ -265,21 +222,17 @@ export default function CorporateSettingsPage() {
           name: responseData.tenant.name || tenantData.name,
         });
       }
-
       toast.success('基本設定を保存しました');
     } catch (err) {
-      console.error('設定更新エラー:', err);
       toast.error(err instanceof Error ? err.message : '設定の更新に失敗しました');
     } finally {
       setIsSaving(false);
     }
   };
-
   // パスワードポリシーを保存
   const handleSaveSecuritySettings = async () => {
     try {
       setIsSaving(true);
-
       const response = await fetch('/api/corporate/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -290,12 +243,10 @@ export default function CorporateSettingsPage() {
           type: 'security',
         }),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'セキュリティ設定の更新に失敗しました');
       }
-
       // テナントデータを更新
       if (tenantData) {
         setTenantData({
@@ -305,25 +256,20 @@ export default function CorporateSettingsPage() {
           },
         });
       }
-
       toast.success('セキュリティ設定を保存しました');
     } catch (err) {
-      console.error('セキュリティ設定エラー:', err);
       toast.error('セキュリティ設定の保存に失敗しました');
     } finally {
       setIsSaving(false);
     }
   };
-
   // handleSaveAdvancedSettings関数を更新
   const handleSaveAdvancedSettings = async (action: string) => {
     try {
       setIsSaving(true);
-
       // action に応じた処理を実装
       let endpoint = '';
       let actionText = '';
-
       switch (action) {
         case 'export':
           endpoint = '/api/corporate/settings/export';
@@ -349,7 +295,6 @@ export default function CorporateSettingsPage() {
           actionText = 'アカウントを削除';
           break;
       }
-
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -357,25 +302,20 @@ export default function CorporateSettingsPage() {
           tenantId: tenantData?.id,
         }),
       });
-
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || `${actionText}に失敗しました`);
       }
-
       const data = await response.json();
       toast.success(`${actionText}しました`);
-
       // データエクスポートの場合、ダウンロード処理を行う
       if (action === 'export' && data.data) {
         handleExportDownload(data.data);
       }
-
       // アカウント削除の場合はダッシュボードにリダイレクト
       if (action === 'delete' && data.redirectTo) {
         router.push(data.redirectTo);
       }
-
       // 停止/再開の場合はテナント情報を更新
       if ((action === 'suspend' || action === 'reactivate') && tenantData) {
         setTenantData({
@@ -384,13 +324,11 @@ export default function CorporateSettingsPage() {
         });
       }
     } catch (err) {
-      console.error('詳細設定エラー:', err);
       toast.error(err instanceof Error ? err.message : '操作に失敗しました');
     } finally {
       setIsSaving(false);
     }
   };
-
   // エクスポートデータの型定義
   interface ExportData {
     companyName: string;
@@ -402,14 +340,12 @@ export default function CorporateSettingsPage() {
     departmentsCSV: string;
     profilesCSV: string;
   }
-
   // データエクスポートのダウンロード処理関数を追加
   const handleExportDownload = (exportData: ExportData) => {
     try {
       // ファイル名に日時を含める
       const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
       const companyName = exportData.companyName.replace(/\s+/g, '_');
-
       // ユーザーデータのダウンロード
       if (exportData.usersCSV) {
         const usersBlob = new Blob([exportData.usersCSV], { type: 'text/csv;charset=utf-8;' });
@@ -421,7 +357,6 @@ export default function CorporateSettingsPage() {
         usersLink.click();
         document.body.removeChild(usersLink);
       }
-
       // 部署データのダウンロード
       if (exportData.departmentsCSV) {
         const deptBlob = new Blob([exportData.departmentsCSV], { type: 'text/csv;charset=utf-8;' });
@@ -433,7 +368,6 @@ export default function CorporateSettingsPage() {
         deptLink.click();
         document.body.removeChild(deptLink);
       }
-
       // プロフィールデータのダウンロード
       if (exportData.profilesCSV) {
         const profileBlob = new Blob([exportData.profilesCSV], { type: 'text/csv;charset=utf-8;' });
@@ -445,7 +379,6 @@ export default function CorporateSettingsPage() {
         profileLink.click();
         document.body.removeChild(profileLink);
       }
-
       // すべてのデータをJSONとしてダウンロード（オプション）
       const allDataBlob = new Blob([JSON.stringify(exportData, null, 2)], {
         type: 'application/json',
@@ -458,16 +391,13 @@ export default function CorporateSettingsPage() {
       allDataLink.click();
       document.body.removeChild(allDataLink);
     } catch (error) {
-      console.error('エクスポートデータのダウンロードエラー:', error);
       toast.error('データのダウンロードに失敗しました');
     }
   };
-
   // 通知設定を保存
   const handleSaveNotificationSettings = async () => {
     try {
       setIsSaving(true);
-
       const response = await fetch('/api/corporate/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -479,12 +409,10 @@ export default function CorporateSettingsPage() {
           type: 'notifications',
         }),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || '通知設定の更新に失敗しました');
       }
-
       // テナントデータを更新
       if (tenantData) {
         setTenantData({
@@ -496,21 +424,17 @@ export default function CorporateSettingsPage() {
           },
         });
       }
-
       toast.success('通知設定を保存しました');
     } catch (err) {
-      console.error('通知設定エラー:', err);
       toast.error('通知設定の保存に失敗しました');
     } finally {
       setIsSaving(false);
     }
   };
-
   // 請求情報を保存
   const handleSaveBillingSettings = async () => {
     try {
       setIsSaving(true);
-
       const response = await fetch('/api/corporate/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -523,12 +447,10 @@ export default function CorporateSettingsPage() {
           type: 'billing',
         }),
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || '請求情報の更新に失敗しました');
       }
-
       // テナントデータを更新
       if (tenantData) {
         setTenantData({
@@ -540,16 +462,13 @@ export default function CorporateSettingsPage() {
           },
         });
       }
-
       toast.success('請求情報を保存しました');
     } catch (err) {
-      console.error('請求情報エラー:', err);
       toast.error('請求情報の保存に失敗しました');
     } finally {
       setIsSaving(false);
     }
   };
-
   // 読み込み中
   if (isLoading) {
     return (
@@ -558,7 +477,6 @@ export default function CorporateSettingsPage() {
       </div>
     );
   }
-
   // エラー表示
   if (error) {
     return (
@@ -575,7 +493,6 @@ export default function CorporateSettingsPage() {
       </div>
     );
   }
-
   // テナントデータがない場合
   if (!tenantData) {
     return (
@@ -592,7 +509,6 @@ export default function CorporateSettingsPage() {
       </div>
     );
   }
-
   // 日付のフォーマット関数
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -602,12 +518,10 @@ export default function CorporateSettingsPage() {
       day: 'numeric',
     });
   };
-
   // プラン名の取得
   const getPlanName = (plan: string, interval?: string) => {
     return getPlanNameFromId(plan, interval);
   };
-
   // 各設定タブのレンダリング
   const renderTabContent = () => {
     switch (activeTab) {
@@ -637,13 +551,11 @@ export default function CorporateSettingsPage() {
                     disabled={!isAdmin}
                   />
                 </div>
-
                 {!isAdmin && (
                   <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3">
                     <p className="text-sm text-yellow-700">設定の変更には管理者権限が必要です</p>
                   </div>
                 )}
-
                 {isAdmin && (
                   <div className="flex justify-end">
                     <Button variant="corporate" type="submit" disabled={isSaving}>
@@ -662,7 +574,6 @@ export default function CorporateSettingsPage() {
             </form>
           </div>
         );
-
       case 'security':
         return (
           <div className="space-y-6">
@@ -690,7 +601,6 @@ export default function CorporateSettingsPage() {
                       <option value={12}>12文字</option>
                     </select>
                   </div>
-
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -706,7 +616,6 @@ export default function CorporateSettingsPage() {
                       大文字を含める必要あり
                     </label>
                   </div>
-
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -722,7 +631,6 @@ export default function CorporateSettingsPage() {
                       数字を含める必要あり
                     </label>
                   </div>
-
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -741,7 +649,6 @@ export default function CorporateSettingsPage() {
                       特殊文字を含める必要あり
                     </label>
                   </div>
-
                   <div>
                     <label className="block text-sm text-gray-700 mb-1">パスワード有効期限</label>
                     <select
@@ -761,7 +668,6 @@ export default function CorporateSettingsPage() {
                   </div>
                 </div>
               </div>
-
               {isAdmin && (
                 <div className="flex justify-end">
                   <Button
@@ -783,7 +689,6 @@ export default function CorporateSettingsPage() {
             </div>
           </div>
         );
-
       case 'notifications':
         return (
           <div className="space-y-6">
@@ -812,7 +717,6 @@ export default function CorporateSettingsPage() {
                       新しいユーザーが追加された時
                     </label>
                   </div>
-
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -830,7 +734,6 @@ export default function CorporateSettingsPage() {
                       ユーザーが削除された時
                     </label>
                   </div>
-
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -848,7 +751,6 @@ export default function CorporateSettingsPage() {
                       プラン変更時
                     </label>
                   </div>
-
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -866,7 +768,6 @@ export default function CorporateSettingsPage() {
                       セキュリティアラート
                     </label>
                   </div>
-
                   <div className="flex items-center">
                     <input
                       type="checkbox"
@@ -886,7 +787,6 @@ export default function CorporateSettingsPage() {
                   </div>
                 </div>
               </div>
-
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <h3 className="font-medium mb-2">管理者通知メールアドレス</h3>
                 <div className="space-y-3">
@@ -903,7 +803,6 @@ export default function CorporateSettingsPage() {
                   </p>
                 </div>
               </div>
-
               <div className="flex justify-end">
                 <Button
                   variant="corporate"
@@ -923,7 +822,6 @@ export default function CorporateSettingsPage() {
             </div>
           </div>
         );
-
       case 'billing':
         return (
           <div className="space-y-6">
@@ -969,7 +867,6 @@ export default function CorporateSettingsPage() {
                 </Button>
               </div>
             </div>
-
             <div className="bg-white border border-gray-200 rounded-lg p-4">
               <h3 className="font-medium mb-3">請求先情報</h3>
               <form className="space-y-3">
@@ -1034,7 +931,6 @@ export default function CorporateSettingsPage() {
             </div>
           </div>
         );
-
       // renderTabContent関数内の詳細設定タブ部分を更新
       case 'advanced':
         return (
@@ -1043,7 +939,6 @@ export default function CorporateSettingsPage() {
               <HiCog className="h-6 w-6 text-corporate-primary mr-2" />
               <h2 className="text-lg font-medium">詳細設定</h2>
             </div>
-
             {/* アカウントステータス表示 */}
             {tenantData.accountStatus && (
               <div className="bg-white border border-gray-200 rounded-lg p-4 mb-4">
@@ -1064,7 +959,6 @@ export default function CorporateSettingsPage() {
                         ? '一時停止中'
                         : tenantData.accountStatus}
                   </span>
-
                   {/* 一時停止中の場合は再開ボタンを表示 */}
                   {tenantData.accountStatus === 'suspended' && isAdmin && (
                     <Button
@@ -1080,7 +974,6 @@ export default function CorporateSettingsPage() {
                 </div>
               </div>
             )}
-
             <div className="space-y-4">
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <h3 className="font-medium mb-2">データエクスポート</h3>
@@ -1103,7 +996,6 @@ export default function CorporateSettingsPage() {
                   )}
                 </Button>
               </div>
-
               <div className="bg-white border border-gray-200 rounded-lg p-4">
                 <h3 className="font-medium text-red-600 mb-2">危険な操作</h3>
                 <p className="text-sm text-gray-600 mb-4">
@@ -1133,7 +1025,6 @@ export default function CorporateSettingsPage() {
                       </p>
                     </div>
                   )}
-
                   <div>
                     <Button
                       variant="outline"
@@ -1157,7 +1048,6 @@ export default function CorporateSettingsPage() {
                 </div>
               </div>
             </div>
-
             {/* 危険な操作に関する注意事項 */}
             <div className="bg-red-50 border border-red-100 rounded-lg p-4">
               <div className="flex flex-row items-start">
@@ -1181,12 +1071,10 @@ export default function CorporateSettingsPage() {
             </div>
           </div>
         );
-
       default:
         return null;
     }
   };
-
   return (
     <div className="space-y-6 corporate-theme">
       {/* ヘッダー部分 */}
@@ -1196,7 +1084,6 @@ export default function CorporateSettingsPage() {
           <p className="text-gray-500 mt-1">法人アカウントの設定を管理します</p>
         </div>
       </div>
-
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* 左側のタブメニュー */}
         <div className="lg:col-span-1">
@@ -1216,7 +1103,6 @@ export default function CorporateSettingsPage() {
                 />
                 基本設定
               </button>
-
               <button
                 className={`group flex items-center px-4 py-4 text-base font-medium transition-all duration-200 ${
                   activeTab === 'security'
@@ -1231,7 +1117,6 @@ export default function CorporateSettingsPage() {
                 />
                 セキュリティ設定
               </button>
-
               <button
                 className={`group flex items-center px-4 py-4 text-base font-medium transition-all duration-200 ${
                   activeTab === 'notifications'
@@ -1246,7 +1131,6 @@ export default function CorporateSettingsPage() {
                 />
                 通知設定
               </button>
-
               <button
                 className={`group flex items-center px-4 py-4 text-base font-medium transition-all duration-200 ${
                   activeTab === 'billing'
@@ -1261,7 +1145,6 @@ export default function CorporateSettingsPage() {
                 />
                 請求情報
               </button>
-
               <button
                 className={`group flex items-center px-4 py-4 text-base font-medium transition-all duration-200 ${
                   activeTab === 'advanced'
@@ -1278,7 +1161,6 @@ export default function CorporateSettingsPage() {
               </button>
             </nav>
           </div>
-
           {/* サポート情報 */}
           <div
             className="mt-6 rounded-md p-4"
@@ -1307,7 +1189,6 @@ export default function CorporateSettingsPage() {
             </div>
           </div>
         </div>
-
         {/* 右側のコンテンツエリア */}
         <div className="lg:col-span-3">
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">

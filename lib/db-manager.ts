@@ -1,11 +1,10 @@
 // lib/db-manager.ts
+import { logger } from "@/lib/utils/logger";
 import { prisma, disconnectPrisma } from '@/lib/prisma';
-
 // 接続カウント用の型定義
 interface PoolStatRecord {
   connection_count: number;
 }
-
 /**
  * 型安全なデータベーストランザクションラッパー
  * @param operation 実行するデータベース操作
@@ -25,7 +24,6 @@ export async function withDatabase<T>(operation: () => Promise<T>): Promise<T> {
     }
   }
 }
-
 /**
  * 接続のステータスを確認する
  * @returns DBのヘルスチェック結果
@@ -38,7 +36,6 @@ export async function checkDatabaseHealth(): Promise<{
   try {
     // 単純なデータベースクエリを実行してヘルスチェック
     const result = await prisma.$queryRaw`SELECT 1 as health`;
-
     // 接続プールの状態確認（可能であれば）
     let connectionCount: number | undefined;
     try {
@@ -51,15 +48,14 @@ export async function checkDatabaseHealth(): Promise<{
       connectionCount = poolStats[0]?.connection_count;
     } catch (e) {
       // 接続カウント取得に失敗しても続行
-      console.warn('接続カウントの取得に失敗:', e);
+      logger.warn('接続カウントの取得に失敗:', e);
     }
-
     return {
       isConnected: Array.isArray(result) && result.length > 0,
       connectionCount,
     };
   } catch (error) {
-    console.error('データベース健全性チェックエラー:', error);
+    logger.error('データベース健全性チェックエラー:', error);
     return {
       isConnected: false,
       error: error instanceof Error ? error.message : String(error),

@@ -1,28 +1,20 @@
 // app/api/corporate/access/route.ts (修正版)
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma, disconnectPrisma } from '@/lib/prisma';
-
+import { logger } from '@/lib/utils/logger';
 export async function GET(request: Request) {
   const url = new URL(request.url);
   const isMobile = url.searchParams.get('mobile') === '1';
-
-  console.log(
-    `[API:corporate/access] API呼び出し開始 (t=${url.searchParams.get('t')}, mobile=${isMobile})`,
-  );
-
+  logger.info('corporate/access API呼び出し開始', { timestamp: url.searchParams.get('t'), mobile: isMobile });
   try {
     // セッションチェック
     const session = await auth();
-
     if (!session || !session.user?.id) {
       return NextResponse.json({ hasAccess: false, error: 'Not authenticated' }, { status: 401 });
     }
-
     const userId = session.user.id;
-
     try {
       // ユーザー情報を取得
       const user = await prisma.user.findUnique({
@@ -55,7 +47,6 @@ export async function GET(request: Request) {
           },
         },
       });
-
       if (!user) {
         return NextResponse.json(
           {
@@ -66,16 +57,12 @@ export async function GET(request: Request) {
           { status: 404 },
         );
       }
-
       // 管理者メールアドレスリスト
       const ADMIN_EMAILS = ['admin@sns-share.com'];
       const isAdminEmail = ADMIN_EMAILS.includes(user.email.toLowerCase());
-
       // 管理者メールアドレスの場合はスーパー管理者権限を付与
       if (isAdminEmail) {
-        console.log(
-          `[API:corporate/access] 管理者メールユーザーにスーパー管理者権限を付与 (userId=${userId})`,
-        );
+        logger.info('管理者メールユーザーにスーパー管理者権限を付与', { userId });
         return NextResponse.json({
           hasCorporateAccess: true,
           hasAccess: true,
@@ -86,10 +73,9 @@ export async function GET(request: Request) {
           error: null,
         });
       }
-
       // 永久利用権ユーザーの場合、即時アクセス権を付与
       if (user.subscriptionStatus === 'permanent') {
-        console.log(`[API:corporate/access] 永久利用権ユーザーにアクセス権付与 (userId=${userId})`);
+        logger.info('永久利用権ユーザーにアクセス権付与', { userId });
         return NextResponse.json({
           hasCorporateAccess: true,
           hasAccess: true,
@@ -100,15 +86,12 @@ export async function GET(request: Request) {
           error: null,
         });
       }
-
       // 🔥 修正: テナント情報の取得ロジックを改善
       const tenant = user.adminOfTenant || user.tenant;
       const tenantId = tenant?.id || user.tenantId; // フォールバック追加
       const hasTenant = !!tenant || !!user.tenantId;
-
       // テナントステータスの確認
       const isTenantSuspended = tenant?.accountStatus === 'suspended';
-
       // 法人サブスクリプションのチェック
       const planLower = (user.subscription?.plan || '').toLowerCase();
       const corporatePlans = [
@@ -120,18 +103,15 @@ export async function GET(request: Request) {
         'starter',
         'starter_yearly',
       ];
-
       const hasCorporateSubscription =
         user.subscription &&
         user.subscription.status === 'active' &&
         (corporatePlans.includes(planLower) ||
           (planLower.includes('corp') && !planLower.includes('personal')) ||
           planLower.includes('pro'));
-
       // 🔥 修正: ユーザーロールの判定を改善
       const isAdmin = !!user.adminOfTenant;
       let userRole: string | null = null;
-
       if (isAdmin) {
         userRole = 'admin';
       } else if (user.corporateRole === 'member' && hasTenant) {
@@ -140,29 +120,23 @@ export async function GET(request: Request) {
         // テナントがあるが明示的なロールがない場合はmemberとして扱う
         userRole = 'member';
       }
-
       // 🔥 修正: アクセス権の判定ロジックを明確化
       const hasBasicAccess = hasTenant && !isTenantSuspended;
-
       // 管理者は常にアクセス可能
       const adminAccess = isAdmin && hasBasicAccess;
-
       // メンバーはテナントがあり停止されていない場合にアクセス可能
       // サブスクリプションチェックは管理者レベルで行い、メンバーは影響を受けない
       const memberAccess = userRole === 'member' && hasBasicAccess;
-
       const finalHasAccess = adminAccess || memberAccess;
-
       // 🔥 修正: 招待メンバーの不完全な状態を検出・警告
       if (user.corporateRole === 'member' && !hasTenant) {
-        console.warn('⚠️  不完全な招待メンバーを検出:', {
+        logger.warn('不完全な招待メンバーを検出', {
           userId,
           email: user.email,
           corporateRole: user.corporateRole,
           tenantId: user.tenantId,
           hasTenant,
         });
-
         return NextResponse.json({
           hasCorporateAccess: false,
           hasAccess: false,
@@ -173,8 +147,7 @@ export async function GET(request: Request) {
           error: 'テナント関連付けが不完全です。管理者にお問い合わせください。',
         });
       }
-
-      console.log('[API:corporate/access] アクセス権判定結果:', {
+      logger.debug('アクセス権判定結果', {
         userId,
         email: user.email,
         hasTenant,
@@ -188,7 +161,6 @@ export async function GET(request: Request) {
         memberAccess,
         finalHasAccess,
       });
-
       return NextResponse.json({
         hasCorporateAccess: finalHasAccess,
         hasAccess: finalHasAccess,
@@ -205,7 +177,7 @@ export async function GET(request: Request) {
           : null,
       });
     } catch (dbError) {
-      console.error('[API:corporate/access] データベースエラー:', dbError);
+      logger.error('データベースエラー:', dbError);
       return NextResponse.json(
         {
           hasCorporateAccess: false,
@@ -218,7 +190,7 @@ export async function GET(request: Request) {
       );
     }
   } catch (error) {
-    console.error('[API:corporate/access] エラー:', error);
+    logger.error('corporate/access エラー:', error);
     return NextResponse.json(
       {
         hasCorporateAccess: false,
@@ -232,7 +204,7 @@ export async function GET(request: Request) {
     try {
       await disconnectPrisma();
     } catch (cleanupError) {
-      console.error('[API:corporate/access] クリーンアップエラー:', cleanupError);
+      logger.error('クリーンアップエラー:', cleanupError);
     }
   }
 }

@@ -2,18 +2,15 @@
 import { Breadcrumb } from '@/components/shared/Breadcrumb';
 import { Footer } from '@/components/layout/Footer';
 import { Header } from '@/components/layout/Header';
-
 type BreadcrumbItem = {
   name: string;
   href: string;
 };
-
 type PageLayoutProps = {
   title: string;
   breadcrumbs: BreadcrumbItem[];
   children: React.ReactNode;
 };
-
 export function PageLayout({ title, breadcrumbs, children }: PageLayoutProps) {
   return (
     <div className="min-h-screen flex flex-col bg-gray-100">

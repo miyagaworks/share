@@ -2,7 +2,6 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import Image from 'next/image';
-
 interface QrCodePreviewProps {
   profileUrl: string;
   userName: string;
@@ -15,7 +14,6 @@ interface QrCodePreviewProps {
   textColor?: string;
   profileImage?: string;
 }
-
 export function QrCodePreview({
   profileUrl,
   userName,
@@ -38,7 +36,6 @@ export function QrCodePreview({
     backgroundColor: '#ebeeef',
     boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
   };
-
   // ヘッダースタイル
   const headerStyle = {
     backgroundColor: primaryColor,
@@ -52,7 +49,6 @@ export function QrCodePreview({
     margin: '0 auto',
     padding: '0.75rem 1rem',
   };
-
   // ヘッダーテキストスタイル
   const headerTextStyle = {
     color: textColor,
@@ -61,7 +57,6 @@ export function QrCodePreview({
     whiteSpace: 'pre-wrap' as const,
     margin: 0,
   };
-
   return (
     <div style={containerStyle}>
       <div style={{ minHeight: '480px' }}>
@@ -69,7 +64,6 @@ export function QrCodePreview({
         <div style={headerStyle}>
           <p style={headerTextStyle}>{headerText || 'シンプルにつながる、スマートにシェア。'}</p>
         </div>
-
         <div style={{ padding: '1.5rem' }}>
           {/* プロフィール部分 */}
           <div className="text-center mt-4 mb-6">
@@ -106,13 +100,11 @@ export function QrCodePreview({
                 </svg>
               )}
             </div>
-
             {/* ユーザー名 */}
             <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold' }}>{userName || 'ユーザー名'}</h1>
             {/* 英語名 */}
             {nameEn && <p style={{ color: '#4B5563', fontSize: '1rem' }}>{nameEn}</p>}
           </div>
-
           {/* QRコード */}
           <div className="flex justify-center my-6">
             <div
@@ -131,7 +123,6 @@ export function QrCodePreview({
               />
             </div>
           </div>
-
           {/* 反転ボタン */}
           <div className="mt-8">
             <button

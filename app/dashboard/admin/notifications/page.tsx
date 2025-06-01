@@ -1,6 +1,5 @@
 // app/dashboard/admin/notifications/page.tsx
 'use client';
-
 import React, { useState, useEffect, Fragment, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -18,7 +17,6 @@ import {
 import { toast } from 'react-hot-toast';
 import { formatDistanceToNow } from 'date-fns';
 import { ja } from 'date-fns/locale';
-
 // お知らせの型定義
 interface Notification {
   id: string;
@@ -34,7 +32,6 @@ interface Notification {
   createdAt: string;
   updatedAt: string;
 }
-
 // お知らせフォームの型
 interface NotificationFormData {
   title: string;
@@ -47,20 +44,17 @@ interface NotificationFormData {
   targetGroup: string;
   active: boolean;
 }
-
 // フィルター設定の型
 interface FilterConfig {
   status: string;
   type: string;
   priority: string;
 }
-
 // ソート設定の型
 interface SortConfig {
   key: string;
   direction: string;
 }
-
 // 初期フォームデータ
 const initialFormData: NotificationFormData = {
   title: '',
@@ -73,7 +67,6 @@ const initialFormData: NotificationFormData = {
   targetGroup: 'all',
   active: true,
 };
-
 // お知らせ統計データの型
 interface NotificationStats {
   total: number;
@@ -83,7 +76,6 @@ interface NotificationStats {
   expired: number;
   byType: Record<string, number>;
 }
-
 export default function AdminNotificationsPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -100,33 +92,27 @@ export default function AdminNotificationsPage() {
     expired: 0,
     byType: {},
   });
-
   // フィルター状態
   const [filters, setFilters] = useState({
     status: 'all', // 'all', 'active', 'inactive', 'upcoming', 'expired'
     type: 'all', // 'all', 'announcement', 'maintenance', 'feature', 'alert'
     priority: 'all', // 'all', 'high', 'normal', 'low'
   });
-
   // 並べ替え状態
   const [sortConfig, setSortConfig] = useState<SortConfig>({
     key: 'createdAt',
     direction: 'desc',
   });
-
   // フォーム状態
   const [showForm, setShowForm] = useState(false);
   const [formData, setFormData] = useState<NotificationFormData>(initialFormData);
   const [editingId, setEditingId] = useState<string | null>(null);
   const [formSubmitting, setFormSubmitting] = useState(false);
-
   // 削除確認状態
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
-
   // 詳細表示状態
   const [expandedId, setExpandedId] = useState<string | null>(null);
-
   // お知らせ一覧取得
   const fetchNotifications = useCallback(async () => {
     setLoading(true);
@@ -138,17 +124,14 @@ export default function AdminNotificationsPage() {
         calculateStats(data.notifications || []);
         applyFiltersAndSort(data.notifications || [], filters, searchTerm, sortConfig);
       } else {
-        console.error('お知らせ一覧取得エラー');
         toast.error('お知らせ一覧の取得に失敗しました');
       }
     } catch (error) {
-      console.error('お知らせ一覧取得エラー:', error);
       toast.error('お知らせ情報の取得中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
   }, [filters, searchTerm, sortConfig]);
-
   // 管理者チェック
   useEffect(() => {
     const checkAdminAccess = async () => {
@@ -156,11 +139,9 @@ export default function AdminNotificationsPage() {
         router.push('/auth/signin');
         return;
       }
-
       try {
         const response = await fetch('/api/admin/access');
         const data = await response.json();
-
         if (data.isSuperAdmin) {
           setIsAdmin(true);
           fetchNotifications();
@@ -168,14 +149,11 @@ export default function AdminNotificationsPage() {
           router.push('/dashboard');
         }
       } catch (error) {
-        console.error('管理者チェックエラー:', error);
         router.push('/dashboard');
       }
     };
-
     checkAdminAccess();
   }, [session, router, fetchNotifications]);
-
   // お知らせ統計情報の計算
   const calculateStats = (notificationList: Notification[]) => {
     const now = new Date();
@@ -187,7 +165,6 @@ export default function AdminNotificationsPage() {
       expired: 0,
       byType: {},
     };
-
     notificationList.forEach((notification) => {
       // アクティブ/非アクティブのカウント
       if (notification.active) {
@@ -195,25 +172,20 @@ export default function AdminNotificationsPage() {
       } else {
         stats.inactive++;
       }
-
       // 開始前のお知らせをカウント
       if (new Date(notification.startDate) > now) {
         stats.upcoming++;
       }
-
       // 終了済みのお知らせをカウント
       if (notification.endDate && new Date(notification.endDate) < now) {
         stats.expired++;
       }
-
       // タイプ別カウント
       const type = notification.type;
       stats.byType[type] = (stats.byType[type] || 0) + 1;
     });
-
     setStats(stats);
   };
-
   // フィルタリングと並べ替えを適用
   const applyFiltersAndSort = (
     notificationList: Notification[],
@@ -223,7 +195,6 @@ export default function AdminNotificationsPage() {
   ) => {
     let filtered = [...notificationList];
     const now = new Date();
-
     // 検索フィルター
     if (search) {
       const lowerSearch = search.toLowerCase();
@@ -233,7 +204,6 @@ export default function AdminNotificationsPage() {
           notification.content.toLowerCase().includes(lowerSearch),
       );
     }
-
     // ステータスフィルター
     if (filters.status !== 'all') {
       switch (filters.status) {
@@ -251,24 +221,20 @@ export default function AdminNotificationsPage() {
           break;
       }
     }
-
     // タイプフィルター
     if (filters.type !== 'all') {
       filtered = filtered.filter((n) => n.type === filters.type);
     }
-
     // 優先度フィルター
     if (filters.priority !== 'all') {
       filtered = filtered.filter((n) => n.priority === filters.priority);
     }
-
     // 並べ替え
     filtered.sort((a, b) => {
       // 値を取得
       const keyToSort = sortConfig.key as keyof Notification;
       const aValue = a[keyToSort];
       const bValue = b[keyToSort];
-
       // 日付型の場合は数値に変換
       if (
         typeof aValue === 'string' &&
@@ -277,17 +243,14 @@ export default function AdminNotificationsPage() {
         // 日付文字列をタイムスタンプに変換
         const aTimestamp = aValue ? new Date(aValue).getTime() : 0;
         const bTimestamp = bValue ? new Date(bValue as string).getTime() : 0;
-
         // 昇順/降順に応じて比較
         return sortConfig.direction === 'asc' ? aTimestamp - bTimestamp : bTimestamp - aTimestamp;
       }
-
       // nullチェックを追加して安全に比較
       // null値は常に最後に配置
       if (aValue === null && bValue === null) return 0;
       if (aValue === null) return sortConfig.direction === 'asc' ? 1 : -1;
       if (bValue === null) return sortConfig.direction === 'asc' ? -1 : 1;
-
       // それ以外の型の場合の比較
       if (aValue! < bValue!) {
         return sortConfig.direction === 'asc' ? -1 : 1;
@@ -297,15 +260,12 @@ export default function AdminNotificationsPage() {
       }
       return 0;
     });
-
     setFilteredNotifications(filtered);
   };
-
   // フィルター変更時に再適用
   useEffect(() => {
     applyFiltersAndSort(notifications, filters, searchTerm, sortConfig);
   }, [filters, searchTerm, sortConfig, notifications]);
-
   // 並べ替え変更ハンドラ
   const handleSort = (key: string) => {
     setSortConfig((prevConfig) => ({
@@ -313,7 +273,6 @@ export default function AdminNotificationsPage() {
       direction: prevConfig.key === key && prevConfig.direction === 'asc' ? 'desc' : 'asc',
     }));
   };
-
   // フィルター変更ハンドラ
   const handleFilterChange = (filterType: string, value: string) => {
     setFilters((prev) => ({
@@ -321,7 +280,6 @@ export default function AdminNotificationsPage() {
       [filterType]: value,
     }));
   };
-
   // フォーム入力変更ハンドラ
   const handleInputChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -329,25 +287,20 @@ export default function AdminNotificationsPage() {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
-
   // チェックボックス変更ハンドラ
   const handleCheckboxChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, checked } = e.target;
     setFormData((prev) => ({ ...prev, [name]: checked }));
   };
-
   // お知らせ作成/更新ハンドラ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setFormSubmitting(true);
-
     try {
       const url = editingId
         ? `/api/admin/notifications/${editingId}`
         : '/api/admin/notifications/create';
-
       const method = editingId ? 'PUT' : 'POST';
-
       // 日付のフォーマット
       const formattedData = {
         ...formData,
@@ -356,7 +309,6 @@ export default function AdminNotificationsPage() {
           : new Date().toISOString(),
         endDate: formData.endDate ? new Date(formData.endDate).toISOString() : null,
       };
-
       const response = await fetch(url, {
         method,
         headers: {
@@ -364,16 +316,13 @@ export default function AdminNotificationsPage() {
         },
         body: JSON.stringify(formattedData),
       });
-
       if (response.ok) {
         await response.json();
         toast.success(editingId ? 'お知らせを更新しました' : 'お知らせを作成しました');
-
         // フォームをリセット
         setShowForm(false);
         setFormData(initialFormData);
         setEditingId(null);
-
         // 一覧を再取得
         fetchNotifications();
       } else {
@@ -381,13 +330,11 @@ export default function AdminNotificationsPage() {
         toast.error(errorData.error || 'お知らせの保存に失敗しました');
       }
     } catch (error) {
-      console.error('お知らせ保存エラー:', error);
       toast.error('処理中にエラーが発生しました');
     } finally {
       setFormSubmitting(false);
     }
   };
-
   // お知らせ編集ハンドラ
   const handleEdit = (notification: Notification) => {
     setFormData({
@@ -406,7 +353,6 @@ export default function AdminNotificationsPage() {
     setEditingId(notification.id);
     setShowForm(true);
   };
-
   // お知らせ削除ハンドラ
   const handleDelete = async (id: string) => {
     setDeletingId(id);
@@ -414,7 +360,6 @@ export default function AdminNotificationsPage() {
       const response = await fetch(`/api/admin/notifications/${id}`, {
         method: 'DELETE',
       });
-
       if (response.ok) {
         toast.success('お知らせを削除しました');
         // 削除確認をクリア
@@ -426,20 +371,17 @@ export default function AdminNotificationsPage() {
         toast.error(errorData.error || 'お知らせの削除に失敗しました');
       }
     } catch (error) {
-      console.error('お知らせ削除エラー:', error);
       toast.error('削除中にエラーが発生しました');
     } finally {
       setDeletingId(null);
     }
   };
-
   // フォームキャンセルハンドラ
   const handleCancelForm = () => {
     setShowForm(false);
     setFormData(initialFormData);
     setEditingId(null);
   };
-
   // プライオリティに応じたバッジカラー
   const getPriorityBadgeClass = (priority: string) => {
     switch (priority) {
@@ -453,7 +395,6 @@ export default function AdminNotificationsPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   // タイプに応じたバッジカラー
   const getTypeBadgeClass = (type: string) => {
     switch (type) {
@@ -469,7 +410,6 @@ export default function AdminNotificationsPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   // ターゲットグループに応じたバッジカラー
   const getTargetGroupBadgeClass = (targetGroup: string) => {
     switch (targetGroup) {
@@ -485,7 +425,6 @@ export default function AdminNotificationsPage() {
         return 'bg-gray-100 text-gray-800';
     }
   };
-
   // ターゲットグループの表示名
   const getTargetGroupDisplay = (targetGroup: string) => {
     switch (targetGroup) {
@@ -501,7 +440,6 @@ export default function AdminNotificationsPage() {
         return targetGroup;
     }
   };
-
   // 日付のフォーマット
   const formatDate = (dateString: string | null) => {
     if (!dateString) return '-';
@@ -511,7 +449,6 @@ export default function AdminNotificationsPage() {
       return dateString;
     }
   };
-
   // 相対日付のフォーマット
   const formatRelativeDate = (dateString: string) => {
     try {
@@ -523,12 +460,10 @@ export default function AdminNotificationsPage() {
       return dateString;
     }
   };
-
   // 詳細表示切り替え
   const toggleExpand = (id: string) => {
     setExpandedId(expandedId === id ? null : id);
   };
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -539,11 +474,9 @@ export default function AdminNotificationsPage() {
       </div>
     );
   }
-
   if (!isAdmin) {
     return null; // リダイレクト処理中は表示なし
   }
-
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
@@ -551,7 +484,6 @@ export default function AdminNotificationsPage() {
           <HiBell className="h-6 w-6 text-blue-600 mr-3" />
           <h1 className="text-2xl font-bold">お知らせ管理</h1>
         </div>
-
         {/* 統計情報 */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <div className="bg-blue-50 p-4 rounded-lg">
@@ -571,7 +503,6 @@ export default function AdminNotificationsPage() {
             <p className="text-2xl font-bold">{stats.inactive + stats.expired}</p>
           </div>
         </div>
-
         {/* 検索・アクションエリア */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <div className="relative w-full sm:w-64">
@@ -586,7 +517,6 @@ export default function AdminNotificationsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
           <div className="flex space-x-2">
             <button
               onClick={() => {
@@ -608,7 +538,6 @@ export default function AdminNotificationsPage() {
             </button>
           </div>
         </div>
-
         {/* フィルターエリア */}
         <div className="flex flex-wrap gap-2 mb-4">
           <select
@@ -622,7 +551,6 @@ export default function AdminNotificationsPage() {
             <option value="upcoming">開始前</option>
             <option value="expired">期限切れ</option>
           </select>
-
           <select
             value={filters.type}
             onChange={(e) => handleFilterChange('type', e.target.value)}
@@ -634,7 +562,6 @@ export default function AdminNotificationsPage() {
             <option value="feature">新機能</option>
             <option value="alert">アラート</option>
           </select>
-
           <select
             value={filters.priority}
             onChange={(e) => handleFilterChange('priority', e.target.value)}
@@ -645,12 +572,10 @@ export default function AdminNotificationsPage() {
             <option value="normal">通常</option>
             <option value="low">低</option>
           </select>
-
           <span className="text-sm text-gray-500 flex items-center ml-auto">
             {filteredNotifications.length}件表示 / 全{notifications.length}件
           </span>
         </div>
-
         {/* フォーム */}
         {showForm && (
           <div className="bg-gray-50 p-4 rounded-lg mb-6 border border-gray-200">
@@ -670,7 +595,6 @@ export default function AdminNotificationsPage() {
                     className="w-full p-2 border border-gray-300 rounded-md"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">タイプ*</label>
                   <select
@@ -686,7 +610,6 @@ export default function AdminNotificationsPage() {
                     <option value="alert">アラート</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">重要度</label>
                   <select
@@ -700,7 +623,6 @@ export default function AdminNotificationsPage() {
                     <option value="high">高</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     対象ユーザー
@@ -717,7 +639,6 @@ export default function AdminNotificationsPage() {
                     <option value="permanent">永久利用権ユーザー</option>
                   </select>
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     表示開始日*
@@ -731,7 +652,6 @@ export default function AdminNotificationsPage() {
                     className="w-full p-2 border border-gray-300 rounded-md"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     表示終了日（空欄の場合は無期限）
@@ -744,7 +664,6 @@ export default function AdminNotificationsPage() {
                     className="w-full p-2 border border-gray-300 rounded-md"
                   />
                 </div>
-
                 <div>
                   <label className="block text-sm font-medium text-gray-700 mb-1">
                     画像URL（オプション）
@@ -758,7 +677,6 @@ export default function AdminNotificationsPage() {
                     placeholder="https://example.com/image.jpg"
                   />
                 </div>
-
                 <div className="flex items-center">
                   <input
                     type="checkbox"
@@ -773,7 +691,6 @@ export default function AdminNotificationsPage() {
                   </label>
                 </div>
               </div>
-
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">内容*</label>
                 <textarea
@@ -784,7 +701,6 @@ export default function AdminNotificationsPage() {
                   className="w-full p-2 border border-gray-300 rounded-md h-32"
                 ></textarea>
               </div>
-
               <div className="flex justify-end space-x-2">
                 <button
                   type="button"
@@ -812,7 +728,6 @@ export default function AdminNotificationsPage() {
             </form>
           </div>
         )}
-
         {/* お知らせ一覧テーブル */}
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
@@ -1076,7 +991,6 @@ export default function AdminNotificationsPage() {
           </table>
         </div>
       </div>
-
       {/* 削除確認モーダル */}
       {deleteConfirm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

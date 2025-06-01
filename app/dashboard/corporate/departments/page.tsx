@@ -1,6 +1,5 @@
 // app/dashboard/corporate/departments/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -9,7 +8,6 @@ import { Spinner } from '@/components/ui/Spinner';
 import { Input } from '@/components/ui/Input';
 import { HiPlus, HiPencil, HiTrash, HiOfficeBuilding, HiInformationCircle, HiUsers } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
-
 // 部署情報の型定義
 interface Department {
   id: string;
@@ -17,7 +15,6 @@ interface Department {
   description: string | null;
   userCount?: number;
 }
-
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -30,7 +27,6 @@ interface TenantData {
     departmentId: string | null;
   }>;
 }
-
 export default function DepartmentsPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -39,7 +35,6 @@ export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
-
   // 部署追加・編集モーダル用の状態
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -47,47 +42,36 @@ export default function DepartmentsPage() {
   const [departmentName, setDepartmentName] = useState('');
   const [departmentDescription, setDepartmentDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
-
   // テナント情報を取得
   useEffect(() => {
     const fetchTenantData = async () => {
       if (!session?.user?.id) return;
-
       try {
         setIsLoading(true);
-
         // テナント情報取得API
         const response = await fetch('/api/corporate/tenant');
-
         if (!response.ok) {
           throw new Error('テナント情報の取得に失敗しました');
         }
-
         const data = await response.json();
         setTenantData(data.tenant);
         setIsAdmin(data.userRole === 'admin');
-
         // 部署情報を取得
         const deptResponse = await fetch('/api/corporate/departments');
-
         if (!deptResponse.ok) {
           throw new Error('部署情報の取得に失敗しました');
         }
-
         const deptData = await deptResponse.json();
         setDepartments(deptData.departments || []);
         setError(null);
       } catch (err) {
-        console.error('テナント情報取得エラー:', err);
         setError('テナント情報を読み込めませんでした');
       } finally {
         setIsLoading(false);
       }
     };
-
     fetchTenantData();
   }, [session]);
-
   // 部署追加モーダルを開く
   const openAddModal = () => {
     setIsEditing(false);
@@ -96,7 +80,6 @@ export default function DepartmentsPage() {
     setDepartmentDescription('');
     setIsModalOpen(true);
   };
-
   // 部署編集モーダルを開く
   const openEditModal = (department: Department) => {
     setIsEditing(true);
@@ -105,24 +88,19 @@ export default function DepartmentsPage() {
     setDepartmentDescription(department.description || '');
     setIsModalOpen(true);
   };
-
   // モーダルを閉じる
   const closeModal = () => {
     setIsModalOpen(false);
   };
-
   // 部署追加・更新処理
   const handleSaveDepartment = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!departmentName.trim()) {
       toast.error('部署名を入力してください');
       return;
     }
-
     try {
       setIsSaving(true);
-
       if (isEditing && editingDepartment) {
         // 部署更新API
         const response = await fetch(`/api/corporate/departments/${editingDepartment.id}`, {
@@ -133,14 +111,11 @@ export default function DepartmentsPage() {
             description: departmentDescription || null,
           }),
         });
-
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error || '部署の更新に失敗しました');
         }
-
         const data = await response.json();
-
         // APIから返ってきた値を使用
         const updatedDepartments = departments.map((dept) =>
           dept.id === editingDepartment.id
@@ -152,7 +127,6 @@ export default function DepartmentsPage() {
             : dept,
         );
         setDepartments(updatedDepartments);
-
         toast.success('部署情報を更新しました');
       } else {
         // 部署追加API
@@ -164,14 +138,11 @@ export default function DepartmentsPage() {
             description: departmentDescription || null,
           }),
         });
-
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error || '部署の追加に失敗しました');
         }
-
         const data = await response.json();
-
         // 新しい部署を追加
         const newDepartment = {
           id: data.department.id,
@@ -179,21 +150,17 @@ export default function DepartmentsPage() {
           description: data.department.description,
           userCount: 0,
         };
-
         setDepartments([...departments, newDepartment]);
         toast.success('部署を追加しました');
       }
-
       // モーダルを閉じる
       closeModal();
     } catch (err) {
-      console.error('部署保存エラー:', err);
       toast.error(err instanceof Error ? err.message : '部署の保存に失敗しました');
     } finally {
       setIsSaving(false);
     }
   };
-
   // 部署削除処理
   const handleDeleteDepartment = async (department: Department) => {
     if (department.userCount && department.userCount > 0) {
@@ -202,33 +169,27 @@ export default function DepartmentsPage() {
       );
       return;
     }
-
     if (
       !confirm(`「${department.name}」部署を削除してもよろしいですか？この操作は元に戻せません。`)
     ) {
       return;
     }
-
     try {
       // 部署削除API
       const response = await fetch(`/api/corporate/departments/${department.id}`, {
         method: 'DELETE',
       });
-
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || '部署の削除に失敗しました');
       }
-
       // 部署リストから削除
       setDepartments(departments.filter((dept) => dept.id !== department.id));
       toast.success('部署を削除しました');
     } catch (err) {
-      console.error('部署削除エラー:', err);
       toast.error(err instanceof Error ? err.message : '部署の削除に失敗しました');
     }
   };
-
   // 読み込み中
   if (isLoading) {
     return (
@@ -237,7 +198,6 @@ export default function DepartmentsPage() {
       </div>
     );
   }
-
   // エラー表示
   if (error) {
     return (
@@ -254,7 +214,6 @@ export default function DepartmentsPage() {
       </div>
     );
   }
-
   // テナントデータがない場合
   if (!tenantData) {
     return (
@@ -271,7 +230,6 @@ export default function DepartmentsPage() {
       </div>
     );
   }
-
   return (
     <div className="space-y-6 corporate-theme">
       {/* ヘッダー部分 */}
@@ -280,7 +238,6 @@ export default function DepartmentsPage() {
           <h1 className="text-2xl font-bold">部署管理</h1>
           <p className="text-gray-500 mt-1">部署を作成・管理し、ユーザーを適切に分類します</p>
         </div>
-
         {isAdmin && (
           <Button variant="corporate" onClick={openAddModal} className="flex items-center">
             <HiPlus className="mr-2 h-4 w-4" />
@@ -288,7 +245,6 @@ export default function DepartmentsPage() {
           </Button>
         )}
       </div>
-
       {/* 部署リスト */}
       {departments.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -305,7 +261,6 @@ export default function DepartmentsPage() {
                     </div>
                     <h3 className="font-medium">{dept.name}</h3>
                   </div>
-
                   {isAdmin && (
                     <div className="flex space-x-1">
                       <button
@@ -324,17 +279,14 @@ export default function DepartmentsPage() {
                     </div>
                   )}
                 </div>
-
                 <p className="text-sm text-gray-500 mb-4 min-h-[40px]">
                   {dept.description || '説明なし'}
                 </p>
-
                 <div className="flex items-center text-sm">
                   <HiUsers className="h-4 w-4 text-gray-500 mr-1" />
                   <span className="text-gray-500">{dept.userCount || 0}人のユーザー</span>
                 </div>
               </div>
-
               <div className="border-t border-gray-200 bg-gray-50 px-6 py-3">
                 <Button
                   variant="ghost"
@@ -364,7 +316,6 @@ export default function DepartmentsPage() {
           )}
         </div>
       )}
-
       {/* 部署追加/編集モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -373,7 +324,6 @@ export default function DepartmentsPage() {
               <h3 className="text-lg font-medium mb-4">
                 {isEditing ? '部署を編集' : '新しい部署を追加'}
               </h3>
-
               <form onSubmit={handleSaveDepartment}>
                 <div className="space-y-4">
                   <div>
@@ -389,7 +339,6 @@ export default function DepartmentsPage() {
                       placeholder="例: 営業部、マーケティング部、開発部"
                     />
                   </div>
-
                   <div>
                     <label
                       htmlFor="description"
@@ -407,7 +356,6 @@ export default function DepartmentsPage() {
                     />
                   </div>
                 </div>
-
                 <div className="flex justify-end space-x-3 mt-6">
                   <Button type="button" variant="corporateOutline" onClick={closeModal}>
                     キャンセル
@@ -428,7 +376,6 @@ export default function DepartmentsPage() {
           </div>
         </div>
       )}
-
       {/* 部署管理のヒント */}
       <div
         className="mt-6 rounded-md p-4"

@@ -1,12 +1,10 @@
 // app/api/corporate-member/profile/route.ts
-
 export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccess';
-
 export async function GET() {
   try {
     // 永久利用権ユーザーかどうかをチェック
@@ -20,13 +18,11 @@ export async function GET() {
           { status: 500 },
         );
       }
-
       // セッションからユーザー情報を取得
       const session = await auth();
       if (!session?.user?.id) {
         return NextResponse.json({ error: '認証されていません' }, { status: 401 });
       }
-
       // ユーザー基本情報を取得
       const userData = await prisma.user.findUnique({
         where: { id: session.user.id },
@@ -47,11 +43,9 @@ export async function GET() {
           profile: true,
         },
       });
-
       if (!userData) {
         return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
       }
-
       // 仮想テナントデータをレスポンスとして返す
       return NextResponse.json({
         user: {
@@ -70,13 +64,11 @@ export async function GET() {
         },
       });
     }
-
     // 通常のユーザーの場合（永久利用権でない場合）
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-
     // ユーザー情報を取得（テナント情報も含める）
     const userData = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -111,14 +103,11 @@ export async function GET() {
         },
       },
     });
-
     if (!userData) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
-
     // テナント情報（管理者または一般メンバーのいずれか）
     const tenantData = userData.adminOfTenant || userData.tenant;
-
     return NextResponse.json({
       user: {
         id: userData.id,
@@ -141,7 +130,7 @@ export async function GET() {
       tenant: tenantData,
     });
   } catch (error) {
-    console.error('プロフィール取得エラー:', error);
+    logger.error('プロフィール取得エラー:', error);
     return NextResponse.json({ error: 'プロフィール情報の取得に失敗しました' }, { status: 500 });
   }
 }

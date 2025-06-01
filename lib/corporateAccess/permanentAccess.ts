@@ -1,4 +1,5 @@
 // lib/corporateAccess/permanentAccess.ts
+import { logger } from "@/lib/utils/logger";
 import {
   CorporateAccessState,
   corporateAccessState,
@@ -9,7 +10,6 @@ import {
 import { setAdminStatus } from './adminAccess';
 import { generateVirtualTenantData } from './virtualTenant';
 import { VirtualTenantData } from './virtualTenant';
-
 // 永久利用権プランタイプの列挙型
 export enum PermanentPlanType {
   PERSONAL = 'personal',
@@ -17,7 +17,6 @@ export enum PermanentPlanType {
   BUSINESS_PLUS = 'business_plus',
   ENTERPRISE = 'enterprise',
 }
-
 // プランタイプの表示名マッピング
 export const PLAN_TYPE_DISPLAY_NAMES: Record<PermanentPlanType, string> = {
   [PermanentPlanType.PERSONAL]: '個人永久プラン',
@@ -25,7 +24,6 @@ export const PLAN_TYPE_DISPLAY_NAMES: Record<PermanentPlanType, string> = {
   [PermanentPlanType.BUSINESS_PLUS]: 'ビジネスプラス永久プラン (30名まで)',
   [PermanentPlanType.ENTERPRISE]: 'エンタープライズ永久プラン (50名まで)',
 };
-
 /**
  * ユーザーが永久利用権を持っているかどうかをチェック
  *
@@ -36,12 +34,10 @@ export function checkPermanentAccess(): boolean {
   if (!isClient()) {
     return false;
   }
-
   // 状態から判定
   if (corporateAccessState.isPermanentUser === true) {
     return true;
   }
-
   // sessionStorageから判定
   try {
     if (typeof sessionStorage !== 'undefined') {
@@ -49,20 +45,16 @@ export function checkPermanentAccess(): boolean {
       if (userDataStr) {
         const userData = JSON.parse(userDataStr);
         const isPermanent = userData.subscriptionStatus === 'permanent';
-
         if (isPermanent) {
           // 永久利用権ユーザーとして設定
           updatePermanentUserStatus(true, userData.id, userData.name);
-
           // 管理者権限をfalseに設定（念のため）
           setAdminStatus(false, true);
-
           logDebug('永久利用権ユーザーを検出', {
             userId: userData.id,
             name: userData.name,
             isPermanent: true,
           });
-
           return true;
         }
       }
@@ -70,10 +62,8 @@ export function checkPermanentAccess(): boolean {
   } catch (error) {
     logDebug('永久利用権チェックエラー', error);
   }
-
   return false;
 }
-
 /**
  * 永久利用権ユーザーの状態を更新
  *
@@ -88,21 +78,17 @@ export function updatePermanentUserStatus(
 ): void {
   // 現在のステータス
   const currentStatus = corporateAccessState.isPermanentUser;
-
   // 変更がなければ何もしない
   if (currentStatus === isPermanent) {
     return;
   }
-
   logDebug('永久利用権ステータス更新', {
     isPermanent,
     userId,
     previousStatus: currentStatus,
   });
-
   if (isPermanent) {
     // 永久利用権ユーザーの場合
-
     // 状態を更新
     updateState({
       isPermanentUser: true,
@@ -114,7 +100,6 @@ export function updatePermanentUserStatus(
       userRole: null,
       error: null,
     });
-
     // 仮想テナントデータを生成（クライアントサイドのみ）
     if (isClient() && userId) {
       const virtualData = generateVirtualTenantData(userId, userName);
@@ -128,7 +113,6 @@ export function updatePermanentUserStatus(
     });
   }
 }
-
 /**
  * 仮想テナントデータをローカルストレージに保存
  *
@@ -136,7 +120,6 @@ export function updatePermanentUserStatus(
  */
 function storeVirtualTenantData(data: VirtualTenantData): void {
   if (!isClient() || typeof localStorage === 'undefined') return;
-
   try {
     localStorage.setItem('virtualTenantData', JSON.stringify(data));
     logDebug('仮想テナントデータを保存', { tenantId: data.id });
@@ -144,7 +127,6 @@ function storeVirtualTenantData(data: VirtualTenantData): void {
     logDebug('仮想テナントデータ保存エラー', error);
   }
 }
-
 /**
  * 永久利用権ユーザーのプラン種別を取得し、アクセス権を更新する
  *
@@ -154,17 +136,14 @@ export async function fetchPermanentPlanType(): Promise<PermanentPlanType | null
   if (!isClient() || !corporateAccessState.isPermanentUser) {
     return null;
   }
-
   // すでに取得済みの場合は保存されている値を返す
   if (corporateAccessState.permanentPlanType) {
     // プラン種別に基づいてアクセス権を更新
     updatePermanentAccessByPlanType(corporateAccessState.permanentPlanType as PermanentPlanType);
     return corporateAccessState.permanentPlanType as PermanentPlanType;
   }
-
   try {
     logDebug('永久利用権プラン種別を取得開始', {});
-
     const response = await fetch('/api/user/permanent-plan-type', {
       headers: {
         'Cache-Control': 'no-cache',
@@ -172,29 +151,23 @@ export async function fetchPermanentPlanType(): Promise<PermanentPlanType | null
       },
       credentials: 'include',
     });
-
     if (response.ok) {
       const data = await response.json();
       logDebug('永久利用権プラン種別取得結果', data);
-
       if (!data.isPermanent) {
         // APIによると永久利用権ユーザーではない
         updatePermanentUserStatus(false);
         return null;
       }
-
       // プラン種別を取得
       // デフォルトはPERSONAL
       const planType = (data.planType || PermanentPlanType.PERSONAL) as PermanentPlanType;
-
       // 状態を更新
       updateState({
         permanentPlanType: planType,
       });
-
       // プラン種別に基づいてアクセス権を更新
       updatePermanentAccessByPlanType(planType);
-
       return planType;
     } else {
       // エラー時はデフォルトでpersonalに設定（安全側）
@@ -203,24 +176,20 @@ export async function fetchPermanentPlanType(): Promise<PermanentPlanType | null
         permanentPlanType: defaultPlanType,
       });
       updatePermanentAccessByPlanType(defaultPlanType);
-
       logDebug('永久利用権プラン種別取得エラー - デフォルト使用', { planType: defaultPlanType });
       return defaultPlanType;
     }
   } catch (error) {
     logDebug('永久利用権プラン種別取得エラー', error);
-
     // エラー時はデフォルトでpersonalに設定（安全側）
     const defaultPlanType = PermanentPlanType.PERSONAL;
     updateState({
       permanentPlanType: defaultPlanType,
     });
     updatePermanentAccessByPlanType(defaultPlanType);
-
     return defaultPlanType;
   }
 }
-
 /**
  * プラン種別に基づいて永久利用権ユーザーのアクセス権を更新
  *
@@ -229,7 +198,6 @@ export async function fetchPermanentPlanType(): Promise<PermanentPlanType | null
 export function updatePermanentAccessByPlanType(planType: PermanentPlanType): void {
   // 明示的にプラン種別を確認して処理
   let hasAccess = false;
-
   switch (planType) {
     case PermanentPlanType.PERSONAL:
       // 個人プランは法人アクセス権なし
@@ -246,7 +214,6 @@ export function updatePermanentAccessByPlanType(planType: PermanentPlanType): vo
       hasAccess = false;
       break;
   }
-
   // ユーザーIDを取得（可能であれば）
   let userId = '';
   try {
@@ -260,7 +227,6 @@ export function updatePermanentAccessByPlanType(planType: PermanentPlanType): vo
   } catch (e) {
     logDebug('ユーザーID取得エラー', e);
   }
-
   // 更新対象の状態
   const updateData: Partial<CorporateAccessState> = {
     hasAccess,
@@ -268,17 +234,14 @@ export function updatePermanentAccessByPlanType(planType: PermanentPlanType): vo
     userRole: hasAccess ? 'admin' : null,
     permanentPlanType: planType,
   };
-
   // 法人プランの場合はテナントIDも設定
   if (hasAccess && userId) {
     updateData.tenantId = `virtual-tenant-${userId}`;
   } else {
     updateData.tenantId = null;
   }
-
   // 状態を更新
   updateState(updateData);
-
   logDebug('永久利用権プラン種別によるアクセス権更新', {
     planType,
     hasAccess,
@@ -287,7 +250,6 @@ export function updatePermanentAccessByPlanType(planType: PermanentPlanType): vo
     tenantId: updateData.tenantId,
   });
 }
-
 /**
  * 永久利用権ユーザーに対してアクション（プラン変更など）が許可されているかチェック
  *
@@ -299,7 +261,6 @@ export function isPermanentActionAllowed(action: string): boolean {
     // 永久利用権ユーザーでなければ制限なし
     return true;
   }
-
   // 永久利用権ユーザーに制限されているアクション
   const restrictedActions = [
     'change_plan',
@@ -307,7 +268,6 @@ export function isPermanentActionAllowed(action: string): boolean {
     'downgrade_plan',
     'upgrade_plan',
   ];
-
   // 制限アクションリストにあるかチェック
   return !restrictedActions.includes(action);
 }

@@ -1,6 +1,5 @@
 // app/dashboard/admin/permissions/page.tsx
 'use client';
-
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
@@ -17,7 +16,6 @@ import {
 } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
 import FixPermanentUsersButton from './fix-permanent-button';
-
 // ユーザー情報の型定義
 interface UserData {
   id: string;
@@ -29,7 +27,6 @@ interface UserData {
   isGracePeriodExpired?: boolean;
   subscriptionStatus: string | null;
 }
-
 // 並び替えのタイプ
 type SortType =
   | 'created_asc'
@@ -39,7 +36,6 @@ type SortType =
   | 'email_asc'
   | 'email_desc'
   | 'permanent';
-
 export default function AdminPermissionsPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -48,7 +44,6 @@ export default function AdminPermissionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [sortType, setSortType] = useState<SortType>('permanent');
-
   // 管理者チェック
   useEffect(() => {
     const checkAdminAccess = async () => {
@@ -56,11 +51,9 @@ export default function AdminPermissionsPage() {
         router.push('/auth/signin');
         return;
       }
-
       try {
         const response = await fetch('/api/admin/access');
         const data = await response.json();
-
         if (data.isSuperAdmin) {
           setIsAdmin(true);
           fetchUsers();
@@ -68,14 +61,11 @@ export default function AdminPermissionsPage() {
           router.push('/dashboard');
         }
       } catch (error) {
-        console.error('管理者チェックエラー:', error);
         router.push('/dashboard');
       }
     };
-
     checkAdminAccess();
   }, [session, router]);
-
   // ユーザー一覧の取得
   const fetchUsers = async () => {
     setLoading(true);
@@ -85,17 +75,14 @@ export default function AdminPermissionsPage() {
         const data = await response.json();
         setUsers(data.users);
       } else {
-        console.error('ユーザー一覧取得エラー');
         toast.error('ユーザー一覧の取得に失敗しました');
       }
     } catch (error) {
-      console.error('ユーザー一覧取得エラー:', error);
       toast.error('ユーザー情報の取得中にエラーが発生しました');
     } finally {
       setLoading(false);
     }
   };
-
   // 永久利用権の付与/解除
   const togglePermanentAccess = async (userId: string, isPermanent: boolean) => {
     try {
@@ -109,26 +96,21 @@ export default function AdminPermissionsPage() {
           isPermanent,
         }),
       });
-
       if (response.ok) {
         toast.success(isPermanent ? '永久利用権を付与しました' : '永久利用権を解除しました');
         // 成功したら一覧を再取得
         fetchUsers();
       } else {
-        console.error('永久利用権の更新に失敗しました');
         toast.error('永久利用権の更新に失敗しました');
       }
     } catch (error) {
-      console.error('永久利用権の更新エラー:', error);
       toast.error('処理中にエラーが発生しました');
     }
   };
-
   // 並び替え関数
   const handleSort = (type: SortType) => {
     setSortType(type);
   };
-
   // 検索結果のフィルタリング
   const filteredUsers = users.filter(
     (user) =>
@@ -136,51 +118,41 @@ export default function AdminPermissionsPage() {
       user.nameKana?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       user.email.toLowerCase().includes(searchTerm.toLowerCase()),
   );
-
   // ユーザーの並び替え
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     // 永久利用権所持ユーザーを優先
     if (sortType === 'permanent') {
       if (a.isPermanentUser && !b.isPermanentUser) return -1;
       if (!a.isPermanentUser && b.isPermanentUser) return 1;
-
       // 同じステータスならフリガナの順
       return (a.nameKana || '').localeCompare(b.nameKana || '');
     }
-
     // 登録日の新しい順
     if (sortType === 'created_desc') {
       return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
     }
-
     // 登録日の古い順
     if (sortType === 'created_asc') {
       return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
     }
-
     // フリガナの昇順
     if (sortType === 'nameKana_asc') {
       return (a.nameKana || '').localeCompare(b.nameKana || '');
     }
-
     // フリガナの降順
     if (sortType === 'nameKana_desc') {
       return (b.nameKana || '').localeCompare(a.nameKana || '');
     }
-
     // メールアドレスの昇順
     if (sortType === 'email_asc') {
       return a.email.localeCompare(b.email);
     }
-
     // メールアドレスの降順
     if (sortType === 'email_desc') {
       return b.email.localeCompare(a.email);
     }
-
     return 0;
   });
-
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -191,11 +163,9 @@ export default function AdminPermissionsPage() {
       </div>
     );
   }
-
   if (!isAdmin) {
     return null; // リダイレクト処理中は表示なし
   }
-
   return (
     <div className="max-w-6xl mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
@@ -203,7 +173,6 @@ export default function AdminPermissionsPage() {
           <HiKey className="h-6 w-6 text-blue-600 mr-3" />
           <h1 className="text-2xl font-bold">永久利用権管理</h1>
         </div>
-
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <div className="relative w-full sm:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
@@ -217,7 +186,6 @@ export default function AdminPermissionsPage() {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-
           <div className="flex space-x-2">
             {/* 修正ボタン */}
             <FixPermanentUsersButton />
@@ -283,7 +251,6 @@ export default function AdminPermissionsPage() {
             </Button>
           </div>
         </div>
-
         <div className="overflow-x-auto">
           <table className="min-w-full bg-white">
             <thead className="bg-gray-50">
@@ -371,7 +338,6 @@ export default function AdminPermissionsPage() {
             </tbody>
           </table>
         </div>
-
         {filteredUsers.length === 0 && (
           <div className="text-center py-6">
             <p className="text-gray-500">該当するユーザーが見つかりません</p>

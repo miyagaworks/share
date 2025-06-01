@@ -1,15 +1,12 @@
 // app/jikogene/components/StepIndicator.tsx
 'use client';
-
 import { cn } from '@/lib/utils';
 import { FormStep } from '../types';
 import { memo } from 'react';
-
 interface StepIndicatorProps {
   currentStep: number;
   steps: FormStep[];
 }
-
 /**
  * フォームのステップを表示するコンポーネント
  * アイコンを中央に配置し、サイズも最適化
@@ -44,7 +41,6 @@ const StepIndicator = memo(function StepIndicator({ currentStep, steps }: StepIn
           ))}
         </div>
       </div>
-
       {/* モバイル表示 - スマホに最適化したサイズでアイコンを中央配置 */}
       <div className="flex md:hidden justify-center mb-4">
         <div className="flex space-x-4 max-w-full overflow-x-auto py-2">
@@ -75,5 +71,4 @@ const StepIndicator = memo(function StepIndicator({ currentStep, steps }: StepIn
     </div>
   );
 });
-
 export default StepIndicator;

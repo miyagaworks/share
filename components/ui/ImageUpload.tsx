@@ -1,11 +1,9 @@
 // components/ui/ImageUpload.tsx
 'use client';
-
 import { useState, useRef, useCallback } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
-
 interface ImageUploadProps {
   value: string | null;
   onChange: (value: string | null) => void;
@@ -13,7 +11,6 @@ interface ImageUploadProps {
   className?: string;
   maxSizeKB?: number; // サイズ制限をプロパティで設定可能に
 }
-
 export function ImageUpload({
   value,
   onChange,
@@ -23,38 +20,30 @@ export function ImageUpload({
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
   // 画像圧縮関数（オプション）
   const compressImage = useCallback(async (file: File, maxWidth = 800): Promise<Blob> => {
     return new Promise((resolve, reject) => {
       // Imageオブジェクト生成
       const img = document.createElement('img');
       const reader = new FileReader();
-
       reader.onload = (e) => {
         if (!e.target?.result) return reject(new Error('画像読み込みエラー'));
-
         img.onload = () => {
           // サイズ調整（必要な場合のみ）
           const width = img.width;
           const height = img.height;
-
           // 既に小さい画像は圧縮しない
           if (width <= maxWidth) {
             return resolve(file as Blob);
           }
-
           // サイズ調整
           const canvas = document.createElement('canvas');
           const ratio = maxWidth / width;
           canvas.width = maxWidth;
           canvas.height = height * ratio;
-
           const ctx = canvas.getContext('2d');
           if (!ctx) return reject(new Error('Canvas contextエラー'));
-
           ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-
           // 圧縮した画像を返却
           canvas.toBlob(
             (blob) => {
@@ -65,44 +54,34 @@ export function ImageUpload({
             0.85, // 品質調整（85%）
           );
         };
-
         img.onerror = () => reject(new Error('画像読み込みエラー'));
         img.src = e.target.result as string;
       };
-
       reader.onerror = () => reject(new Error('ファイル読み込みエラー'));
       reader.readAsDataURL(file);
     });
   }, []);
-
   const handleClick = () => {
     if (disabled) return;
     fileInputRef.current?.click();
   };
-
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled || !e.target.files || e.target.files.length === 0) return;
-
     const file = e.target.files[0];
-
     // ファイルサイズチェック
     if (file.size > maxSizeKB * 1024) {
       toast.error(`ファイルサイズは${maxSizeKB / 1024}MB以下にしてください`);
       return;
     }
-
     // ファイル形式チェック
     if (!/^image\/(jpeg|png|jpg)$/.test(file.type)) {
       toast.error('JPGまたはPNG形式の画像をアップロードしてください');
       return;
     }
-
     setIsUploading(true);
-
     try {
       // 画像圧縮（大きい画像の場合のみ）
       const compressedFile = await compressImage(file);
-
       // FileReaderでファイルをBase64に変換
       const reader = new FileReader();
       reader.onload = (event) => {
@@ -122,13 +101,11 @@ export function ImageUpload({
       setIsUploading(false);
     }
   };
-
   const handleRemove = (e: React.MouseEvent) => {
     e.stopPropagation();
     if (disabled) return;
     onChange(null);
   };
-
   return (
     <div
       onClick={handleClick}
@@ -147,7 +124,6 @@ export function ImageUpload({
         disabled={disabled || isUploading}
         className="hidden"
       />
-
       {isUploading ? (
         <div className="text-sm text-muted-foreground">アップロード中...</div>
       ) : value ? (

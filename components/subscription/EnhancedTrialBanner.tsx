@@ -1,16 +1,12 @@
 // components/subscription/EnhancedTrialBanner.tsx - 修正版（アイコン表示・青系カラー対応）
 'use client';
-
 import { useState, useEffect } from 'react';
 import { HiArrowRight, HiSparkles, HiClock } from 'react-icons/hi';
-
 interface EnhancedTrialBannerProps {
   trialEndDate: string | null;
 }
-
 export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBannerProps) {
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
-
   useEffect(() => {
     if (trialEndDate) {
       const end = new Date(trialEndDate);
@@ -20,12 +16,9 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
       setDaysRemaining(diffDays);
     }
   }, [trialEndDate]);
-
   // プラン選択のクリックハンドラー
   const handlePlanSelection = (e: React.MouseEvent) => {
     e.preventDefault();
-    console.log('EnhancedTrialBanner: Plan selection clicked');
-
     // 現在のページが subscription ページかチェック
     if (window.location.pathname === '/dashboard/subscription') {
       // 既に subscription ページにいる場合、直接スクロール
@@ -36,7 +29,6 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
         const headerHeight = 80;
         const offset = 30;
         const scrollPosition = absoluteElementTop - headerHeight - offset;
-
         window.scrollTo({
           top: scrollPosition,
           behavior: 'smooth',
@@ -44,14 +36,11 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
         return;
       }
     }
-
     // subscription ページに遷移
     window.location.href = '/dashboard/subscription#subscription-plans';
   };
-
   // 残り日数が0以下またはトライアル期間でない場合は表示しない
   if (!trialEndDate || daysRemaining <= 0) return null;
-
   return (
     <div className="relative mb-10 sm:mb-12 overflow-hidden rounded-xl shadow-xl">
       {/* 🔧 修正：青系グラデーション背景に変更 */}
@@ -68,7 +57,6 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
             <div className="flex-shrink-0 w-12 h-12 sm:w-14 sm:h-14 bg-white/20 backdrop-blur-sm rounded-full flex items-center justify-center border border-white/30 shadow-lg">
               <HiClock className="h-8 w-8 sm:h-8 sm:w-8 text-blue-100 drop-shadow-md" />
             </div>
-
             <div className="text-white">
               <h3 className="text-lg sm:text-xl font-bold mb-1 flex items-center">
                 無料トライアル期間中
@@ -83,7 +71,6 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
               </p>
             </div>
           </div>
-
           {/* ボタンエリア */}
           <div className="flex items-center justify-center sm:justify-end">
             <button
@@ -95,7 +82,6 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
             </button>
           </div>
         </div>
-
         {/* プログレスバー */}
         <div className="mt-4 relative">
           <div className="w-full bg-white/20 rounded-full h-2 backdrop-blur-sm">

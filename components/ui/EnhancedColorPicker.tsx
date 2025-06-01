@@ -1,16 +1,13 @@
 // components/ui/EnhancedColorPicker.tsx
 "use client";
-
 import { useState, useEffect, useRef } from "react";
 import { cn } from "@/lib/utils";
 import tinycolor from "tinycolor2";
-
 interface EnhancedColorPickerProps {
     color: string;
     onChange: (color: string) => void;
     disabled?: boolean;
 }
-
 export function EnhancedColorPicker({
     color,
     onChange,
@@ -22,7 +19,6 @@ export function EnhancedColorPicker({
     const [saturation, setSaturation] = useState(100);
     const [lightness, setLightness] = useState(50);
     const pickerRef = useRef<HTMLDivElement>(null);
-
     // 初期カラーに基づいてHSLを設定
     useEffect(() => {
         if (color) {
@@ -34,7 +30,6 @@ export function EnhancedColorPicker({
             setInputValue(tc.toHexString());
         }
     }, [color]);
-
     // 外部クリックでピッカーを閉じる
     useEffect(() => {
         const handleClickOutside = (event: MouseEvent) => {
@@ -42,48 +37,40 @@ export function EnhancedColorPicker({
                 setIsOpen(false);
             }
         };
-
         document.addEventListener("mousedown", handleClickOutside);
         return () => {
             document.removeEventListener("mousedown", handleClickOutside);
         };
     }, [pickerRef]);
-
     // HSL値からカラーを更新する関数
     const updateColorFromHsl = () => {
         const newColor = tinycolor({ h: hue, s: saturation / 100, l: lightness / 100 }).toHexString();
         setInputValue(newColor);
         onChange(newColor);
     };
-
     // 色相スライダーの変更ハンドラー
     const handleHueChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setHue(parseInt(e.target.value));
         updateColorFromHsl();
     };
-
     // 彩度スライダーの変更ハンドラー
     const handleSaturationChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setSaturation(parseInt(e.target.value));
         updateColorFromHsl();
     };
-
     // 明度スライダーの変更ハンドラー
     const handleLightnessChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setLightness(parseInt(e.target.value));
         updateColorFromHsl();
     };
-
     // カラーコード入力の変更ハンドラー
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         const value = e.target.value;
         setInputValue(value);
-
         // 有効なカラーコードの場合のみonChangeを呼び出し
         if (tinycolor(value).isValid()) {
             const newColor = tinycolor(value).toHexString();
             onChange(newColor);
-
             // HSL値も更新
             const hsl = tinycolor(newColor).toHsl();
             setHue(Math.round(hsl.h));
@@ -91,7 +78,6 @@ export function EnhancedColorPicker({
             setLightness(Math.round(hsl.l * 100));
         }
     };
-
     return (
         <div className="space-y-4" ref={pickerRef}>
             <div className="flex items-center space-x-2">
@@ -119,7 +105,6 @@ export function EnhancedColorPicker({
                     maxLength={7}
                 />
             </div>
-
             {isOpen && (
                 <div className="p-4 bg-background rounded-md border border-input shadow-md">
                     {/* 色相スライダー */}
@@ -140,7 +125,6 @@ export function EnhancedColorPicker({
                             className="w-full"
                         />
                     </div>
-
                     {/* 彩度スライダー */}
                     <div className="space-y-2 mb-4">
                         <label className="text-xs text-muted-foreground">彩度</label>
@@ -159,7 +143,6 @@ export function EnhancedColorPicker({
                             className="w-full"
                         />
                     </div>
-
                     {/* 明度スライダー */}
                     <div className="space-y-2 mb-4">
                         <label className="text-xs text-muted-foreground">明度</label>

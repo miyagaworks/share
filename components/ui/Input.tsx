@@ -1,7 +1,6 @@
 // components/ui/Input.tsx
 import React from "react";
 import { cn } from "@/lib/utils";
-
 export interface InputProps
     extends React.InputHTMLAttributes<HTMLInputElement> {
     label?: string;
@@ -11,7 +10,6 @@ export interface InputProps
     iconPosition?: "left" | "right";
     fullWidth?: boolean;
 }
-
 const Input = React.forwardRef<HTMLInputElement, InputProps>(
     ({
         className,
@@ -64,9 +62,7 @@ const Input = React.forwardRef<HTMLInputElement, InputProps>(
         );
     }
 );
-
 Input.displayName = "Input";
-
 // テキストエリアコンポーネント
 export interface TextareaProps
     extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {
@@ -75,7 +71,6 @@ export interface TextareaProps
     error?: string;
     fullWidth?: boolean;
 }
-
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     ({ className, label, helperText, error, fullWidth = false, ...props }, ref) => {
         return (
@@ -105,9 +100,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         );
     }
 );
-
 Textarea.displayName = "Textarea";
-
 // チェックボックスコンポーネント
 export interface CheckboxProps
     extends React.InputHTMLAttributes<HTMLInputElement> {
@@ -115,7 +108,6 @@ export interface CheckboxProps
     description?: string;
     error?: string;
 }
-
 const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
     ({ className, label, description, error, ...props }, ref) => {
         return (
@@ -151,9 +143,7 @@ const Checkbox = React.forwardRef<HTMLInputElement, CheckboxProps>(
         );
     }
 );
-
 Checkbox.displayName = "Checkbox";
-
 // セレクトコンポーネント
 export interface SelectProps
     extends React.SelectHTMLAttributes<HTMLSelectElement> {
@@ -163,7 +153,6 @@ export interface SelectProps
     options: { value: string; label: string }[];
     fullWidth?: boolean;
 }
-
 const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
     ({ className, label, helperText, error, options, fullWidth = false, ...props }, ref) => {
         return (
@@ -210,15 +199,12 @@ const Select = React.forwardRef<HTMLSelectElement, SelectProps>(
         );
     }
 );
-
 Select.displayName = "Select";
-
 // フォームグループコンポーネント
 export interface FormGroupProps {
     children: React.ReactNode;
     className?: string;
 }
-
 export function FormGroup({ children, className }: FormGroupProps) {
     return (
         <div className={cn("space-y-6", className)}>
@@ -226,7 +212,6 @@ export function FormGroup({ children, className }: FormGroupProps) {
         </div>
     );
 }
-
 // フォームセクションコンポーネント
 export interface FormSectionProps {
     title?: string;
@@ -234,7 +219,6 @@ export interface FormSectionProps {
     children: React.ReactNode;
     className?: string;
 }
-
 export function FormSection({ title, description, children, className }: FormSectionProps) {
     return (
         <div className={cn("space-y-4", className)}>
@@ -250,7 +234,6 @@ export function FormSection({ title, description, children, className }: FormSec
         </div>
     );
 }
-
 // ラジオグループコンポーネント
 export interface RadioOption {
     id: string;
@@ -258,7 +241,6 @@ export interface RadioOption {
     value: string;
     description?: string;
 }
-
 export interface RadioGroupProps {
     label?: string;
     options: RadioOption[];
@@ -271,7 +253,6 @@ export interface RadioGroupProps {
     inline?: boolean;
     className?: string;
 }
-
 export function RadioGroup({
     label,
     options,
@@ -333,5 +314,4 @@ export function RadioGroup({
         </div>
     );
 }
-
 export { Input, Textarea, Select, Checkbox };

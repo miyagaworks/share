@@ -1,22 +1,19 @@
 // lib/stripeClient.ts
+import { logger } from "@/lib/utils/logger";
 // クライアントサイドでのStripe初期化用
 import { loadStripe } from '@stripe/stripe-js';
-
 // 環境変数の存在確認
 if (!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY) {
-  console.warn('Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY environment variable');
+  logger.warn('Missing NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY environment variable');
 }
-
 // Stripe初期化
 export const stripePromise = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY
   ? loadStripe(process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY)
   : null;
-
 // クライアント側でStripeが利用可能かどうかをチェックするヘルパー関数
 export function isClientStripeAvailable(): boolean {
   return !!process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 }
-
 // ヘルパー関数をエクスポート
 export function getSubscriptionStatusText(status: string): string {
   switch (status) {
@@ -36,7 +33,6 @@ export function getSubscriptionStatusText(status: string): string {
       return '不明なステータス';
   }
 }
-
 // プラン定義
 export const PLANS = {
   MONTHLY: {

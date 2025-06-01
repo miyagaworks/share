@@ -1,8 +1,6 @@
 "use client";
-
 // components/providers/ToastProvider.tsx
 import { Toaster } from "react-hot-toast";
-
 export function ToastProvider() {
     return (
         <Toaster
