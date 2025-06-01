@@ -1,5 +1,5 @@
 // components/corporate/CorporateSnsIntegration.tsx
-import React from 'react';
+import React, { useEffect } from 'react';
 import { HiOfficeBuilding, HiExclamation, HiInformationCircle, HiCheck } from 'react-icons/hi';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform, SNS_METADATA } from '@/types/sns';
@@ -55,9 +55,45 @@ export function CorporateSnsIntegration({
   personalSnsLinks,
   tenantData,
 }: CorporateSnsIntegrationProps) {
+
+  // ★★★ useEffectを追加 ★★★
+  useEffect(() => {
+    console.log('=== CorporateSnsIntegration useEffect実行 ===');
+
+    const debugAndFix = () => {
+      console.log('debugAndFix関数実行中');
+
+      // 全ボタンを確認
+      const allButtons = document.querySelectorAll('button');
+      console.log('全ボタン数:', allButtons.length);
+
+      // 対象ボタンを探す
+      const targetButtons = Array.from(allButtons).filter(
+        (btn) => btn.textContent?.includes('設定を変更') || btn.textContent?.includes('設定する'),
+      );
+
+      console.log('対象ボタン数:', targetButtons.length);
+      targetButtons.forEach((btn, index) => {
+        console.log(`対象ボタン${index}:`, btn.textContent);
+
+        // 色を変更
+        btn.style.setProperty('background-color', '#1E3A8A', 'important');
+        btn.style.setProperty('border-color', '#1E3A8A', 'important');
+        btn.style.setProperty('color', 'white', 'important');
+
+        console.log('✅ ボタン色を変更しました');
+      });
+    };
+
+    // 複数のタイミングで実行
+    debugAndFix();
+    setTimeout(debugAndFix, 100);
+    setTimeout(debugAndFix, 500);
+    setTimeout(debugAndFix, 1000);
+  }, [corporateSnsLinks, personalSnsLinks]);
+
   // テナントカラーの取得（優先順位を考慮）
-  const corporatePrimary =
-    tenantData?.primaryColor || tenantData?.corporatePrimary || 'var(--color-corporate-primary)';
+  const corporatePrimary = tenantData?.primaryColor || tenantData?.corporatePrimary || '#1E3A8A';
 
   // 法人必須SNSが個人SNSに設定されているかチェック
   const getSetupStatus = (corporateLink: CorporateSnsLink) => {
@@ -127,9 +163,7 @@ export function CorporateSnsIntegration({
   };
 
   return (
-    <div
-      className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm"
-    >
+    <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold flex items-center">
           <HiOfficeBuilding className="mr-2 h-5 w-5 text-gray-600" />

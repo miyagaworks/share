@@ -1,4 +1,4 @@
-// app/layout.tsx (元の状態)
+// app/layout.tsx (自動ログアウト無効化版)
 import type { Metadata, Viewport } from 'next';
 import { Inter, Roboto_Mono } from 'next/font/google';
 import { ToastProvider } from '@/components/providers/ToastProvider';
@@ -52,9 +52,15 @@ export default function RootLayout({
       <body className={`${inter.variable} ${robotoMono.variable} font-sans antialiased`}>
         <QueryProvider>
           <SessionProvider
-            sessionTimeoutMinutes={isDevelopment ? 30 : 480}
-            warningBeforeMinutes={isDevelopment ? 2 : 5}
-            enableAutoLogout={true}
+            sessionTimeoutMinutes={isDevelopment ? 120 : 480} // 開発環境を2時間に延長
+            warningBeforeMinutes={isDevelopment ? 10 : 5} // 警告も10分前に
+            enableAutoLogout={!isDevelopment} // 🔥 開発環境では完全無効化
+            excludePaths={[
+              // 🚀 除外パスを追加
+              '/dashboard/design',
+              '/dashboard/links',
+              '/dashboard/corporate-member',
+            ]}
           >
             <ToastProvider />
             {children}

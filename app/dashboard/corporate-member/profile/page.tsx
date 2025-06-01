@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { HiUser } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
+import { Button } from '@/components/ui/Button';
 import { MemberProfileForm } from '@/components/corporate/MemberProfileForm';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { UserData, ProfileUpdateData } from '@/types/profiles';
@@ -117,7 +118,7 @@ export default function CorporateMemberProfilePage() {
 
   return (
     <CorporateMemberGuard>
-      <div className="space-y-6">
+      <div className="space-y-6 corporate-theme">
         <div className="flex items-center mb-6">
           <HiUser className="h-8 w-8 text-corporate-primary mr-3" />
           <div>
@@ -136,12 +137,9 @@ export default function CorporateMemberProfilePage() {
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-6">
             <p className="text-red-700">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-corporate-primary text-white rounded-md"
-            >
+            <Button variant="corporate" onClick={() => window.location.reload()} className="mt-4">
               再読み込み
-            </button>
+            </Button>
           </div>
         ) : (
           <MemberProfileForm

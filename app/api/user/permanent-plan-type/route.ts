@@ -63,17 +63,12 @@ export async function GET() {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    // ユーザーが存在するか確認
+    // ユーザーが存在するか確認（metadataを削除）
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
         subscriptionStatus: true,
-        // metadataテーブルからプラン情報を取得
-        metadata: {
-          select: {
-            permanentPlanType: true,
-          },
-        },
+        // metadataテーブルは存在しないので削除
       },
     });
 
@@ -86,23 +81,17 @@ export async function GET() {
       return NextResponse.json({ isPermanent: false });
     }
 
-    // プラン種別を取得
-    // デフォルトはPERSONAL
-    const planType = (user.metadata?.permanentPlanType ||
-      PermanentPlanType.PERSONAL) as PermanentPlanType;
-
-    // プラン種別が有効かどうかを確認
-    const isValidPlanType = Object.values(PermanentPlanType).includes(planType);
-    const validPlanType = isValidPlanType ? planType : PermanentPlanType.PERSONAL;
+    // 現在はプラン種別情報がないため、デフォルト値を返す
+    const planType = PermanentPlanType.PERSONAL;
 
     // 拡張された情報を返す
     return NextResponse.json({
       isPermanent: true,
-      planType: validPlanType,
-      displayName: PLAN_TYPE_DISPLAY_NAMES[validPlanType],
-      maxUsers: PLAN_FEATURES[validPlanType].maxUsers,
-      allowedFeatures: PLAN_FEATURES[validPlanType].allowedFeatures,
-      restrictions: PLAN_FEATURES[validPlanType].restrictions,
+      planType: planType,
+      displayName: PLAN_TYPE_DISPLAY_NAMES[planType],
+      maxUsers: PLAN_FEATURES[planType].maxUsers,
+      allowedFeatures: PLAN_FEATURES[planType].allowedFeatures,
+      restrictions: PLAN_FEATURES[planType].restrictions,
     });
   } catch (error) {
     console.error('永久利用権プラン取得エラー:', error);

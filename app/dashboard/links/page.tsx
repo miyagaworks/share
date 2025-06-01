@@ -1,7 +1,7 @@
-// app/dashboard/links/page.tsx
+// app/dashboard/links/page.tsx (修正版 - リロードなし)
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { redirect, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { DashboardSection } from '@/components/layout/DashboardLayout';
@@ -23,29 +23,6 @@ import { motion } from 'framer-motion';
 import type { SnsLink, CustomLink } from '@prisma/client';
 import { HiLink, HiPlus, HiGlobeAlt, HiPencil } from 'react-icons/hi';
 
-// リンクをフェッチする関数
-async function fetchLinks() {
-  try {
-    const response = await fetch('/api/links', {
-      method: 'GET',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-
-    if (!response.ok) {
-      throw new Error('リンクの取得に失敗しました');
-    }
-
-    const data = await response.json();
-    return data;
-  } catch (error) {
-    console.error('リンク取得エラー:', error);
-    toast.error('リンクの取得に失敗しました');
-    return { snsLinks: [], customLinks: [] };
-  }
-}
-
 export default function LinksPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -57,9 +34,78 @@ export default function LinksPage() {
   const [activeTab, setActiveTab] = useState('sns');
   const [isAddingSns, setIsAddingSns] = useState(false);
   const [isAddingCustom, setIsAddingCustom] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false);
 
   const editingSnsLink = snsLinks.find((link) => link.id === editingSnsId);
   const editingCustomLink = customLinks.find((link) => link.id === editingCustomId);
+
+  // 編集ダイアログを開く
+  const handleEditSnsLink = (id: string) => {
+    setEditingSnsId(id);
+  };
+
+  // カスタムリンク編集ダイアログを開く
+  const handleEditCustomLink = (id: string) => {
+    setEditingCustomId(id);
+  };
+
+  // 編集成功時の処理
+  const handleEditSuccess = () => {
+    setEditingSnsId(null);
+    setEditingCustomId(null);
+    handleUpdate();
+  };
+
+  // 🚀 追加: デバッグ用のstate
+  const [refreshKey, setRefreshKey] = useState(0);
+
+  // 🚀 修正: より確実なfetchLinks関数
+  const fetchLinks = useCallback(async () => {
+    try {
+      console.log('🔍 fetchLinks開始:', new Date().toISOString());
+
+      // より強力なキャッシュバスティング
+      const timestamp = Date.now();
+      const randomParam = Math.random().toString(36).substring(7);
+      const sessionParam = session?.user?.id ? session.user.id.slice(-8) : 'guest';
+
+      const url = `/api/links?_t=${timestamp}&_r=${randomParam}&_s=${sessionParam}&_refresh=${refreshKey}`;
+      console.log('🌐 リクエストURL:', url);
+
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+          Expires: '0',
+          'X-Requested-With': 'XMLHttpRequest',
+        },
+        cache: 'no-store',
+      });
+
+      console.log('📡 Response status:', response.status);
+      console.log('📡 Response headers:', Object.fromEntries(response.headers.entries()));
+
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}: リンクの取得に失敗しました`);
+      }
+
+      const data = await response.json();
+      console.log('📊 取得データ:', {
+        snsCount: data.snsLinks?.length || 0,
+        customCount: data.customLinks?.length || 0,
+        snsLinks: data.snsLinks,
+        customLinks: data.customLinks,
+      });
+
+      return data;
+    } catch (error) {
+      console.error('❌ fetchLinks エラー:', error);
+      toast.error('リンクの取得に失敗しました');
+      return { snsLinks: [], customLinks: [] };
+    }
+  }, [session?.user?.id, refreshKey]);
 
   // セッションチェックと初期データ取得
   useEffect(() => {
@@ -85,50 +131,100 @@ export default function LinksPage() {
     };
 
     loadLinks();
-  }, [session, status, router]);
+  }, [session, status, router, fetchLinks]);
 
-  // 編集ダイアログを開く
-  const handleEditSnsLink = (id: string) => {
-    setEditingSnsId(id);
-  };
-
-  // カスタムリンク編集ダイアログを開く
-  const handleEditCustomLink = (id: string) => {
-    setEditingCustomId(id);
-  };
-
-  // 編集成功時の処理
-  const handleEditSuccess = () => {
-    setEditingSnsId(null);
-    setEditingCustomId(null);
-    handleUpdate();
-  };
-
-  // SNSリンク追加成功時の処理
+  // 🚀 修正: SNSリンク追加成功時の処理（リロードなし）
   const handleSnsAddSuccess = async () => {
-    setIsAddingSns(false);
-    handleUpdate();
-    toast.success('SNSリンクを追加しました');
+    if (isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+      console.log('🚀 SNSリンク追加成功 - データ更新開始');
+
+      // フォームを閉じる
+      setIsAddingSns(false);
+
+      // データを再取得
+      const data = await fetchLinks();
+
+      // 強制的にstateを更新
+      setSnsLinks([...(data.snsLinks || [])]);
+      setCustomLinks([...(data.customLinks || [])]);
+
+      toast.success('SNSリンクを追加しました！');
+    } catch (error) {
+      console.error('❌ SNS追加後の処理エラー:', error);
+      toast.error('データの更新に失敗しました');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  // カスタムリンク追加成功時の処理
+  // 🚀 修正: カスタムリンク追加成功時の処理（リロードなし）
   const handleCustomAddSuccess = async () => {
-    setIsAddingCustom(false);
-    handleUpdate();
-    toast.success('カスタムリンクを追加しました');
+    if (isProcessing) return;
+
+    try {
+      setIsProcessing(true);
+      console.log('🚀 カスタムリンク追加成功 - 強制データ更新開始');
+
+      // フォームを閉じる
+      setIsAddingCustom(false);
+
+      // refresh keyを更新
+      setRefreshKey((prev) => prev + 1);
+
+      // 少し待機してからデータ取得
+      await new Promise((resolve) => setTimeout(resolve, 200));
+
+      // データを再取得
+      const data = await fetchLinks();
+
+      // 🔥 重要: 強制的にstateを更新
+      setSnsLinks([...(data.snsLinks || [])]);
+      setCustomLinks([...(data.customLinks || [])]);
+
+      toast.success('カスタムリンクを追加しました！');
+
+      console.log('✅ カスタムリンク追加処理完了', {
+        newSnsCount: data.snsLinks?.length || 0,
+        newCustomCount: data.customLinks?.length || 0,
+      });
+
+      // コンポーネントの強制再レンダリング
+      setTimeout(() => {
+        setRefreshKey((prev) => prev + 1);
+      }, 100);
+    } catch (error) {
+      console.error('❌ カスタムリンク追加後の処理エラー:', error);
+      toast.error('データの更新に失敗しました');
+    } finally {
+      setIsProcessing(false);
+    }
   };
 
-  // リンク情報の更新処理
+  // リンク情報の更新処理（削除・編集・並び替え時）
   const handleUpdate = async () => {
     try {
-      setIsLoading(true);
+      console.log('🚀 リンク更新開始');
+
+      // refresh keyを更新
+      setRefreshKey((prev) => prev + 1);
+
+      // データを再取得
       const data = await fetchLinks();
-      setSnsLinks(data.snsLinks || []);
-      setCustomLinks(data.customLinks || []);
+
+      // 強制的にstateを更新
+      setSnsLinks([...(data.snsLinks || [])]);
+      setCustomLinks([...(data.customLinks || [])]);
+
+      console.log('✅ リンク情報更新完了', {
+        snsCount: data.snsLinks?.length || 0,
+        customCount: data.customLinks?.length || 0,
+      });
     } catch (error) {
-      console.error('リンク再取得エラー:', error);
-    } finally {
-      setIsLoading(false);
+      console.error('❌ リンク再取得エラー:', error);
+      toast.error('リンク情報の取得に失敗しました');
     }
   };
 
@@ -138,8 +234,19 @@ export default function LinksPage() {
     visible: { opacity: 1, y: 0, transition: { duration: 0.4 } },
   };
 
+  // 🚀 追加: デバッグ情報の表示
+  useEffect(() => {
+    console.log('🔄 Page state updated:', {
+      snsLinksCount: snsLinks.length,
+      customLinksCount: customLinks.length,
+      refreshKey,
+      isLoading,
+      isProcessing,
+    });
+  }, [snsLinks, customLinks, refreshKey, isLoading, isProcessing]);
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6" key={`links-page-${refreshKey}`}>
       <div className="flex items-center mb-6">
         <HiLink className="h-8 w-8 text-gray-700 mr-3" />
         <div>
@@ -193,13 +300,21 @@ export default function LinksPage() {
 
           <div>
             {activeTab === 'sns' && (
-              <Button onClick={() => setIsAddingSns(true)} className="flex items-center">
+              <Button
+                onClick={() => setIsAddingSns(true)}
+                className="flex items-center"
+                disabled={isProcessing}
+              >
                 <HiPlus className="mr-2 h-4 w-4" />
                 SNSリンクを追加
               </Button>
             )}
             {activeTab === 'custom' && (
-              <Button onClick={() => setIsAddingCustom(true)} className="flex items-center">
+              <Button
+                onClick={() => setIsAddingCustom(true)}
+                className="flex items-center"
+                disabled={isProcessing}
+              >
                 <HiPlus className="mr-2 h-4 w-4" />
                 カスタムリンクを追加
               </Button>
@@ -229,6 +344,7 @@ export default function LinksPage() {
                   <Button
                     onClick={() => setIsAddingSns(true)}
                     className="flex items-center justify-center"
+                    disabled={isProcessing}
                   >
                     <HiPlus className="mr-2 h-4 w-4" />
                     SNSリンクを追加
@@ -240,6 +356,7 @@ export default function LinksPage() {
                 {isAddingSns && (
                   <DashboardCard title="新規SNSリンク追加" className="mb-6">
                     <SNSLinkFormWithGuideIntegration
+                      key={`sns-form-${refreshKey}`}
                       existingPlatforms={snsLinks.map((link) => link.platform)}
                       onSuccess={handleSnsAddSuccess}
                     />
@@ -248,6 +365,7 @@ export default function LinksPage() {
                         variant="outline"
                         onClick={() => setIsAddingSns(false)}
                         className="flex items-center"
+                        disabled={isProcessing}
                       >
                         キャンセル
                       </Button>
@@ -257,7 +375,11 @@ export default function LinksPage() {
 
                 {snsLinks.length > 0 && !isAddingSns && (
                   <div className="flex justify-center mb-4">
-                    <Button onClick={() => setIsAddingSns(true)} className="flex items-center">
+                    <Button
+                      onClick={() => setIsAddingSns(true)}
+                      className="flex items-center"
+                      disabled={isProcessing}
+                    >
                       <HiPlus className="mr-2 h-4 w-4" />
                       SNSリンクを追加
                     </Button>
@@ -271,6 +393,7 @@ export default function LinksPage() {
                     description="ドラッグ＆ドロップで順番を変更できます"
                   >
                     <ImprovedSnsLinkList
+                      key={`sns-list-${refreshKey}-${snsLinks.length}`}
                       links={snsLinks}
                       onUpdate={handleUpdate}
                       onEdit={handleEditSnsLink}
@@ -306,6 +429,7 @@ export default function LinksPage() {
                   <Button
                     onClick={() => setIsAddingCustom(true)}
                     className="flex items-center justify-center"
+                    disabled={isProcessing}
                   >
                     <HiPlus className="mr-2 h-4 w-4" />
                     カスタムリンクを追加
@@ -320,9 +444,16 @@ export default function LinksPage() {
                     icon={<HiPlus className="h-5 w-5 text-gray-500" />}
                     className="mb-6"
                   >
-                    <CustomLinkForm onSuccess={handleCustomAddSuccess} />
+                    <CustomLinkForm
+                      key={`custom-form-${refreshKey}`}
+                      onSuccess={handleCustomAddSuccess}
+                    />
                     <div className="mt-4 flex justify-center">
-                      <Button variant="outline" onClick={() => setIsAddingCustom(false)}>
+                      <Button
+                        variant="outline"
+                        onClick={() => setIsAddingCustom(false)}
+                        disabled={isProcessing}
+                      >
                         キャンセル
                       </Button>
                     </div>
@@ -331,7 +462,11 @@ export default function LinksPage() {
 
                 {customLinks.length > 0 && !isAddingCustom && (
                   <div className="flex justify-center mb-4">
-                    <Button onClick={() => setIsAddingCustom(true)} className="flex items-center">
+                    <Button
+                      onClick={() => setIsAddingCustom(true)}
+                      className="flex items-center"
+                      disabled={isProcessing}
+                    >
                       <HiPlus className="mr-2 h-4 w-4" />
                       カスタムリンクを追加
                     </Button>
@@ -345,9 +480,10 @@ export default function LinksPage() {
                     description="ドラッグ＆ドロップで順番を変更できます"
                   >
                     <CustomLinkList
+                      key={`custom-list-${refreshKey}-${customLinks.length}`}
                       links={customLinks}
                       onUpdate={handleUpdate}
-                      onEdit={handleEditCustomLink} // 編集関数を渡す
+                      onEdit={handleEditCustomLink}
                     />
                   </DashboardCard>
                 )}
@@ -402,6 +538,16 @@ export default function LinksPage() {
           </DialogContent>
         )}
       </Dialog>
+
+      {/* 処理中のオーバーレイ */}
+      {isProcessing && (
+        <div className="fixed inset-0 bg-white bg-opacity-70 flex items-center justify-center z-50 backdrop-blur-sm">
+          <div className="bg-white rounded-lg p-6 flex items-center space-x-3 shadow-lg border">
+            <Spinner size="md" />
+            <span className="text-gray-700 font-medium">処理中...</span>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

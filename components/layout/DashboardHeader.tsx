@@ -1,4 +1,4 @@
-// components/layout/DashboardHeader.tsx (元の状態)
+// components/layout/DashboardHeader.tsx (プラン別アイコン色対応版)
 'use client';
 
 import React, { useState, useRef, useEffect } from 'react';
@@ -24,6 +24,32 @@ export function DashboardHeader() {
     name: dashboardInfo?.user.name || session?.user?.name || 'ユーザー',
     image: dashboardInfo?.user.image || session?.user?.image || null,
   };
+
+  // 🚀 法人プランユーザーかどうかを判定
+  const isCorporateUser =
+    dashboardInfo?.permissions.userType === 'corporate' ||
+    dashboardInfo?.permissions.userType === 'invited-member' ||
+    dashboardInfo?.permissions.hasCorpAccess === true ||
+    dashboardInfo?.permissions.planType === 'corporate';
+
+  // 🚀 プラン別のアイコン色を設定
+  const getIconColors = () => {
+    if (isCorporateUser) {
+      // 法人プランユーザー: #1E3A8A系
+      return {
+        normal: 'bg-[#1E3A8A]',
+        hover: 'hover:bg-[#122153]',
+      };
+    } else {
+      // 個人プランユーザー: 青系
+      return {
+        normal: 'bg-blue-600',
+        hover: 'hover:bg-blue-800',
+      };
+    }
+  };
+
+  const iconColors = getIconColors();
 
   // クリックイベントハンドラを設定して、メニュー外のクリックを検知
   useEffect(() => {
@@ -72,7 +98,7 @@ export function DashboardHeader() {
         <div className="flex items-center space-x-4 mt-1">
           <NotificationBell />
 
-          {/* 🚀 統合されたユーザーアイコン */}
+          {/* 🚀 統合されたユーザーアイコン（プラン別色対応） */}
           <div className="relative">
             <button
               ref={buttonRef}
@@ -95,7 +121,9 @@ export function DashboardHeader() {
                   />
                 </div>
               ) : (
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600 text-white hover:bg-blue-800 transition-colors">
+                <div
+                  className={`flex h-8 w-8 items-center justify-center rounded-full ${iconColors.normal} ${iconColors.hover} text-white transition-colors`}
+                >
                   <svg
                     xmlns="http://www.w3.org/2000/svg"
                     width="20"

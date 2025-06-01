@@ -319,10 +319,11 @@ export function CorporateSnsAddForm({
       </div>
 
       <div className="flex justify-end space-x-4 mt-6">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isSubmitting}>
+        <Button type="button" variant="corporateOutline" onClick={onCancel} disabled={isSubmitting}>
           キャンセル
         </Button>
         <Button
+          variant="corporate"
           type="button"
           disabled={
             !selectedPlatform ||

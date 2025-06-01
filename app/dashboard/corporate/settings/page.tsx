@@ -565,7 +565,11 @@ export default function CorporateSettingsPage() {
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-red-800 mb-2">エラーが発生しました</h3>
         <p className="text-red-700">{error}</p>
-        <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+        <Button
+          variant="corporateOutline"
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
           再読み込み
         </Button>
       </div>
@@ -578,7 +582,11 @@ export default function CorporateSettingsPage() {
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-yellow-800 mb-2">法人プランが有効ではありません</h3>
         <p className="text-yellow-700">法人プランにアップグレードしてこの機能をご利用ください。</p>
-        <Button className="mt-4" onClick={() => router.push('/dashboard/subscription')}>
+        <Button
+          variant="corporate"
+          className="mt-4"
+          onClick={() => router.push('/dashboard/subscription')}
+        >
           プランを見る
         </Button>
       </div>
@@ -897,7 +905,11 @@ export default function CorporateSettingsPage() {
               </div>
 
               <div className="flex justify-end">
-                <Button onClick={handleSaveNotificationSettings} disabled={isSaving || !isAdmin}>
+                <Button
+                  variant="corporate"
+                  onClick={handleSaveNotificationSettings}
+                  disabled={isSaving || !isAdmin}
+                >
                   {isSaving ? (
                     <>
                       <Spinner size="sm" className="mr-2" />
@@ -1176,7 +1188,7 @@ export default function CorporateSettingsPage() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 corporate-theme">
       {/* ヘッダー部分 */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
@@ -1191,8 +1203,10 @@ export default function CorporateSettingsPage() {
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
             <nav className="flex flex-col">
               <button
-                className={`flex items-center px-4 py-4 text-base font-medium ${
-                  activeTab === 'general' ? 'active-tab' : 'inactive-tab'
+                className={`group flex items-center px-4 py-4 text-base font-medium transition-all duration-200 ${
+                  activeTab === 'general'
+                    ? 'bg-[#1E3A8A]/10 text-[#1E3A8A] border-l-4 border-[#1E3A8A]'
+                    : 'text-gray-700 border-l-4 border-transparent hover:bg-[#1E3A8A]/10 hover:text-[#1E3A8A] hover:border-l-[#1E3A8A]'
                 }`}
                 onClick={() => setActiveTab('general')}
               >
@@ -1204,8 +1218,10 @@ export default function CorporateSettingsPage() {
               </button>
 
               <button
-                className={`flex items-center px-4 py-4 text-base font-medium ${
-                  activeTab === 'security' ? 'active-tab' : 'inactive-tab'
+                className={`group flex items-center px-4 py-4 text-base font-medium transition-all duration-200 ${
+                  activeTab === 'security'
+                    ? 'bg-[#1E3A8A]/10 text-[#1E3A8A] border-l-4 border-[#1E3A8A]'
+                    : 'text-gray-700 border-l-4 border-transparent hover:bg-[#1E3A8A]/10 hover:text-[#1E3A8A] hover:border-l-[#1E3A8A]'
                 }`}
                 onClick={() => setActiveTab('security')}
               >
@@ -1217,8 +1233,10 @@ export default function CorporateSettingsPage() {
               </button>
 
               <button
-                className={`flex items-center px-4 py-4 text-base font-medium ${
-                  activeTab === 'notifications' ? 'active-tab' : 'inactive-tab'
+                className={`group flex items-center px-4 py-4 text-base font-medium transition-all duration-200 ${
+                  activeTab === 'notifications'
+                    ? 'bg-[#1E3A8A]/10 text-[#1E3A8A] border-l-4 border-[#1E3A8A]'
+                    : 'text-gray-700 border-l-4 border-transparent hover:bg-[#1E3A8A]/10 hover:text-[#1E3A8A] hover:border-l-[#1E3A8A]'
                 }`}
                 onClick={() => setActiveTab('notifications')}
               >
@@ -1230,8 +1248,10 @@ export default function CorporateSettingsPage() {
               </button>
 
               <button
-                className={`flex items-center px-4 py-4 text-base font-medium ${
-                  activeTab === 'billing' ? 'active-tab' : 'inactive-tab'
+                className={`group flex items-center px-4 py-4 text-base font-medium transition-all duration-200 ${
+                  activeTab === 'billing'
+                    ? 'bg-[#1E3A8A]/10 text-[#1E3A8A] border-l-4 border-[#1E3A8A]'
+                    : 'text-gray-700 border-l-4 border-transparent hover:bg-[#1E3A8A]/10 hover:text-[#1E3A8A] hover:border-l-[#1E3A8A]'
                 }`}
                 onClick={() => setActiveTab('billing')}
               >
@@ -1243,8 +1263,10 @@ export default function CorporateSettingsPage() {
               </button>
 
               <button
-                className={`flex items-center px-4 py-4 text-base font-medium ${
-                  activeTab === 'advanced' ? 'active-tab' : 'inactive-tab'
+                className={`group flex items-center px-4 py-4 text-base font-medium transition-all duration-200 ${
+                  activeTab === 'advanced'
+                    ? 'bg-[#1E3A8A]/10 text-[#1E3A8A] border-l-4 border-[#1E3A8A]'
+                    : 'text-gray-700 border-l-4 border-transparent hover:bg-[#1E3A8A]/10 hover:text-[#1E3A8A] hover:border-l-[#1E3A8A]'
                 }`}
                 onClick={() => setActiveTab('advanced')}
               >
@@ -1258,18 +1280,25 @@ export default function CorporateSettingsPage() {
           </div>
 
           {/* サポート情報 */}
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mt-4">
+          <div
+            className="mt-6 rounded-md p-4"
+            style={{
+              backgroundColor: '#1E3A8A10',
+              borderColor: '#1E3A8A30',
+              borderWidth: '1px',
+            }}
+          >
             <div className="flex flex-row items-start">
-              <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
+              <HiInformationCircle className="text-[#1E3A8A] h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
               <div className="w-full">
-                <h3 className="font-medium text-blue-900 mb-1">サポート</h3>
+                <h3 className="font-medium text-[#1E3A8A] mb-1">サポート</h3>
                 <p className="text-sm text-corporate-secondary break-words hyphens-auto text-justify">
                   設定に関するお問い合わせやサポートが必要な場合は、以下よりお問い合わせください。
                 </p>
                 <Button
                   variant="outline"
                   size="sm"
-                  className="text-blue-700 border-blue-200 hover:bg-blue-100 w-full mt-4"
+                  className="text-[#1E3A8A] border-gray-200 hover:bg-gray-50 w-full mt-4"
                   onClick={() => router.push('/support/contact?subject=法人プランサポート')}
                 >
                   サポートに問い合わせる

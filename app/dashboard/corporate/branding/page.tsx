@@ -855,11 +855,18 @@ export default function ImprovedCorporateBrandingPage() {
           </div>
 
           {/* ブランディングの活用方法 */}
-          <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+          <div
+            className="mt-6 rounded-md p-4"
+            style={{
+              backgroundColor: '#1E3A8A10',
+              borderColor: '#1E3A8A30',
+              borderWidth: '1px',
+            }}
+          >
             <div className="flex flex-row items-start">
-              <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
+              <HiInformationCircle className="text-[#1E3A8A] h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
               <div className="w-full">
-                <h3 className="font-medium text-blue-900 mb-1">企業ブランディングについて</h3>
+                <h3 className="font-medium text-[#1E3A8A] mb-1">企業ブランディングについて</h3>
                 <p className="text-sm text-corporate-secondary break-words hyphens-auto text-justify">
                   企業ロゴとカラースキームを設定して統一感のあるプロフィールを作成できます。ロゴは背景色との対比が明確なものを選ぶと視認性が高まります。プライマリーカラーとセカンダリーカラーは補色関係にすると効果的で、企業のブランドガイドラインに沿った色を選ぶことで統一感が生まれます。
                 </p>

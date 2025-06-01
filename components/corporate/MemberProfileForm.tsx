@@ -60,17 +60,7 @@ export function MemberProfileForm({
   const corporatePrimary = tenantData?.corporatePrimary || 'var(--color-corporate-primary)';
 
   // Reactの状態でホバーを管理
-  const [isPrimaryHovered, setIsPrimaryHovered] = useState(false);
   const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
-
-  // プライマリーボタンのスタイル
-  const primaryButtonStyle = {
-    backgroundColor: isPrimaryHovered
-      ? 'var(--color-corporate-secondary)'
-      : 'var(--color-corporate-primary)',
-    borderColor: 'var(--color-corporate-primary)',
-    transition: 'background-color 0.2s',
-  };
 
   // 姓名とフリガナを分割する関数
   const splitNameAndKana = (user: UserData) => {
@@ -333,12 +323,20 @@ export function MemberProfileForm({
           </div>
 
           {/* かんたん自己紹介ボタンを追加 */}
-          <div className="mt-6 mb-4 border border-corporate-primary/20 rounded-lg bg-corporate-primary/5 p-4">
+          <div
+            className="mt-6 mb-4 border rounded-lg p-4"
+            style={{
+              borderColor: 'rgba(30, 58, 138, 0.2)',
+              backgroundColor: 'rgba(30, 58, 138, 0.05)',
+            }}
+          >
             <div className="flex items-center mb-2">
-              <HiSparkles className="text-corporate-primary h-5 w-5 mr-2" />
-              <h3 className="text-corporate-primary/90 font-medium">自己紹介文を簡単に作成</h3>
+              <HiSparkles className="h-5 w-5 mr-2" style={{ color: '#1E3A8A' }} />
+              <h3 className="font-medium" style={{ color: 'rgba(30, 58, 138, 0.9)' }}>
+                自己紹介文を簡単に作成
+              </h3>
             </div>
-            <p className="text-sm text-corporate-primary/80 mb-4 text-justify">
+            <p className="text-sm mb-4 text-justify" style={{ color: 'rgba(30, 58, 138, 0.8)' }}>
               AIを使って質問に答えるだけで、あなたに最適な自己紹介文を自動生成できます。
               現在の編集内容は保存してから利用することをおすすめします。
             </p>
@@ -437,13 +435,11 @@ export function MemberProfileForm({
 
         {/* プライマリーボタン */}
         <Button
+          variant="corporate"
           type="submit"
           disabled={isSaving}
           loading={isSaving}
           loadingText="更新中..."
-          style={primaryButtonStyle}
-          onMouseEnter={() => setIsPrimaryHovered(true)}
-          onMouseLeave={() => setIsPrimaryHovered(false)}
           className="w-full sm:w-auto"
         >
           プロフィールを更新

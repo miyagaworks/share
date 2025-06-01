@@ -123,6 +123,16 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     return isCorporateRelated ? 'corporate-theme' : '';
   }, [dashboardInfo, pathname]);
 
+  // CSS変数の強制設定を追加
+  useEffect(() => {
+    if (themeClass === 'corporate-theme') {
+      document.documentElement.style.setProperty('--corporate-primary', '#1E3A8A');
+      document.documentElement.style.setProperty('--corporate-secondary', '#122153');
+      document.documentElement.style.setProperty('--color-corporate-primary', '#1E3A8A');
+      document.documentElement.style.setProperty('--color-corporate-secondary', '#122153');
+    }
+  }, [themeClass]);
+
   // 🔥 修正: リダイレクト処理（シンプル化）
   useEffect(() => {
     // 認証チェック

@@ -22,7 +22,6 @@ interface ShareSettingsProps {
 export function MemberShareSettings({
   initialValues,
   baseUrl,
-  primaryColor,
   isLoading,
   onSave,
 }: ShareSettingsProps) {
@@ -226,15 +225,16 @@ export function MemberShareSettings({
         </div>
       </div>
 
-      {/* 送信ボタン */}
+      {/* 送信ボタン - 修正：variant="corporate"を使用してstyleプロパティを削除 */}
       <div className="flex justify-center sm:justify-end">
         <Button
           type="submit"
+          variant="corporate"
           disabled={!formChanged || isLoading || isSaving || !!slugError}
           loading={isSaving}
           loadingText="保存中..."
-          style={{ backgroundColor: primaryColor }}
           className="w-full sm:w-auto"
+          hoverScale="subtle"
         >
           共有設定を保存
         </Button>

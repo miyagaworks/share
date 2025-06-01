@@ -55,21 +55,50 @@ export default function ImprovedDesignPage() {
   // データが更新されたときに再取得する関数
   const handleUpdate = async () => {
     try {
-      setIsLoading(true);
-      const userData = await fetchUserData();
+      console.log('🎨 [Page] handleUpdate開始');
+
+      // 🚀 修正: ローディング状態にしない（プレビューの体験向上）
+      // setIsLoading(true);
+
+      // 🚀 修正: キャッシュ回避を強化
+      const timestamp = Date.now();
+      const response = await fetch(`/api/profile?_t=${timestamp}`, {
+        method: 'GET',
+        headers: {
+          'Cache-Control': 'no-cache, no-store, must-revalidate',
+          Pragma: 'no-cache',
+        },
+      });
+
+      if (!response.ok) {
+        throw new Error('プロフィール情報の取得に失敗しました');
+      }
+
+      const data = await response.json();
+      const userData = data.user as UserWithProfile;
+
+      console.log('🎨 [Page] 新しいユーザーデータ:', {
+        mainColor: userData.mainColor,
+        snsIconColor: userData.snsIconColor,
+        headerText: userData.headerText,
+        textColor: userData.textColor,
+      });
+
+      // 🚀 修正: 状態を即座に更新
       setUser(userData);
 
       // モバイルビューでスクロールするようにフラグを設定
       if (typeof window !== 'undefined' && window.innerWidth < 1024) {
         setShouldScroll(true);
       }
+
+      console.log('🎨 [Page] handleUpdate完了');
     } catch (error) {
-      console.error('データ再取得エラー:', error);
+      console.error('🎨 [Page] データ再取得エラー:', error);
       setError('プロフィール情報の再取得に失敗しました');
       toast.error('プロフィール情報の再取得に失敗しました');
-    } finally {
-      setIsLoading(false);
     }
+    // 🚀 修正: finally句を削除（ローディング状態を変更しないため）
   };
 
   // スクロールフラグが変更されたらスクロール実行

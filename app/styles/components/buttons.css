@@ -1,0 +1,253 @@
+/* app/styles/components/buttons.css */
+
+/* ===== 基本ボタンスタイル ===== */
+.btn-base {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    font-weight: 500;
+    transition: var(--transition);
+    cursor: pointer;
+    border: none;
+    text-decoration: none;
+    font-size: 0.875rem;
+    line-height: 1.25rem;
+}
+
+.btn-base:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+/* ===== プライマリボタン ===== */
+.btn-primary {
+    background-color: var(--theme-primary);
+    color: white;
+}
+
+.btn-primary:hover:not(:disabled) {
+    background-color: var(--theme-hover);
+    color: white;
+}
+
+/* ===== アウトラインボタン ===== */
+.btn-outline {
+    background-color: white;
+    color: var(--theme-primary);
+    border: 1px solid var(--theme-primary);
+}
+
+.btn-outline:hover:not(:disabled) {
+    background-color: var(--theme-primary);
+    color: white;
+}
+
+/* ===== セカンダリボタン ===== */
+.btn-secondary {
+    background-color: var(--gray-100);
+    color: var(--gray-700);
+}
+
+.btn-secondary:hover:not(:disabled) {
+    background-color: var(--gray-200);
+}
+
+/* ===== 危険ボタン ===== */
+.btn-destructive {
+    background-color: #DC2626;
+    color: white;
+}
+
+.btn-destructive:hover:not(:disabled) {
+    background-color: #B91C1C;
+}
+
+/* ===== サイズバリエーション ===== */
+.btn-sm {
+    padding: 0.25rem 0.75rem;
+    font-size: 0.75rem;
+}
+
+.btn-lg {
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+}
+
+.btn-xl {
+    padding: 1rem 2rem;
+    font-size: 1.125rem;
+}
+
+/* ===== 幅バリエーション ===== */
+.btn-full {
+    width: 100%;
+}
+
+/* ===== 個人プラン専用ボタン ===== */
+.theme-individual .btn-primary {
+    background-color: var(--individual-primary);
+}
+
+.theme-individual .btn-primary:hover:not(:disabled) {
+    background-color: var(--individual-hover);
+}
+
+.theme-individual .btn-outline {
+    color: var(--individual-primary);
+    border-color: var(--individual-primary);
+}
+
+.theme-individual .btn-outline:hover:not(:disabled) {
+    background-color: var(--individual-primary);
+}
+
+/* ===== 法人プラン専用ボタン ===== */
+.theme-corporate .btn-primary,
+.btn-corporate {
+    background-color: var(--corporate-primary);
+    transition: all 0.2s ease-in-out;
+}
+
+.theme-corporate .btn-primary:hover:not(:disabled),
+.btn-corporate:hover:not(:disabled) {
+    background-color: var(--corporate-hover);
+    transform: scale(1.05);
+    box-shadow: 0 4px 12px rgba(30, 58, 138, 0.3);
+}
+
+.theme-corporate .btn-outline,
+.btn-corporate-outline {
+    background-color: white;
+    color: var(--corporate-primary);
+    border: 1px solid var(--corporate-primary);
+    transition: all 0.2s ease-in-out;
+}
+
+.theme-corporate .btn-outline:hover:not(:disabled),
+.btn-corporate-outline:hover:not(:disabled) {
+    background-color: #1E3A8A !important;
+    color: white !important;
+    border-color: #1E3A8A !important;
+    transform: scale(1.05);
+    box-shadow: 0 2px 8px rgba(30, 58, 138, 0.2);
+}
+
+/* キャンセルボタン専用のホバー効果 */
+.btn-corporate-outline.cancel-button:hover:not(:disabled) {
+    background-color: #1E3A8A !important;
+    color: white !important;
+    border-color: #1E3A8A !important;
+}
+
+/* 削除ボタン専用のホバー効果 */
+.btn-corporate-outline.delete-button:hover:not(:disabled) {
+    background-color: #DC2626 !important;
+    color: white !important;
+    border-color: #DC2626 !important;
+}
+
+/* ===== 管理者専用ボタン ===== */
+.theme-admin .btn-primary {
+    background-color: var(--admin-primary);
+}
+
+.theme-admin .btn-primary:hover:not(:disabled) {
+    background-color: var(--admin-hover);
+}
+
+/* ===== 特殊ボタン ===== */
+.qr-color-button {
+    transition: var(--transition);
+}
+
+.qr-download-black {
+    background-color: #000000 !important;
+    color: white !important;
+}
+
+.qr-download-black:hover {
+    background-color: #1f1f1f !important;
+}
+
+.qr-download-dark-gray {
+    background-color: #333333 !important;
+    color: white !important;
+}
+
+.qr-download-dark-gray:hover {
+    background-color: #4a4a4a !important;
+}
+
+/* ===== ボタン内要素の色確保 ===== */
+.btn-primary *,
+.btn-corporate *,
+.btn-outline:hover *,
+.btn-corporate-outline:hover *,
+.qr-download-black *,
+.qr-download-dark-gray * {
+    color: inherit !important;
+}
+
+/* ===== プラン選択ボタン ===== */
+[data-plan-type="individual"] {
+    background-color: var(--individual-primary);
+    color: white;
+    transition: var(--transition);
+}
+
+[data-plan-type="individual"]:hover {
+    background-color: var(--individual-hover);
+    color: white;
+}
+
+[data-plan-type="corporate"] {
+    background-color: var(--corporate-primary);
+    color: white;
+    transition: var(--transition);
+}
+
+[data-plan-type="corporate"]:hover {
+    background-color: var(--corporate-hover);
+    color: white;
+}
+
+/* ===== ホバー効果の微調整 ===== */
+.hover-subtle:hover {
+    transform: scale(1.02) !important;
+}
+
+.hover-normal:hover {
+    transform: scale(1.05) !important;
+}
+
+.hover-strong:hover {
+    transform: scale(1.08) !important;
+}
+
+/* QRコード表示ボタン用の控えめなホバー効果 */
+.qr-display-button:hover {
+    transform: scale(1.01) !important;
+    box-shadow: 0 2px 6px rgba(30, 58, 138, 0.15) !important;
+}
+
+/* ===== ダークモード対応 ===== */
+@media (prefers-color-scheme: dark) {
+
+    .btn-outline,
+    .btn-corporate-outline {
+        background-color: white !important;
+        color: var(--theme-primary) !important;
+    }
+
+    .btn-secondary {
+        background-color: var(--gray-100);
+        color: var(--gray-700);
+    }
+
+    .qr-download-black,
+    .qr-download-dark-gray {
+        color: white !important;
+    }
+}

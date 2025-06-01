@@ -1,87 +1,31 @@
+/* app/globals.css - 法人メニュークラス追加版 */
+
 @import "tailwindcss";
 
-:root {
-    /* 既存の変数 */
-    --background: #E8EAEE;
-    --foreground: #171717;
+/* ===== CSS変数とコンポーネントのインポート ===== */
+@import "./styles/base/variables.css";
+@import "./styles/components/buttons.css";
 
-    /* 追加する変数 */
-    --color-blue-primary: #3B82F6;
-    --color-blue-secondary: #1E40AF;
-
-    /* 法人用の色 */
-    --color-corporate-primary: #1E3A8A;
-    --color-corporate-secondary: #122153;
-
-    /* 残りの変数 */
-    --color-background: var(--background);
-    --color-foreground: var(--foreground);
-    --font-sans: var(--font-geist-sans);
-    --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-    :root {
-        --background: #0a0a0a;
-        --foreground: #ededed;
-    }
-}
-
-/* iOS ダークモード対応 - ダーク化アプローチ */
+/* ===== 基本設定 ===== */
 html {
     color-scheme: light dark;
 }
 
-/* ダークモード対応 - 白背景・黒文字維持 */
-@media (prefers-color-scheme: dark) {
+body {
+    background: var(--background);
+    color: var(--foreground);
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+}
 
-    /* 背景は白のまま */
+/* ===== ダークモード基本対応 ===== */
+@media (prefers-color-scheme: dark) {
     body {
         background-color: #ffffff !important;
+        /* 白背景を強制維持 */
         color: #1f2937 !important;
-        /* 濃いグレー */
-    }
-
-    /* 白い背景は維持 */
-    .bg-white,
-    [class*="bg-white"] {
-        background-color: #ffffff !important;
-    }
-
-    /* グレー系背景も明るく保つ */
-    .bg-gray-50 {
-        background-color: #f9fafb !important;
-    }
-
-    .bg-gray-100 {
-        background-color: #f3f4f6 !important;
-    }
-
-    /* テキスト色は黒系に統一 */
-    .text-gray-900,
-    .text-black {
-        color: #111827 !important;
-        /* 非常に濃い */
-    }
-
-    .text-gray-800 {
-        color: #1f2937 !important;
-        /* 濃い */
-    }
-
-    .text-gray-700 {
-        color: #374151 !important;
-        /* 中程度 */
-    }
-
-    .text-gray-600 {
-        color: #4b5563 !important;
-        /* やや薄い */
-    }
-
-    .text-gray-500 {
-        color: #6b7280 !important;
-        /* 薄い */
+        /* 黒文字を強制維持 */
     }
 
     /* フォーム要素も白背景・黒文字 */
@@ -91,424 +35,109 @@ html {
         background-color: #ffffff !important;
         color: #1f2937 !important;
         border-color: #d1d5db !important;
-        /* 薄いグレーボーダー */
     }
 
     input::placeholder,
     textarea::placeholder {
         color: #9ca3af !important;
-        /* プレースホルダーは薄いグレー */
     }
 
-    /* ボーダー色は薄いグレー */
-    .border-gray-200,
-    .border-gray-300 {
-        border-color: #e5e7eb !important;
-    }
-
-    /* カード要素のボーダーも薄く */
-    .rounded-lg,
-    .rounded-md,
-    [class*="rounded"] {
-        border-color: #e5e7eb !important;
-    }
-
-    /* 青系ボタンは視認性のため少し濃く */
-    .bg-blue-600:not(:hover) {
-        background-color: #1d4ed8 !important;
-    }
-    .bg-blue-500:not(:hover) {
-        background-color: #2563eb !important;
-    }
-
-    .btn-corporate {
-        background-color: #1e40af !important;
-        /* より濃い企業色 */
-    }
-}
-
-/* iOS の色反転モード対応 */
-@media (inverted-colors: inverted) {
-
-    /* 画像とSVGのみ反転 */
-    img,
-    svg,
-    canvas {
-        -webkit-filter: invert(1);
-        filter: invert(1);
-    }
-
-    /* QRコードは保護 */
-    .preserve-colors,
-    [class*="qr"] {
-        -webkit-filter: none !important;
-        filter: none !important;
-    }
-}
-
-/* フォームコントロールのダークモード対応 */
-input,
-textarea,
-select,
-button {
-    color-scheme: light dark;
-}
-
-body {
-    background: var(--background);
-    color: var(--foreground);
-    font-family: Arial, Helvetica, sans-serif;
-}
-
-/* 法人テーマ用のカスタムスタイル */
-.corporate-theme {
-    /* テーマカラーを指定 */
-    --theme-primary: var(--color-corporate-primary);
-    --theme-secondary: var(--color-corporate-secondary);
-}
-
-/* カードやコンテナのアクセント */
-.corporate-theme .bg-blue-50 {
-    background-color: rgba(30, 58, 138, 0.05);
-}
-
-.corporate-theme .border-blue-100 {
-    border-color: rgba(30, 58, 138, 0.1);
-}
-
-.corporate-theme .text-blue-600,
-.corporate-theme .text-blue-700,
-.corporate-theme .text-blue-800 {
-    color: var(--color-corporate-primary);
-}
-
-/* ボタンスタイルのオーバーライド */
-.corporate-theme .bg-blue-600 {
-    background-color: var(--color-corporate-primary);
-}
-
-.corporate-theme .hover\:bg-blue-700:hover,
-.corporate-theme .hover\:bg-blue-800:hover {
-    background-color: var(--color-corporate-secondary) !important;
-    color: white !important;
-    transition: all 0.2s ease-in-out !important;
-}
-
-.corporate-theme .focus-visible\:ring-blue-500:focus-visible {
-    --tw-ring-color: var(--color-corporate-primary);
-}
-
-.btn-corporate {
-    background-color: #1E3A8A !important;
-    color: white !important;
-}
-
-.btn-corporate:hover {
-    background-color: #122153 !important;
-}
-
-.btn-corporate-outline {
-    background-color: white !important;
-    color: #1E3A8A !important;
-    border: 1px solid #1E3A8A !important;
-    border-radius: 0.375rem !important;
-    /* rounded-md */
-}
-
-.btn-corporate-outline:hover {
-    background-color: rgba(30, 58, 138, 0.05) !important;
-    color: #1E3A8A !important;
-    /* ホバー時も紺色を維持 */
-}
-
-/* ダークモードでのボタンアウトライン調整 */
-@media (prefers-color-scheme: dark) {
-    [variant="corporateOutline"] {
+    /* チェックボックスの色設定 */
+    input[type="checkbox"] {
         background-color: #ffffff !important;
-        /* 白背景維持 */
-        background: #ffffff !important;
-        /* 追加で確実に白背景 */
-        color: #1e40af !important;
-        /* より濃い青文字 */
-        border: 1px solid #1e40af !important;
-        border-radius: 0.375rem !important;
-        /* 角丸を確実に適用 */
-        box-shadow: none !important;
-        /* 不要な影を削除 */
+        border-color: #d1d5db !important;
+        accent-color: var(--theme-primary) !important;
     }
 
-    [variant="corporateOutline"]:hover {
-        background-color: rgba(30, 64, 175, 0.05) !important;
-        background: rgba(30, 64, 175, 0.05) !important;
-        color: #1e40af !important;
-        /* ホバー時も青文字を維持 */
-        border-color: #1e40af !important;
-    }
-
-    .btn-corporate-outline {
-        background-color: #ffffff !important;
-        /* 白背景維持 */
-        background: #ffffff !important;
-        /* 追加で確実に白背景 */
-        color: #1e40af !important;
-        /* より濃い青文字 */
-        border: 1px solid #1e40af !important;
-        border-radius: 0.375rem !important;
-        /* 角丸を確実に適用 */
-        box-shadow: none !important;
-        /* 不要な影を削除 */
-    }
-
-    .btn-corporate-outline:hover {
-        background-color: rgba(30, 64, 175, 0.05) !important;
-        background: rgba(30, 64, 175, 0.05) !important;
-        color: #1e40af !important;
-        /* ホバー時も青文字を維持 */
-        border-color: #1e40af !important;
+    input[type="checkbox"]:checked {
+        background-color: var(--theme-primary) !important;
+        border-color: var(--theme-primary) !important;
     }
 }
 
-/* 法人テーマでのボタン内テキストとアイコンの色を確実に指定 */
-.corporate-theme [variant="corporateOutline"],
-.corporate-theme .btn-corporate-outline {
-    color: #1E3A8A !important;
-}
-
-.corporate-theme [variant="corporateOutline"] *,
-.corporate-theme .btn-corporate-outline * {
-    color: #1E3A8A !important;
-}
-
-.corporate-theme [variant="corporateOutline"]:hover,
-.corporate-theme .btn-corporate-outline:hover {
-    color: #1E3A8A !important;
-}
-
-.corporate-theme [variant="corporateOutline"]:hover *,
-.corporate-theme .btn-corporate-outline:hover * {
-    color: #1E3A8A !important;
-}
-
-[variant="corporate"] {
-    background-color: #1E3A8A !important;
-    color: white !important;
-}
-
-[variant="corporateOutline"] {
-    background-color: white !important;
-    color: #1E3A8A !important;
-    border: 1px solid #1E3A8A !important;
-    border-radius: 0.375rem !important;
-    /* rounded-md */
-}
-
-/* チェックボックスを紺色に変更する明示的なスタイル */
-.corporate-theme input[type="checkbox"] {
-    accent-color: #1E3A8A !important;
-    /* corporate-primary */
-}
-
-.corporate-theme input[type="checkbox"]:checked {
-    background-color: #1E3A8A !important;
-    border-color: #1E3A8A !important;
-}
-
-/* チェックボックスのフォーカス時のスタイル */
-.corporate-theme input[type="checkbox"]:focus {
-    outline: 2px solid rgba(30, 58, 138, 0.5) !important;
-}
-
-.corporate-theme .btn-corporate,
-.corporate-theme button[variant="corporate"] {
-    background-color: #1E3A8A !important;
-    color: white !important;
-}
-
-.corporate-theme .btn-corporate:hover,
-.corporate-theme button[variant="corporate"]:hover {
-    background-color: #122153 !important;
-}
-
-/* 設定を保存ボタンなどに適用 */
-.corporate-theme button[type="submit"],
-.corporate-theme .save-button {
-    background-color: #1E3A8A !important;
-    color: white !important;
-}
-
-/* フォーカスリングの色を変更 */
-.corporate-theme *:focus {
-    --tw-ring-color: rgba(30, 58, 138, 0.5) !important;
-}
-
-.corporate-theme input:focus,
-.corporate-theme select:focus,
-.corporate-theme textarea:focus {
-    border-color: #1E3A8A !important;
-    box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2) !important;
-}
-
-/* 法人メニューのアクティブスタイル */
+/* ===== 法人メニュー専用クラス ===== */
 .corporate-menu-active {
-    background-color: rgba(30, 58, 138, 0.1);
-    color: var(--color-corporate-primary);
+    background-color: rgba(30, 58, 138, 0.1) !important;
+    color: #1E3A8A !important;
 }
 
 .corporate-icon-active {
-    color: var(--color-corporate-primary);
-}
-
-/* 法人メンバープロフィールページのアイコン用スタイル */
-[class*="dashboard/corporate-member"] svg,
-[class*="dashboard/corporate-member"] .h-5.w-5,
-[class*="dashboard/corporate-member"] .h-8.w-8 {
-    color: var(--color-corporate-primary) !important;
-}
-
-/* hover時も同じスタイルを適用 */
-.hover\:corporate-menu-active:hover {
-    background-color: rgba(30, 58, 138, 0.1);
-    color: var(--color-corporate-primary);
-}
-
-.group:hover .group-hover\:corporate-icon-active {
-    color: var(--color-corporate-primary);
-}
-
-/* 設定ページのタブスタイル - モバイルフレンドリー */
-.active-tab {
-    color: #1E3A8A;
-    background-color: rgba(30, 58, 138, 0.05);
-    border-left: 4px solid #1E3A8A;
-}
-
-.inactive-tab {
-    color: #374151;
-    background-color: transparent;
-    border-left: 4px solid transparent;
-}
-
-.inactive-tab:hover {
-    background-color: rgba(30, 58, 138, 0.05);
-    border-left: 4px solid #1E3A8A;
-    color: #1E3A8A;
-}
-
-/* ダークモードでのタブスタイル調整 */
-@media (prefers-color-scheme: dark) {
-
-    .corporate-theme [variant="corporateOutline"],
-    .corporate-theme .btn-corporate-outline {
-        background-color: #ffffff !important;
-        background: #ffffff !important;
-        color: #1e40af !important;
-        border-color: #1e40af !important;
-        border-radius: 0.375rem !important;
-    }
-
-    .corporate-theme [variant="corporateOutline"] *,
-    .corporate-theme .btn-corporate-outline * {
-        color: #1e40af !important;
-    }
-
-    .corporate-theme [variant="corporateOutline"]:hover,
-    .corporate-theme .btn-corporate-outline:hover {
-        background-color: rgba(30, 64, 175, 0.05) !important;
-        background: rgba(30, 64, 175, 0.05) !important;
-        color: #1e40af !important;
-    }
-
-    .corporate-theme [variant="corporateOutline"]:hover *,
-    .corporate-theme .btn-corporate-outline:hover * {
-        color: #1e40af !important;
-    }
-}
-
-/* ホバー時のアイコン色変更 - より具体的なセレクタ */
-.inactive-tab:hover svg,
-.inactive-tab:hover .h-5,
-.inactive-tab:hover .h-6 {
     color: #1E3A8A !important;
 }
 
-@media (prefers-color-scheme: dark) {
-
-    .inactive-tab:hover svg,
-    .inactive-tab:hover .h-5,
-    .inactive-tab:hover .h-6 {
-        color: #1e40af !important;
-        /* より濃い青 */
-    }
+/* ホバー効果用のクラス */
+.hover\:corporate-menu-active:hover {
+    background-color: rgba(30, 58, 138, 0.1) !important;
+    color: #1E3A8A !important;
 }
 
-/* レスポンシブ対応 */
-@media (max-width: 640px) {
-
-    .active-tab,
-    .inactive-tab {
-        padding-top: 1rem;
-        padding-bottom: 1rem;
-    }
-
-    .active-tab svg,
-    .inactive-tab svg {
-        width: 1.5rem;
-        height: 1.5rem;
-    }
+.group:hover .group-hover\:corporate-icon-active {
+    color: #1E3A8A !important;
 }
 
-/* 法人セクション内での特別リンク（ご利用プラン・個人ダッシュボード）用スタイル */
-.corporate-special-link {
-    background-color: rgba(59, 130, 246, 0.1);
-    color: #3B82F6;
+/* ===== デスクトップタブナビゲーション用ホバー効果 ===== */
+.desktop-tab-hover:hover {
+    background-color: #1E3A8A !important;
+    color: #ffffff !important;
 }
 
-.corporate-special-link:hover {
-    background-color: rgba(59, 130, 246, 0.2);
+.desktop-tab-hover:hover .tab-icon {
+    color: #ffffff !important;
 }
 
-.corporate-special-icon {
-    color: #3B82F6;
+/* ===== ユーティリティクラス ===== */
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
 }
 
-/* ダークモードでの特別リンク調整 */
-@media (prefers-color-scheme: dark) {
-    .corporate-special-link {
-        background-color: rgba(37, 99, 235, 0.05);
-        /* より濃い青ベース */
-        color: #1d4ed8;
-        /* より濃い青 */
-    }
-
-    .corporate-special-link:hover {
-        background-color: rgba(37, 99, 235, 0.1);
-    }
-
-    .corporate-special-icon {
-        color: #1d4ed8;
-        /* より濃い青 */
-    }
+.animate-slideUp {
+    animation: slideUp 0.3s ease-out;
 }
 
-/* QRスキャンページ用のスタイル */
-
-.profile-scan-page {
-    animation: fadeIn 0.5s ease-in-out;
+.transition-all {
+    transition: var(--transition) !important;
 }
 
+/* ===== アニメーション定義 ===== */
 @keyframes fadeIn {
-    0% {
+    from {
         opacity: 0;
     }
 
-    100% {
+    to {
         opacity: 1;
     }
 }
 
+@keyframes slideUp {
+    from {
+        transform: translateY(10px);
+        opacity: 0;
+    }
 
-/* モーダル関連スタイル */
+    to {
+        transform: translateY(0);
+        opacity: 1;
+    }
+}
 
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.5;
+    }
+}
+
+.animate-pulse {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* ===== モーダル関連 ===== */
 .modal-open {
     overflow: hidden;
 }
@@ -545,1169 +174,64 @@ body {
     }
 }
 
-
-/* フェードインアニメーション */
-
-@keyframes fadeIn {
-    from {
-        opacity: 0;
-    }
-
-    to {
-        opacity: 1;
-    }
-}
-
-.animate-fadeIn {
-    animation: fadeIn 0.3s ease-out;
-}
-
-
-/* スライドアップアニメーション */
-
-@keyframes slideUp {
-    from {
-        transform: translateY(10px);
-        opacity: 0;
-    }
-
-    to {
-        transform: translateY(0);
-        opacity: 1;
-    }
-}
-
-.animate-slideUp {
-    animation: slideUp 0.3s ease-out;
-}
-
-.corporate-dashboard-wrapper {
-    width: 100% !important;
-    padding-right: 1rem !important;
-    padding-left: 0 !important;
-    margin-right: 0 !important;
-    margin-left: 0 !important;
-    box-sizing: border-box !important;
-}
-
-/* フェードイン */
-
-.fade-in {
-    animation: fadeIn 0.3s ease-out;
-}
-
-/* ドロップダウンスタイル */
-.dropdown {
-    position: relative;
-    display: inline-block;
-}
-
-.dropdown-content {
-    display: none;
-    position: absolute;
-    right: 0;
-    min-width: 160px;
-    z-index: 50;
-}
-
-.dropdown:hover .dropdown-content {
-    display: block;
-}
-
-/* ダークモードでのドロップダウン調整 */
-@media (prefers-color-scheme: dark) {
-    .dropdown-content {
-        background-color: #ffffff !important;
-        /* 白背景維持 */
-        border-color: #e5e7eb !important;
-        color: #1f2937 !important;
-        /* 黒文字 */
-    }
-}
-
-/* モバイル表示用の特別なスタイル */
-
+/* ===== レスポンシブ対応 ===== */
 @media (max-width: 767px) {
 
-    /* 既存のサイドバーを確実に非表示 */
+    /* サイドバーを確実に非表示 */
     .side-nav,
     .sidebar,
     aside,
     [class*="sidebar"],
     [class*="side-nav"],
-    [class*="side-menu"],
-    [id*="sidebar"] {
+    [class*="side-menu"] {
         display: none !important;
-        width: 0 !important;
-        min-width: 0 !important;
-        position: absolute !important;
-        left: -9999px !important;
-        pointer-events: none !important;
     }
 
     /* メインコンテンツを全幅で表示 */
     main,
     .main-content,
-    .dashboard-content,
-    [class*="main-content"],
-    [class*="dashboard-content"] {
-        padding-left: 1rem !important;
-        /* 左右のパディングを均等に */
-        padding-right: 1rem !important;
-        margin-left: auto !important;
-        /* 左右のマージンを均等に */
-        margin-right: auto !important;
-    }
-
-    /* ダッシュボードのナビゲーションカードのアイコンサイズを調整 */
-    .dashboard-nav-icon {
-        width: 1.25rem;
-        height: 1.25rem;
-    }
-
-    /* ダッシュボードカードの余白調整 */
-    .dashboard-card {
-        padding: 1rem !important;
-    }
-
-    /* コンテナにも左右均等なパディングを設定 */
-    .container {
+    .dashboard-content {
         padding-left: 1rem !important;
         padding-right: 1rem !important;
         margin-left: auto !important;
         margin-right: auto !important;
     }
+}
 
-    /* カードやセクションのパディングも均等に */
-    .card,
-    .section,
-    .dashboard-card,
-    [class*="card"],
-    [class*="section"] {
-        padding-left: 1rem !important;
-        padding-right: 1rem !important;
+/* ===== 色反転モード対応（iOS） ===== */
+@media (inverted-colors: inverted) {
+
+    img,
+    svg,
+    canvas {
+        filter: invert(1);
     }
 
-    /* メニューカードを非表示 */
-    .menu-card,
-    .menu-section,
-    div[class*="menu-card"],
-    div[class*="menu-section"],
-    div.mobile-menu-card,
-    div[id="mobile-menu"],
-    div.dashboard-menu {
-        display: none !important;
-    }
-
-    /* ダッシュボードに表示されるメニューコンテナを非表示 */
-    .dashboard-nav-container,
-    #mobile-menu,
-    div[id*="mobile-menu"],
-    div[class*="mobile-menu"],
-    .menu-heading,
-    .menu-container {
-        display: none !important;
-    }
-
-    /* メニュー見出しを持つ要素を非表示 */
-    h2.menu-title,
-    h3.menu-title {
-        display: none !important;
-    }
-
-    /* メニューという文字を含む見出しを持つ親要素を非表示 */
-    div:where(h2, h3, h4) {
-        display: none !important;
+    .preserve-colors {
+        filter: none !important;
     }
 }
 
-
-/* リンクカードのアイテムが折り返しの際に整列するようにする */
-
-.link-items-container {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-    gap: 1rem;
-}
-
-
-/* デスクトップでの調整 */
-
-@media (min-width: 768px) {
-
-    /* デスクトップではサイドバーを表示 */
-    .sidebar {
-        display: flex !important;
-    }
-
-    /* メインコンテンツにマージンを追加 */
-    .main-content {
-        margin-left: 16rem !important;
-        /* 256px (w-64) */
-    }
-
-    /* サイドバーが折りたたまれている場合 */
-    .sidebar-collapsed+.main-content {
-        margin-left: 4rem !important;
-        /* 64px (w-16) */
-    }
-}
-
-
-/* メニューカードを非表示にするための追加スタイル */
-
-
-/* JavaScriptを使わずCSSのみで対応 */
-
-.dashboard div:first-of-type+div.rounded-lg,
-.dashboard-page div:first-of-type+div.rounded-lg,
-[class*="dashboard"] div:first-of-type+div.rounded-lg {
-    display: none !important;
-}
-
-
-/* サインアップページのダークモード修正 - globals.cssに追加 */
-
-@media (prefers-color-scheme: dark) {
-
-    /* ブルーグラデーション背景内のすべての要素を白テキストで保護 */
-    .bg-gradient-to-br.from-blue-600.to-blue-800,
-    .bg-gradient-to-br.from-blue-600.to-blue-800 * {
-        color: #ffffff !important;
-    }
-
-    /* ブルー背景内の半透明白要素を保護 */
-    .bg-gradient-to-br .bg-white\/20,
-    .bg-gradient-to-br .bg-white\/10 {
-        background-color: rgba(255, 255, 255, 0.2) !important;
-        color: #ffffff !important;
-    }
-
-    /* ブルー背景内のspanタグを明示的に白に */
-    .bg-gradient-to-br span {
-        color: #ffffff !important;
-    }
-
-    /* ブルー背景内のすべてのテキスト要素 */
-    .bg-gradient-to-br h1,
-    .bg-gradient-to-br h2,
-    .bg-gradient-to-br h3,
-    .bg-gradient-to-br h4,
-    .bg-gradient-to-br h5,
-    .bg-gradient-to-br h6,
-    .bg-gradient-to-br p,
-    .bg-gradient-to-br span,
-    .bg-gradient-to-br div,
-    .bg-gradient-to-br .text-white,
-    .bg-gradient-to-br .text-white\/90,
-    .bg-gradient-to-br .text-white\/80 {
-        color: #ffffff !important;
-    }
-
-    /* backdrop-blurを持つ要素内のテキスト */
-    .bg-gradient-to-br .backdrop-blur-sm,
-    .bg-gradient-to-br .backdrop-blur-sm * {
-        color: #ffffff !important;
-    }
-
-    /* 右下のタグ部分を特別に保護 */
-    .bg-gradient-to-br .absolute.bottom-6.right-6 span {
-        color: #ffffff !important;
-        background-color: rgba(255, 255, 255, 0.2) !important;
-    }
-}
-
-/* ライトモードでも確実に表示されるように */
-.bg-gradient-to-br.from-blue-600.to-blue-800 {
-    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
-}
-
-.bg-gradient-to-br.from-blue-600.to-blue-800 * {
-    color: #ffffff;
-}
-
-.bg-gradient-to-br .bg-white\/20 {
-    background-color: rgba(255, 255, 255, 0.2);
-    color: #ffffff;
-}
-
-.bg-gradient-to-br .bg-white\/10 {
-    background-color: rgba(255, 255, 255, 0.1);
-    color: #ffffff;
-}
-
-/* 特定の要素を強制的に白テキストに */
-.blue-bg-protection {
-    background: linear-gradient(135deg, #2563eb 0%, #1e40af 100%) !important;
-}
-
-.blue-bg-protection,
-.blue-bg-protection * {
-    color: #ffffff !important;
-}
-
-.blue-bg-protection .bg-white\/20,
-.blue-bg-protection .bg-white\/10 {
-    background-color: rgba(255, 255, 255, 0.2) !important;
-    color: #ffffff !important; }
-
-/* globals.cssに追加するCSS修正 */
-
-/* 法人テーマの強化 - ボタンとコンポーネント */
-.corporate-theme .bg-blue-600,
-.corporate-theme .bg-blue-500,
-.corporate-theme .bg-blue-700 {
-    background-color: var(--color-corporate-primary) !important;
-}
-
-.corporate-theme .hover\:bg-blue-700:hover,
-.corporate-theme .hover\:bg-blue-600:hover,
-.corporate-theme .hover\:bg-blue-800:hover {
-    background-color: var(--color-corporate-secondary) !important;
-}
-
-/* 法人ページのテキスト色 */
-.corporate-theme .text-blue-600,
-.corporate-theme .text-blue-700,
-.corporate-theme .text-blue-800 {
-    color: var(--color-corporate-primary) !important;
-}
-
-/* 法人ページのボーダー色 */
-.corporate-theme .border-blue-200,
-.corporate-theme .border-blue-300,
-.corporate-theme .border-blue-500 {
-    border-color: var(--color-corporate-primary) !important;
-}
-
-/* 法人ページのフォーカスリング */
-.corporate-theme .focus\:ring-blue-500:focus,
-.corporate-theme .focus-visible\:ring-blue-500:focus-visible {
-    --tw-ring-color: var(--color-corporate-primary) !important;
-}
-
-/* 法人ページの背景色 */
-.corporate-theme .bg-blue-50 {
-    background-color: rgba(30, 58, 138, 0.05) !important;
-}
-
-.corporate-theme .bg-blue-100 {
-    background-color: rgba(30, 58, 138, 0.1) !important;
-}
-
-/* 法人ページのリンク色 */
-.corporate-theme a,
-.corporate-theme .text-blue-500 {
-    color: var(--color-corporate-primary) !important;
-}
-
-.corporate-theme a:hover {
-    color: var(--color-corporate-secondary) !important;
-}
-
-/* Buttonコンポーネントの variant 属性対応 */
-.corporate-theme button[class*="bg-blue"],
-.corporate-theme .btn-primary,
-.corporate-theme [data-variant="primary"] {
-    background-color: var(--color-corporate-primary) !important;
-    color: white !important;
-}
-
-.corporate-theme button[class*="bg-blue"]:hover,
-.corporate-theme .btn-primary:hover,
-.corporate-theme [data-variant="primary"]:hover {
-    background-color: var(--color-corporate-secondary) !important;
-}
-
-/* 法人ページの強制適用（重要度最高） */
-.corporate-theme * {
-    --tw-text-blue-600: var(--color-corporate-primary) !important;
-    --tw-text-blue-700: var(--color-corporate-primary) !important;
-    --tw-text-blue-800: var(--color-corporate-primary) !important;
-    --tw-bg-blue-600: var(--color-corporate-primary) !important;
-    --tw-bg-blue-700: var(--color-corporate-secondary) !important;
-}
-
-/* 特定のコンポーネントクラス */
-.corporate-theme .Button,
-.corporate-theme .button,
-.corporate-theme button {
-    --primary-color: var(--color-corporate-primary);
-    --primary-hover: var(--color-corporate-secondary);
-}
-
-/* 法人ダッシュボード特有のスタイル */
-body.corporate-theme,
-html.corporate-theme {
-    --color-primary: var(--color-corporate-primary);
-    --color-primary-hover: var(--color-corporate-secondary);
-}
-
-/* 法人セクション内の全てのボタン */
-[class*="/dashboard/corporate"] .bg-blue-600,
-[class*="/dashboard/corporate"] .bg-blue-500,
-[class*="/dashboard/corporate-member"] .bg-blue-600,
-[class*="/dashboard/corporate-member"] .bg-blue-500 {
-    background-color: var(--color-corporate-primary) !important;
-}
-
-/* 法人ページURL判定による強制適用 */
-body[data-pathname*="/dashboard/corporate"] .bg-blue-600,
-body[data-pathname*="/dashboard/corporate"] .bg-blue-500,
-body[data-pathname*="/dashboard/corporate-member"] .bg-blue-600,
-body[data-pathname*="/dashboard/corporate-member"] .bg-blue-500 {
-    background-color: var(--color-corporate-primary) !important;
-    color: white !important;
-}
-
-body[data-pathname*="/dashboard/corporate"] .hover\:bg-blue-700:hover,
-body[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-700:hover {
-    background-color: var(--color-corporate-secondary) !important;
-}
-
-
-/* プラン選択ボタンのホバー時スタイル修正 */
-
-/* 個人プランボタン */
-.individual-plan-button {
-    background-color: #3b82f6;
-    /* blue-500 */
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition: all 0.2s ease-in-out;
-    cursor: pointer;
-}
-
-.individual-plan-button:hover {
-    background-color: #2563eb;
-    /* blue-600 */
-    color: white;
-    /* 明示的に白色を指定 */
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-/* 法人プランボタン */
-.corporate-plan-button {
-    background-color: #6b7280;
-    /* gray-500 */
-    color: white;
-    border: none;
-    padding: 0.75rem 1.5rem;
-    border-radius: 0.375rem;
-    font-weight: 500;
-    transition: all 0.2s ease-in-out;
-    cursor: pointer;
-}
-
-.corporate-plan-button:hover {
-    background-color: #4b5563;
-    /* gray-600 */
-    color: white;
-    /* 明示的に白色を指定 */
-    transform: translateY(-1px);
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
-}
-
-/* アクティブ状態のボタン */
-.plan-button-active {
-    background-color: #1d4ed8;
-    /* blue-700 */
-    color: white;
-}
-
-.plan-button-active:hover {
-    background-color: #1e40af;
-    /* blue-800 */
-    color: white; }
-
-.plan-button-hover-fix {
-  transition: all 0.2s ease-in-out !important;
-}
-
-.plan-button-hover-fix:hover {
-  color: white !important;
-  background-color: var(--hover-bg-color) !important;
-}
-
-.individual-plan .plan-button-hover-fix:hover {
-  --hover-bg-color: #2563eb; /* blue-600 */
-}
-
-.corporate-plan .plan-button-hover-fix:hover {
-  --hover-bg-color: #4b5563; /* gray-600 */
-}
-
-/* ホバー効果の修正 - 最優先 */
-button:hover,
-.hover\:bg-blue-700:hover,
-.hover\:bg-blue-800:hover,
-.hover\:bg-blue-600:hover,
-.hover\:bg-blue-50:hover,
-.hover\:text-white:hover,
-.hover\:text-blue-700:hover,
-.hover\:text-blue-800:hover {
-    transition: all 0.2s ease-in-out !important;
-}
-
-/* 個人プラン・法人プランボタンのホバー効果 */
-.hover\:bg-blue-700:hover {
-    background-color: #1d4ed8 !important;
-    color: white !important;
-}
-
-.hover\:bg-blue-800:hover {
-    background-color: #1e40af !important;
-    color: white !important;
-}
-
-.hover\:bg-blue-50:hover {
-    background-color: #eff6ff !important;
-}
-
-.hover\:text-blue-700:hover {
-    color: #1d4ed8 !important;
-}
-
-.hover\:text-blue-800:hover {
-    color: #1e40af !important;
-}
-
-.hover\:text-white:hover {
-    color: white !important;
-}
-
-/* スケール効果とシャドウ効果 */
-.hover\:scale-105:hover {
-    transform: scale(1.05) !important;
-}
-
-.hover\:shadow-md:hover {
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06) !important;
-}
-
-/* トランジション効果を強制適用 */
-.transition-all {
-    transition: all 0.2s ease-in-out !important;
-}
-
-.duration-300 {
-    transition-duration: 0.3s !important;
-}
-
-.duration-200 {
-    transition-duration: 0.2s !important;
-}
-
-/* Framer Motion の transform を保護 */
-[style*="transform"]:hover {
-    transition: transform 0.2s ease-in-out !important;
-}
-
-/* 【今回追加】法人テーマでのプラン選択ボタンの色分け */
-.corporate-theme [data-plan-type="individual"] {
-    background-color: #3b82f6 !important;
-    /* 個人プラン：青色 */
-    color: white !important;
-}
-
-.corporate-theme [data-plan-type="individual"]:hover {
-    background-color: #2563eb !important;
-    color: white !important;
-    transform: scale(1.05) !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-}
-
-.corporate-theme [data-plan-type="corporate"] {
-    background-color: var(--color-corporate-primary) !important;
-    /* 法人プラン：紺色 */
-    color: white !important;
-}
-
-.corporate-theme [data-plan-type="corporate"]:hover {
-    background-color: var(--color-corporate-secondary) !important;
-    color: white !important;
-    transform: scale(1.05) !important;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1) !important;
-}
-
-/* 非選択時のスタイル */
-.corporate-theme [data-plan-type="individual"]:not(.active) {
-    background-color: white !important;
-    color: #3b82f6 !important;
-}
-
-.corporate-theme [data-plan-type="corporate"]:not(.active) {
-    background-color: white !important;
-    color: var(--color-corporate-primary) !important;
-}
-
-/* 【修正】プラン選択ボタンのホバー時テキスト色を強制的に白に */
-.corporate-theme [data-plan-type="individual"]:hover,
-.corporate-theme [data-plan-type="individual"]:hover * {
-    color: white !important;
-}
-
-.corporate-theme [data-plan-type="corporate"]:hover,
-.corporate-theme [data-plan-type="corporate"]:hover * {
-    color: white !important;
-}
-
-/* 通常時（法人テーマ以外）でもホバー時のテキスト色を修正 */
-[data-plan-type="individual"]:hover,
-[data-plan-type="individual"]:hover * {
-    color: white !important;
-}
-
-[data-plan-type="corporate"]:hover,
-[data-plan-type="corporate"]:hover * {
-    color: white !important;
-}
-
-/* アイコンも含めて白色に強制 */
-.corporate-theme [data-plan-type="individual"]:hover svg,
-.corporate-theme [data-plan-type="corporate"]:hover svg,
-[data-plan-type="individual"]:hover svg,
-[data-plan-type="corporate"]:hover svg {
-    color: white !important;
-}
-
-/* 【修正】サイドバー折りたたみボタンの背景色を完全に削除 */
-.corporate-theme button[aria-label*="サイドバー"] {
-    background-color: transparent !important;
-    background: none !important;
-}
-
-.corporate-theme button[aria-label*="サイドバー"]:hover {
-    background-color: #f3f4f6 !important;
-    /* gray-100 */
-    background: #f3f4f6 !important;
-}
-
-/* より具体的なセレクタで確実に適用 */
-.corporate-theme .fixed button[aria-label*="サイドバー"] {
-    background-color: transparent !important;
-    background: none !important;
-}
-
-.corporate-theme .fixed button[aria-label*="サイドバー"]:hover {
-    background-color: #f3f4f6 !important;
-    background: #f3f4f6 !important;
-}
-
-/* 法人テーマのボタン全般から青色背景を除外 */
-.corporate-theme button[aria-label*="サイドバー"],
-.corporate-theme button[aria-label*="展開"],
-.corporate-theme button[aria-label*="折りたた"] {
-    background-color: transparent !important;
-    background: none !important;
-}
-
-.corporate-theme button[aria-label*="サイドバー"]:hover,
-.corporate-theme button[aria-label*="展開"]:hover,
-.corporate-theme button[aria-label*="折りたた"]:hover {
-    background-color: #f3f4f6 !important;
-    background: #f3f4f6 !important;
-}
-
-/* QRコードボタンの最優先スタイル - ダークモードCSS対策 */
-.qr-color-button,
-.qr-download-black,
-.qr-download-dark-gray {
-    transition: all 0.2s ease-in-out !important;
-    border: none !important;
-    outline: none !important;
-}
-
-/* ブラックボタンの最優先背景色 */
-.qr-download-black,
-button.qr-download-black,
-.qr-download-black:not(:hover),
-.qr-download-black:not(:focus),
-.qr-download-black:not(:active) {
-    background: #000000 !important;
-    background-color: #000000 !important;
-    color: white !important;
-}
-
-.qr-download-black:hover,
-button.qr-download-black:hover {
-    background: #1f1f1f !important;
-    background-color: #1f1f1f !important;
-    color: white !important;
-}
-
-/* ダークグレーボタンの最優先背景色 */
-.qr-download-dark-gray,
-button.qr-download-dark-gray,
-.qr-download-dark-gray:not(:hover),
-.qr-download-dark-gray:not(:focus),
-.qr-download-dark-gray:not(:active) {
-    background: #333333 !important;
-    background-color: #333333 !important;
-    color: white !important;
-}
-
-.qr-download-dark-gray:hover,
-button.qr-download-dark-gray:hover {
-    background: #4a4a4a !important;
-    background-color: #4a4a4a !important;
-    color: white !important;
-}
-
-/* QRボタン内のテキストを強制的に白に */
-.qr-color-button span,
-.qr-download-black span,
-.qr-download-dark-gray span,
-button.qr-color-button span,
-button.qr-download-black span,
-button.qr-download-dark-gray span {
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}
-
-/* ホバー時のテキストも白に */
-.qr-color-button:hover span,
-.qr-download-black:hover span,
-.qr-download-dark-gray:hover span,
-button.qr-color-button:hover span,
-button.qr-download-black:hover span,
-button.qr-download-dark-gray:hover span {
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}
-
-/* ダークモードでも同じスタイルを強制適用 */
-@media (prefers-color-scheme: dark) {
-
-    .qr-download-black,
-    button.qr-download-black,
-    .qr-download-black:hover,
-    button.qr-download-black:hover {
-        background: #000000 !important;
-        background-color: #000000 !important;
-        color: white !important;
-    }
-
-    .qr-download-black:hover,
-    button.qr-download-black:hover {
-        background: #1f1f1f !important;
-        background-color: #1f1f1f !important;
-    }
-
-    .qr-download-dark-gray,
-    button.qr-download-dark-gray,
-    .qr-download-dark-gray:hover,
-    button.qr-download-dark-gray:hover {
-        background: #333333 !important;
-        background-color: #333333 !important;
-        color: white !important;
-    }
-
-    .qr-download-dark-gray:hover,
-    button.qr-download-dark-gray:hover {
-        background: #4a4a4a !important;
-        background-color: #4a4a4a !important;
-    }
-
-    .qr-color-button span,
-    .qr-download-black span,
-    .qr-download-dark-gray span,
-    .qr-color-button:hover span,
-    .qr-download-black:hover span,
-    .qr-download-dark-gray:hover span {
-        color: white !important;
-        -webkit-text-fill-color: white !important;
-    }
-}
-
-/* 既存のダークモード対応CSSをオーバーライド */
-@media (prefers-color-scheme: dark) {
-
-    .qr-download-black,
-    .qr-download-dark-gray {
-        background-color: unset !important;
-    }
-
-    .qr-download-black {
-        background: #000000 !important;
-    }
-
-    .qr-download-dark-gray {
-        background: #333333 !important;
-    }
-}
-
-/* QRデザイナーボタンも同様に修正 */
-.qr-designer-button,
-.qr-designer-button *,
-a.qr-designer-button,
-a.qr-designer-button * {
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}
-
-.qr-designer-button:hover,
-.qr-designer-button:hover *,
-a.qr-designer-button:hover,
-a.qr-designer-button:hover * {
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}
-
-/* より具体的なセレクタでダークモード対策 */
-@media (prefers-color-scheme: dark) {
-
-    .qr-designer-button,
-    .qr-designer-button span,
-    .qr-designer-button svg,
-    a.qr-designer-button,
-    a.qr-designer-button span,
-    a.qr-designer-button svg {
-        color: white !important;
-        -webkit-text-fill-color: white !important;
-    }
-}
-
-/* 法人テーマでの追加保護 */
-.corporate-theme .qr-download-black,
-.corporate-theme .qr-download-dark-gray,
-.corporate-theme .qr-designer-button {
-    color: white !important;
-}
-
-.corporate-theme .qr-download-black span,
-.corporate-theme .qr-download-dark-gray span,
-.corporate-theme .qr-designer-button span,
-.corporate-theme .qr-designer-button svg {
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}
-
-/* ダークモード対応 - タブのhover効果のみ強化 */
-@media (prefers-color-scheme: dark) {
-
-    /* タブボタンのhover効果を強制適用（プレビューに影響しないよう限定） */
-    .corporate-theme button[class*="hover:bg-[#1E3A8A]"]:hover,
-    .corporate-theme .hover\:bg-\[\#1E3A8A\]:hover {
-        background-color: #1E3A8A !important;
-        color: white !important;
-    }
-
-    /* プレビューのハイライト効果のみ保護 */
-    .border-red-500 {
-        border-color: #ef4444 !important;
-        border-width: 2px !important;
-    }
-
-    /* プレビュー内の要素は保護しない（削除） */
-}
-
-/* hover効果の最優先適用（プレビューエリア以外） */
-.corporate-theme .hover\:bg-\[\#1E3A8A\]:hover,
-.corporate-theme button[class*="hover:bg-[#1E3A8A]"]:hover {
-    background-color: #1E3A8A !important;
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}
-
-/* プレビューのハイライト効果強化 */
-.animate-pulse {
-    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-}
-
-@keyframes pulse {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: .5;
-    }
-}
-
-/* 赤いボーダーの強制表示 */
-.border-red-500 {
-    border-color: #ef4444 !important;
-    border-width: 2px !important;
-    border-style: solid !important;
-}
-
-/* ダークモードでも赤いボーダーを維持（プレビューのみ） */
-@media (prefers-color-scheme: dark) {
-    .border-red-500 {
-        border-color: #ef4444 !important;
-        opacity: 1 !important;
-    }
-
-    /* アニメーション効果も強制適用 */
-    .animate-pulse {
-        animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite !important;
-    }
-}
-
-/* QRデザイナーボタンのホバー効果修正 - 最優先適用 */
-.qr-designer-button,
-a[href="/qrcode"],
-a.qr-designer-button,
-Link[href="/qrcode"] {
-    background-color: #2563eb !important;
-    /* bg-blue-600 */
-    color: white !important;
-    transition: all 0.2s ease-in-out !important;
-}
-
-.qr-designer-button:hover,
-a[href="/qrcode"]:hover,
-a.qr-designer-button:hover,
-Link[href="/qrcode"]:hover {
-    background-color: #1d4ed8 !important;
-    /* bg-blue-700 */
-    color: white !important;
-    transform: scale(1.05) !important;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
-/* ボタン内のテキストとアイコンも白色に強制 */
-.qr-designer-button *,
-.qr-designer-button:hover *,
-a[href="/qrcode"] *,
-a[href="/qrcode"]:hover *,
-a.qr-designer-button *,
-a.qr-designer-button:hover * {
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}
-
-/* ダークモードでも同じスタイルを強制適用 */
-@media (prefers-color-scheme: dark) {
-
-    .qr-designer-button,
-    a[href="/qrcode"],
-    a.qr-designer-button {
-        background-color: #2563eb !important;
-        color: white !important;
-    }
-
-    .qr-designer-button:hover,
-    a[href="/qrcode"]:hover,
-    a.qr-designer-button:hover {
-        background-color: #1d4ed8 !important;
-        color: white !important;
-        transform: scale(1.05) !important;
-        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-    }
-
-    .qr-designer-button *,
-    .qr-designer-button:hover *,
-    a[href="/qrcode"] *,
-    a[href="/qrcode"]:hover *,
-    a.qr-designer-button *,
-    a.qr-designer-button:hover * {
-        color: white !important;
-        -webkit-text-fill-color: white !important;
-    }
-}
-
-/* 法人テーマでも同様に適用 */
-.corporate-theme .qr-designer-button,
-.corporate-theme a[href="/qrcode"] {
-    background-color: #2563eb !important;
-    color: white !important;
-}
-
-.corporate-theme .qr-designer-button:hover,
-.corporate-theme a[href="/qrcode"]:hover {
-    background-color: #1d4ed8 !important;
-    color: white !important;
-    transform: scale(1.05) !important;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
-/* 法人メンバーページの強制スタイル適用 */
-body[data-pathname*="/dashboard/corporate-member"] .bg-blue-600,
-body[data-pathname*="/dashboard/corporate-member"] .bg-blue-500,
-body[data-pathname*="/dashboard/corporate-member"] .bg-blue-700,
-[data-pathname*="/dashboard/corporate-member"] .bg-blue-600,
-[data-pathname*="/dashboard/corporate-member"] .bg-blue-500,
-[data-pathname*="/dashboard/corporate-member"] .bg-blue-700 {
-    background-color: #1E3A8A !important;
-    color: white !important;
-}
-
-body[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-700:hover,
-body[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-600:hover,
-body[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-800:hover,
-[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-700:hover,
-[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-600:hover,
-[data-pathname*="/dashboard/corporate-member"] .hover\:bg-blue-800:hover {
-    background-color: #122153 !important;
-    color: white !important;
-}
-
-/* QRデザイナーボタンが既に正しい色の場合は保護 */
-body[data-pathname*="/dashboard/corporate-member"] .qr-designer-button {
-    background-color: #1E3A8A !important;
-    color: white !important;
-}
-
-body[data-pathname*="/dashboard/corporate-member"] .qr-designer-button:hover {
-    background-color: #122153 !important;
-    color: white !important;
-}
-
-/* 法人メンバーページのすべてのボタン内テキストを白に */
-body[data-pathname*="/dashboard/corporate-member"] .bg-blue-600 *,
-body[data-pathname*="/dashboard/corporate-member"] .bg-blue-500 *,
-body[data-pathname*="/dashboard/corporate-member"] .qr-designer-button *,
-[data-pathname*="/dashboard/corporate-member"] .bg-blue-600 *,
-[data-pathname*="/dashboard/corporate-member"] .bg-blue-500 *,
-[data-pathname*="/dashboard/corporate-member"] .qr-designer-button * {
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}
-
-/* 個人プランページのQRデザイナーボタンのホバー効果修正 */
-body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button,
-body[data-pathname="/dashboard/share"] .qr-designer-button,
-[data-pathname="/dashboard/share"] .qr-designer-button {
-    background-color: #2563eb !important;
-    /* bg-blue-600 */
-    color: white !important;
-    transition: all 0.2s ease-in-out !important;
-}
-
-body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button:hover,
-body[data-pathname="/dashboard/share"] .qr-designer-button:hover,
-[data-pathname="/dashboard/share"] .qr-designer-button:hover {
-    background-color: #1d4ed8 !important;
-    /* bg-blue-700 */
-    color: white !important;
-    transform: scale(1.05) !important;
-    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05) !important;
-}
-
-/* 個人プランページの青いボタン全般のホバー効果修正 */
-body:not([data-pathname*="/dashboard/corporate"]) .bg-blue-600:hover,
-body[data-pathname="/dashboard/share"] .bg-blue-600:hover {
-    background-color: #1d4ed8 !important;
-    /* bg-blue-700 */
-    color: white !important;
-}
-
-/* ボタン内のテキストとアイコンも白色に */
-body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button *,
-body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button:hover *,
-body[data-pathname="/dashboard/share"] .qr-designer-button *,
-body[data-pathname="/dashboard/share"] .qr-designer-button:hover * {
-    color: white !important;
-    -webkit-text-fill-color: white !important;
-}
-
-/* ダークモードでも同じ効果を適用 */
-@media (prefers-color-scheme: dark) {
-
-    body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button,
-    body[data-pathname="/dashboard/share"] .qr-designer-button {
-        background-color: #2563eb !important;
-        color: white !important;
-    }
-
-    body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button:hover,
-    body[data-pathname="/dashboard/share"] .qr-designer-button:hover {
-        background-color: #1d4ed8 !important;
-        color: white !important;
-    }
-
-    body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button *,
-    body:not([data-pathname*="/dashboard/corporate"]) .qr-designer-button:hover *,
-    body[data-pathname="/dashboard/share"] .qr-designer-button *,
-    body[data-pathname="/dashboard/share"] .qr-designer-button:hover * {
-        color: white !important;
-        -webkit-text-fill-color: white !important;
-    }
-}
-
-/* チェックボックスの専用ダークモード対応 */
-@media (prefers-color-scheme: dark) {
-
-    /* チェックボックスを白背景に強制 */
-    input[type="checkbox"] {
-        background-color: #ffffff !important;
-        border-color: #d1d5db !important;
-        color: #2563eb !important;
-        /* チェックマークの色 */
-        accent-color: #2563eb !important;
-    }
-
-    /* チェックされた状態でも白背景を維持しつつ、チェックマークは青 */
-    input[type="checkbox"]:checked {
-        background-color: #2563eb !important;
-        border-color: #2563eb !important;
-        color: white !important;
-    }
-
-    /* フォーカス時も白背景を維持 */
-    input[type="checkbox"]:focus {
-        background-color: #ffffff !important;
-        border-color: #2563eb !important;
-        box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.2) !important;
-    }
-
-    /* ホバー時の効果 */
-    input[type="checkbox"]:hover {
-        border-color: #2563eb !important;
-    }
-
-    /* チェック状態でのホバー */
-    input[type="checkbox"]:checked:hover {
-        background-color: #1d4ed8 !important;
-    }
-}
-
-/* ライトモードでも確実に表示されるように */
-input[type="checkbox"] {
-    background-color: #ffffff;
-    border-color: #d1d5db;
-    accent-color: #2563eb;
+/* ===== フォーカスリング ===== */
+*:focus-visible {
+    outline: 2px solid var(--theme-primary);
+    outline-offset: 2px;
 }
 
-input[type="checkbox"]:checked {
-    background-color: #2563eb;
-    border-color: #2563eb;
-    color: white;
+/* ===== スクロールバー（Webkit） ===== */
+::-webkit-scrollbar {
+    width: 8px;
 }
 
-/* 法人テーマでのチェックボックス対応 */
-.corporate-theme input[type="checkbox"] {
-    accent-color: #1E3A8A !important;
+::-webkit-scrollbar-track {
+    background: var(--gray-100);
 }
 
-.corporate-theme input[type="checkbox"]:checked {
-    background-color: #1E3A8A !important;
-    border-color: #1E3A8A !important;
+::-webkit-scrollbar-thumb {
+    background: var(--gray-300);
+    border-radius: 4px;
 }
-
-@media (prefers-color-scheme: dark) {
-    .corporate-theme input[type="checkbox"] {
-        background-color: #ffffff !important;
-        border-color: #d1d5db !important;
-        accent-color: #1E3A8A !important;
-    }
-
-    .corporate-theme input[type="checkbox"]:checked {
-        background-color: #1E3A8A !important;
-        border-color: #1E3A8A !important;
-        color: white !important;
-    }
 
-    .corporate-theme input[type="checkbox"]:focus {
-        border-color: #1E3A8A !important;
-        box-shadow: 0 0 0 2px rgba(30, 58, 138, 0.2) !important;
-    }
+::-webkit-scrollbar-thumb:hover {
+    background: var(--gray-400);
 }

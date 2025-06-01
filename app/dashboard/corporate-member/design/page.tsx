@@ -336,11 +336,18 @@ export default function ImprovedCorporateMemberDesignPage() {
               </div>
 
               {/* ブランディングの活用方法 */}
-              <div className="bg-blue-50 border border-blue-100 rounded-lg p-4">
+              <div
+                className="mt-6 rounded-md p-4"
+                style={{
+                  backgroundColor: '#1E3A8A10',
+                  borderColor: '#1E3A8A30',
+                  borderWidth: '1px',
+                }}
+              >
                 <div className="flex flex-row items-start">
-                  <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
+                  <HiInformationCircle className="text-[#1E3A8A] h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
                   <div className="w-full">
-                    <h3 className="font-medium text-blue-900 mb-1">SNSアイコンカラーについて</h3>
+                    <h3 className="font-medium text-[#1E3A8A] mb-1">SNSアイコンカラーについて</h3>
                     <p className="text-sm text-corporate-secondary break-words hyphens-auto text-justify">
                       SNSアイコンの色は、オリジナルのSNSカラーを使用するか、単色で統一するかを選べます。
                       オリジナルカラーは視認性が高く親しみやすい一方、単色にすることで法人プロフィールとしての統一感が生まれます。

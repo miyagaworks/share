@@ -1,7 +1,7 @@
-// components/dashboard/ImprovedDesignPreview.tsx
+// components/dashboard/ImprovedDesignPreview.tsx (最終修正版)
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
 import type { User } from '@prisma/client';
@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 
 // 型拡張
 interface ExtendedUser extends User {
-  snsIconColor: string | null; // null を使用し、undefined を排除
+  snsIconColor: string | null;
   headerText: string | null;
   textColor: string | null;
 }
@@ -21,23 +21,31 @@ interface ImprovedDesignPreviewProps {
 export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
   const extendedUser = user as ExtendedUser;
 
-  // 親コンポーネントの状態が変更された時に更新するためのキー
-  const [key, setKey] = useState(0);
-  const [mainColor, setMainColor] = useState(user.mainColor || '#3B82F6');
-  const [snsIconColor, setSnsIconColor] = useState(extendedUser.snsIconColor || '#333333');
-  const [headerText, setHeaderText] = useState(
-    extendedUser.headerText || 'シンプルにつながる、スマートにシェア。',
-  );
-  const [textColor, setTextColor] = useState(extendedUser.textColor || '#FFFFFF');
+  // 🚀 useMemoで値を安定化
+  const previewData = useMemo(() => {
+    const data = {
+      mainColor: user.mainColor || '#3B82F6',
+      snsIconColor: extendedUser.snsIconColor || '#333333',
+      headerText: extendedUser.headerText || 'シンプルにつながる、スマートにシェア。',
+      textColor: extendedUser.textColor || '#FFFFFF',
+      timestamp: Date.now(), // 変更検出用
+    };
 
-  // ユーザーのカラー設定が変更されたら更新
-  useEffect(() => {
-    setMainColor(user.mainColor || '#3B82F6');
-    setSnsIconColor(extendedUser.snsIconColor || '#333333');
-    setHeaderText(extendedUser.headerText || 'シンプルにつながる、スマートにシェア。');
-    setTextColor(extendedUser.textColor || '#FFFFFF');
-    setKey((prev) => prev + 1);
+    console.log('🎨 [Preview] データ更新:', data);
+    return data;
   }, [user.mainColor, extendedUser.snsIconColor, extendedUser.headerText, extendedUser.textColor]);
+
+  // 🚀 強制更新用のキー
+  const [updateKey, setUpdateKey] = useState(0);
+
+  // 🚀 プレビューデータが変更されたら強制更新
+  useEffect(() => {
+    setUpdateKey((prev) => {
+      const newKey = prev + 1;
+      console.log('🎨 [Preview] 強制更新:', newKey, previewData);
+      return newKey;
+    });
+  }, [previewData]);
 
   // テスト用のダミーデータ
   const dummySnsLinks = [
@@ -50,7 +58,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
   return (
     <div className="flex justify-center w-full">
       <motion.div
-        key={key}
+        key={`preview-${updateKey}`} // 🔥 強制更新キー
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
@@ -59,11 +67,20 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
       >
         {/* ヘッダー部分 */}
         <div
+          key={`header-${updateKey}`} // 🔥 個別に強制更新
           className="h-12 w-full relative overflow-hidden flex items-center justify-center"
-          style={{ backgroundColor: mainColor }}
+          style={{
+            backgroundColor: previewData.mainColor,
+          }}
         >
-          <p className="text-sm px-2 text-center" style={{ color: textColor }}>
-            {headerText}
+          <p
+            key={`header-text-${updateKey}`} // 🔥 テキストも強制更新
+            className="text-sm px-2 text-center"
+            style={{
+              color: previewData.textColor,
+            }}
+          >
+            {previewData.headerText}
           </p>
         </div>
 
@@ -78,7 +95,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
           <div className="grid grid-cols-4 gap-3">
             {dummySnsLinks.map((link, index) => (
               <motion.div
-                key={link.platform}
+                key={`${link.platform}-${updateKey}`} // 🔥 SNSアイコンも強制更新
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: index * 0.05 }}
@@ -88,7 +105,11 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
                   <ImprovedSnsIcon
                     platform={link.platform as SnsPlatform}
                     size={30}
-                    color={snsIconColor === 'original' ? 'original' : snsIconColor}
+                    color={
+                      previewData.snsIconColor === 'original'
+                        ? 'original'
+                        : previewData.snsIconColor
+                    }
                   />
                 </div>
                 <span className="text-xs">{link.name}</span>
@@ -208,10 +229,14 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
           {/* 主要アクションボタン */}
           <div className="mt-6 space-y-3">
             <motion.button
+              key={`phone-button-${updateKey}`} // 🔥 ボタンも強制更新
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="w-full py-2 rounded-md text-sm font-medium transition-all flex items-center justify-center"
-              style={{ backgroundColor: mainColor, color: textColor }}
+              style={{
+                backgroundColor: previewData.mainColor,
+                color: previewData.textColor,
+              }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -230,10 +255,11 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
               電話をかける
             </motion.button>
             <motion.button
+              key={`contact-button-${updateKey}`} // 🔥 ボタンも強制更新
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="w-full py-2 rounded-md text-sm font-medium border transition-all flex items-center justify-center bg-white"
-              style={{ borderColor: mainColor, color: '#333' }}
+              style={{ borderColor: previewData.mainColor, color: '#333' }}
             >
               <svg
                 xmlns="http://www.w3.org/2000/svg"

@@ -227,7 +227,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
   }
 
   // プライマリカラーの設定
-  const primaryColor = tenantData?.primaryColor || '#1E3A8A';
+  const primaryColor = '#1E3A8A';
 
   return (
     <div
@@ -295,15 +295,17 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       )}
 
       {/* デスクトップ用タブナビゲーション */}
-      <div className="hidden md:block mb-6 overflow-x-auto">
+      <div className="hidden px-1 md:block mb-6 overflow-x-auto">
         <div className="flex space-x-2 min-w-max pb-2">
           {filteredNavItems.map((item) => (
             <Link key={item.href} href={item.href}>
               <Button
                 variant={pathname === item.href ? 'corporate' : 'ghost'}
-                className="flex items-center whitespace-nowrap"
+                className={`flex items-center whitespace-nowrap transition-colors duration-200 ${
+                  pathname !== item.href ? 'desktop-tab-hover' : ''
+                }`}
               >
-                {item.icon}
+                <span className="tab-icon">{item.icon}</span>
                 <span className="ml-2">{item.label}</span>
               </Button>
             </Link>

@@ -602,6 +602,7 @@ export function MemberSnsManager({
 
           <Button
             variant="corporate"
+            hoverScale="subtle"
             onClick={() => {
               setIsSelectingSnsType(true);
               setIsAddingSns(false);
@@ -657,23 +658,6 @@ export function MemberSnsManager({
         {/* SNSリンク追加フォーム */}
         {isAddingSns && (
           <div className="border rounded-md p-4 mb-4" style={{ borderColor: '#e2e8f0' }}>
-            <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-2">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  setIsAddingSns(false);
-                  setSnsForm({ platform: '', username: '', url: '' });
-                }}
-                className="w-full sm:w-auto"
-              >
-                キャンセル
-              </Button>
-              <Button variant="corporate" onClick={handleAddSns} className="w-full sm:w-auto">
-                <HiCheck className="mr-1 h-4 w-4" />
-                追加
-              </Button>
-            </div>
-
             <div className="space-y-4">
               {/* LINE系とそれ以外で分岐 */}
               {isLineLink(snsForm.platform) || isOfficialLineLink(snsForm.platform) ? (
@@ -737,7 +721,8 @@ export function MemberSnsManager({
 
               <div className="flex justify-end space-x-2 pt-2">
                 <Button
-                  variant="outline"
+                  variant="corporateOutline"
+                  hoverScale="subtle"
                   onClick={() => {
                     setIsAddingSns(false);
                     setSnsForm({ platform: '', username: '', url: '' });
@@ -745,7 +730,7 @@ export function MemberSnsManager({
                 >
                   キャンセル
                 </Button>
-                <Button variant="corporate" onClick={handleAddSns}>
+                <Button variant="corporate" hoverScale="subtle" onClick={handleAddSns}>
                   <HiCheck className="mr-1 h-4 w-4" />
                   追加
                 </Button>
@@ -825,7 +810,8 @@ export function MemberSnsManager({
 
                   <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-2">
                     <Button
-                      variant="outline"
+                      variant="corporateOutline"
+                      hoverScale="subtle"
                       onClick={() => {
                         setEditingSnsId(null);
                         setSnsForm({ platform: '', username: '', url: '' });
@@ -836,6 +822,7 @@ export function MemberSnsManager({
                     </Button>
                     <Button
                       variant="corporate"
+                      hoverScale="subtle"
                       onClick={() => handleUpdateSns(link.id)}
                       className="w-full sm:w-auto"
                     >
@@ -906,6 +893,7 @@ export function MemberSnsManager({
 
           <Button
             variant="corporate"
+            hoverScale="subtle"
             onClick={() => setIsAddingCustom(true)}
             disabled={isAddingCustom}
           >
@@ -961,7 +949,8 @@ export function MemberSnsManager({
 
               <div className="flex flex-col sm:flex-row justify-end space-y-2 sm:space-y-0 sm:space-x-2 pt-2">
                 <Button
-                  variant="outline"
+                  variant="corporateOutline"
+                  hoverScale="subtle"
                   onClick={() => {
                     setIsAddingCustom(false);
                     setCustomForm({ name: '', url: '' });
@@ -970,7 +959,12 @@ export function MemberSnsManager({
                 >
                   キャンセル
                 </Button>
-                <Button variant="corporate" onClick={handleAddCustom} className="w-full sm:w-auto">
+                <Button
+                  variant="corporate"
+                  hoverScale="subtle"
+                  onClick={handleAddCustom}
+                  className="w-full sm:w-auto"
+                >
                   <HiCheck className="mr-1 h-4 w-4" />
                   追加
                 </Button>
@@ -1013,7 +1007,8 @@ export function MemberSnsManager({
 
                     <div className="flex justify-end space-x-2 pt-2">
                       <Button
-                        variant="outline"
+                        variant="corporateOutline"
+                        hoverScale="subtle"
                         onClick={() => {
                           setEditingCustomId(null);
                           setCustomForm({ name: '', url: '' });
@@ -1021,7 +1016,11 @@ export function MemberSnsManager({
                       >
                         キャンセル
                       </Button>
-                      <Button variant="corporate" onClick={() => handleUpdateCustom(link.id)}>
+                      <Button
+                        variant="corporate"
+                        hoverScale="subtle"
+                        onClick={() => handleUpdateCustom(link.id)}
+                      >
                         <HiCheck className="mr-1 h-4 w-4" />
                         更新
                       </Button>
@@ -1061,7 +1060,8 @@ export function MemberSnsManager({
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex items-center text-red-600 border-red-300"
+                          className="flex items-center text-red-600 border-red-300 hover:bg-red-600 hover:text-white hover:border-red-600"
+                          hoverScale="subtle"
                           onClick={() => handleDeleteCustom(link.id)}
                         >
                           <HiTrash className="mr-1 h-3 w-3" />

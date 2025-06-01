@@ -1,11 +1,11 @@
-// components/ui/Button.tsx (修正版)
+// components/ui/Button.tsx (代替案 - Tailwindクラスを使用)
 import React from 'react';
 import { cva, type VariantProps } from 'class-variance-authority';
 import { cn } from '@/lib/utils';
 
 // ボタンバリエーション設定
 const buttonVariants = cva(
-  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
+  'inline-flex items-center justify-center rounded-md text-sm font-medium transition-all duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none',
   {
     variants: {
       variant: {
@@ -16,11 +16,11 @@ const buttonVariants = cva(
         secondary: 'bg-gray-100 text-gray-900 hover:bg-gray-200 focus-visible:ring-gray-500',
         ghost: 'hover:bg-gray-100 text-gray-700 hover:text-gray-900 focus-visible:ring-gray-500',
         link: 'text-blue-600 underline-offset-4 hover:underline focus-visible:ring-blue-500 p-0 h-auto',
-        // 🔥 修正: 法人テーマ用のバリアントを修正（!importantを使わない）
+        // 修正: CSS変数を使用（確実に法人カラーを適用）
         corporate:
-          'bg-[#1E3A8A] text-white hover:bg-[#122153] focus-visible:ring-[#1E3A8A] transition-all duration-200',
+          'bg-[var(--corporate-primary)] text-white hover:bg-[var(--corporate-secondary)] hover:shadow-lg focus-visible:ring-[var(--corporate-primary)] transition-all duration-200 ease-in-out',
         corporateOutline:
-          'border border-[#1E3A8A] bg-white text-[#1E3A8A] hover:bg-[#1E3A8A]/10 focus-visible:ring-[#1E3A8A] transition-all duration-200',
+          'border border-[var(--corporate-primary)] bg-white text-[var(--corporate-primary)] hover:bg-[var(--corporate-primary)] hover:text-white hover:shadow-md focus-visible:ring-[var(--corporate-primary)] transition-all duration-200 ease-in-out',
       },
       size: {
         default: 'h-10 px-4 py-2',
@@ -34,12 +34,20 @@ const buttonVariants = cva(
       loading: {
         true: 'relative',
       },
+      // ホバー効果の強度を調整できるオプション
+      hoverScale: {
+        none: 'hover:scale-100',
+        subtle: 'hover:scale-[1.01]',
+        normal: 'hover:scale-105',
+        strong: 'hover:scale-110',
+      },
     },
     defaultVariants: {
       variant: 'default',
       size: 'default',
       fullWidth: false,
       loading: false,
+      hoverScale: 'normal',
     },
   },
 );
@@ -53,38 +61,27 @@ export interface ButtonProps
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   (
-    { className, variant, size, fullWidth, loading, children, icon, loadingText, ...props },
+    {
+      className,
+      variant,
+      size,
+      fullWidth,
+      loading,
+      hoverScale,
+      children,
+      icon,
+      loadingText,
+      ...props
+    },
     ref,
   ) => {
-    // 🔥 修正: 法人バリアント用の追加スタイル処理
-    const getCorporateStyles = () => {
-      if (variant === 'corporate') {
-        return {
-          backgroundColor: '#1E3A8A',
-          color: 'white',
-          borderColor: '#1E3A8A',
-        };
-      }
-      if (variant === 'corporateOutline') {
-        return {
-          backgroundColor: 'white',
-          color: '#1E3A8A',
-          borderColor: '#1E3A8A',
-        };
-      }
-      return {};
-    };
-
     return (
       <button
         className={cn(
-          buttonVariants({ variant, size, fullWidth, loading }),
-          // 🔥 修正: 法人テーマ用の追加クラス
-          variant === 'corporate' && 'btn-corporate',
-          variant === 'corporateOutline' && 'btn-corporate-outline',
+          buttonVariants({ variant, size, fullWidth, loading, hoverScale }),
+          // 追加のクラス適用を確実にする
           className,
         )}
-        style={getCorporateStyles()}
         ref={ref}
         disabled={loading || props.disabled}
         {...props}
@@ -118,7 +115,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           </>
         ) : (
           <>
-            {icon && <span className="mr-2 corporate-icon">{icon}</span>}
+            {icon && <span className="mr-2">{icon}</span>}
             {children}
           </>
         )}

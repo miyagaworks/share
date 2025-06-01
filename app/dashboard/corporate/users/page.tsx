@@ -302,7 +302,11 @@ export default function CorporateUsersPage() {
           <div>
             <h3 className="text-lg font-medium text-red-800">エラーが発生しました</h3>
             <p className="mt-2 text-red-700">{error}</p>
-            <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+            <Button
+              variant="corporateOutline"
+              className="mt-4"
+              onClick={() => window.location.reload()}
+            >
               再読み込み
             </Button>
           </div>
@@ -334,7 +338,7 @@ export default function CorporateUsersPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-full overflow-hidden px-2 sm:px-4">
+    <div className="space-y-6 max-w-full overflow-hidden px-2 sm:px-4 corporate-theme">
       {/* ヘッダー部分 */}
       <div className="flex flex-col sm:flex-row justify-between sm:items-center gap-4 mb-6">
         <div>
@@ -343,7 +347,11 @@ export default function CorporateUsersPage() {
         </div>
 
         <div className="flex gap-2 flex-wrap">
-          <Button onClick={handleOpenInviteDialog} className="flex items-center">
+          <Button
+            variant="corporate"
+            onClick={handleOpenInviteDialog}
+            className="flex items-center"
+          >
             <HiPlus className="mr-2 h-4 w-4" />
             ユーザーを招待
           </Button>
@@ -351,11 +359,18 @@ export default function CorporateUsersPage() {
       </div>
 
       {/* 説明セクション */}
-      <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 w-full">
+      <div
+        className="mt-6 rounded-md p-4"
+        style={{
+          backgroundColor: '#1E3A8A10',
+          borderColor: '#1E3A8A30',
+          borderWidth: '1px',
+        }}
+      >
         <div className="flex flex-row items-start">
-          <HiInformationCircle className="text-blue-900 h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
+          <HiInformationCircle className="text-[#1E3A8A] h-5 w-5 flex-shrink-0 mr-2 mt-0.5" />
           <div className="w-full">
-            <h3 className="font-medium text-blue-900 mb-1">ユーザー管理について</h3>
+            <h3 className="font-medium text-[#1E3A8A] mb-1">ユーザー管理について</h3>
             <p className="text-sm text-corporate-secondary break-words hyphens-auto">
               法人アカウントに所属するユーザーを管理できます。招待メールを送信してユーザーを追加したり、
               役割や部署を変更したりすることができます。管理者は全ての操作が可能で、一般メンバーは自身のプロフィールのみ編集できます。
@@ -610,7 +625,7 @@ export default function CorporateUsersPage() {
           <p className="mt-2 text-gray-500 mb-6">
             「ユーザーを招待」ボタンをクリックして、法人アカウントにユーザーを追加してください。
           </p>
-          <Button onClick={handleOpenInviteDialog}>
+          <Button variant="corporate" onClick={handleOpenInviteDialog}>
             <HiPlus className="mr-2 h-4 w-4" />
             ユーザーを招待
           </Button>
@@ -675,7 +690,7 @@ export default function CorporateUsersPage() {
 
               <div className="flex justify-end space-x-3 mt-6">
                 <Button
-                  variant="outline"
+                  variant="corporateOutline"
                   onClick={() => {
                     setIsEditRoleDialogOpen(false);
                     setSelectedUser(null);
@@ -686,10 +701,10 @@ export default function CorporateUsersPage() {
                   キャンセル
                 </Button>
                 <Button
+                  variant="corporate"
                   onClick={handleUpdateUser}
                   type="button"
                   disabled={isUpdating}
-                  className="bg-blue-600 hover:bg-blue-700 text-white"
                 >
                   {isUpdating ? (
                     <>
@@ -728,7 +743,7 @@ export default function CorporateUsersPage() {
               </div>
               <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3">
                 <Button
-                  variant="outline"
+                  variant="corporateOutline"
                   onClick={() => {
                     setIsDeleteDialogOpen(false);
                     setSelectedUser(null); // 選択ユーザーもクリア
@@ -738,11 +753,7 @@ export default function CorporateUsersPage() {
                 >
                   キャンセル
                 </Button>
-                <Button
-                  className="bg-red-600 hover:bg-red-700 text-white w-full sm:w-auto"
-                  onClick={handleConfirmDelete}
-                  type="button"
-                >
+                <Button variant="destructive" onClick={handleConfirmDelete} type="button">
                   削除する
                 </Button>
               </div>

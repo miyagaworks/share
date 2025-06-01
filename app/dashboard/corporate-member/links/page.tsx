@@ -169,7 +169,7 @@ export default function CorporateMemberLinksPage() {
 
   return (
     <CorporateMemberGuard>
-      <div className="space-y-6">
+      <div className="space-y-6 corporate-theme">
         <div className="flex items-center mb-6">
           <HiLink className="h-8 w-8 text-gray-700 mr-3" />
           <div>

@@ -10,7 +10,6 @@ import { Input } from '@/components/ui/Input';
 import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker';
 import { toast } from 'react-hot-toast';
 import { updateProfile } from '@/actions/profile';
-import { useRouter } from 'next/navigation';
 import type { User } from '@prisma/client';
 import tinycolor from 'tinycolor2';
 
@@ -39,7 +38,6 @@ interface ImprovedDesignFormProps {
 
 export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) {
   const extendedUser = user as ExtendedUser;
-  const router = useRouter();
   const [isPending, setIsPending] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -113,6 +111,8 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
       setErrorMessage(null);
       setIsSubmitting(true);
 
+      console.log('🎨 [Form] デザイン更新開始:', data);
+
       const response = await updateProfile({
         mainColor: data.mainColor,
         snsIconColor: data.snsIconColor,
@@ -125,18 +125,22 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
         throw new Error(response.error);
       }
 
+      console.log('🎨 [Form] デザイン更新成功');
+
+      // 🚀 修正: 更新コールバックを最初に実行
+      if (onUpdate) {
+        console.log('🎨 [Form] プレビュー更新開始');
+        await onUpdate();
+        console.log('🎨 [Form] プレビュー更新完了');
+      }
+
+      // 🚀 修正: 成功メッセージはプレビュー更新後に表示
       toast.success('デザイン設定を更新しました');
 
-      // APIとの同期が終わってからルーター更新
-      router.refresh();
-
-      // 更新コールバックを呼び出し
-      if (onUpdate) {
-        // コールバックを直接呼び出す
-        onUpdate();
-      }
+      // 🚀 修正: router.refreshは最後に実行（必要に応じて）
+      // router.refresh();
     } catch (error) {
-      console.error('Error:', error);
+      console.error('🎨 [Form] Error:', error);
       toast.error(errorMessage || 'デザイン設定の更新に失敗しました');
     } finally {
       setIsPending(false);
