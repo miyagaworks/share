@@ -39,6 +39,7 @@ export default function AdminSubscriptionsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [isAdmin, setIsAdmin] = useState(false);
   const [sortType, setSortType] = useState<SortType>('status');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   // 管理者チェック
   useEffect(() => {
     const checkAdminAccess = async () => {
@@ -171,59 +172,65 @@ export default function AdminSubscriptionsPage() {
           </div>
           <div className="flex space-x-2">
             <div className="dropdown">
-              <Button variant="outline" className="flex items-center">
+              <Button
+                variant="outline"
+                className="flex items-center"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
                 <span className="mr-1">並び替え</span>
                 {sortType.includes('asc') ? (
                   <HiSortAscending className="h-4 w-4" />
                 ) : (
                   <HiSortDescending className="h-4 w-4" />
                 )}
-                <div className="dropdown-content absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                  <div className="py-1">
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'status' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('status')}
-                    >
-                      ステータス順
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_desc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('created_desc')}
-                    >
-                      登録日 (新→古)
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_asc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('created_asc')}
-                    >
-                      登録日 (古→新)
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_asc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('nameKana_asc')}
-                    >
-                      フリガナ (ア→ワ)
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_desc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('nameKana_desc')}
-                    >
-                      フリガナ (ワ→ア)
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'plan_asc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('plan_asc')}
-                    >
-                      プラン (A→Z)
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'plan_desc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('plan_desc')}
-                    >
-                      プラン (Z→A)
-                    </button>
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                    <div className="py-1">
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'status' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('status')}
+                      >
+                        ステータス順
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('created_desc')}
+                      >
+                        登録日 (新→古)
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('created_asc')}
+                      >
+                        登録日 (古→新)
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('nameKana_asc')}
+                      >
+                        フリガナ (ア→ワ)
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('nameKana_desc')}
+                      >
+                        フリガナ (ワ→ア)
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'plan_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('plan_asc')}
+                      >
+                        プラン (A→Z)
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'plan_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('plan_desc')}
+                      >
+                        プラン (Z→A)
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </Button>
             </div>
             <Button onClick={fetchUsers}>

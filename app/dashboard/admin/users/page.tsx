@@ -59,6 +59,7 @@ export default function AdminUsersPage() {
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [sortType, setSortType] = useState<SortType>('grace_period');
+  const [dropdownOpen, setDropdownOpen] = useState(false);
   const [corporateAdminErrorDetails, setCorporateAdminErrorDetails] =
     useState<CorporateAdminErrorDetails | null>(null);
   // URLパラメータから削除アクションを確認
@@ -267,59 +268,65 @@ export default function AdminUsersPage() {
           </div>
           <div className="flex space-x-2">
             <div className="dropdown">
-              <Button variant="outline" className="flex items-center">
+              <Button
+                variant="outline"
+                className="flex items-center"
+                onClick={() => setDropdownOpen(!dropdownOpen)}
+              >
                 <span className="mr-1">並び替え</span>
                 {sortType.includes('asc') ? (
                   <HiSortAscending className="h-4 w-4" />
                 ) : (
                   <HiSortDescending className="h-4 w-4" />
                 )}
-                <div className="dropdown-content absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
-                  <div className="py-1">
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'grace_period' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('grace_period')}
-                    >
-                      猶予期間切れ優先
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_desc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('created_desc')}
-                    >
-                      登録日 (新→古)
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_asc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('created_asc')}
-                    >
-                      登録日 (古→新)
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_asc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('nameKana_asc')}
-                    >
-                      フリガナ (ア→ワ)
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_desc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('nameKana_desc')}
-                    >
-                      フリガナ (ワ→ア)
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'email_asc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('email_asc')}
-                    >
-                      メール (A→Z)
-                    </button>
-                    <button
-                      className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'email_desc' ? 'bg-gray-100 font-medium' : ''}`}
-                      onClick={() => handleSort('email_desc')}
-                    >
-                      メール (Z→A)
-                    </button>
+                {dropdownOpen && (
+                  <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg z-10 border border-gray-200">
+                    <div className="py-1">
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'grace_period' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('grace_period')}
+                      >
+                        猶予期間切れ優先
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('created_desc')}
+                      >
+                        登録日 (新→古)
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('created_asc')}
+                      >
+                        登録日 (古→新)
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('nameKana_asc')}
+                      >
+                        フリガナ (ア→ワ)
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('nameKana_desc')}
+                      >
+                        フリガナ (ワ→ア)
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'email_asc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('email_asc')}
+                      >
+                        メール (A→Z)
+                      </button>
+                      <button
+                        className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'email_desc' ? 'bg-gray-100 font-medium' : ''}`}
+                        onClick={() => handleSort('email_desc')}
+                      >
+                        メール (Z→A)
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
               </Button>
             </div>
             <Button onClick={fetchUsers}>
@@ -443,14 +450,10 @@ export default function AdminUsersPage() {
                     <div className="text-sm text-gray-500">{user.email}</div>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {formatDate(user.createdAt)}
-                    </div>
+                    <div className="text-sm text-gray-500">{formatDate(user.createdAt)}</div>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {formatDate(user.updatedAt)}
-                    </div>
+                    <div className="text-sm text-gray-500">{formatDate(user.updatedAt)}</div>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap">
                     {user.isGracePeriodExpired ? (
@@ -472,9 +475,7 @@ export default function AdminUsersPage() {
                     )}
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {getSubscriptionEndDate(user)}
-                    </div>
+                    <div className="text-sm text-gray-500">{getSubscriptionEndDate(user)}</div>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap text-right text-sm font-medium">
                     <Button
