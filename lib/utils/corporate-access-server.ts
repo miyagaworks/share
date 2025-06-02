@@ -17,12 +17,14 @@ export async function checkCorporateAccess(userId: string) {
           select: {
             id: true,
             accountStatus: true,
+            maxUsers: true, // 🔥 この行を追加
           },
         },
         tenant: {
           select: {
             id: true,
             accountStatus: true,
+            maxUsers: true, // 🔥 この行を追加
           },
         },
         subscription: {
@@ -43,7 +45,46 @@ export async function checkCorporateAccess(userId: string) {
     }
     // 永久利用権ユーザーの場合は常に法人アクセス権あり
     if (user.subscriptionStatus === 'permanent') {
-      logger.info('永久利用権ユーザーに法人アクセス権を付与', { userId });
+      // プラン種別を判定
+      let planType = 'personal';
+      if (user.subscription?.plan) {
+        const plan = user.subscription.plan.toLowerCase();
+        if (plan.includes('enterprise')) {
+          planType = 'enterprise';
+        } else if (plan.includes('business_plus') || plan.includes('business-plus')) {
+          planType = 'business_plus';
+        } else if (plan.includes('business')) {
+          planType = 'business';
+        }
+      } else if (user.adminOfTenant || user.tenant) {
+        // サブスクリプション情報がない場合はテナント情報から判定
+        const tenant = user.adminOfTenant || user.tenant;
+        const maxUsers = tenant?.maxUsers || 10;
+        if (maxUsers >= 50) {
+          planType = 'enterprise';
+        } else if (maxUsers >= 30) {
+          planType = 'business_plus';
+        } else {
+          planType = 'business';
+        }
+      }
+
+      // 個人プランの場合は法人アクセス権なし
+      if (planType === 'personal') {
+        logger.info('個人永久利用権ユーザー - 法人アクセス権なし', { userId });
+        return {
+          hasCorporateAccess: false,
+          isAdmin: false,
+          isSuperAdmin: false,
+          tenant: null,
+          subscription: user.subscription,
+          userRole: 'personal',
+          error: null,
+        };
+      }
+
+      // 法人プランの場合は法人アクセス権あり
+      logger.info('法人永久利用権ユーザーに法人アクセス権を付与', { userId, planType });
       return {
         hasCorporateAccess: true,
         isAdmin: true, // 管理者権限も付与
@@ -55,7 +96,7 @@ export async function checkCorporateAccess(userId: string) {
             accountStatus: 'active',
           },
         subscription: {
-          plan: 'business_plus', // business_plus に変更
+          plan: planType,
           status: 'active',
         },
         userRole: 'admin', // ユーザーロールも明示的に設定

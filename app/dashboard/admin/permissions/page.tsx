@@ -510,7 +510,7 @@ export default function AdminPermissionsPage() {
                     ) : (
                       <Button
                         size="sm"
-                        onClick={() => togglePermanentAccess(user.id, true)}
+                        onClick={() => setShowGrantForm(true)}
                         disabled={user.trialDaysRemaining <= 0}
                         className={
                           user.trialDaysRemaining <= 0 ? 'opacity-50 cursor-not-allowed' : ''

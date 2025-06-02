@@ -1,10 +1,45 @@
-// app/api/user/dashboard-info/route.ts (プロフィール管理メニュー追加版)
+// app/api/user/dashboard-info/route.ts (永久利用権プラン種別対応版)
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-// 既存の型定義は省略...
+
+// 永久利用権プラン種別を判定する関数
+function determinePermanentPlanType(user: any): string {
+  // サブスクリプション情報から判定
+  if (user.subscription?.plan) {
+    const plan = user.subscription.plan.toLowerCase();
+
+    if (plan.includes('permanent_enterprise') || plan.includes('enterprise')) {
+      return 'enterprise';
+    } else if (plan.includes('permanent_business_plus') || plan.includes('business_plus')) {
+      return 'business_plus';
+    } else if (plan.includes('permanent_business') || plan.includes('business')) {
+      return 'business';
+    } else if (plan.includes('permanent_personal') || plan.includes('personal')) {
+      return 'personal';
+    }
+  }
+
+  // テナント情報から判定
+  if (user.adminOfTenant || user.tenant) {
+    const tenant = user.adminOfTenant || user.tenant;
+    const maxUsers = tenant?.maxUsers || 10;
+
+    if (maxUsers >= 50) {
+      return 'enterprise';
+    } else if (maxUsers >= 30) {
+      return 'business_plus';
+    } else {
+      return 'business';
+    }
+  }
+
+  // デフォルトは個人プラン
+  return 'personal';
+}
+
 interface UserData {
   id: string;
   name: string | null;
@@ -20,6 +55,7 @@ interface UserData {
     primaryColor: string | null;
     secondaryColor: string | null;
     accountStatus: string;
+    maxUsers: number;
   } | null;
   tenant?: {
     id: string;
@@ -28,6 +64,7 @@ interface UserData {
     primaryColor: string | null;
     secondaryColor: string | null;
     accountStatus: string;
+    maxUsers: number;
   } | null;
   subscription?: {
     plan: string | null;
@@ -35,12 +72,14 @@ interface UserData {
     interval?: string;
   } | null;
 }
+
 interface MenuItem {
   title: string;
   href: string;
   icon: string;
   isDivider?: boolean;
 }
+
 interface Permissions {
   userType: 'admin' | 'corporate' | 'personal' | 'permanent' | 'invited-member';
   isAdmin: boolean;
@@ -55,17 +94,19 @@ interface Permissions {
   planType: 'personal' | 'corporate' | 'permanent' | null;
   planDisplayName: string;
 }
+
 interface Navigation {
   shouldRedirect: boolean;
   redirectPath: string | null;
   menuItems: MenuItem[];
 }
-// 🔥 修正: generateNavigationEnhanced 関数（プロフィール管理メニュー追加）
+
 function generateNavigationEnhanced(
   permissions: Permissions,
   currentPath?: string | null,
 ): Navigation {
-  const { userType } = permissions;
+  const { userType, permanentPlanType } = permissions;
+
   const menuTemplates: Record<string, MenuItem[]> = {
     admin: [
       { title: '管理者ダッシュボード', href: '/dashboard/admin', icon: 'HiShieldCheck' },
@@ -106,37 +147,101 @@ function generateNavigationEnhanced(
       { title: '共有設定', href: '/dashboard/share', icon: 'HiShare' },
       { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
     ],
-    permanent: [
-      { title: 'ダッシュボード', href: '/dashboard', icon: 'HiHome' },
-      { title: 'プロフィール編集', href: '/dashboard/profile', icon: 'HiUser' },
-      { title: 'SNS・リンク管理', href: '/dashboard/links', icon: 'HiLink' },
-      { title: 'デザイン設計', href: '/dashboard/design', icon: 'HiColorSwatch' },
-      { title: '共有設定', href: '/dashboard/share', icon: 'HiShare' },
-      { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
-      { title: '永久利用権法人機能', href: '#permanent-divider', icon: '', isDivider: true },
-      { title: '法人管理ダッシュボード', href: '/dashboard/corporate', icon: 'HiOfficeBuilding' },
-    ],
+    // 🔥 永久利用権ユーザーのメニューをプラン種別に応じて決定
+    permanent: [], // この後、プラン種別に応じて動的に設定
   };
+
+  // 🔥 永久利用権ユーザーのメニューを動的に設定
+  if (userType === 'permanent') {
+    if (permanentPlanType === 'personal') {
+      // 個人永久プランは個人機能のみ
+      menuTemplates.permanent = [
+        { title: 'ダッシュボード', href: '/dashboard', icon: 'HiHome' },
+        { title: 'プロフィール編集', href: '/dashboard/profile', icon: 'HiUser' },
+        { title: 'SNS・リンク管理', href: '/dashboard/links', icon: 'HiLink' },
+        { title: 'デザイン設定', href: '/dashboard/design', icon: 'HiColorSwatch' },
+        { title: '共有設定', href: '/dashboard/share', icon: 'HiShare' },
+        { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
+      ];
+    } else {
+      // 法人永久プランは法人機能を含む
+      menuTemplates.permanent = [
+        { title: '法人ダッシュボード', href: '/dashboard/corporate', icon: 'HiOfficeBuilding' },
+        { title: 'ユーザー管理', href: '/dashboard/corporate/users', icon: 'HiUsers' },
+        { title: '部署管理', href: '/dashboard/corporate/departments', icon: 'HiTemplate' },
+        { title: '共通SNS設定', href: '/dashboard/corporate/sns', icon: 'HiLink' },
+        {
+          title: 'ブランディング設定',
+          href: '/dashboard/corporate/branding',
+          icon: 'HiColorSwatch',
+        },
+        { title: 'アカウント設定', href: '/dashboard/corporate/settings', icon: 'HiCog' },
+        { title: '法人メンバー機能', href: '#member-divider', icon: '', isDivider: true },
+        { title: '法人メンバープロフィール', href: '/dashboard/corporate-member', icon: 'HiUser' },
+        { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
+      ];
+    }
+  }
+
   const menuItems = menuTemplates[userType] || menuTemplates.personal;
-  // 🔥 修正: リダイレクト処理
+
+  // リダイレクト処理
   const defaultRedirectMap: Record<string, string> = {
     admin: '/dashboard/admin',
     'invited-member': '/dashboard/corporate-member',
-    permanent: '/dashboard/corporate',
+    permanent: permanentPlanType === 'personal' ? '/dashboard' : '/dashboard/corporate',
     corporate: '/dashboard/corporate',
   };
-  // 🔥 法人管理者の特別処理
+
+  // 🔥 永久利用権ユーザーの特別処理
+  if (userType === 'permanent') {
+    const isPermanentPersonal = permanentPlanType === 'personal';
+    const isCorporatePath = currentPath?.startsWith('/dashboard/corporate');
+    const isCorporateMemberPath = currentPath?.startsWith('/dashboard/corporate-member');
+    const isPersonalPath =
+      currentPath === '/dashboard' ||
+      currentPath?.startsWith('/dashboard/profile') ||
+      currentPath?.startsWith('/dashboard/links') ||
+      currentPath?.startsWith('/dashboard/design') ||
+      currentPath?.startsWith('/dashboard/share');
+    const isSubscriptionPath = currentPath?.startsWith('/dashboard/subscription');
+
+    if (isPermanentPersonal) {
+      // 個人永久プランユーザーは法人機能にアクセス不可
+      if (isCorporatePath || isCorporateMemberPath) {
+        return {
+          shouldRedirect: true,
+          redirectPath: '/dashboard',
+          menuItems,
+        };
+      }
+    } else {
+      // 法人永久プランユーザーは個人機能にアクセスした場合、法人ダッシュボードにリダイレクト
+      if (currentPath === '/dashboard' || isPersonalPath) {
+        return {
+          shouldRedirect: true,
+          redirectPath: '/dashboard/corporate',
+          menuItems,
+        };
+      }
+    }
+
+    // 許可されたパスではリダイレクトしない
+    if (isCorporatePath || isCorporateMemberPath || isPersonalPath || isSubscriptionPath) {
+      return {
+        shouldRedirect: false,
+        redirectPath: null,
+        menuItems,
+      };
+    }
+  }
+
+  // 法人管理者の特別処理
   if (userType === 'corporate') {
     const isCorporateMemberPath = currentPath?.startsWith('/dashboard/corporate-member');
     const isCorporatePath = currentPath?.startsWith('/dashboard/corporate');
     const isSubscriptionPath = currentPath?.startsWith('/dashboard/subscription');
-    logger.debug('🔧 法人管理者のリダイレクト判定:', {
-      currentPath,
-      isCorporateMemberPath,
-      isCorporatePath,
-      isSubscriptionPath,
-      userType,
-    });
+
     // 許可されたパスではリダイレクトしない
     if (isCorporateMemberPath || isCorporatePath || isSubscriptionPath) {
       return {
@@ -145,7 +250,7 @@ function generateNavigationEnhanced(
         menuItems,
       };
     }
-    // 🔥 修正: 個人機能ページや/dashboardへのアクセスは法人ダッシュボードにリダイレクト
+    // 個人機能ページや/dashboardへのアクセスは法人ダッシュボードにリダイレクト
     else if (
       currentPath === '/dashboard' ||
       currentPath?.startsWith('/dashboard/profile') ||
@@ -166,6 +271,7 @@ function generateNavigationEnhanced(
       };
     }
   }
+
   // その他のユーザータイプの処理
   const redirectPath = defaultRedirectMap[userType];
   return {
@@ -174,10 +280,11 @@ function generateNavigationEnhanced(
     menuItems,
   };
 }
-// 既存のcalculatePermissionsFixed関数とGET関数は変更なし
+
 function calculatePermissionsFixed(userData: UserData): Permissions {
   const ADMIN_EMAILS = ['admin@sns-share.com'];
   const isAdminEmail = ADMIN_EMAILS.includes(userData.email.toLowerCase());
+
   logger.debug('🔧 権限計算詳細デバッグ:', {
     email: userData.email,
     subscriptionStatus: userData.subscriptionStatus,
@@ -186,6 +293,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
     hasTenant: !!userData.tenant,
     isAdminEmail,
   });
+
   // 管理者の早期リターン
   if (isAdminEmail) {
     return {
@@ -203,33 +311,44 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       planDisplayName: '管理者アカウント',
     };
   }
-  // 永久利用権ユーザーの判定
+
+  // 🔥 永久利用権ユーザーの判定（プラン種別も判定）
   const isPermanentUser = userData.subscriptionStatus === 'permanent';
   if (isPermanentUser) {
-    logger.debug('✅ 永久利用権ユーザーを検出');
+    const permanentPlanType = determinePermanentPlanType(userData);
+    const isPermanentPersonal = permanentPlanType === 'personal';
+
+    logger.debug('✅ 永久利用権ユーザーを検出', {
+      permanentPlanType,
+      isPermanentPersonal,
+    });
+
     return {
       userType: 'permanent',
-      isAdmin: true,
+      isAdmin: !isPermanentPersonal, // 個人プラン以外は管理者権限
       isSuperAdmin: false,
-      hasCorpAccess: true,
-      isCorpAdmin: true,
+      hasCorpAccess: !isPermanentPersonal, // 個人プラン以外は法人アクセス権
+      isCorpAdmin: !isPermanentPersonal, // 個人プラン以外は法人管理者権限
       isPermanentUser: true,
-      permanentPlanType: 'business_plus',
-      userRole: 'admin',
+      permanentPlanType,
+      userRole: isPermanentPersonal ? 'personal' : 'admin',
       hasActivePlan: true,
       isTrialPeriod: false,
       planType: 'permanent',
-      planDisplayName: '永久利用権',
+      planDisplayName: `永久利用権 (${getPlanDisplayName(permanentPlanType)})`,
     };
   }
+
   // 法人テナント関連の判定
   const hasTenant = !!(userData.adminOfTenant || userData.tenant);
   const tenant = userData.adminOfTenant || userData.tenant;
   const isTenantActive = tenant?.accountStatus !== 'suspended';
   const isCorpAdmin = !!userData.adminOfTenant;
+
   // 招待メンバーの厳格な判定
   const isInvitedMember =
     hasTenant && userData.corporateRole === 'member' && !isCorpAdmin && isTenantActive;
+
   logger.debug('🎯 招待メンバー判定:', {
     hasTenant,
     corporateRole: userData.corporateRole,
@@ -237,6 +356,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
     isTenantActive,
     result: isInvitedMember,
   });
+
   // 法人管理者の判定
   if (isCorpAdmin && isTenantActive) {
     logger.debug('✅ 法人管理者を検出');
@@ -266,11 +386,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
         corporatePlanDisplayName = '法人ビジネスプラン(30名まで)';
       }
     }
-    logger.debug('🔧 法人プラン判定:', {
-      subscriptionPlan: userData.subscription?.plan,
-      interval: userData.subscription?.interval,
-      displayName: corporatePlanDisplayName,
-    });
+
     return {
       userType: 'corporate',
       isAdmin: true,
@@ -286,6 +402,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       planDisplayName: corporatePlanDisplayName,
     };
   }
+
   // 招待メンバーの判定
   if (isInvitedMember) {
     logger.debug('✅ 招待メンバーを検出');
@@ -304,6 +421,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       planDisplayName: '法人メンバー',
     };
   }
+
   // 個人ユーザーの判定
   logger.debug('✅ 個人ユーザーとして判定');
   const hasPersonalPlan = userData.subscription?.status === 'active';
@@ -311,12 +429,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
     userData.subscriptionStatus === 'trialing' || userData.subscription?.status === 'trialing';
   const isTrialActive =
     isTrialUser && userData.trialEndsAt ? new Date(userData.trialEndsAt) > new Date() : false;
-  logger.debug('🔧 個人ユーザーのプラン判定:', {
-    hasPersonalPlan,
-    isTrialUser,
-    isTrialActive,
-    trialEndsAt: userData.trialEndsAt,
-  });
+
   return {
     userType: 'personal',
     isAdmin: false,
@@ -336,6 +449,18 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
         : '無料プラン',
   };
 }
+
+// プラン種別の表示名を取得する関数
+function getPlanDisplayName(planType: string): string {
+  const displayNames: Record<string, string> = {
+    personal: '個人プラン',
+    business: 'ビジネスプラン (10名まで)',
+    business_plus: 'ビジネスプラス (30名まで)',
+    enterprise: 'エンタープライズ (50名まで)',
+  };
+  return displayNames[planType] || 'プラン';
+}
+
 export async function GET(request: Request) {
   const startTime = Date.now();
   try {
@@ -343,27 +468,17 @@ export async function GET(request: Request) {
     const url = new URL(request.url);
     const referer = request.headers.get('referer');
     const currentPath = referer ? new URL(referer).pathname : null;
-    logger.debug('🔧 リクエスト情報:', {
-      url: url.toString(),
-      referer,
-      currentPath,
-    });
+
     const session = await auth();
-    logger.debug('🔧 セッション取得結果:', {
-      hasSession: !!session,
-      hasUser: !!session?.user,
-      userId: session?.user?.id,
-      userEmail: session?.user?.email,
-    });
     if (!session?.user?.id) {
       logger.debug('❌ 認証失敗 - セッションまたはユーザーIDがありません');
       return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
     }
+
     const userId = session.user.id;
-    logger.debug('✅ ユーザー認証OK:', userId);
+
     let userData: UserData | null = null;
     try {
-      logger.debug('🔧 DB query開始 - ユーザーID:', userId);
       userData = (await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -382,6 +497,7 @@ export async function GET(request: Request) {
               primaryColor: true,
               secondaryColor: true,
               accountStatus: true,
+              maxUsers: true, // 🔥 追加
             },
           },
           tenant: {
@@ -392,6 +508,7 @@ export async function GET(request: Request) {
               primaryColor: true,
               secondaryColor: true,
               accountStatus: true,
+              maxUsers: true, // 🔥 追加
             },
           },
           subscription: {
@@ -403,15 +520,6 @@ export async function GET(request: Request) {
           },
         },
       })) as UserData | null;
-      logger.debug('✅ DB query完了:', {
-        hasUser: !!userData,
-        userEmail: userData?.email,
-        hasAdminTenant: !!userData?.adminOfTenant,
-        hasTenant: !!userData?.tenant,
-        subscriptionStatus: userData?.subscriptionStatus,
-        corporateRole: userData?.corporateRole,
-        trialEndsAt: userData?.trialEndsAt,
-      });
     } catch (dbError) {
       logger.error('❌ データベースエラー詳細:', {
         error: dbError,
@@ -428,20 +536,15 @@ export async function GET(request: Request) {
         { status: 500 },
       );
     }
+
     if (!userData) {
       logger.debug('❌ ユーザー見つからず - DB結果がnull');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-    logger.debug('🚀 権限計算開始');
+
     const permissions = calculatePermissionsFixed(userData);
-    logger.debug('✅ 権限計算完了:', permissions);
-    logger.debug('🚀 ナビゲーション生成開始');
     const navigation = generateNavigationEnhanced(permissions, currentPath);
-    logger.debug('✅ ナビゲーション生成完了:', {
-      shouldRedirect: navigation.shouldRedirect,
-      redirectPath: navigation.redirectPath,
-      menuItemsCount: navigation.menuItems.length,
-    });
+
     const tenant = userData.adminOfTenant || userData.tenant;
     const response = {
       user: {
@@ -463,8 +566,8 @@ export async function GET(request: Request) {
           }
         : null,
     };
+
     const duration = Date.now() - startTime;
-    logger.debug(`⚡ Dashboard API完了: ${duration}ms - レスポンス準備完了`);
     return NextResponse.json(response, {
       headers: {
         'Cache-Control': 'private, max-age=300',

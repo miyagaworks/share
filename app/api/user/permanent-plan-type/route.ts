@@ -64,6 +64,21 @@ function determinePlanType(user: any): PermanentPlanType {
   if (user.subscription?.plan) {
     const plan = user.subscription.plan.toLowerCase();
 
+    // 具体的なプラン名から判定
+    if (plan.includes('permanent_enterprise') || plan.includes('enterprise')) {
+      return PermanentPlanType.ENTERPRISE;
+    } else if (
+      plan.includes('permanent_business_plus') ||
+      plan.includes('business_plus') ||
+      plan.includes('business-plus')
+    ) {
+      return PermanentPlanType.BUSINESS_PLUS;
+    } else if (plan.includes('permanent_business') || plan.includes('business')) {
+      return PermanentPlanType.BUSINESS;
+    } else if (plan.includes('permanent_personal') || plan.includes('personal')) {
+      return PermanentPlanType.PERSONAL;
+    }
+
     // プランが'permanent'の場合は、intervalやその他の情報から判定
     if (plan === 'permanent') {
       // テナント情報がある場合は法人プラン
@@ -81,15 +96,6 @@ function determinePlanType(user: any): PermanentPlanType {
       }
       // テナント情報がない場合は個人プラン
       return PermanentPlanType.PERSONAL;
-    }
-
-    // 具体的なプラン名から判定
-    if (plan.includes('enterprise')) {
-      return PermanentPlanType.ENTERPRISE;
-    } else if (plan.includes('business_plus') || plan.includes('business-plus')) {
-      return PermanentPlanType.BUSINESS_PLUS;
-    } else if (plan.includes('business')) {
-      return PermanentPlanType.BUSINESS;
     }
   }
 
