@@ -243,16 +243,20 @@ export async function POST(request: Request) {
         return { user: updatedUser, action: 'granted' };
       } else {
         // 🔥 永久利用権解除
-        // 関連データのクリーンアップを段階的に実行
-        const originalTrialEnd = user.trialEndsAt ? new Date(user.trialEndsAt) : null;
-        const isTrialExpired = !originalTrialEnd || originalTrialEnd < now;
+        // 🔥 修正: 解除前のユーザー情報を取得（永久利用権付与前のtrialEndsAtを確認）
+
+        // 永久利用権ユーザーの場合、元のトライアル期間を再計算する必要がある
+        // ユーザーの作成日から通常のトライアル期間（14日）を算出
+        const userCreatedAt = new Date(user.createdAt);
+        const originalTrialEnd = addDays(userCreatedAt, 14); // 通常のトライアル期間は14日
+        const isTrialExpired = originalTrialEnd < now;
 
         let newTrialEndsAt = null;
         if (isTrialExpired) {
-          // トライアル期間が過ぎている場合は、猶予期間（7日）を設定
+          // 元のトライアル期間が過ぎている場合は、猶予期間（7日）を設定
           newTrialEndsAt = addDays(now, 7);
         } else {
-          // トライアル期間がまだ残っている場合は、元のトライアル期間を復元
+          // 元のトライアル期間がまだ残っている場合は、元のトライアル期間を復元
           newTrialEndsAt = originalTrialEnd;
         }
 
@@ -328,7 +332,8 @@ export async function POST(request: Request) {
           userId,
           email: user.email,
           isTrialExpired,
-          newTrialEndsAt,
+          originalTrialEnd: originalTrialEnd.toISOString(),
+          newTrialEndsAt: newTrialEndsAt?.toISOString(),
           hadTenant: !!user.adminOfTenant,
         });
 
