@@ -180,7 +180,7 @@ function EmailVerificationContent() {
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-blue-800">認証手順</h3>
                 <div className="mt-2 text-sm text-blue-700">
-                  <ol className="list-decimal list-inside space-y-1">
+                  <ol className="list-decimal list-inside space-y-1 text-justify">
                     <li>
                       登録されたメールアドレス
                       {userEmail ? (
@@ -275,7 +275,7 @@ function EmailVerificationContent() {
               )}
             </Button>
 
-            <div className="text-center text-sm text-gray-500 space-y-2">
+            <div className="text-justify text-sm text-gray-500 space-y-2">
               <p>メールが届かない場合は、迷惑メールフォルダもご確認ください。</p>
               <p>
                 メールアドレスを変更したい場合は、
