@@ -243,7 +243,7 @@ export async function POST(request: Request) {
         return { user: updatedUser, action: 'granted' };
       } else {
         // 🔥 永久利用権解除
-        // トライアル期間が既に過ぎているかチェック
+        // 関連データのクリーンアップを段階的に実行
         const originalTrialEnd = user.trialEndsAt ? new Date(user.trialEndsAt) : null;
         const isTrialExpired = !originalTrialEnd || originalTrialEnd < now;
 
@@ -256,56 +256,80 @@ export async function POST(request: Request) {
           newTrialEndsAt = originalTrialEnd;
         }
 
+        // 🔥 Step 1: 法人テナントの管理者の場合の詳細なクリーンアップ
+        if (user.adminOfTenant) {
+          const tenantId = user.adminOfTenant.id;
+
+          // 1.1 テナントの他のメンバーを確認
+          const otherMembers = await tx.user.findMany({
+            where: {
+              tenantId: tenantId,
+              id: { not: userId },
+            },
+          });
+
+          // 1.2 CorporateSnsLinkを削除
+          await tx.corporateSnsLink.deleteMany({
+            where: { tenantId: tenantId },
+          });
+
+          // 1.3 Departmentを削除
+          await tx.department.deleteMany({
+            where: { tenantId: tenantId },
+          });
+
+          // 1.4 他のメンバーのテナント関連付けを解除
+          if (otherMembers.length > 0) {
+            await tx.user.updateMany({
+              where: {
+                tenantId: tenantId,
+                id: { not: userId },
+              },
+              data: {
+                tenantId: null,
+                corporateRole: null,
+                departmentId: null,
+              },
+            });
+          }
+
+          // 1.5 CorporateTenantを削除（最後に実行）
+          await tx.corporateTenant.delete({
+            where: { id: tenantId },
+          });
+
+          logger.info('永久利用権解除: テナント削除完了', {
+            tenantId,
+            otherMembersCount: otherMembers.length,
+          });
+        }
+
+        // 🔥 Step 2: ユーザーのテナント関連付けを解除
         const updatedUser = await tx.user.update({
           where: { id: userId },
           data: {
             subscriptionStatus: null,
             trialEndsAt: newTrialEndsAt,
+            corporateRole: null,
+            departmentId: null,
+            // tenantIdは上記のテナント削除で自動的にnullになる
           },
         });
 
-        // サブスクリプション情報を削除または更新
+        // 🔥 Step 3: サブスクリプション情報を削除
         if (user.subscription) {
-          // 🔥 永久利用権のサブスクリプションは削除
           await tx.subscription.delete({
             where: { userId },
           });
-          logger.info('永久利用権サブスクリプション削除', { userId });
+          logger.info('永久利用権解除: サブスクリプション削除完了', { userId });
         }
 
-        // 法人テナント関連のクリーンアップ
-        if (user.adminOfTenant) {
-          // 管理者の場合、テナントとの関連を解除
-          await tx.user.update({
-            where: { id: userId },
-            data: {
-              corporateRole: null,
-              tenantId: null,
-            },
-          });
-
-          // テナントを削除（他にユーザーがいない場合）
-          const otherTenantUsers = await tx.user.findMany({
-            where: {
-              tenantId: user.adminOfTenant.id,
-              id: { not: userId },
-            },
-          });
-
-          if (otherTenantUsers.length === 0) {
-            // 他にユーザーがいない場合、テナントを削除
-            await tx.corporateTenant.delete({
-              where: { id: user.adminOfTenant.id },
-            });
-            logger.info('空のテナント削除', { tenantId: user.adminOfTenant.id });
-          }
-        }
-
-        logger.info('永久利用権解除（管理画面）', {
+        logger.info('永久利用権解除完了', {
           userId,
           email: user.email,
           isTrialExpired,
           newTrialEndsAt,
+          hadTenant: !!user.adminOfTenant,
         });
 
         return {
