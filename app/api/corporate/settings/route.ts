@@ -1,7 +1,7 @@
-// app/api/corporate/settings/route.ts (修正版)
+// app/api/corporate/settings/route.ts (完全修正版)
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
@@ -59,7 +59,7 @@ export async function GET() {
     // 永久利用権ユーザーの場合、実際のテナント情報または仮想テナントの設定情報を返す
     if (user.subscriptionStatus === 'permanent') {
       logger.debug('永久利用権ユーザー用設定情報の取得:', user.id);
-      
+
       // 実際のテナントがある場合はそれを使用
       const actualTenant = user.adminOfTenant || user.tenant;
       if (actualTenant) {
@@ -163,20 +163,49 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
 
-    // 🔥 永久利用権ユーザーの場合、実際のテナントがあれば更新処理を行う
+    // 🔥 永久利用権ユーザーの場合の処理
     if (user.subscriptionStatus === 'permanent') {
       const actualTenant = user.adminOfTenant || user.tenant;
 
-      if (actualTenant) {
+      if (actualTenant && type === 'general' && bodyName) {
         // 実際のテナントがある場合は通常の更新処理を実行
         logger.debug('永久利用権ユーザーの実テナント更新:', {
           userId: user.id,
           tenantId: actualTenant.id,
+          oldName: actualTenant.name,
+          newName: bodyName,
         });
-        // 以下の通常の更新処理に続行
-      } else {
-        // 実際のテナントがない場合は仮想的な成功レスポンスを返す
-        logger.debug('永久利用権ユーザーの仮想テナント更新:', { userId: user.id });
+
+        // 実際のテナント名を更新
+        const updatedTenant = await prisma.corporateTenant.update({
+          where: { id: actualTenant.id },
+          data: { name: bodyName },
+        });
+
+        logger.info('永久利用権ユーザーテナント名更新完了:', {
+          tenantId: updatedTenant.id,
+          newName: updatedTenant.name,
+        });
+
+        return NextResponse.json({
+          success: true,
+          message: '設定を更新しました',
+          tenant: {
+            ...updatedTenant,
+            name: bodyName,
+          },
+          updatedType: type,
+          isVirtual: false,
+          requiresCacheClear: true, // 🔥 キャッシュクリア必須
+          isPermanentUser: true, // 🔥 永久利用権ユーザーフラグ
+        });
+      } else if (type === 'general') {
+        // 実際のテナントがない場合は仮想的な成功レスポンス
+        logger.debug('永久利用権ユーザーの仮想テナント更新:', {
+          userId: user.id,
+          newName: bodyName,
+        });
+
         return NextResponse.json({
           success: true,
           message: '設定を更新しました',
@@ -189,12 +218,34 @@ export async function PUT(req: Request) {
             billingContact: body.billingContact || null,
           },
           updatedType: type,
-          isVirtual: true, // 🔥 仮想更新であることを示すフラグ
+          isVirtual: true,
+          requiresCacheClear: true, // 🔥 仮想テナントもキャッシュクリア必須
+          isPermanentUser: true,
+        });
+      }
+
+      // その他の設定タイプ（security, notifications, billing）の処理
+      if (type !== 'general') {
+        return NextResponse.json({
+          success: true,
+          message: '設定を更新しました',
+          tenant: {
+            name: actualTenant?.name || `${user.name || 'ユーザー'}の法人`,
+            securitySettings: body.securitySettings || null,
+            notificationSettings: body.notificationSettings || null,
+            billingAddress: body.billingAddress || null,
+            billingEmail: body.billingEmail || null,
+            billingContact: body.billingContact || null,
+          },
+          updatedType: type,
+          isVirtual: !actualTenant,
+          requiresCacheClear: false,
+          isPermanentUser: true,
         });
       }
     }
 
-    // 管理者権限の確認
+    // 管理者権限の確認（通常の法人ユーザー）
     const isAdmin = !!user.adminOfTenant;
     if (!isAdmin) {
       return NextResponse.json(
@@ -278,10 +329,6 @@ export async function PUT(req: Request) {
       return updatedTenant;
     });
 
-    // 🔥 永久利用権ユーザーの場合、キャッシュクリアフラグを追加
-    const requiresCacheClear =
-      user.subscriptionStatus === 'permanent' && type === 'general' && bodyName;
-
     return NextResponse.json({
       success: true,
       tenant: {
@@ -291,18 +338,8 @@ export async function PUT(req: Request) {
       message: '法人アカウント設定を更新しました',
       updatedType: type,
       isVirtual: false,
-      requiresCacheClear, // 🔥 キャッシュクリアフラグを追加
-    });
-
-    return NextResponse.json({
-      success: true,
-      tenant: {
-        ...result,
-        securitySettings: result.securitySettings,
-      },
-      message: '法人アカウント設定を更新しました',
-      updatedType: type,
-      isVirtual: false, // 🔥 実際の更新であることを示す
+      requiresCacheClear: false,
+      isPermanentUser: false,
     });
   } catch (error) {
     logger.error('法人アカウント設定更新エラー:', error);

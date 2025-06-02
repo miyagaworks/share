@@ -1,4 +1,4 @@
-// lib/corporateAccess/virtualTenant.ts (修正版)
+// lib/corporateAccess/virtualTenant.ts
 import { isClient, logDebug } from './state';
 import { getFromStorage, saveToStorage, StorageKey, StorageType } from './storage';
 
@@ -285,4 +285,45 @@ export function getVirtualSettings(): {
 } | null {
   const data = getVirtualTenantData();
   return data?.settings || null;
+}
+
+/**
+ * 🔥 イベントリスナーを追加して動的更新に対応
+ */
+export function initializeVirtualTenantEventListeners(): void {
+  if (!isClient()) return;
+
+  // テナント名更新イベントのリスナー
+  window.addEventListener('tenantNameUpdated', (event: Event) => {
+    const customEvent = event as CustomEvent;
+    const { newName } = customEvent.detail;
+    if (newName && virtualTenantDataCache) {
+      virtualTenantDataCache.name = newName;
+      saveToStorage(StorageKey.VIRTUAL_TENANT, virtualTenantDataCache);
+      logDebug('仮想テナント名を更新', { newName });
+    }
+  });
+
+  // 仮想テナント更新イベントのリスナー
+  window.addEventListener('virtualTenantUpdated', (event: Event) => {
+    const customEvent = event as CustomEvent;
+    const updatedData = customEvent.detail;
+    if (updatedData && virtualTenantDataCache) {
+      virtualTenantDataCache = { ...virtualTenantDataCache, ...updatedData };
+      saveToStorage(StorageKey.VIRTUAL_TENANT, virtualTenantDataCache);
+      logDebug('仮想テナントデータを更新', { updatedData });
+    }
+  });
+
+  logDebug('仮想テナントイベントリスナーを初期化', {});
+}
+
+// 自動的にイベントリスナーを初期化
+if (isClient()) {
+  // DOMが読み込まれた後に初期化
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initializeVirtualTenantEventListeners);
+  } else {
+    initializeVirtualTenantEventListeners();
+  }
 }

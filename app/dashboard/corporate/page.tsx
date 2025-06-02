@@ -1,6 +1,6 @@
 // app/dashboard/corporate/page.tsx (プラン名修正版)
 'use client';
-import React, { memo, useMemo } from 'react';
+import React, { memo, useMemo, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Image from 'next/image';
 import { CorporateBranding } from '@/components/ui/CorporateBranding';
@@ -144,6 +144,23 @@ export default function OptimizedCorporateDashboardPage() {
   const router = useRouter();
   const { data: tenantResponse, isLoading, error } = useOptimizedTenant();
   const refreshTenant = useRefreshTenant();
+
+  // 🔥 テナント名更新イベントのリスナーを追加
+  useEffect(() => {
+    const handleTenantNameUpdate = () => {
+      // テナント情報を強制的に再取得
+      refreshTenant();
+    };
+
+    window.addEventListener('tenantNameUpdated', handleTenantNameUpdate);
+    window.addEventListener('virtualTenantUpdated', handleTenantNameUpdate);
+
+    return () => {
+      window.removeEventListener('tenantNameUpdated', handleTenantNameUpdate);
+      window.removeEventListener('virtualTenantUpdated', handleTenantNameUpdate);
+    };
+  }, [refreshTenant]);
+
   // メニューアクション（メモ化）
   const menuActions = useMemo(
     () => ({

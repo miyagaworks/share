@@ -190,9 +190,10 @@ export default function CorporateSettingsPage() {
       toast.error('会社名を入力してください');
       return;
     }
+
     try {
       setIsSaving(true);
-      // テナント設定更新API
+
       const response = await fetch('/api/corporate/settings', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
@@ -201,46 +202,70 @@ export default function CorporateSettingsPage() {
           type: 'general',
         }),
       });
-      // エラーレスポンスの詳細な処理
+
       if (!response.ok) {
         const data = await response.json();
-        // 権限エラーの場合は特別なメッセージを表示
         if (response.status === 403) {
-          setIsAdmin(false); // 権限がないとAPIが判断した場合、UI状態も更新
+          setIsAdmin(false);
           throw new Error(data.error || '管理者権限がありません');
         }
         throw new Error(data.error || '設定の更新に失敗しました');
       }
+
       const responseData = await response.json();
 
-      // 🔥 キャッシュクリア処理を追加
-      if (responseData.requiresCacheClear) {
-        // 仮想テナントキャッシュをクリア
+      // 🔥 永久利用権ユーザーのキャッシュクリア処理を強化
+      if (responseData.requiresCacheClear || responseData.isPermanentUser) {
+        // 1. LocalStorage の仮想テナントキャッシュをクリア
         if (typeof window !== 'undefined') {
           localStorage.removeItem('virtualTenantData');
+          localStorage.removeItem('corporateAccessState');
           sessionStorage.removeItem('corporateAccessState');
+          sessionStorage.removeItem('userData');
         }
-        // React Queryのキャッシュも無効化
-        await queryClient.invalidateQueries({ queryKey: ['tenant'] });
 
-        // 少し待ってからページをリロード（確実にキャッシュがクリアされるように）
+        // 2. React Query のすべてのテナント関連キャッシュを無効化
+        await queryClient.invalidateQueries({ queryKey: ['tenant'] });
+        await queryClient.removeQueries({ queryKey: ['tenant'] });
+
+        // 3. 仮想テナント更新イベントを発行
+        if (typeof window !== 'undefined') {
+          window.dispatchEvent(
+            new CustomEvent('virtualTenantUpdated', {
+              detail: { name: companyName },
+            }),
+          );
+
+          // 4. カスタムイベントでダッシュボード更新を通知
+          window.dispatchEvent(
+            new CustomEvent('tenantNameUpdated', {
+              detail: { newName: companyName },
+            }),
+          );
+        }
+
+        toast.success('基本設定を保存しました');
+
+        // 5. 少し待ってからページをリロード（確実にキャッシュクリア）
         setTimeout(() => {
           window.location.reload();
-        }, 500);
+        }, 1000);
+
+        return; // ここで処理を終了
       }
 
-      // APIからisAdminが返ってくる場合はそれを使用
+      // 通常の処理
       if (responseData.isAdmin !== undefined) {
         setIsAdmin(responseData.isAdmin);
       }
-      // テナントデータを更新
+
       if (tenantData && responseData.tenant) {
-        // 必須フィールドを明示的に指定
         setTenantData({
           ...tenantData,
           name: responseData.tenant.name || tenantData.name,
         });
       }
+
       toast.success('基本設定を保存しました');
     } catch (error) {
       toast.error(error instanceof Error ? error.message : '設定の更新に失敗しました');

@@ -67,25 +67,24 @@ async function fetchTenantInfo(): Promise<TenantResponse> {
 // 最適化されたテナント情報取得フック
 export function useOptimizedTenant() {
   const { data: session } = useSession();
+
   const query = useQuery<TenantResponse, ApiError>({
     queryKey: ['tenant', session?.user?.id],
     queryFn: fetchTenantInfo,
     enabled: !!session?.user?.id,
-    staleTime: 5 * 60 * 1000, // 5分間はフレッシュ
-    gcTime: 10 * 60 * 1000, // 10分間キャッシュ保持 (旧cacheTime)
+    staleTime: 0, // 🔥 永久利用権ユーザーの場合はキャッシュを短縮
+    gcTime: 5 * 60 * 1000, // 🔥 5分間キャッシュ保持に短縮
     retry: (failureCount, error) => {
-      // 認証エラーや404の場合はリトライしない
       if (error.status === 401 || error.status === 404) {
         return false;
       }
-      // 最大3回まで
       return failureCount < 3;
     },
     retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    refetchOnWindowFocus: false,
-    refetchOnMount: false,
+    refetchOnWindowFocus: true, // 🔥 フォーカス時も再取得
+    refetchOnMount: true, // 🔥 マウント時も再取得
     refetchOnReconnect: true,
-    refetchInterval: false, // 自動更新は無効
+    refetchInterval: false,
   });
 
   return query;
