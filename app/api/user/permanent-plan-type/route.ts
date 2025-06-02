@@ -5,15 +5,17 @@ import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
-// 🔥 新しいプラン構成に合わせた定義
-export enum PermanentPlanType {
-  PERSONAL = 'personal',
-  STARTER = 'starter', // 10名まで（旧BUSINESS）
-  BUSINESS = 'business', // 30名まで（旧BUSINESS_PLUS）
-  ENTERPRISE = 'enterprise', // 50名まで
-}
+// 🔥 新しいプラン構成に合わせた定義（enum を削除）
+const PermanentPlanType = {
+  PERSONAL: 'personal',
+  STARTER: 'starter', // 10名まで（旧BUSINESS）
+  BUSINESS: 'business', // 30名まで（旧BUSINESS_PLUS）
+  ENTERPRISE: 'enterprise', // 50名まで
+} as const;
 
-export const PLAN_TYPE_DISPLAY_NAMES: Record<PermanentPlanType, string> = {
+type PermanentPlanType = (typeof PermanentPlanType)[keyof typeof PermanentPlanType];
+
+const PLAN_TYPE_DISPLAY_NAMES: Record<PermanentPlanType, string> = {
   [PermanentPlanType.PERSONAL]: '個人プラン',
   [PermanentPlanType.STARTER]: 'スタータープラン (10名まで)',
   [PermanentPlanType.BUSINESS]: 'ビジネスプラン (30名まで)',
