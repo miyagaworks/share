@@ -82,28 +82,82 @@ function EmailVerificationContent() {
   const handleResendEmail = async () => {
     if (countdown > 0) return;
 
+    // 🔥 詳細デバッグ
+    console.log('🔍 Debug - userEmail:', userEmail);
+    console.log('🔍 Debug - userEmail type:', typeof userEmail);
+    console.log('🔍 Debug - userEmail length:', userEmail?.length);
+
+    if (!userEmail || userEmail.trim() === '') {
+      console.error('❌ Invalid email:', userEmail);
+      setResendError('メールアドレスが特定できません。ページを再読み込みしてください。');
+      return;
+    }
+
+    const trimmedEmail = userEmail.trim();
+    console.log('📧 Trimmed email:', trimmedEmail);
+
+    // 簡易メールバリデーション
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(trimmedEmail)) {
+      console.error('❌ Invalid email format:', trimmedEmail);
+      setResendError('無効なメールアドレス形式です。');
+      return;
+    }
+
     setIsResending(true);
     setResendError(null);
     setResendMessage(null);
 
+    console.log('🔄 Sending resend email request for:', trimmedEmail);
+
     try {
+      const requestData = { email: trimmedEmail };
+      const requestBody = JSON.stringify(requestData);
+
+      console.log('📤 Request data object:', requestData);
+      console.log('📤 Request body string:', requestBody);
+      console.log('📤 Request body length:', requestBody.length);
+
       const response = await fetch('/api/auth/send-verification-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
+        body: requestBody,
       });
 
-      const data = await response.json();
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response ok:', response.ok);
+      console.log('📥 Response headers:', response.headers);
 
-      if (response.ok) {
+      let data;
+      try {
+        const responseText = await response.text();
+        console.log('📄 Raw response text:', responseText);
+
+        if (responseText) {
+          data = JSON.parse(responseText);
+          console.log('📋 Parsed response data:', data);
+        } else {
+          console.error('❌ Empty response body');
+          data = { error: 'Empty response from server' };
+        }
+      } catch (parseError) {
+        console.error('❌ JSON parse error:', parseError);
+        data = { error: 'Invalid JSON response from server' };
+      }
+
+      if (response.ok && data && !data.error) {
         setResendMessage('認証メールを再送信しました。メールをご確認ください。');
         setCountdown(60);
       } else {
-        setResendError(data.message || data.error || '再送信に失敗しました。');
+        const errorMessage = data?.error || data?.message || `サーバーエラー (${response.status})`;
+        console.error('❌ API Error:', errorMessage);
+        setResendError(errorMessage);
       }
-    } catch {
-      setResendError('再送信中にエラーが発生しました。');
+    } catch (networkError) {
+      console.error('💥 Network Error:', networkError);
+      setResendError('ネットワークエラーが発生しました。');
     } finally {
       setIsResending(false);
     }
