@@ -23,6 +23,7 @@ declare module 'next-auth/jwt' {
     role?: string;
     isAdmin?: boolean;
     tenantId?: string | null;
+    subscriptionStatus?: string | null;
   }
 }
 
@@ -176,11 +177,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   accountStatus: true,
                 },
               },
+              // 🔥 永久利用権のプラン種別判定のためサブスクリプション情報を追加
+              subscription: {
+                select: {
+                  plan: true,
+                  status: true,
+                },
+              },
             },
           });
 
           if (dbUser) {
             const userEmail = dbUser.email.toLowerCase();
+
+            // 🔥 subscriptionStatus をトークンに追加
+            token.subscriptionStatus = dbUser.subscriptionStatus;
 
             // ロール判定
             if (userEmail === 'admin@sns-share.com') {
@@ -188,9 +199,41 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               token.isAdmin = true;
               token.tenantId = `admin-tenant-${token.sub}`;
             } else if (dbUser.subscriptionStatus === 'permanent') {
-              token.role = 'permanent-admin';
-              token.isAdmin = true;
-              token.tenantId = `virtual-tenant-${token.sub}`;
+              // 🔥 永久利用権ユーザーのプラン種別を判定
+              let permanentPlanType = 'personal'; // デフォルト
+
+              // サブスクリプション情報から判定
+              if (dbUser.subscription?.plan) {
+                const plan = dbUser.subscription.plan.toLowerCase();
+                if (plan.includes('permanent_personal') || plan.includes('personal')) {
+                  permanentPlanType = 'personal';
+                } else if (
+                  plan.includes('permanent_starter') ||
+                  plan.includes('starter') ||
+                  plan.includes('permanent_business') ||
+                  plan.includes('business') ||
+                  plan.includes('permanent_enterprise') ||
+                  plan.includes('enterprise')
+                ) {
+                  permanentPlanType = 'corporate';
+                }
+              }
+
+              // テナント情報からも判定（サブスクリプション情報がない場合）
+              if (permanentPlanType === 'personal' && (dbUser.adminOfTenant || dbUser.tenant)) {
+                permanentPlanType = 'corporate';
+              }
+
+              // 🔥 プラン種別に応じてロールを設定
+              if (permanentPlanType === 'personal') {
+                token.role = 'permanent-personal';
+                token.isAdmin = false;
+                token.tenantId = null;
+              } else {
+                token.role = 'permanent-admin';
+                token.isAdmin = true;
+                token.tenantId = `virtual-tenant-${token.sub}`;
+              }
             } else if (dbUser.adminOfTenant) {
               const isActive = dbUser.adminOfTenant.accountStatus !== 'suspended';
               token.role = isActive ? 'admin' : 'personal';
