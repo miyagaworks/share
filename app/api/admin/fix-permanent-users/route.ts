@@ -34,13 +34,11 @@ export async function POST() {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
-    // 管理者チェック
     const isAdmin = await isAdminUser(session.user.id);
     if (!isAdmin) {
       return NextResponse.json({ error: '管理者権限がありません' }, { status: 403 });
     }
 
-    // 永久利用権ユーザーを取得
     const permanentUsers = await prisma.user.findMany({
       where: {
         subscriptionStatus: 'permanent',
@@ -71,37 +69,34 @@ export async function POST() {
     const results: FixResult[] = [];
     const errors: ErrorResult[] = [];
 
-    // 各ユーザーを処理
     for (const user of permanentUsers) {
       try {
         await prisma.$transaction(async (tx) => {
           const actions: string[] = [];
-          let planType: PermanentPlanType = PermanentPlanType.PERSONAL;
+          let planType = 'personal';
           let subscriptionPlan = 'permanent_personal';
 
-          // 🔥 プラン種別を判定
+          // 🔥 新しいプラン構成に合わせた判定
           if (user.adminOfTenant) {
-            // 管理者の場合、テナントのmaxUsersから判定
             const maxUsers = user.adminOfTenant.maxUsers;
             if (maxUsers >= 50) {
-              planType = PermanentPlanType.ENTERPRISE;
+              planType = 'enterprise';
               subscriptionPlan = 'permanent_enterprise';
             } else if (maxUsers >= 30) {
-              planType = PermanentPlanType.BUSINESS_PLUS;
-              subscriptionPlan = 'permanent_business_plus';
-            } else {
-              planType = PermanentPlanType.BUSINESS;
+              planType = 'business'; // 🔥 business_plus → business
               subscriptionPlan = 'permanent_business';
+            } else {
+              planType = 'starter'; // 🔥 business → starter
+              subscriptionPlan = 'permanent_starter';
             }
           } else if (user.tenant) {
-            // メンバーの場合、とりあえずビジネスプランとして設定
-            planType = PermanentPlanType.BUSINESS;
-            subscriptionPlan = 'permanent_business';
+            // メンバーの場合はスタータープランとして設定
+            planType = 'starter'; // 🔥 business → starter
+            subscriptionPlan = 'permanent_starter';
           }
 
           // 🔥 サブスクリプション情報を修正
           if (user.subscription) {
-            // 既存のサブスクリプションを更新
             if (user.subscription.plan !== subscriptionPlan) {
               await tx.subscription.update({
                 where: { userId: user.id },
@@ -109,12 +104,13 @@ export async function POST() {
                   plan: subscriptionPlan,
                   interval: 'permanent',
                   status: 'active',
+                  subscriptionId:
+                    user.subscription.subscriptionId || `permanent_${user.id}_${Date.now()}`,
                 },
               });
               actions.push(`サブスクリプションプランを${subscriptionPlan}に更新`);
             }
           } else {
-            // サブスクリプション情報が無い場合は作成
             const now = new Date();
             const endDate = new Date();
             endDate.setFullYear(endDate.getFullYear() + 100);
@@ -135,13 +131,26 @@ export async function POST() {
             actions.push('サブスクリプション情報を作成');
           }
 
-          // 🔥 法人管理者の場合、デフォルト部署を確認・作成
-          let defaultDepartmentId = null;
+          // 🔥 テナントのオンボーディング完了とsubscriptionId設定
           if (user.adminOfTenant) {
+            const subscriptionId =
+              user.subscription?.subscriptionId || `permanent_${user.id}_${Date.now()}`;
+
+            await tx.corporateTenant.update({
+              where: { id: user.adminOfTenant.id },
+              data: {
+                onboardingCompleted: true,
+                subscriptionId: subscriptionId,
+              },
+            });
+            actions.push('テナントのオンボーディング完了とsubscriptionId設定');
+
+            // デフォルト部署の確認・作成
             const defaultDepartment = user.adminOfTenant.departments.find(
               (dept) => dept.name === '全社',
             );
 
+            let defaultDepartmentId = null;
             if (!defaultDepartment) {
               const newDepartment = await tx.department.create({
                 data: {
@@ -156,7 +165,6 @@ export async function POST() {
               defaultDepartmentId = defaultDepartment.id;
             }
 
-            // ユーザーに部署が設定されていない場合は設定
             if (!user.departmentId) {
               await tx.user.update({
                 where: { id: user.id },
@@ -168,14 +176,13 @@ export async function POST() {
             }
           }
 
-          // 結果を記録
           results.push({
             userId: user.id,
             email: user.email,
             action: actions.join(', ') || '変更なし',
-            planType,
+            planType: planType as any,
             tenantId: user.adminOfTenant?.id || user.tenant?.id,
-            departmentId: defaultDepartmentId || user.departmentId || undefined,
+            departmentId: user.departmentId || undefined,
             subscriptionPlan,
           });
         });

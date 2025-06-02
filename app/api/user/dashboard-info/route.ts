@@ -7,44 +7,44 @@ import { prisma } from '@/lib/prisma';
 
 // 永久利用権プラン種別を判定する関数
 function determinePermanentPlanType(user: any): string {
-  // 🔥 まずサブスクリプション情報から判定
+  // サブスクリプション情報から判定
   if (user.subscription?.plan) {
     const plan = user.subscription.plan.toLowerCase();
 
     if (plan.includes('permanent_enterprise') || plan.includes('enterprise')) {
       return 'enterprise';
-    } else if (
-      plan.includes('permanent_business_plus') ||
-      plan.includes('business_plus') ||
-      plan.includes('business-plus')
-    ) {
-      return 'business_plus';
-    } else if (plan.includes('permanent_business') && !plan.includes('plus')) {
+    } else if (plan.includes('permanent_business') || plan.includes('business')) {
+      // 🔥 business_plusの互換性を保ちつつbusinessにマッピング
       return 'business';
+    } else if (
+      plan.includes('business_plus') ||
+      plan.includes('business-plus') ||
+      plan.includes('businessplus')
+    ) {
+      return 'business'; // 🔥 旧business_plusはbusinessにマッピング
+    } else if (plan.includes('permanent_starter') || plan.includes('starter')) {
+      return 'starter';
     } else if (plan.includes('permanent_personal') || plan.includes('personal')) {
       return 'personal';
     }
   }
 
-  // 🔥 テナント情報から判定（より正確に）
+  // テナント情報から判定
   if (user.adminOfTenant || user.tenant) {
     const tenant = user.adminOfTenant || user.tenant;
     const maxUsers = tenant?.maxUsers || 10;
 
-    // maxUsersに基づいた正確な判定
     if (maxUsers >= 50) {
       return 'enterprise';
     } else if (maxUsers >= 30) {
-      return 'business_plus';
-    } else if (maxUsers >= 10) {
-      return 'business';
+      return 'business'; // 🔥 30名以上はbusiness
+    } else {
+      return 'starter'; // 🔥 10名はstarter
     }
   }
 
-  // 🔥 デフォルト: 個人プラン
   return 'personal';
 }
-
 interface UserData {
   id: string;
   name: string | null;
@@ -459,8 +459,8 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
 function getPlanDisplayName(planType: string): string {
   const displayNames: Record<string, string> = {
     personal: '個人プラン',
-    business: 'ビジネスプラン (10名まで)',
-    business_plus: 'ビジネスプラス (30名まで)',
+    starter: 'スタータープラン (10名まで)', // 🔥 修正
+    business: 'ビジネスプラン (30名まで)', // 🔥 修正
     enterprise: 'エンタープライズ (50名まで)',
   };
   return displayNames[planType] || 'プラン';

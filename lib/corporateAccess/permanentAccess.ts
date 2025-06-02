@@ -9,20 +9,42 @@ import {
 import { setAdminStatus } from './adminAccess';
 import { generateVirtualTenantData } from './virtualTenant';
 import { VirtualTenantData } from './virtualTenant';
+
 // 永久利用権プランタイプの列挙型
 export enum PermanentPlanType {
   PERSONAL = 'personal',
-  BUSINESS = 'business',
-  BUSINESS_PLUS = 'business_plus',
-  ENTERPRISE = 'enterprise',
+  STARTER = 'starter', // 10名まで
+  BUSINESS = 'business', // 30名まで
+  ENTERPRISE = 'enterprise', // 50名まで
 }
-// プランタイプの表示名マッピング
+
 export const PLAN_TYPE_DISPLAY_NAMES: Record<PermanentPlanType, string> = {
-  [PermanentPlanType.PERSONAL]: '個人永久プラン',
-  [PermanentPlanType.BUSINESS]: 'ビジネス永久プラン (10名まで)',
-  [PermanentPlanType.BUSINESS_PLUS]: 'ビジネスプラス永久プラン (30名まで)',
-  [PermanentPlanType.ENTERPRISE]: 'エンタープライズ永久プラン (50名まで)',
+  [PermanentPlanType.PERSONAL]: '個人プラン',
+  [PermanentPlanType.STARTER]: 'スタータープラン (10名まで)',
+  [PermanentPlanType.BUSINESS]: 'ビジネスプラン (30名まで)',
+  [PermanentPlanType.ENTERPRISE]: 'エンタープライズプラン (50名まで)',
 };
+
+// 🔥 BUSINESS_PLUS を削除し、古いコードとの互換性を保つ関数を追加
+export function normalizePlanType(planType: string): PermanentPlanType {
+  switch (planType.toLowerCase()) {
+    case 'business_plus':
+    case 'business-plus':
+    case 'businessplus':
+      return PermanentPlanType.BUSINESS; // 旧 BUSINESS_PLUS は BUSINESS にマッピング
+    case 'business_legacy':
+    case 'starter':
+      return PermanentPlanType.STARTER;
+    case 'business':
+      return PermanentPlanType.BUSINESS;
+    case 'enterprise':
+      return PermanentPlanType.ENTERPRISE;
+    case 'personal':
+    default:
+      return PermanentPlanType.PERSONAL;
+  }
+}
+
 /**
  * ユーザーが永久利用権を持っているかどうかをチェック
  *
@@ -202,8 +224,8 @@ export function updatePermanentAccessByPlanType(planType: PermanentPlanType): vo
       // 個人プランは法人アクセス権なし
       hasAccess = false;
       break;
+    case PermanentPlanType.STARTER:
     case PermanentPlanType.BUSINESS:
-    case PermanentPlanType.BUSINESS_PLUS:
     case PermanentPlanType.ENTERPRISE:
       // 法人プランはアクセス権あり
       hasAccess = true;

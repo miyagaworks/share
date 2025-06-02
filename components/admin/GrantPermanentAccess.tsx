@@ -20,7 +20,7 @@ export default function GrantPermanentAccess() {
   const [userQuery, setUserQuery] = useState('');
   const [searchResults, setSearchResults] = useState<SearchResult[]>([]);
   const [selectedUser, setSelectedUser] = useState<SearchResult | null>(null);
-  const [planType, setPlanType] = useState<PermanentPlanType>(PermanentPlanType.PERSONAL);
+  const [planType, setPlanType] = useState<PermanentPlanType>(PermanentPlanType.STARTER); // 🔥 デフォルトをSTARTERに
   const [isLoading, setIsLoading] = useState(false);
   const [isSearching, setIsSearching] = useState(false);
   const [result, setResult] = useState<{
@@ -106,21 +106,14 @@ export default function GrantPermanentAccess() {
           planName: data.planName,
         });
 
-        // 成功通知
         toast.success(`${data.planName || '永久利用権'}を付与しました`);
-
-        // フォームをリセット
         clearUserSelection();
-
-        // 管理画面を更新
         router.refresh();
       } else {
         setResult({
           success: false,
           error: data.error || '処理中にエラーが発生しました',
         });
-
-        // エラー通知
         toast.error(data.error || '処理中にエラーが発生しました');
       }
     } catch {
@@ -243,13 +236,13 @@ export default function GrantPermanentAccess() {
           </p>
           <div className="space-y-1 text-xs">
             {planType === PermanentPlanType.PERSONAL && <p>• 個人機能のみ利用可能</p>}
-            {planType === PermanentPlanType.BUSINESS && (
+            {planType === PermanentPlanType.STARTER && ( // 🔥 BUSINESS を STARTER に修正
               <>
                 <p>• 法人機能利用可能</p>
                 <p>• 最大10名まで</p>
               </>
             )}
-            {planType === PermanentPlanType.BUSINESS_PLUS && (
+            {planType === PermanentPlanType.BUSINESS && ( // 🔥 BUSINESS_PLUS を BUSINESS に修正
               <>
                 <p>• 法人機能利用可能</p>
                 <p>• 最大30名まで</p>

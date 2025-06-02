@@ -15,13 +15,8 @@ function getMaxUsersByPlan(plan: string | null | undefined): number {
     return 50;
   }
 
-  // ビジネスプラン: 30ユーザー（旧business_plusも含む）
+  // ビジネスプラン: 30ユーザー
   if (planLower.includes('business') && !planLower.includes('starter')) {
-    return 30;
-  }
-
-  // 🔥 旧プラン名の互換性対応
-  if (planLower.includes('business_plus') || planLower.includes('businessplus')) {
     return 30;
   }
 
@@ -32,60 +27,136 @@ function getMaxUsersByPlan(plan: string | null | undefined): number {
 
   return 10; // デフォルト
 }
+
 export async function GET() {
   try {
     logger.debug('[API] /api/corporate/tenant リクエスト受信');
-    // セッション認証チェック
+
     const session = await auth();
     if (!session || !session.user?.id) {
       logger.debug('[API] 認証されていないアクセス');
       return NextResponse.json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }, { status: 401 });
     }
+
     const userId = session.user.id;
     logger.debug('[API] ユーザーID:', userId);
+
     try {
-      // ユーザー情報を取得
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
           id: true,
           name: true,
           subscriptionStatus: true,
+          subscription: {
+            select: {
+              plan: true,
+              status: true,
+            },
+          },
         },
       });
-      // ユーザーが見つからない場合
+
       if (!user) {
         logger.debug('[API] ユーザーが見つかりません:', userId);
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
+
       // 永久利用権ユーザーの場合、仮想テナントデータを生成して返す
       if (user.subscriptionStatus === 'permanent') {
         logger.debug('[API] 永久利用権ユーザー用仮想テナントデータを生成:', userId);
-        const virtualTenant = generateVirtualTenantData(userId, user.name);
-        const responseData = {
-          tenant: {
-            id: virtualTenant.id,
-            name: virtualTenant.name,
-            logoUrl: virtualTenant.settings.logoUrl,
-            logoWidth: null,
-            logoHeight: null,
-            primaryColor: virtualTenant.settings.primaryColor,
-            secondaryColor: virtualTenant.settings.secondaryColor,
-            headerText: null,
-            textColor: null,
-            maxUsers: 50, // 永久利用権は50ユーザー
-            accountStatus: 'active',
-            onboardingCompleted: true,
-            userCount: 1,
-            departmentCount: virtualTenant.departments.length,
-            users: [{ id: userId, name: user.name, role: 'admin' }],
-            departments: virtualTenant.departments,
-            subscriptionPlan: 'permanent', // 永久利用権を明示
+
+        // 🔥 実際のテナントがあるかチェック
+        const actualTenant = await prisma.corporateTenant.findFirst({
+          where: {
+            OR: [{ adminId: userId }, { users: { some: { id: userId } } }],
           },
-          isAdmin: true,
-          userRole: 'admin',
-        };
-        return NextResponse.json(responseData);
+          select: {
+            id: true,
+            name: true,
+            logoUrl: true,
+            logoWidth: true,
+            logoHeight: true,
+            primaryColor: true,
+            secondaryColor: true,
+            headerText: true,
+            textColor: true,
+            maxUsers: true,
+            accountStatus: true,
+            onboardingCompleted: true,
+            subscriptionId: true, // 🔥 追加
+            _count: {
+              select: {
+                users: true,
+                departments: true,
+              },
+            },
+          },
+        });
+
+        if (actualTenant) {
+          // 🔥 実際のテナントがある場合はそれを返す
+          logger.debug('[API] 実際のテナントデータを使用:', actualTenant.id);
+
+          // プラン情報を追加
+          let subscriptionPlan = 'permanent';
+          if (user.subscription?.plan) {
+            subscriptionPlan = user.subscription.plan;
+          }
+
+          const responseData = {
+            tenant: {
+              id: actualTenant.id,
+              name: actualTenant.name,
+              logoUrl: actualTenant.logoUrl,
+              logoWidth: actualTenant.logoWidth,
+              logoHeight: actualTenant.logoHeight,
+              primaryColor: actualTenant.primaryColor,
+              secondaryColor: actualTenant.secondaryColor,
+              headerText: actualTenant.headerText,
+              textColor: actualTenant.textColor,
+              maxUsers: actualTenant.maxUsers,
+              accountStatus: actualTenant.accountStatus,
+              onboardingCompleted: actualTenant.onboardingCompleted || true, // 🔥 永久利用権は強制的にtrue
+              userCount: actualTenant._count?.users ?? 1,
+              departmentCount: actualTenant._count?.departments ?? 1,
+              users: [{ id: userId, name: user.name, role: 'admin' }],
+              departments: [{ id: 'default', name: '全社' }],
+              subscriptionPlan: subscriptionPlan,
+            },
+            isAdmin: true,
+            userRole: 'admin',
+          };
+
+          return NextResponse.json(responseData);
+        } else {
+          // 🔥 実際のテナントがない場合は仮想テナントを生成
+          const virtualTenant = generateVirtualTenantData(userId, user.name);
+          const responseData = {
+            tenant: {
+              id: virtualTenant.id,
+              name: virtualTenant.name,
+              logoUrl: virtualTenant.settings.logoUrl,
+              logoWidth: null,
+              logoHeight: null,
+              primaryColor: virtualTenant.settings.primaryColor,
+              secondaryColor: virtualTenant.settings.secondaryColor,
+              headerText: null,
+              textColor: null,
+              maxUsers: 50, // 永久利用権は50ユーザー
+              accountStatus: 'active',
+              onboardingCompleted: true, // 🔥 永久利用権は常にtrue
+              userCount: 1,
+              departmentCount: virtualTenant.departments.length,
+              users: [{ id: userId, name: user.name, role: 'admin' }],
+              departments: virtualTenant.departments,
+              subscriptionPlan: 'permanent',
+            },
+            isAdmin: true,
+            userRole: 'admin',
+          };
+          return NextResponse.json(responseData);
+        }
       }
       // 管理者としてのテナントを検索（サブスクリプション情報も含む）
       const adminTenant = await prisma.corporateTenant.findUnique({

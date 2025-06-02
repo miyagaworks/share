@@ -72,23 +72,24 @@ export function useOptimizedTenant() {
     queryKey: ['tenant', session?.user?.id],
     queryFn: fetchTenantInfo,
     enabled: !!session?.user?.id,
-    staleTime: 0, // 🔥 永久利用権ユーザーの場合はキャッシュを短縮
-    gcTime: 5 * 60 * 1000, // 🔥 5分間キャッシュ保持に短縮
+    staleTime: 1 * 60 * 1000, // 🔥 1分間はフレッシュ（短縮）
+    gcTime: 3 * 60 * 1000, // 🔥 3分間キャッシュ保持（短縮）
     retry: (failureCount, error) => {
       if (error.status === 401 || error.status === 404) {
         return false;
       }
-      return failureCount < 3;
+      return failureCount < 2; // 🔥 リトライ回数を削減
     },
-    retryDelay: (attemptIndex) => Math.min(1000 * 2 ** attemptIndex, 30000),
-    refetchOnWindowFocus: true, // 🔥 フォーカス時も再取得
-    refetchOnMount: true, // 🔥 マウント時も再取得
+    retryDelay: (attemptIndex) => Math.min(500 * 2 ** attemptIndex, 10000), // 🔥 短縮
+    refetchOnWindowFocus: true, // 🔥 フォーカス時に再取得
+    refetchOnMount: true, // 🔥 マウント時に再取得
     refetchOnReconnect: true,
     refetchInterval: false,
   });
 
   return query;
 }
+
 // テナント情報を手動で更新するフック
 export function useRefreshTenant() {
   const queryClient = useQueryClient();
