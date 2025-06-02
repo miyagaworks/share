@@ -128,13 +128,17 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
           reason: '法人メンバーは専用ページを使用',
         };
       }
-      // 永久利用権ユーザーは法人ダッシュボードにリダイレクト
+      // 🔥 修正: 永久利用権ユーザーのプラン種別を考慮したリダイレクト
       if (permissions.isPermanentUser) {
-        return {
-          hasAccess: false,
-          redirectTo: '/dashboard/corporate',
-          reason: '永久利用権ユーザーは法人ダッシュボードを使用',
-        };
+        // 永久利用権の法人プランユーザーのみ法人ダッシュボードにリダイレクト
+        if (permissions.permanentPlanType !== 'personal' && permissions.hasCorpAccess) {
+          return {
+            hasAccess: false,
+            redirectTo: '/dashboard/corporate',
+            reason: '永久利用権法人プランユーザーは法人ダッシュボードを使用',
+          };
+        }
+        // 永久利用権個人プランユーザーは個人ダッシュボードのまま
       }
     }
 
@@ -146,6 +150,11 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       '/dashboard/share',
     ];
     if (personalPages.some((page) => pathname.startsWith(page))) {
+      // 🔥 永久利用権個人プランユーザーは個人機能ページを使用可能
+      if (permissions.isPermanentUser && permissions.permanentPlanType === 'personal') {
+        return { hasAccess: true };
+      }
+      
       // 法人管理者は対応する法人ページにリダイレクト
       if (permissions.isAdmin && permissions.hasCorpAccess) {
         const corporatePageMap: Record<string, string> = {
