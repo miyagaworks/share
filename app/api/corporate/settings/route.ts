@@ -1,11 +1,12 @@
-// app/api/corporate/settings/route.ts
+// app/api/corporate/settings/route.ts (修正版)
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { generateVirtualTenantData } from '@/lib/corporateAccess';
+
 // 法人アカウント設定の取得（GET）
 export async function GET() {
   try {
@@ -13,24 +14,72 @@ export async function GET() {
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
+
     // ユーザーのテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
         id: true,
         name: true,
-        email: true, // メールアドレスを追加
-        subscriptionStatus: true, // 永久利用権ユーザー判定用
-        adminOfTenant: true,
-        tenant: true,
+        email: true,
+        subscriptionStatus: true,
+        adminOfTenant: {
+          select: {
+            id: true,
+            name: true,
+            securitySettings: true,
+            notificationSettings: true,
+            billingAddress: true,
+            billingEmail: true,
+            billingContact: true,
+            accountStatus: true,
+            dataRetentionDays: true,
+          },
+        },
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            securitySettings: true,
+            notificationSettings: true,
+            billingAddress: true,
+            billingEmail: true,
+            billingContact: true,
+            accountStatus: true,
+            dataRetentionDays: true,
+          },
+        },
       },
     });
+
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
-    // 永久利用権ユーザーの場合、仮想テナントの設定情報を返す
+
+    // 永久利用権ユーザーの場合、実際のテナント情報または仮想テナントの設定情報を返す
     if (user.subscriptionStatus === 'permanent') {
-      logger.debug('永久利用権ユーザー用仮想設定情報の生成:', user.id);
+      logger.debug('永久利用権ユーザー用設定情報の取得:', user.id);
+
+      // 実際のテナントがある場合はそれを使用
+      const actualTenant = user.adminOfTenant || user.tenant;
+      if (actualTenant) {
+        return NextResponse.json({
+          success: true,
+          settings: {
+            name: actualTenant.name,
+            securitySettings: actualTenant.securitySettings,
+            notificationSettings: actualTenant.notificationSettings,
+            billingAddress: actualTenant.billingAddress,
+            billingEmail: actualTenant.billingEmail,
+            billingContact: actualTenant.billingContact,
+            accountStatus: actualTenant.accountStatus,
+            dataRetentionDays: actualTenant.dataRetentionDays,
+          },
+          isAdmin: true,
+        });
+      }
+
+      // 実際のテナントがない場合は仮想テナント情報を生成
       const virtualTenant = generateVirtualTenantData(user.id, user.name);
       const virtualSettings = {
         name: virtualTenant.name,
@@ -42,17 +91,20 @@ export async function GET() {
         accountStatus: 'active',
         dataRetentionDays: 365,
       };
+
       return NextResponse.json({
         success: true,
         settings: virtualSettings,
         isAdmin: true,
       });
     }
-    // テナント情報を取得（管理者または一般メンバーのいずれか）
+
+    // 通常の法人ユーザーの処理
     const tenant = user.adminOfTenant || user.tenant;
     if (!tenant) {
       return NextResponse.json({ error: '法人テナント情報が見つかりません' }, { status: 404 });
     }
+
     return NextResponse.json({
       success: true,
       settings: {
@@ -72,6 +124,7 @@ export async function GET() {
     return NextResponse.json({ error: '法人アカウント設定の取得に失敗しました' }, { status: 500 });
   }
 }
+
 // 法人アカウント基本設定の更新（PUT）
 export async function PUT(req: Request) {
   try {
@@ -79,43 +132,69 @@ export async function PUT(req: Request) {
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-    // リクエストボディの取得
+
     const body = await req.json();
     const { name: bodyName, type } = body;
-    // ユーザーとテナント情報を取得（tenant情報も含める）
+
+    // ユーザーとテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
       select: {
         id: true,
-        name: true, // 名前を追加
-        email: true, // メールアドレスを追加
-        subscriptionStatus: true, // 永久利用権ユーザー判定用
-        adminOfTenant: true,
-        tenant: true, // テナント情報も含める
+        name: true,
+        email: true,
+        subscriptionStatus: true,
+        adminOfTenant: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
       },
     });
+
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
-    // 永久利用権ユーザーの場合、設定の更新はサポートしない
+
+    // 🔥 永久利用権ユーザーの場合、実際のテナントがあれば更新処理を行う
     if (user.subscriptionStatus === 'permanent') {
-      // 設定更新リクエストを送信するとエラーではなく、成功と見なす
-      return NextResponse.json({
-        success: true,
-        message: '永久利用権ユーザーの設定は更新されません',
-        tenant: {
-          name: bodyName || `${user.name || 'ユーザー'}の法人`,
-          // フロントエンドの表示用に他のフィールドも含める
-          securitySettings: body.securitySettings || null,
-          notificationSettings: body.notificationSettings || null,
-          billingAddress: body.billingAddress || null,
-          billingEmail: body.billingEmail || null,
-          billingContact: body.billingContact || null,
-        },
-        updatedType: type,
-      });
+      const actualTenant = user.adminOfTenant || user.tenant;
+
+      if (actualTenant) {
+        // 実際のテナントがある場合は通常の更新処理を実行
+        logger.debug('永久利用権ユーザーの実テナント更新:', {
+          userId: user.id,
+          tenantId: actualTenant.id,
+        });
+        // 以下の通常の更新処理に続行
+      } else {
+        // 実際のテナントがない場合は仮想的な成功レスポンスを返す
+        logger.debug('永久利用権ユーザーの仮想テナント更新:', { userId: user.id });
+        return NextResponse.json({
+          success: true,
+          message: '設定を更新しました',
+          tenant: {
+            name: bodyName || `${user.name || 'ユーザー'}の法人`,
+            securitySettings: body.securitySettings || null,
+            notificationSettings: body.notificationSettings || null,
+            billingAddress: body.billingAddress || null,
+            billingEmail: body.billingEmail || null,
+            billingContact: body.billingContact || null,
+          },
+          updatedType: type,
+          isVirtual: true, // 🔥 仮想更新であることを示すフラグ
+        });
+      }
     }
-    // 管理者権限の確認（adminOfTenantが存在するか）
+
+    // 管理者権限の確認
     const isAdmin = !!user.adminOfTenant;
     if (!isAdmin) {
       return NextResponse.json(
@@ -123,11 +202,9 @@ export async function PUT(req: Request) {
         { status: 403 },
       );
     }
-    // tenantIdを一度だけ宣言（nullチェック付き）
-    if (!user.adminOfTenant) {
-      return NextResponse.json({ error: '管理者のテナント情報が見つかりません' }, { status: 404 });
-    }
-    const tenantId = user.adminOfTenant.id;
+
+    const tenantId = user.adminOfTenant!.id;
+
     // 更新する設定タイプに基づいて更新データを準備
     type UpdateData = {
       name?: string;
@@ -138,15 +215,15 @@ export async function PUT(req: Request) {
       billingContact?: string;
       onboardingCompleted?: boolean;
     };
+
     let updateData: UpdateData = {};
     let billingDescription = '';
+
     switch (type) {
       case 'general':
-        // 必須フィールドの検証（onboardingCompletedが存在する場合は検証をスキップ）
         if (body.onboardingCompleted === undefined && (!bodyName || bodyName.trim() === '')) {
           return NextResponse.json({ error: '会社名は必須です' }, { status: 400 });
         }
-        // オブジェクトリテラルを一度に代入する方式に変更
         updateData = {
           ...(bodyName && { name: bodyName }),
           ...(body.onboardingCompleted !== undefined && {
@@ -155,16 +232,19 @@ export async function PUT(req: Request) {
         };
         billingDescription = '基本設定の更新';
         break;
+
       case 'security':
         const { securitySettings } = body;
         updateData.securitySettings = securitySettings;
         billingDescription = 'セキュリティ設定の更新';
         break;
+
       case 'notifications':
         const { notificationSettings } = body;
         updateData.notificationSettings = notificationSettings;
         billingDescription = '通知設定の更新';
         break;
+
       case 'billing':
         const { billingAddress, billingEmail, billingContact } = body;
         updateData.billingAddress = billingAddress;
@@ -172,36 +252,41 @@ export async function PUT(req: Request) {
         updateData.billingContact = billingContact;
         billingDescription = '請求情報の更新';
         break;
+
       default:
         return NextResponse.json({ error: '無効な設定タイプです' }, { status: 400 });
     }
-    // トランザクションを使用して、テナント更新とBillingRecordの作成を一括で行う
+
+    // トランザクションを使用して更新
     const result = await prisma.$transaction(async (tx) => {
-      // テナント情報を更新
       const updatedTenant = await tx.corporateTenant.update({
         where: { id: tenantId },
         data: updateData,
       });
+
       // 設定変更の記録をBillingRecordに保存
       await tx.billingRecord.create({
         data: {
           userId: session.user.id,
-          amount: 0, // 設定変更は0円
+          amount: 0,
           status: 'paid',
           description: billingDescription,
           paidAt: new Date(),
         },
       });
+
       return updatedTenant;
     });
+
     return NextResponse.json({
       success: true,
       tenant: {
         ...result,
-        securitySettings: result.securitySettings, // これが重要！明示的にsecuritySettingsを含める
+        securitySettings: result.securitySettings,
       },
       message: '法人アカウント設定を更新しました',
-      updatedType: type, // どの種類の設定が更新されたかも返す
+      updatedType: type,
+      isVirtual: false, // 🔥 実際の更新であることを示す
     });
   } catch (error) {
     logger.error('法人アカウント設定更新エラー:', error);

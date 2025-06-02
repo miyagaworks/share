@@ -64,7 +64,7 @@ export async function checkCorporateAccess(userId: string) {
           planType = 'enterprise';
         } else if (maxUsers >= 30) {
           planType = 'business_plus';
-        } else {
+        } else if (maxUsers >= 10) {
           planType = 'business';
         }
       }
