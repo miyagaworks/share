@@ -478,15 +478,21 @@ export default function AdminUsersPage() {
                     <div className="text-sm text-gray-500">{getSubscriptionEndDate(user)}</div>
                   </td>
                   <td className="py-4 px-4 whitespace-nowrap text-right text-sm font-medium">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      className="border-red-300 text-red-600 hover:bg-red-50"
-                      onClick={() => setDeleteConfirm(user.id)}
-                    >
-                      <HiTrash className="mr-2 h-4 w-4" />
-                      削除
-                    </Button>
+                    {user.email === 'admin@sns-share.com' ? (
+                      <span className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full font-medium">
+                        システム管理者
+                      </span>
+                    ) : (
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="border-red-300 text-red-600 hover:bg-red-50"
+                        onClick={() => setDeleteConfirm(user.id)}
+                      >
+                        <HiTrash className="mr-2 h-4 w-4" />
+                        削除
+                      </Button>
+                    )}
                   </td>
                 </tr>
               ))}

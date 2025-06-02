@@ -313,7 +313,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       hasActivePlan: true,
       isTrialPeriod: false,
       planType: null,
-      planDisplayName: '管理者アカウント',
+      planDisplayName: 'システム管理者',
     };
   }
 
