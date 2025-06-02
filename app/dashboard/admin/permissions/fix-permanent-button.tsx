@@ -4,12 +4,14 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { HiRefresh } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
+
 // APIレスポンスの型定義
 interface ErrorResult {
   userId: string;
   email: string;
   error: string;
 }
+
 interface SuccessResult {
   userId: string;
   email: string;
@@ -18,6 +20,7 @@ interface SuccessResult {
   stripeCustomerId: string | null;
   status: string;
 }
+
 interface FixPermanentUsersResponse {
   success: boolean;
   totalUsers: number;
@@ -27,16 +30,21 @@ interface FixPermanentUsersResponse {
   errors?: ErrorResult[];
   error?: string;
 }
+
 export default function FixPermanentUsersButton() {
   const [isLoading, setIsLoading] = useState(false);
   const [result, setResult] = useState<FixPermanentUsersResponse | null>(null);
+
   const handleFixPermanentUsers = async () => {
     if (isLoading) return;
+
     try {
       setIsLoading(true);
       setResult(null);
-      // 👇 API URLの修正（末尾のスラッシュを追加）
+
+      // 🔥 API URLの修正（末尾のスラッシュを追加）
       const response = await fetch('/api/admin/fix-permanent-users/');
+
       // responseが正常なJSONかをチェック
       const contentType = response.headers.get('content-type');
       if (!contentType || !contentType.includes('application/json')) {
@@ -46,7 +54,9 @@ export default function FixPermanentUsersButton() {
         setIsLoading(false);
         return;
       }
+
       const data: FixPermanentUsersResponse = await response.json();
+
       if (response.ok) {
         setResult(data);
         if (data.success) {
@@ -61,41 +71,56 @@ export default function FixPermanentUsersButton() {
         toast.error('APIエラー: ' + (data.error || `ステータスコード ${response.status}`));
       }
     } catch {
-      toast.error(
-        'リクエスト中にエラーが発生しました。',
-      );
+      toast.error('リクエスト中にエラーが発生しました。');
     } finally {
       setIsLoading(false);
     }
   };
+
   return (
-    <div className="mb-6">
+    <div className="inline-block">
       <Button
         onClick={handleFixPermanentUsers}
         disabled={isLoading}
-        className="bg-blue-600 hover:bg-blue-700 text-white"
+        variant="outline"
+        size="sm"
+        className="bg-blue-600 hover:bg-blue-700 text-white border-blue-600"
       >
-        <HiRefresh className={`mr-2 h-5 w-5 ${isLoading ? 'animate-spin' : ''}`} />
-        永久利用権ユーザーのデータを修正
+        <HiRefresh className={`mr-2 h-4 w-4 ${isLoading ? 'animate-spin' : ''}`} />
+        データ修正
       </Button>
+
       {result && (
-        <div className="mt-4 p-4 rounded-lg bg-gray-50 border border-gray-200">
-          <h3 className="text-lg font-medium mb-2">処理結果</h3>
-          <p>対象ユーザー: {result.totalUsers}人</p>
-          <p>成功: {result.successCount}人</p>
-          <p>エラー: {result.errorCount}人</p>
-          {result.errorCount > 0 && result.errors && (
-            <div className="mt-2">
-              <p className="font-medium text-red-600">エラー詳細:</p>
-              <ul className="list-disc pl-5 mt-1">
-                {result.errors.map((error: ErrorResult, index: number) => (
-                  <li key={index} className="text-sm text-red-600">
-                    {error.email}: {error.error}
-                  </li>
-                ))}
-              </ul>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
+            <h3 className="text-lg font-medium mb-4">データ修正結果</h3>
+            <div className="space-y-2 mb-4">
+              <p>対象ユーザー: {result.totalUsers}人</p>
+              <p className="text-green-600">成功: {result.successCount}人</p>
+              {result.errorCount > 0 && (
+                <p className="text-red-600">エラー: {result.errorCount}人</p>
+              )}
             </div>
-          )}
+
+            {result.errorCount > 0 && result.errors && (
+              <div className="mt-4">
+                <p className="font-medium text-red-600 mb-2">エラー詳細:</p>
+                <div className="max-h-32 overflow-y-auto bg-red-50 p-2 rounded">
+                  <ul className="list-disc pl-5 text-sm">
+                    {result.errors.map((error: ErrorResult, index: number) => (
+                      <li key={index} className="text-red-600">
+                        {error.email}: {error.error}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              </div>
+            )}
+
+            <div className="flex justify-end mt-6">
+              <Button onClick={() => setResult(null)}>閉じる</Button>
+            </div>
+          </div>
         </div>
       )}
     </div>

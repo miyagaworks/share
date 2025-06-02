@@ -1,175 +1,204 @@
 // app/api/admin/fix-permanent-users/route.ts
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { isAdminUser } from '@/lib/utils/admin-access-server';
+import { PermanentPlanType } from '@/lib/corporateAccess';
+
+export const fetchCache = 'force-no-store';
+export const revalidate = 0;
+
 // 結果の型定義
-interface SuccessResult {
+interface FixResult {
   userId: string;
   email: string;
-  tenantId: string;
-  departmentId: string;
-  stripeCustomerId: string | null;
-  status: string;
+  action: string;
+  planType?: PermanentPlanType;
+  tenantId?: string;
+  departmentId?: string;
+  subscriptionPlan?: string;
 }
+
 interface ErrorResult {
   userId: string;
   email: string;
   error: string;
 }
-export async function GET() {
+
+export async function POST() {
   try {
-    // 管理者認証
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-    // 管理者かどうか確認（メールアドレスで）
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
-      select: { email: true },
-    });
-    if (!user || user.email !== 'admin@sns-share.com') {
-      return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
+
+    // 管理者チェック
+    const isAdmin = await isAdminUser(session.user.id);
+    if (!isAdmin) {
+      return NextResponse.json({ error: '管理者権限がありません' }, { status: 403 });
     }
-    // subscriptionStatusが'permanent'のユーザーを検索
+
+    // 永久利用権ユーザーを取得
     const permanentUsers = await prisma.user.findMany({
       where: {
         subscriptionStatus: 'permanent',
-        // テナント関連付けがないユーザーもしくはdepartmentIdがないユーザーを対象に
-        OR: [{ tenantId: null, adminOfTenant: null }, { departmentId: null }],
       },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        stripeCustomerId: true,
-        tenantId: true,
-        adminOfTenant: true,
-        departmentId: true,
+      include: {
+        subscription: true,
+        adminOfTenant: {
+          include: {
+            departments: true,
+          },
+        },
+        tenant: true,
       },
     });
-    const results: SuccessResult[] = [];
+
+    if (permanentUsers.length === 0) {
+      return NextResponse.json({
+        success: true,
+        message: '修正対象の永久利用権ユーザーが見つかりませんでした',
+        totalUsers: 0,
+        successCount: 0,
+        errorCount: 0,
+        results: [],
+        errors: [],
+      });
+    }
+
+    const results: FixResult[] = [];
     const errors: ErrorResult[] = [];
-    // 各ユーザーに対して処理
+
+    // 各ユーザーを処理
     for (const user of permanentUsers) {
       try {
         await prisma.$transaction(async (tx) => {
-          let tenantId: string;
-          let departmentId: string;
-          let stripeCustomerId = user.stripeCustomerId;
-          // StripeCustomerIdが設定されていない場合は設定する
-          if (!stripeCustomerId) {
-            // モック顧客IDを生成 (実際のStripe統合があればそれを使用)
-            stripeCustomerId = `cus_permanent_${user.id.substring(0, 8)}`;
-          }
-          // 既存のテナント関連付けがあるかチェック
-          if (user.tenantId || user.adminOfTenant) {
-            // 既存のテナント情報を使用
-            tenantId = user.adminOfTenant?.id || user.tenantId || '';
-            // 既存テナントの部署を取得
-            const existingDepartment = await tx.department.findFirst({
-              where: { tenantId },
-              orderBy: { createdAt: 'asc' },
-            });
-            if (existingDepartment) {
-              departmentId = existingDepartment.id;
+          const actions: string[] = [];
+          let planType: PermanentPlanType = PermanentPlanType.PERSONAL;
+          let subscriptionPlan = 'permanent_personal';
+
+          // 🔥 プラン種別を判定
+          if (user.adminOfTenant) {
+            // 管理者の場合、テナントのmaxUsersから判定
+            const maxUsers = user.adminOfTenant.maxUsers;
+            if (maxUsers >= 50) {
+              planType = PermanentPlanType.ENTERPRISE;
+              subscriptionPlan = 'permanent_enterprise';
+            } else if (maxUsers >= 30) {
+              planType = PermanentPlanType.BUSINESS_PLUS;
+              subscriptionPlan = 'permanent_business_plus';
             } else {
-              // 部署がない場合は新規作成
-              const newDepartment = await tx.department.create({
+              planType = PermanentPlanType.BUSINESS;
+              subscriptionPlan = 'permanent_business';
+            }
+          } else if (user.tenant) {
+            // メンバーの場合、とりあえずビジネスプランとして設定
+            planType = PermanentPlanType.BUSINESS;
+            subscriptionPlan = 'permanent_business';
+          }
+
+          // 🔥 サブスクリプション情報を修正
+          if (user.subscription) {
+            // 既存のサブスクリプションを更新
+            if (user.subscription.plan !== subscriptionPlan) {
+              await tx.subscription.update({
+                where: { userId: user.id },
                 data: {
-                  name: '全社',
-                  description: 'デフォルト部署',
-                  tenantId,
+                  plan: subscriptionPlan,
+                  interval: 'permanent',
+                  status: 'active',
                 },
               });
-              departmentId = newDepartment.id;
+              actions.push(`サブスクリプションプランを${subscriptionPlan}に更新`);
             }
           } else {
-            // 新規テナントを作成
-            const tenant = await tx.corporateTenant.create({
-              data: {
-                name: `${user.name || user.email || 'ユーザー'}の法人`,
-                maxUsers: 50,
-                primaryColor: '#3B82F6',
-                secondaryColor: '#60A5FA',
-                admin: { connect: { id: user.id } },
-              },
-            });
-            tenantId = tenant.id;
-            // 新規部署を作成
-            const department = await tx.department.create({
-              data: {
-                name: '全社',
-                description: 'デフォルト部署',
-                tenantId,
-              },
-            });
-            departmentId = department.id;
-            // デフォルトのSNSリンク設定を作成
-            const defaultSnsLinks = [
-              { platform: 'line', url: 'https://line.me/ti/p/~', displayOrder: 1 },
-              { platform: 'instagram', url: 'https://www.instagram.com/', displayOrder: 2 },
-              { platform: 'youtube', url: 'https://www.youtube.com/c/', displayOrder: 3 },
-            ];
-            for (const snsLink of defaultSnsLinks) {
-              await tx.corporateSnsLink.create({
-                data: {
-                  ...snsLink,
-                  tenant: { connect: { id: tenantId } },
-                },
-              });
-            }
-          }
-          // サブスクリプション情報をチェック
-          const existingSubscription = await tx.subscription.findUnique({
-            where: { userId: user.id },
-          });
-          // サブスクリプションがない場合は作成
-          if (!existingSubscription) {
+            // サブスクリプション情報が無い場合は作成
             const now = new Date();
             const endDate = new Date();
-            endDate.setFullYear(endDate.getFullYear() + 100); // 100年後（実質永久）
+            endDate.setFullYear(endDate.getFullYear() + 100);
+
             await tx.subscription.create({
               data: {
                 userId: user.id,
                 status: 'active',
-                plan: 'business_plus',
-                priceId: 'price_permanent',
-                subscriptionId: `permanent_${user.id}`,
+                plan: subscriptionPlan,
+                priceId: `price_${subscriptionPlan}`,
+                subscriptionId: `permanent_${user.id}_${Date.now()}`,
                 currentPeriodStart: now,
                 currentPeriodEnd: endDate,
                 cancelAtPeriodEnd: false,
+                interval: 'permanent',
               },
             });
+            actions.push('サブスクリプション情報を作成');
           }
-          // ユーザー情報を更新
-          await tx.user.update({
-            where: { id: user.id },
-            data: {
-              departmentId,
-              tenantId,
-              stripeCustomerId,
-              corporateRole: 'admin',
-            },
-          });
+
+          // 🔥 法人管理者の場合、デフォルト部署を確認・作成
+          let defaultDepartmentId = null;
+          if (user.adminOfTenant) {
+            const defaultDepartment = user.adminOfTenant.departments.find(
+              (dept) => dept.name === '全社',
+            );
+
+            if (!defaultDepartment) {
+              const newDepartment = await tx.department.create({
+                data: {
+                  name: '全社',
+                  description: 'デフォルト部署',
+                  tenantId: user.adminOfTenant.id,
+                },
+              });
+              defaultDepartmentId = newDepartment.id;
+              actions.push('デフォルト部署を作成');
+            } else {
+              defaultDepartmentId = defaultDepartment.id;
+            }
+
+            // ユーザーに部署が設定されていない場合は設定
+            if (!user.departmentId) {
+              await tx.user.update({
+                where: { id: user.id },
+                data: {
+                  departmentId: defaultDepartmentId,
+                },
+              });
+              actions.push('デフォルト部署を設定');
+            }
+          }
+
+          // 結果を記録
           results.push({
             userId: user.id,
             email: user.email,
-            tenantId,
-            departmentId,
-            stripeCustomerId: stripeCustomerId || null,
-            status: '成功',
+            action: actions.join(', ') || '変更なし',
+            planType,
+            tenantId: user.adminOfTenant?.id || user.tenant?.id,
+            departmentId: defaultDepartmentId || user.departmentId || undefined,
+            subscriptionPlan,
           });
         });
+
+        logger.info('永久利用権ユーザーデータ修正完了', {
+          userId: user.id,
+          email: user.email,
+        });
       } catch (error) {
-        errors.push({
+        logger.error('永久利用権ユーザーデータ修正エラー', {
           userId: user.id,
           email: user.email,
           error: error instanceof Error ? error.message : String(error),
         });
+
+        errors.push({
+          userId: user.id,
+          email: user.email,
+          error: error instanceof Error ? error.message : '不明なエラー',
+        });
       }
     }
+
     return NextResponse.json({
       success: true,
       totalUsers: permanentUsers.length,
@@ -179,10 +208,12 @@ export async function GET() {
       errors,
     });
   } catch (error) {
+    logger.error('永久利用権ユーザーデータ修正API全体エラー:', error);
     return NextResponse.json(
       {
         success: false,
-        error: error instanceof Error ? error.message : String(error),
+        error: 'データ修正中にエラーが発生しました',
+        details: error instanceof Error ? error.message : String(error),
       },
       { status: 500 },
     );
