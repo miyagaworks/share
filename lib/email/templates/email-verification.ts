@@ -1,10 +1,12 @@
-// lib/email/templates/email-verification.ts
+// lib/email/templates/email-verification.ts (#3B82F6ベース)
 interface EmailVerificationParams {
   userName: string;
   verificationUrl: string;
 }
+
 export function getEmailVerificationTemplate(params: EmailVerificationParams) {
   const { userName, verificationUrl } = params;
+
   const html = `
     <!DOCTYPE html>
     <html lang="ja">
@@ -16,12 +18,13 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
     <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;">
       <div style="max-width: 600px; margin: 0 auto; background-color: #ffffff; box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);">
         <!-- ヘッダー -->
-        <div style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 40px 20px; text-align: center;">
+        <div style="background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%); padding: 40px 20px; text-align: center;">
           <div style="background-color: rgba(255, 255, 255, 0.1); display: inline-block; padding: 12px 24px; border-radius: 50px; margin-bottom: 20px;">
             <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 2px;">Share</h1>
           </div>
           <p style="color: rgba(255, 255, 255, 0.9); margin: 0; font-size: 16px; font-weight: 300;">すべてのSNS、ワンタップで</p>
         </div>
+
         <!-- メインコンテンツ -->
         <div style="padding: 40px 30px;">
           <div style="text-align: center; margin-bottom: 30px;">
@@ -31,6 +34,7 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
             <h2 style="color: #1f2937; margin: 0 0 10px; font-size: 24px; font-weight: 600;">アカウント登録完了！</h2>
             <p style="color: #6b7280; margin: 0; font-size: 16px;">あと一歩で利用開始できます</p>
           </div>
+
           <div style="background: linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%); border-radius: 12px; padding: 25px; margin: 30px 0;">
             <p style="color: #374151; margin: 0 0 15px; font-size: 16px; line-height: 1.6;">
               <strong>${userName}</strong> 様
@@ -42,10 +46,11 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
               メールアドレスの認証を完了して、すべての機能をお楽しみください。
             </p>
           </div>
+
           <!-- CTA ボタン -->
           <div style="text-align: center; margin: 40px 0;">
             <a href="${verificationUrl}" 
-               style="background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); 
+               style="background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%); 
                       color: white; 
                       text-decoration: none; 
                       padding: 16px 32px; 
@@ -53,11 +58,12 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
                       font-weight: 600; 
                       font-size: 16px; 
                       display: inline-block; 
-                      box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.4); 
+                      box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.4); 
                       transition: all 0.3s ease;">
               🔐 メールアドレスを認証する
             </a>
           </div>
+
           <!-- 注意事項 -->
           <div style="background-color: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px 20px; border-radius: 8px; margin: 30px 0;">
             <p style="color: #92400e; margin: 0; font-size: 14px; line-height: 1.5;">
@@ -65,12 +71,13 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
               期限を過ぎた場合は、お手数ですが再度ご登録をお願いいたします。
             </p>
           </div>
+
           <!-- 機能紹介 -->
           <div style="margin: 40px 0;">
             <h3 style="color: #1f2937; margin: 0 0 20px; font-size: 18px; font-weight: 600; text-align: center;">Shareでできること</h3>
             <div style="display: grid; gap: 15px;">
               <div style="display: flex; align-items: center; padding: 15px; background-color: #f9fafb; border-radius: 8px;">
-                <span style="background-color: #3b82f6; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 16px;">📱</span>
+                <span style="background-color: #3B82F6; color: white; width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin-right: 15px; font-size: 16px;">📱</span>
                 <div>
                   <strong style="color: #1f2937; font-size: 14px;">SNSを一括管理</strong>
                   <p style="color: #6b7280; margin: 5px 0 0; font-size: 13px;">すべてのSNSアカウントを一つのプロフィールで</p>
@@ -93,12 +100,13 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
             </div>
           </div>
         </div>
+
         <!-- フッター -->
         <div style="background-color: #f9fafb; padding: 30px; border-top: 1px solid #e5e7eb;">
           <div style="text-align: center; margin-bottom: 20px;">
             <p style="color: #6b7280; margin: 0 0 10px; font-size: 14px;">サポートが必要な場合は</p>
             <a href="mailto:support@sns-share.com" 
-               style="color: #667eea; text-decoration: none; font-weight: 600;">
+               style="color: #3B82F6; text-decoration: none; font-weight: 600;">
               support@sns-share.com
             </a>
           </div>
@@ -126,45 +134,65 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
     </body>
     </html>
   `;
+
   const text = `
 🎉 【Share】アカウント登録完了・メールアドレス認証のお願い
+
 ${userName} 様
+
 この度はShareにご登録いただき、誠にありがとうございます！
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📧 メールアドレス認証のお願い
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 アカウントの登録が完了しました。
 以下のリンクをクリックして、メールアドレスの認証を完了してください。
+
 👉 認証URL: ${verificationUrl}
+
 ⏰ 重要：このリンクは24時間のみ有効です
    期限を過ぎた場合は、お手数ですが再度ご登録をお願いいたします。
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ✨ Shareでできること
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 📱 SNSを一括管理
    → すべてのSNSアカウントを一つのプロフィールで管理
+
 🎨 カスタマイズ可能
    → あなたらしいプロフィールデザインを作成
+
 📊 QRコード生成
    → オフラインでも簡単にシェア
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📞 サポート情報
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 ご不明な点やお困りのことがございましたら、
 お気軽にお問い合わせください。
+
 ✉️ メール: support@sns-share.com
 🌐 ウェブサイト: https://app.sns-share.com
+
 Share サポートチーム
+
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏢 運営会社情報
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
 〒730-0046 広島県広島市中区昭和町6-11
 運営: ビイアルファ株式会社
 すべてのSNS、ワンタップでShare
+
 📋 プライバシーポリシー: https://app.sns-share.com/legal/privacy
 📋 利用規約: https://app.sns-share.com/legal/terms
+
 このメールに心当たりがない場合は、お手数ですが削除をお願いいたします。
   `;
+
   return {
     subject: '【Share】アカウント登録完了・メールアドレス認証のお願い',
     html,
