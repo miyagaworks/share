@@ -88,7 +88,7 @@ export async function POST(request: Request) {
 
       logger.info('永久利用権付与', { userId, planType, trialEndsAt: user.trialEndsAt });
 
-      // 2. サブスクリプション作成/更新
+      // 2. サブスクリプション作成/更新（テナント作成前に実行）
       let subscription;
       const subscriptionId = `permanent_${userId}_${Date.now()}`;
 
@@ -121,8 +121,8 @@ export async function POST(request: Request) {
         });
       }
 
-      // 3. 法人プランの場合のテナント処理
-      let tenant: any = null; // 🔥 型を明示的に指定
+      // 3. 法人プランの場合のテナント処理（サブスクリプション作成後に実行）
+      let tenant: any = null;
       const isCorporatePlan = ['starter', 'business', 'enterprise'].includes(planType);
 
       if (isCorporatePlan) {
@@ -137,13 +137,12 @@ export async function POST(request: Request) {
           // 既存のテナントを更新
           tenant = user.adminOfTenant || user.tenant;
           if (tenant) {
-            // 🔥 null チェック追加
             await tx.corporateTenant.update({
               where: { id: tenant.id },
               data: {
                 maxUsers: maxUsers,
                 onboardingCompleted: true,
-                subscriptionId: subscriptionId,
+                subscriptionId: subscription.id, // 🔥 修正: 作成されたサブスクリプションのIDを使用
               },
             });
             logger.info('既存テナント更新', { tenantId: tenant.id, maxUsers });
@@ -157,8 +156,8 @@ export async function POST(request: Request) {
               primaryColor: '#3B82F6',
               secondaryColor: '#60A5FA',
               onboardingCompleted: true,
-              subscriptionId: subscriptionId,
-              adminId: userId, // 🔥 admin の代わりに adminId を使用
+              subscriptionId: subscription.id, // 🔥 修正: 作成されたサブスクリプションのIDを使用
+              adminId: userId,
               departments: {
                 create: {
                   name: '全社',
@@ -174,7 +173,7 @@ export async function POST(request: Request) {
           await tx.user.update({
             where: { id: userId },
             data: {
-              tenantId: tenant.id, // 🔥 直接 tenantId を設定
+              tenantId: tenant.id,
               corporateRole: 'admin',
             },
           });
@@ -182,7 +181,6 @@ export async function POST(request: Request) {
 
         // デフォルトSNSリンクの作成
         if (tenant) {
-          // 🔥 null チェック追加
           const existingSnsLinks = await tx.corporateSnsLink.findMany({
             where: { tenantId: tenant.id },
           });
@@ -198,7 +196,7 @@ export async function POST(request: Request) {
               await tx.corporateSnsLink.create({
                 data: {
                   ...snsLink,
-                  tenantId: tenant.id, // 🔥 直接 tenantId を設定
+                  tenantId: tenant.id,
                 },
               });
             }
@@ -212,7 +210,6 @@ export async function POST(request: Request) {
 
     // 成功レスポンス
     const planDisplayNames: Record<string, string> = {
-      // 🔥 型を明示的に指定
       personal: '個人プラン',
       starter: 'スタータープラン (10名まで)',
       business: 'ビジネスプラン (30名まで)',
@@ -229,7 +226,7 @@ export async function POST(request: Request) {
         trialEndsAt: result.user.trialEndsAt,
       },
       planType: planType,
-      planName: planDisplayNames[planType] || planType, // 🔥 型安全に修正
+      planName: planDisplayNames[planType] || planType,
       tenant: result.tenant
         ? {
             id: result.tenant.id,
