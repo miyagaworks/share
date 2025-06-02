@@ -1,4 +1,4 @@
-// app/auth/email-verification/page.tsx (完全版)
+// app/auth/email-verification/page.tsx (Suspense修正版)
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
@@ -7,6 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 
+// 🔥 useSearchParams を使用するコンポーネントを分離
 function EmailVerificationContent() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -17,7 +18,7 @@ function EmailVerificationContent() {
   const [countdown, setCountdown] = useState(0);
   const [userEmail, setUserEmail] = useState<string>('');
 
-  // URLパラメータからメールアドレスを取得
+  // 🔥 URLパラメータからメールアドレスを取得
   useEffect(() => {
     const emailFromUrl = searchParams?.get('email');
     if (emailFromUrl) {
@@ -81,14 +82,24 @@ function EmailVerificationContent() {
   const handleResendEmail = async () => {
     if (countdown > 0) return;
 
+    // 🔥 詳細デバッグ
+    console.log('🔍 Debug - userEmail:', userEmail);
+    console.log('🔍 Debug - userEmail type:', typeof userEmail);
+    console.log('🔍 Debug - userEmail length:', userEmail?.length);
+
     if (!userEmail || userEmail.trim() === '') {
+      console.error('❌ Invalid email:', userEmail);
       setResendError('メールアドレスが特定できません。ページを再読み込みしてください。');
       return;
     }
 
     const trimmedEmail = userEmail.trim();
+    console.log('📧 Trimmed email:', trimmedEmail);
+
+    // 簡易メールバリデーション
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(trimmedEmail)) {
+      console.error('❌ Invalid email format:', trimmedEmail);
       setResendError('無効なメールアドレス形式です。');
       return;
     }
@@ -97,20 +108,42 @@ function EmailVerificationContent() {
     setResendError(null);
     setResendMessage(null);
 
+    console.log('🔄 Sending resend email request for:', trimmedEmail);
+
     try {
+      const requestData = { email: trimmedEmail };
+      const requestBody = JSON.stringify(requestData);
+
+      console.log('📤 Request data object:', requestData);
+      console.log('📤 Request body string:', requestBody);
+      console.log('📤 Request body length:', requestBody.length);
+
       const response = await fetch('/api/auth/send-verification-email', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ email: trimmedEmail }),
+        body: requestBody,
       });
+
+      console.log('📥 Response status:', response.status);
+      console.log('📥 Response ok:', response.ok);
+      console.log('📥 Response headers:', response.headers);
 
       let data;
       try {
         const responseText = await response.text();
-        data = responseText ? JSON.parse(responseText) : { error: 'Empty response from server' };
-      } catch {
+        console.log('📄 Raw response text:', responseText);
+
+        if (responseText) {
+          data = JSON.parse(responseText);
+          console.log('📋 Parsed response data:', data);
+        } else {
+          console.error('❌ Empty response body');
+          data = { error: 'Empty response from server' };
+        }
+      } catch (parseError) {
+        console.error('❌ JSON parse error:', parseError);
         data = { error: 'Invalid JSON response from server' };
       }
 
@@ -119,9 +152,11 @@ function EmailVerificationContent() {
         setCountdown(60);
       } else {
         const errorMessage = data?.error || data?.message || `サーバーエラー (${response.status})`;
+        console.error('❌ API Error:', errorMessage);
         setResendError(errorMessage);
       }
-    } catch {
+    } catch (networkError) {
+      console.error('💥 Network Error:', networkError);
       setResendError('ネットワークエラーが発生しました。');
     } finally {
       setIsResending(false);
@@ -199,7 +234,7 @@ function EmailVerificationContent() {
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-blue-800">認証手順</h3>
                 <div className="mt-2 text-sm text-blue-700">
-                  <ol className="list-decimal list-inside space-y-1">
+                  <ol className="list-decimal list-inside space-y-1 text-justify">
                     <li>
                       登録されたメールアドレス
                       {userEmail ? (
@@ -294,7 +329,7 @@ function EmailVerificationContent() {
               )}
             </Button>
 
-            <div className="text-center text-sm text-gray-500 space-y-2">
+            <div className="text-justify text-sm text-gray-500 space-y-2">
               <p>メールが届かない場合は、迷惑メールフォルダもご確認ください。</p>
               <p>
                 メールアドレスを変更したい場合は、
@@ -314,6 +349,7 @@ function EmailVerificationContent() {
   );
 }
 
+// 🔥 メインコンポーネント：Suspenseでラップ
 export default function EmailVerificationPage() {
   return (
     <Suspense
