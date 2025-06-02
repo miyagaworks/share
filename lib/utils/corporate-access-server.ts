@@ -45,27 +45,25 @@ export async function checkCorporateAccess(userId: string) {
     }
     // 永久利用権ユーザーの場合は常に法人アクセス権あり
     if (user.subscriptionStatus === 'permanent') {
-      // プラン種別を判定
       let planType = 'personal';
       if (user.subscription?.plan) {
         const plan = user.subscription.plan.toLowerCase();
         if (plan.includes('enterprise')) {
           planType = 'enterprise';
-        } else if (plan.includes('business_plus') || plan.includes('business-plus')) {
-          planType = 'business_plus';
-        } else if (plan.includes('business')) {
-          planType = 'business';
+        } else if (plan.includes('business') || plan.includes('business_plus')) {
+          planType = 'business'; // 🔥 business_plusもbusinessとして扱う
+        } else if (plan.includes('starter')) {
+          planType = 'starter';
         }
       } else if (user.adminOfTenant || user.tenant) {
-        // サブスクリプション情報がない場合はテナント情報から判定
         const tenant = user.adminOfTenant || user.tenant;
         const maxUsers = tenant?.maxUsers || 10;
         if (maxUsers >= 50) {
           planType = 'enterprise';
         } else if (maxUsers >= 30) {
-          planType = 'business_plus';
-        } else if (maxUsers >= 10) {
           planType = 'business';
+        } else {
+          planType = 'starter';
         }
       }
 

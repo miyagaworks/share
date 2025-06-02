@@ -4,7 +4,21 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { PermanentPlanType, PLAN_TYPE_DISPLAY_NAMES } from '@/lib/corporateAccess';
+
+// 🔥 新しいプラン構成に合わせた定義
+export enum PermanentPlanType {
+  PERSONAL = 'personal',
+  STARTER = 'starter', // 10名まで（旧BUSINESS）
+  BUSINESS = 'business', // 30名まで（旧BUSINESS_PLUS）
+  ENTERPRISE = 'enterprise', // 50名まで
+}
+
+export const PLAN_TYPE_DISPLAY_NAMES: Record<PermanentPlanType, string> = {
+  [PermanentPlanType.PERSONAL]: '個人プラン',
+  [PermanentPlanType.STARTER]: 'スタータープラン (10名まで)',
+  [PermanentPlanType.BUSINESS]: 'ビジネスプラン (30名まで)',
+  [PermanentPlanType.ENTERPRISE]: 'エンタープライズプラン (50名まで)',
+};
 
 // プラン種別ごとの機能・制限を定義
 interface PlanFeatures {
@@ -20,7 +34,7 @@ const PLAN_FEATURES: Record<PermanentPlanType, PlanFeatures> = {
     allowedFeatures: ['個人プロフィール', 'SNSリンク管理', 'デザインカスタマイズ', 'QRコード生成'],
     restrictions: ['法人機能は利用できません'],
   },
-  [PermanentPlanType.BUSINESS]: {
+  [PermanentPlanType.STARTER]: {
     maxUsers: 10,
     allowedFeatures: [
       '法人プロフィール',
@@ -30,7 +44,7 @@ const PLAN_FEATURES: Record<PermanentPlanType, PlanFeatures> = {
     ],
     restrictions: ['最大10名までのユーザー登録に制限されます'],
   },
-  [PermanentPlanType.BUSINESS_PLUS]: {
+  [PermanentPlanType.BUSINESS]: {
     maxUsers: 30,
     allowedFeatures: [
       '法人プロフィール',
@@ -67,14 +81,16 @@ function determinePlanType(user: any): PermanentPlanType {
     // 具体的なプラン名から判定
     if (plan.includes('permanent_enterprise') || plan.includes('enterprise')) {
       return PermanentPlanType.ENTERPRISE;
-    } else if (
-      plan.includes('permanent_business_plus') ||
-      plan.includes('business_plus') ||
-      plan.includes('business-plus')
-    ) {
-      return PermanentPlanType.BUSINESS_PLUS;
     } else if (plan.includes('permanent_business') || plan.includes('business')) {
       return PermanentPlanType.BUSINESS;
+    } else if (
+      plan.includes('business_plus') ||
+      plan.includes('business-plus') ||
+      plan.includes('businessplus')
+    ) {
+      return PermanentPlanType.BUSINESS; // 🔥 旧business_plusはBUSINESSにマッピング
+    } else if (plan.includes('permanent_starter') || plan.includes('starter')) {
+      return PermanentPlanType.STARTER;
     } else if (plan.includes('permanent_personal') || plan.includes('personal')) {
       return PermanentPlanType.PERSONAL;
     }
@@ -89,9 +105,9 @@ function determinePlanType(user: any): PermanentPlanType {
         if (maxUsers >= 50) {
           return PermanentPlanType.ENTERPRISE;
         } else if (maxUsers >= 30) {
-          return PermanentPlanType.BUSINESS_PLUS;
-        } else {
           return PermanentPlanType.BUSINESS;
+        } else {
+          return PermanentPlanType.STARTER;
         }
       }
       // テナント情報がない場合は個人プラン
@@ -107,9 +123,9 @@ function determinePlanType(user: any): PermanentPlanType {
     if (maxUsers >= 50) {
       return PermanentPlanType.ENTERPRISE;
     } else if (maxUsers >= 30) {
-      return PermanentPlanType.BUSINESS_PLUS;
-    } else {
       return PermanentPlanType.BUSINESS;
+    } else {
+      return PermanentPlanType.STARTER; // 10名はSTARTER
     }
   }
 

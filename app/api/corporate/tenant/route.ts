@@ -7,30 +7,30 @@ import { prisma } from '@/lib/prisma';
 import { generateVirtualTenantData } from '@/lib/corporateAccess';
 // プランに応じたmaxUsersを取得する関数（修正版）
 function getMaxUsersByPlan(plan: string | null | undefined): number {
-  if (!plan) return 10; // デフォルト
+  if (!plan) return 10;
   const planLower = plan.toLowerCase();
-  // スタータープラン: 10ユーザー（最初に判定）
+
+  // エンタープライズプラン: 50ユーザー
+  if (planLower.includes('enterprise')) {
+    return 50;
+  }
+
+  // ビジネスプラン: 30ユーザー（旧business_plusも含む）
+  if (planLower.includes('business') && !planLower.includes('starter')) {
+    return 30;
+  }
+
+  // 🔥 旧プラン名の互換性対応
+  if (planLower.includes('business_plus') || planLower.includes('businessplus')) {
+    return 30;
+  }
+
+  // スタータープラン: 10ユーザー
   if (planLower.includes('starter') || planLower === 'business_legacy') {
     return 10;
   }
-  // エンタープライズプラン: 50ユーザー
-  if (
-    planLower.includes('enterprise') ||
-    planLower.includes('business_plus') ||
-    planLower.includes('businessplus')
-  ) {
-    return 50;
-  }
-  // ビジネスプラン: 30ユーザー（starterを除外した後に判定）
-  if (planLower.includes('business')) {
-    return 30;
-  }
-  // プロプラン（旧称の場合）
-  if (planLower.includes('pro')) {
-    return 30;
-  }
-  // その他: 10ユーザー
-  return 10;
+
+  return 10; // デフォルト
 }
 export async function GET() {
   try {

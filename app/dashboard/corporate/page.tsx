@@ -14,36 +14,31 @@ import { Building2, Users, Layout, Palette, Link, Settings, AlertTriangle } from
 const getPlanDisplayName = (planId: string | undefined): string => {
   if (!planId) return '';
   const plan = planId.toLowerCase();
-  if (plan.includes('starter')) {
-    return 'スタータープラン';
-  } else if (plan.includes('business') && !plan.includes('enterprise')) {
-    return 'ビジネスプラン';
-  } else if (plan.includes('enterprise')) {
+
+  if (plan.includes('enterprise')) {
     return 'エンタープライズプラン';
-  }
-  // 古いプランIDとの互換性
-  if (plan === 'business_legacy') {
-    return 'スタータープラン';
-  } else if (plan === 'business_plus' || plan === 'business-plus') {
+  } else if (plan.includes('business') && !plan.includes('starter')) {
     return 'ビジネスプラン';
+  } else if (plan.includes('business_plus') || plan.includes('businessplus')) {
+    return 'ビジネスプラン'; // 🔥 旧プラン名を新プラン名にマッピング
+  } else if (plan.includes('starter')) {
+    return 'スタータープラン';
+  } else if (plan.includes('personal')) {
+    return '個人プラン';
   }
-  // デフォルト
+
   return planId;
 };
-// プランIDからユーザー数を取得する関数
+
 const getMaxUsersByPlan = (planId: string | undefined): number => {
   if (!planId) return 0;
   const plan = planId.toLowerCase();
-  if (plan.includes('starter') || plan === 'business_legacy') {
-    return 10; // スタータープラン
-  } else if (plan.includes('business') && !plan.includes('enterprise')) {
-    return 30; // ビジネスプラン
-  } else if (plan.includes('enterprise')) {
-    return 50; // エンタープライズプラン
-  } else if (plan === 'business_plus' || plan === 'business-plus') {
-    return 30; // 旧ビジネスプラスは30名
-  }
-  // デフォルト
+
+  if (plan.includes('enterprise')) return 50;
+  if (plan.includes('business') && !plan.includes('starter')) return 30;
+  if (plan.includes('business_plus') || plan.includes('businessplus')) return 30; // 🔥 旧プラン対応
+  if (plan.includes('starter')) return 10;
+
   return 0;
 };
 // デバッグ情報のプロパティ型定義
