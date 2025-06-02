@@ -1,7 +1,7 @@
 // app/api/corporate/settings/route.ts (修正版)
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from '@/lib/utils/logger';
+import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
@@ -59,7 +59,7 @@ export async function GET() {
     // 永久利用権ユーザーの場合、実際のテナント情報または仮想テナントの設定情報を返す
     if (user.subscriptionStatus === 'permanent') {
       logger.debug('永久利用権ユーザー用設定情報の取得:', user.id);
-
+      
       // 実際のテナントがある場合はそれを使用
       const actualTenant = user.adminOfTenant || user.tenant;
       if (actualTenant) {
@@ -276,6 +276,22 @@ export async function PUT(req: Request) {
       });
 
       return updatedTenant;
+    });
+
+    // 🔥 永久利用権ユーザーの場合、キャッシュクリアフラグを追加
+    const requiresCacheClear =
+      user.subscriptionStatus === 'permanent' && type === 'general' && bodyName;
+
+    return NextResponse.json({
+      success: true,
+      tenant: {
+        ...result,
+        securitySettings: result.securitySettings,
+      },
+      message: '法人アカウント設定を更新しました',
+      updatedType: type,
+      isVirtual: false,
+      requiresCacheClear, // 🔥 キャッシュクリアフラグを追加
     });
 
     return NextResponse.json({

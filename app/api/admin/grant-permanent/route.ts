@@ -203,8 +203,8 @@ export async function POST(request: Request) {
           data: {
             userId,
             status: 'active',
-            plan: 'permanent',
-            priceId: 'price_permanent',
+            plan: `permanent_${planType}`, // 🔥 プラン種別を含めて保存
+            priceId: `price_permanent_${planType}`,
             subscriptionId: `permanent_${userId}`,
             currentPeriodStart: now,
             currentPeriodEnd: endDate,

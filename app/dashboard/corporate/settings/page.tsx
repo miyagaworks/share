@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { Input } from '@/components/ui/Input';
@@ -69,6 +70,7 @@ type SettingsTab = 'general' | 'security' | 'notifications' | 'billing' | 'advan
 export default function CorporateSettingsPage() {
   const { data: session } = useSession();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const [isLoading, setIsLoading] = useState(true);
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [subscriptionData, setSubscriptionData] = useState<SubscriptionData | null>(null);
@@ -210,6 +212,23 @@ export default function CorporateSettingsPage() {
         throw new Error(data.error || '設定の更新に失敗しました');
       }
       const responseData = await response.json();
+
+      // 🔥 キャッシュクリア処理を追加
+      if (responseData.requiresCacheClear) {
+        // 仮想テナントキャッシュをクリア
+        if (typeof window !== 'undefined') {
+          localStorage.removeItem('virtualTenantData');
+          sessionStorage.removeItem('corporateAccessState');
+        }
+        // React Queryのキャッシュも無効化
+        await queryClient.invalidateQueries({ queryKey: ['tenant'] });
+
+        // 少し待ってからページをリロード（確実にキャッシュがクリアされるように）
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
+      }
+
       // APIからisAdminが返ってくる場合はそれを使用
       if (responseData.isAdmin !== undefined) {
         setIsAdmin(responseData.isAdmin);
@@ -1082,6 +1101,14 @@ export default function CorporateSettingsPage() {
         <div>
           <h1 className="text-2xl font-bold">アカウント設定</h1>
           <p className="text-gray-500 mt-1">法人アカウントの設定を管理します</p>
+          {/* 🔥 永久利用権ユーザーの場合の表示を追加 */}
+          {session?.user && (
+            <div className="mt-2">
+              <span className="text-xs text-purple-600 bg-purple-50 px-2 py-1 rounded-full">
+                永久利用権ユーザー
+              </span>
+            </div>
+          )}
         </div>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
