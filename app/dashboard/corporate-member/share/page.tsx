@@ -1,4 +1,4 @@
-// app/dashboard/corporate-member/share/page.tsx
+// app/dashboard/corporate-member/share/page.tsx (修正版)
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -13,11 +13,13 @@ import {
   HiLightBulb,
   HiInformationCircle,
   HiExternalLink,
+  HiClipboardCopy,
 } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { QrCodeGenerator } from '@/components/corporate/QrCodeGenerator';
 import { MemberShareSettings } from '@/components/corporate/MemberShareSettings';
+
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -28,6 +30,7 @@ interface TenantData {
   textColor?: string | null;
   headerText?: string | null;
 }
+
 // 共有設定の型定義
 interface ShareSettings {
   isPublic: boolean;
@@ -35,6 +38,17 @@ interface ShareSettings {
   views: number;
   lastAccessed: string | null;
 }
+
+// QRコードページの型定義
+interface QrCodePage {
+  id: string;
+  slug: string;
+  primaryColor: string;
+  textColor: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
 export default function CorporateMemberSharePage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -43,10 +57,14 @@ export default function CorporateMemberSharePage() {
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [hasProfile, setHasProfile] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  // QRコード用のカスタムURLスラグ管理
+
+  // QRコード関連の状態
+  const [qrCodePages, setQrCodePages] = useState<QrCodePage[]>([]);
+  const [selectedQrCode, setSelectedQrCode] = useState<QrCodePage | null>(null);
   const [qrCodeSlug, setQrCodeSlug] = useState('');
   const [isCheckingQrSlug, setIsCheckingQrSlug] = useState(false);
   const [isQrSlugAvailable, setIsQrSlugAvailable] = useState(false);
+
   // データ取得
   useEffect(() => {
     if (status === 'loading') return;
@@ -54,9 +72,11 @@ export default function CorporateMemberSharePage() {
       router.push('/auth/signin');
       return;
     }
+
     const fetchData = async () => {
       try {
         setIsLoading(true);
+
         // 共有設定情報を取得
         const response = await fetch('/api/corporate-member/share');
         if (!response.ok) {
@@ -67,19 +87,23 @@ export default function CorporateMemberSharePage() {
         setTenantData(data.tenant);
         setHasProfile(data.hasProfile);
         setError(null);
-        // 既存のQRコードがあれば取得
+
+        // QRコードページ一覧を取得
         try {
           const qrResponse = await fetch('/api/qrcode');
           if (qrResponse.ok) {
             const qrData = await qrResponse.json();
+            setQrCodePages(qrData.qrCodes || []);
             if (qrData.qrCodes && qrData.qrCodes.length > 0) {
-              // 最新のQRコードのスラグを使用
-              setQrCodeSlug(qrData.qrCodes[0].slug);
+              const latestQrCode = qrData.qrCodes[0];
+              setSelectedQrCode(latestQrCode);
+              setQrCodeSlug(latestQrCode.slug);
               setIsQrSlugAvailable(true);
             }
           }
-        } catch {
-          // エラーがあっても処理は続行
+        } catch (qrError) {
+          console.warn('QRコード情報の取得に失敗しました:', qrError);
+          // QRコード取得失敗は致命的でないため、処理を続行
         }
       } catch {
         setError('データの取得に失敗しました');
@@ -87,8 +111,10 @@ export default function CorporateMemberSharePage() {
         setIsLoading(false);
       }
     };
+
     fetchData();
   }, [session, status, router]);
+
   // スラグの利用可能性をチェック
   const checkQrSlugAvailability = async (slug: string) => {
     if (!slug || slug.length < 3) {
@@ -107,6 +133,7 @@ export default function CorporateMemberSharePage() {
       setIsCheckingQrSlug(false);
     }
   };
+
   // QRコードスラグ変更ハンドラー
   const handleQrCodeSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
@@ -117,6 +144,7 @@ export default function CorporateMemberSharePage() {
       setIsQrSlugAvailable(false);
     }
   };
+
   // 共有設定保存処理
   const handleSaveShareSettings = async (values: { isPublic?: boolean; slug?: string | null }) => {
     try {
@@ -129,29 +157,37 @@ export default function CorporateMemberSharePage() {
       });
       if (!response.ok) {
         const data = await response.json();
-        // エラーをスローする代わりに、メッセージをカスタマイズして再スロー
         throw new Error(data.error || '共有設定の更新に失敗しました');
       }
       const updatedData = await response.json();
       setShareSettings(updatedData.shareSettings);
       setHasProfile(true);
       toast.success('共有設定を更新しました');
-      return updatedData; // 成功時はデータを返す
+      return updatedData;
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '共有設定の更新に失敗しました');
-      // エラーを再スローして、子コンポーネントでもキャッチできるようにする
-      throw error;
+      throw err;
     }
   };
+
   // プロフィールURLの生成
   const getProfileUrl = () => {
     const baseUrl = typeof window !== 'undefined' ? window.location.origin : '';
     return `${baseUrl}/${shareSettings?.slug || ''}`;
   };
+
   // ベースURLの取得
   const getBaseUrl = () => {
     return typeof window !== 'undefined' ? window.location.origin : '';
   };
+
+  // QRコードページURLの生成
+  const getQrCodePageUrl = () => {
+    if (!selectedQrCode) return '';
+    const baseUrl = getBaseUrl();
+    return `${baseUrl}/qr/${selectedQrCode.slug}`;
+  };
+
   // URLをクリップボードにコピー
   const copyUrlToClipboard = () => {
     navigator.clipboard
@@ -159,6 +195,24 @@ export default function CorporateMemberSharePage() {
       .then(() => toast.success('URLをコピーしました'))
       .catch(() => toast.error('URLのコピーに失敗しました'));
   };
+
+  // QRコードページURLをコピー
+  const copyQrCodePageUrl = () => {
+    const url = getQrCodePageUrl();
+    if (url) {
+      navigator.clipboard.writeText(url);
+      toast.success('QRコードページURLをコピーしました');
+    }
+  };
+
+  // QRコードページを開く
+  const openQrCodePage = () => {
+    const url = getQrCodePageUrl();
+    if (url) {
+      window.open(url, '_blank');
+    }
+  };
+
   return (
     <CorporateMemberGuard>
       <div className="space-y-6">
@@ -169,6 +223,7 @@ export default function CorporateMemberSharePage() {
             <p className="text-muted-foreground">プロフィールの公開設定とQRコード生成</p>
           </div>
         </div>
+
         {isLoading ? (
           <div className="flex flex-col items-center justify-center min-h-[400px]">
             <Spinner size="lg" />
@@ -205,6 +260,7 @@ export default function CorporateMemberSharePage() {
                     onSave={handleSaveShareSettings}
                   />
                 )}
+
                 {/* URLコピーボタンを追加 - 保存ボタンの下部 */}
                 {hasProfile && shareSettings?.slug && (
                   <div className="mt-8 border-t border-gray-200 pt-6">
@@ -225,6 +281,7 @@ export default function CorporateMemberSharePage() {
                   </div>
                 )}
               </div>
+
               {/* 右: QRコードジェネレーター */}
               <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
                 <h2 className="text-lg font-semibold mb-4 flex items-center">
@@ -234,6 +291,7 @@ export default function CorporateMemberSharePage() {
                 <p className="text-sm text-gray-500 mb-6">
                   プロフィールのQRコードを生成して共有できます。
                 </p>
+
                 {hasProfile && shareSettings?.slug ? (
                   <>
                     {/* QRコードカスタムURL設定フォーム（1つのみ） */}
@@ -269,6 +327,7 @@ export default function CorporateMemberSharePage() {
                         <p className="text-xs text-gray-500 mt-1">3文字以上入力してください</p>
                       )}
                     </div>
+
                     {/* QRコードデザイナーボタン */}
                     <div className="mb-6">
                       <Link
@@ -281,13 +340,60 @@ export default function CorporateMemberSharePage() {
                         <HiExternalLink className="ml-2 h-4 w-4 text-white" />
                       </Link>
                     </div>
+
+                    {/* QRコードページ管理セクション */}
+                    {selectedQrCode ? (
+                      <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+                        <h3 className="text-sm font-medium text-green-800 mb-2">
+                          QRコードページが作成されています
+                        </h3>
+                        <p className="text-sm text-green-600 mb-3">
+                          作成日: {new Date(selectedQrCode.createdAt).toLocaleDateString('ja-JP')}
+                        </p>
+                        <div className="bg-white p-3 rounded-md mb-3 break-all border border-green-200">
+                          <p className="font-mono text-sm">{getQrCodePageUrl()}</p>
+                        </div>
+                        <div className="flex gap-2">
+                          <Button
+                            onClick={copyQrCodePageUrl}
+                            variant="corporate"
+                            size="sm"
+                            className="flex-1 flex items-center justify-center gap-2"
+                          >
+                            <HiClipboardCopy className="h-4 w-4" />
+                            コピー
+                          </Button>
+                          <Button
+                            onClick={openQrCodePage}
+                            variant="corporate"
+                            size="sm"
+                            className="flex-1 flex items-center justify-center gap-2"
+                          >
+                            <HiExternalLink className="h-4 w-4" />
+                            開く
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <h3 className="text-sm font-medium text-yellow-800 mb-2">
+                          QRコードページを作成してください
+                        </h3>
+                        <p className="text-sm text-yellow-600">
+                          上記の「QRコードデザイナーを使用する」ボタンからQRコードページを作成すると、ここでQRコードページのURLを管理できます。
+                        </p>
+                      </div>
+                    )}
+
                     {/* 区切り線 */}
                     <div className="border-t border-gray-200 my-6"></div>
+
                     {/* QRコードのみダウンロードのタイトル */}
                     <h2 className="text-lg font-semibold mb-4 flex items-center">
                       <HiQrcode className="mr-2 h-5 w-5 text-gray-600" />
                       QRコードのみダウンロード
                     </h2>
+
                     {/* QrCodeGenerator - URLスラグ入力部分を非表示 */}
                     <QrCodeGenerator
                       profileUrl={getProfileUrl()}
@@ -298,7 +404,6 @@ export default function CorporateMemberSharePage() {
                         setQrCodeSlug(slug);
                         checkQrSlugAvailability(slug);
                       }}
-                      // onGenerateQrCode={handleGenerateQrCode}
                       hideSlugInput={true}
                       hideGenerateButton={true}
                     />
@@ -324,6 +429,7 @@ export default function CorporateMemberSharePage() {
                 )}
               </div>
             </div>
+
             {/* 共有のヒント */}
             <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
               <h2 className="text-lg font-semibold mb-4 flex items-center text-[#1E3A8A]">
