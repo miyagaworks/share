@@ -410,7 +410,7 @@ export default function CorporateMemberSharePage() {
                   </>
                 ) : (
                   <div className="bg-yellow-50 border border-yellow-100 rounded-md p-6 text-center">
-                    <p className="text-yellow-700 mb-4">
+                    <p className="text-yellow-700 mb-4 text-justify">
                       プロフィールが作成されていないか、URLが設定されていません。
                       まず、「共有設定」セクションでURLを設定してください。
                     </p>
