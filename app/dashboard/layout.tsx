@@ -236,18 +236,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     // ダッシュボード情報の読み込み中は何もしない
     if (!dashboardInfo || isLoading) return;
 
-    // 🚀 新機能: ダッシュボード情報APIからのリダイレクト指示をチェック
-    if (dashboardInfo.navigation?.shouldRedirect && dashboardInfo.navigation?.redirectPath) {
-      const targetPath = dashboardInfo.navigation.redirectPath;
-      if (pathname !== targetPath) {
-        console.log('ダッシュボード情報APIからリダイレクト指示:', targetPath);
-        setIsRedirecting(true);
-        setRedirectReason(`${targetPath} にリダイレクト中`);
-        window.location.href = targetPath;
-        return;
-      }
-    }
-
     // アクセス権チェックによるリダイレクト
     if (!accessCheck.hasAccess && accessCheck.redirectTo) {
       if (pathname !== accessCheck.redirectTo) {
