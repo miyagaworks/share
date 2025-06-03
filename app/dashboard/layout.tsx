@@ -1,4 +1,4 @@
-// app/dashboard/layout.tsx (リダイレクト強化版)
+// app/dashboard/layout.tsx (永久利用権個人プラン無限ループ修正版)
 'use client';
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -52,7 +52,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
   const router = useRouter();
   const { data: dashboardInfo, isLoading, error } = useDashboardInfo();
 
-  // 🚀 新機能: リダイレクト状態管理
+  // リダイレクト状態管理
   const [isRedirecting, setIsRedirecting] = useState(false);
   const [redirectReason, setRedirectReason] = useState<string>('');
 
@@ -66,10 +66,46 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     }
   }, [pathname]);
 
-  // 🔥 修正: 強化されたアクセス権チェック
+  // 🔥 修正: 永久利用権個人プランを最優先でチェックするアクセス権判定
   const accessCheck = useMemo(() => {
     if (!dashboardInfo || !pathname) return { hasAccess: true };
     const { permissions } = dashboardInfo;
+
+    // 🚀 最優先: 永久利用権個人プランユーザーの処理
+    if (permissions.isPermanentUser && permissions.permanentPlanType === 'personal') {
+      console.log('🌟 永久利用権個人プランユーザーの処理開始');
+
+      // 法人関連ページへのアクセスは拒否
+      if (pathname.startsWith('/dashboard/corporate')) {
+        return {
+          hasAccess: false,
+          redirectTo: '/dashboard',
+          reason: '永久利用権個人プランユーザーは法人機能にアクセスできません',
+        };
+      }
+
+      // 個人機能ページと基本ダッシュボードは許可
+      const allowedPersonalPages = [
+        '/dashboard',
+        '/dashboard/profile',
+        '/dashboard/links',
+        '/dashboard/design',
+        '/dashboard/share',
+        '/dashboard/subscription',
+      ];
+
+      if (allowedPersonalPages.some((page) => pathname.startsWith(page))) {
+        console.log('✅ 永久利用権個人プランユーザー: アクセス許可', pathname);
+        return { hasAccess: true };
+      }
+
+      // その他のページは個人ダッシュボードにリダイレクト
+      return {
+        hasAccess: false,
+        redirectTo: '/dashboard',
+        reason: '永久利用権個人プランユーザーは個人機能のみ利用可能',
+      };
+    }
 
     // 1. 管理者ページのチェック
     if (pathname.startsWith('/dashboard/admin')) {
@@ -110,13 +146,8 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       return { hasAccess: true };
     }
 
-    // 🚀 新機能: 4. 個人ダッシュボードページでの法人ユーザーリダイレクト
+    // 4. 個人ダッシュボードページでの法人ユーザーリダイレクト
     if (pathname === '/dashboard') {
-      // 🔥 最優先: 永久利用権個人プランユーザーは個人ダッシュボードを使用
-      if (permissions.isPermanentUser && permissions.permanentPlanType === 'personal') {
-        return { hasAccess: true };
-      }
-
       // 法人管理者は法人ダッシュボードにリダイレクト
       if (permissions.isAdmin && permissions.hasCorpAccess && !permissions.isSuperAdmin) {
         return {
@@ -149,7 +180,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       }
     }
 
-    // 🚀 新機能: 5. 個人機能ページでの法人ユーザーリダイレクト
+    // 5. 個人機能ページでの法人ユーザーリダイレクト
     const personalPages = [
       '/dashboard/profile',
       '/dashboard/links',
@@ -157,11 +188,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       '/dashboard/share',
     ];
     if (personalPages.some((page) => pathname.startsWith(page))) {
-      // 🔥 永久利用権個人プランユーザーは個人機能ページを使用可能
-      if (permissions.isPermanentUser && permissions.permanentPlanType === 'personal') {
-        return { hasAccess: true };
-      }
-      
       // 法人管理者は対応する法人ページにリダイレクト
       if (permissions.isAdmin && permissions.hasCorpAccess) {
         const corporatePageMap: Record<string, string> = {
@@ -202,10 +228,16 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     return { hasAccess: true };
   }, [dashboardInfo, pathname]);
 
-  // 🔥 修正: テーマクラスの決定（シンプル化）
+  // テーマクラスの決定
   const themeClass = useMemo(() => {
     if (!dashboardInfo) return '';
     const { permissions } = dashboardInfo;
+
+    // 永久利用権個人プランは個人テーマを使用
+    if (permissions.isPermanentUser && permissions.permanentPlanType === 'personal') {
+      return '';
+    }
+
     const isCorporateRelated =
       pathname?.startsWith('/dashboard/corporate') ||
       pathname?.startsWith('/dashboard/corporate-member') ||
@@ -240,7 +272,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     if (!accessCheck.hasAccess && accessCheck.redirectTo) {
       if (pathname !== accessCheck.redirectTo) {
         console.log(
-          'アクセス権チェックによるリダイレクト:',
+          '🔄 アクセス権チェックによるリダイレクト:',
           accessCheck.redirectTo,
           '理由:',
           accessCheck.reason,
