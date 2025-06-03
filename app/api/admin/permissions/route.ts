@@ -9,7 +9,30 @@ import { addDays } from 'date-fns';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
-// 🔥 新規追加: GET - トライアル期間中のユーザー一覧を取得
+// 🔥 統一されたトライアル期間定数（7日間）
+const TRIAL_PERIOD_DAYS = 7;
+
+// 🔥 トライアル期間中またはpermanentユーザーかどうかを判定する統一関数
+function isTrialOrPermanentUser(
+  user: {
+    trialEndsAt: Date | null;
+    subscriptionStatus: string | null;
+  },
+  currentTime: Date = new Date(),
+): boolean {
+  // 永久利用権ユーザーは対象
+  if (user.subscriptionStatus === 'permanent') {
+    return true;
+  }
+
+  // トライアル期間が設定されていて、まだ期限内の場合は対象
+  if (user.trialEndsAt && new Date(user.trialEndsAt) > currentTime) {
+    return true;
+  }
+
+  return false;
+}
+
 export async function GET() {
   try {
     const session = await auth();
@@ -25,10 +48,14 @@ export async function GET() {
 
     const now = new Date();
 
-    // 🔥 修正: トライアル期間中のユーザー + 永久利用権ユーザーを取得
+    // 🔥 シンプルな条件でトライアル期間中 + 永久利用権ユーザーを取得
     const users = await prisma.user.findMany({
       where: {
         OR: [
+          // 永久利用権ユーザー
+          {
+            subscriptionStatus: 'permanent',
+          },
           // トライアル期間中のユーザー
           {
             AND: [
@@ -40,25 +67,6 @@ export async function GET() {
               {
                 subscriptionStatus: {
                   not: 'permanent', // 永久利用権ではない
-                },
-              },
-            ],
-          },
-          // 永久利用権ユーザー
-          {
-            subscriptionStatus: 'permanent',
-          },
-          // 🔥 追加: 永久利用権を解除されたが、トライアル期間が残っているユーザー
-          {
-            AND: [
-              {
-                subscriptionStatus: {
-                  not: 'permanent', // 永久利用権ではない
-                },
-              },
-              {
-                trialEndsAt: {
-                  gt: now, // トライアル期間がまだ残っている
                 },
               },
             ],
@@ -166,10 +174,8 @@ export async function POST(request: Request) {
     const now = new Date();
 
     if (isPermanent) {
-      // 🔥 永久利用権付与時: トライアル期間中かチェック
-      const isTrialActive = user.trialEndsAt && new Date(user.trialEndsAt) > now;
-
-      if (!isTrialActive) {
+      // 🔥 永久利用権付与時: 統一判定関数を使用
+      if (!isTrialOrPermanentUser(user, now)) {
         return NextResponse.json(
           {
             error: 'トライアル期間中のユーザーのみに永久利用権を付与できます',
@@ -242,19 +248,16 @@ export async function POST(request: Request) {
         logger.info('永久利用権付与（管理画面）', { userId, email: user.email });
         return { user: updatedUser, action: 'granted' };
       } else {
-        // 🔥 永久利用権解除
-        // 🔥 修正: 解除前のユーザー情報を取得（永久利用権付与前のtrialEndsAtを確認）
-
-        // 永久利用権ユーザーの場合、元のトライアル期間を再計算する必要がある
-        // ユーザーの作成日から通常のトライアル期間（14日）を算出
+        // 🔥 永久利用権解除（修正版）
+        // 🔥 統一されたトライアル期間（7日間）でtrialEndsAtを計算
         const userCreatedAt = new Date(user.createdAt);
-        const originalTrialEnd = addDays(userCreatedAt, 14); // 通常のトライアル期間は14日
+        const originalTrialEnd = addDays(userCreatedAt, TRIAL_PERIOD_DAYS); // 🔥 7日間に統一
         const isTrialExpired = originalTrialEnd < now;
 
         let newTrialEndsAt = null;
         if (isTrialExpired) {
           // 元のトライアル期間が過ぎている場合は、猶予期間（7日）を設定
-          newTrialEndsAt = addDays(now, 7);
+          newTrialEndsAt = addDays(now, TRIAL_PERIOD_DAYS);
         } else {
           // 元のトライアル期間がまだ残っている場合は、元のトライアル期間を復元
           newTrialEndsAt = originalTrialEnd;
@@ -312,7 +315,7 @@ export async function POST(request: Request) {
         const updatedUser = await tx.user.update({
           where: { id: userId },
           data: {
-            subscriptionStatus: null,
+            subscriptionStatus: 'trialing', // 🔥 trialingステータスに戻す
             trialEndsAt: newTrialEndsAt,
             corporateRole: null,
             departmentId: null,
@@ -362,8 +365,7 @@ export async function POST(request: Request) {
     if (!isPermanent) {
       responseData.isTrialExpired = result.isTrialExpired;
       if (result.isTrialExpired) {
-        responseData.warning =
-          '元のトライアル期間が既に終了していたため、7日間の猶予期間を設定しました。';
+        responseData.warning = `元のトライアル期間が既に終了していたため、${TRIAL_PERIOD_DAYS}日間の猶予期間を設定しました。`;
       }
     }
 
