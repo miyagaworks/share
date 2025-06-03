@@ -332,7 +332,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       userType: 'permanent',
       isAdmin: !isPermanentPersonal, // 個人プラン以外は管理者権限
       isSuperAdmin: false,
-      hasCorpAccess: !isPermanentPersonal, // 個人プラン以外は法人アクセス権
+      hasCorpAccess: !isPermanentPersonal, // 🔥 修正: 個人プランは法人アクセス権なし
       isCorpAdmin: !isPermanentPersonal, // 個人プラン以外は法人管理者権限
       isPermanentUser: true,
       permanentPlanType,
