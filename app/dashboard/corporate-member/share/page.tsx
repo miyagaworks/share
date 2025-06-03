@@ -286,7 +286,7 @@ export default function CorporateMemberSharePage() {
               <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
                 <h2 className="text-lg font-semibold mb-4 flex items-center">
                   <HiQrcode className="mr-2 h-5 w-5 text-gray-600" />
-                  QRコード生成
+                  公開QRコード生成
                 </h2>
                 <p className="text-sm text-gray-500 mb-6">
                   プロフィールのQRコードを生成して共有できます。
@@ -379,7 +379,7 @@ export default function CorporateMemberSharePage() {
                         <h3 className="text-sm font-medium text-yellow-800 mb-2">
                           QRコードページを作成してください
                         </h3>
-                        <p className="text-sm text-yellow-600">
+                        <p className="text-sm text-yellow-600 text-justify">
                           上記の「QRコードデザイナーを使用する」ボタンからQRコードページを作成すると、ここでQRコードページのURLを管理できます。
                         </p>
                       </div>

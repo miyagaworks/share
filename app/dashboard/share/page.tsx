@@ -228,7 +228,7 @@ function SharePageContent() {
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex items-center mb-4">
           <HiQrcode className="h-5 w-5 text-gray-700 mr-2" />
-          <h2 className="text-xl font-semibold">QRコード生成</h2>
+          <h2 className="text-xl font-semibold">公開QRコード生成</h2>
         </div>
         <p className="text-sm text-muted-foreground mb-4 text-justify">
           プロフィールのQRコードを生成して共有できます。
@@ -286,7 +286,7 @@ function SharePageContent() {
                 <h3 className="text-sm font-medium text-yellow-800 mb-2">
                   QRコードページを作成してください
                 </h3>
-                <p className="text-sm text-yellow-600">
+                <p className="text-sm text-yellow-600 text-justify">
                   上記の「QRコードデザイナーを使用する」ボタンからQRコードページを作成すると、ここでQRコードページのURLを管理できます。
                 </p>
               </div>
