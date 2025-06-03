@@ -1,4 +1,4 @@
-// auth.ts (Google修正版)
+// auth.ts (永久利用権判定統一修正版)
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -27,14 +27,54 @@ declare module 'next-auth/jwt' {
   }
 }
 
+// 🔥 永久利用権プラン種別を判定する統一関数（Dashboard APIと同じロジック）
+function determinePermanentPlanType(user: any): string {
+  // サブスクリプション情報から判定
+  if (user.subscription?.plan) {
+    const plan = user.subscription.plan.toLowerCase();
+
+    if (plan.includes('permanent_enterprise') || plan.includes('enterprise')) {
+      return 'enterprise';
+    } else if (plan.includes('permanent_business') || plan.includes('business')) {
+      return 'business';
+    } else if (
+      plan.includes('business_plus') ||
+      plan.includes('business-plus') ||
+      plan.includes('businessplus')
+    ) {
+      return 'business'; // 旧business_plusはbusinessにマッピング
+    } else if (plan.includes('permanent_starter') || plan.includes('starter')) {
+      return 'starter';
+    } else if (plan.includes('permanent_personal') || plan.includes('personal')) {
+      return 'personal';
+    }
+  }
+
+  // テナント情報から判定
+  if (user.adminOfTenant || user.tenant) {
+    const tenant = user.adminOfTenant || user.tenant;
+    const maxUsers = tenant?.maxUsers || 10;
+
+    if (maxUsers >= 50) {
+      return 'enterprise';
+    } else if (maxUsers >= 30) {
+      return 'business';
+    } else {
+      return 'starter';
+    }
+  }
+
+  return 'personal';
+}
+
 // NextAuth設定
 export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
-    strategy: 'jwt', // 🔥 重要: JWTを使用
+    strategy: 'jwt',
     maxAge: process.env.SESSION_TIMEOUT_HOURS
       ? parseInt(process.env.SESSION_TIMEOUT_HOURS) * 60 * 60
-      : 8 * 60 * 60, // デフォルト8時間
+      : 8 * 60 * 60,
   },
   cookies: {
     sessionToken: {
@@ -63,7 +103,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const email = user.email.toLowerCase();
           console.log('📧 Processing Google login for:', email);
 
-          // 既存ユーザーを検索
           const existingUser = await prisma.user.findUnique({
             where: { email },
             select: {
@@ -84,19 +123,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
           }
 
-          // 管理者ユーザーチェック
           if (email === 'admin@sns-share.com') {
             console.log('👑 Admin user detected');
             return true;
           }
 
-          // 開発環境での全ユーザー許可モード
           if (process.env.NODE_ENV === 'development' && process.env.ALLOW_ALL_USERS === 'true') {
             console.log('🌍 All users allowed (development mode)');
             return true;
           }
 
-          // 🔥 新規ユーザーの作成を試行
           console.log('🆕 Creating new user for Google login');
           try {
             const newUser = await prisma.user.create({
@@ -104,8 +140,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 email: email,
                 name: user.name || profile?.name || 'Google User',
                 image: user.image || profile?.picture || null,
-                emailVerified: new Date(), // Googleユーザーは認証済み
-                subscriptionStatus: 'trial', // デフォルトはトライアル
+                emailVerified: new Date(),
+                subscriptionStatus: 'trial',
               },
             });
 
@@ -117,7 +153,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           } catch (createError) {
             console.error('❌ Failed to create new user:', createError);
 
-            // 招待チェック（フォールバック）
             const invitedUser = await prisma.passwordResetToken.findFirst({
               where: {
                 user: {
@@ -169,15 +204,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 select: {
                   id: true,
                   accountStatus: true,
+                  maxUsers: true, // 🔥 追加
                 },
               },
               tenant: {
                 select: {
                   id: true,
                   accountStatus: true,
+                  maxUsers: true, // 🔥 追加
                 },
               },
-              // 🔥 永久利用権のプラン種別判定のためサブスクリプション情報を追加
               subscription: {
                 select: {
                   plan: true,
@@ -189,8 +225,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (dbUser) {
             const userEmail = dbUser.email.toLowerCase();
-
-            // 🔥 subscriptionStatus をトークンに追加
             token.subscriptionStatus = dbUser.subscriptionStatus;
 
             // ロール判定
@@ -199,37 +233,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               token.isAdmin = true;
               token.tenantId = `admin-tenant-${token.sub}`;
             } else if (dbUser.subscriptionStatus === 'permanent') {
-              // 🔥 永久利用権ユーザーのプラン種別を判定
-              let permanentPlanType = 'personal'; // デフォルト
+              // 🔥 修正: 永久利用権ユーザーのプラン種別を統一ロジックで判定
+              const permanentPlanType = determinePermanentPlanType(dbUser);
 
-              // サブスクリプション情報から判定
-              if (dbUser.subscription?.plan) {
-                const plan = dbUser.subscription.plan.toLowerCase();
-                if (plan.includes('permanent_personal') || plan.includes('personal')) {
-                  permanentPlanType = 'personal';
-                } else if (
-                  plan.includes('permanent_starter') ||
-                  plan.includes('starter') ||
-                  plan.includes('permanent_business') ||
-                  plan.includes('business') ||
-                  plan.includes('permanent_enterprise') ||
-                  plan.includes('enterprise')
-                ) {
-                  permanentPlanType = 'corporate';
-                }
-              }
+              console.log('🔥 永久利用権ユーザー判定:', {
+                userId: token.sub,
+                email: userEmail,
+                permanentPlanType,
+                subscription: dbUser.subscription?.plan,
+                hasAdminTenant: !!dbUser.adminOfTenant,
+                hasTenant: !!dbUser.tenant,
+              });
 
-              // テナント情報からも判定（サブスクリプション情報がない場合）
-              if (permanentPlanType === 'personal' && (dbUser.adminOfTenant || dbUser.tenant)) {
-                permanentPlanType = 'corporate';
-              }
-
-              // 🔥 プラン種別に応じてロールを設定
+              // 🔥 修正: プラン種別に応じて正確にロールを設定
               if (permanentPlanType === 'personal') {
                 token.role = 'permanent-personal';
                 token.isAdmin = false;
                 token.tenantId = null;
               } else {
+                // starter, business, enterprise は法人プラン
                 token.role = 'permanent-admin';
                 token.isAdmin = true;
                 token.tenantId = `virtual-tenant-${token.sub}`;
