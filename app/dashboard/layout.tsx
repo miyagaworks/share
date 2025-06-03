@@ -112,14 +112,20 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
     // 🚀 新機能: 4. 個人ダッシュボードページでの法人ユーザーリダイレクト
     if (pathname === '/dashboard') {
+      // 🔥 最優先: 永久利用権個人プランユーザーは個人ダッシュボードを使用
+      if (permissions.isPermanentUser && permissions.permanentPlanType === 'personal') {
+        return { hasAccess: true };
+      }
+
       // 法人管理者は法人ダッシュボードにリダイレクト
-      if (permissions.isAdmin && permissions.hasCorpAccess) {
+      if (permissions.isAdmin && permissions.hasCorpAccess && !permissions.isSuperAdmin) {
         return {
           hasAccess: false,
           redirectTo: '/dashboard/corporate',
           reason: '法人管理者は法人ダッシュボードを使用',
         };
       }
+
       // 法人招待メンバーは法人メンバーページにリダイレクト
       if (permissions.userRole === 'member' && permissions.hasCorpAccess) {
         return {
@@ -128,17 +134,18 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
           reason: '法人メンバーは専用ページを使用',
         };
       }
-      // 🔥 修正: 永久利用権ユーザーのプラン種別を考慮したリダイレクト
-      if (permissions.isPermanentUser) {
-        // 永久利用権の法人プランユーザーのみ法人ダッシュボードにリダイレクト
-        if (permissions.permanentPlanType !== 'personal' && permissions.hasCorpAccess) {
-          return {
-            hasAccess: false,
-            redirectTo: '/dashboard/corporate',
-            reason: '永久利用権法人プランユーザーは法人ダッシュボードを使用',
-          };
-        }
-        // 永久利用権個人プランユーザーは個人ダッシュボードのまま
+
+      // 🔥 永久利用権法人プランユーザーは法人ダッシュボードにリダイレクト
+      if (
+        permissions.isPermanentUser &&
+        permissions.permanentPlanType !== 'personal' &&
+        permissions.hasCorpAccess
+      ) {
+        return {
+          hasAccess: false,
+          redirectTo: '/dashboard/corporate',
+          reason: '永久利用権法人プランユーザーは法人ダッシュボードを使用',
+        };
       }
     }
 
