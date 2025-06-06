@@ -35,13 +35,13 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
         <td style="padding: 12px 8px; border-bottom: 1px solid #e5e7eb; font-size: 14px; color: #374151;">${gracePeriodEndDate}</td>
         <td style="padding: 12px 8px; border-bottom: 1px solid #e5e7eb; text-align: center;">
           <a href="${deleteUrl}" 
-             style="background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%); 
-                    color: white !important; 
+             style="background-color: #dc2626; 
+                    color: white; 
                     padding: 8px 12px; 
                     text-decoration: none; 
-                    border-radius: 6px; 
+                    border-radius: 4px; 
                     font-size: 12px; 
-                    font-weight: 600;
+                    font-weight: bold;
                     display: inline-block;">
             削除する
           </a>
@@ -67,14 +67,14 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
               
               <!-- ヘッダー -->
               <tr>
-                <td style="background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%); padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                <td style="background-color: #3B82F6; padding: 40px 20px; text-align: center;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="center">
-                        <div style="background-color: rgba(255, 255, 255, 0.1); display: inline-block; padding: 12px 24px; border-radius: 50px; margin-bottom: 20px;">
-                          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 2px;">Share</h1>
+                        <div style="background-color: #ffffff; display: inline-block; padding: 12px 24px; border-radius: 8px; margin-bottom: 20px;">
+                          <h1 style="color: #3B82F6; margin: 0; font-size: 28px; font-weight: bold;">Share</h1>
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.9); margin: 0; font-size: 16px; font-weight: 300;">管理者通知システム</p>
+                        <p style="color: #ffffff; margin: 0; font-size: 16px;">管理者通知システム</p>
                       </td>
                     </tr>
                   </table>
@@ -141,12 +141,12 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
                         <div style="overflow-x: auto;">
                           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                             <!-- テーブルヘッダー -->
-                            <tr style="background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%);">
-                              <td style="padding: 16px 12px; color: white; font-weight: 600; font-size: 14px;">ユーザー名</td>
-                              <td style="padding: 16px 12px; color: white; font-weight: 600; font-size: 14px;">メールアドレス</td>
-                              <td style="padding: 16px 12px; color: white; font-weight: 600; font-size: 14px;">トライアル終了日</td>
-                              <td style="padding: 16px 12px; color: white; font-weight: 600; font-size: 14px;">猶予期間終了日</td>
-                              <td style="padding: 16px 12px; color: white; font-weight: 600; font-size: 14px; text-align: center;">操作</td>
+                            <tr style="background-color: #3B82F6;">
+                              <td style="padding: 16px 12px; color: white; font-weight: bold; font-size: 14px;">ユーザー名</td>
+                              <td style="padding: 16px 12px; color: white; font-weight: bold; font-size: 14px;">メールアドレス</td>
+                              <td style="padding: 16px 12px; color: white; font-weight: bold; font-size: 14px;">トライアル終了日</td>
+                              <td style="padding: 16px 12px; color: white; font-weight: bold; font-size: 14px;">猶予期間終了日</td>
+                              <td style="padding: 16px 12px; color: white; font-weight: bold; font-size: 14px; text-align: center;">操作</td>
                             </tr>
                             <!-- ユーザーデータ -->
                             ${userListHTML}
@@ -169,18 +169,18 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
                       <td align="center" style="padding: 40px 0;">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td>
+                            <td style="background-color: #3B82F6; border-radius: 8px;">
                               <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/dashboard/admin/users" 
-                                 style="background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%); 
-                                        color: white !important; 
+                                 style="background-color: #3B82F6; 
+                                        color: #ffffff; 
                                         text-decoration: none; 
                                         padding: 16px 32px; 
-                                        border-radius: 50px; 
-                                        font-weight: 600; 
+                                        border-radius: 8px; 
+                                        font-weight: bold; 
                                         font-size: 16px; 
-                                        display: inline-block;
+                                        display: block;
                                         text-align: center;
-                                        min-width: 200px;
+                                        width: 280px;
                                         box-sizing: border-box;">
                                 🛠️ 管理者ダッシュボードを開く
                               </a>

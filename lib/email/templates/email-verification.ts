@@ -23,14 +23,14 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
               
               <!-- ヘッダー -->
               <tr>
-                <td style="background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%); padding: 40px 20px; text-align: center; border-radius: 8px 8px 0 0;">
+                <td style="background-color: #3B82F6; padding: 40px 20px; text-align: center;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="center">
-                        <div style="background-color: rgba(255, 255, 255, 0.1); display: inline-block; padding: 12px 24px; border-radius: 50px; margin-bottom: 20px;">
-                          <h1 style="color: #ffffff; margin: 0; font-size: 28px; font-weight: 700; letter-spacing: 2px;">Share</h1>
+                        <div style="background-color: #ffffff; display: inline-block; padding: 12px 24px; border-radius: 8px; margin-bottom: 20px;">
+                          <h1 style="color: #3B82F6; margin: 0; font-size: 28px; font-weight: bold;">Share</h1>
                         </div>
-                        <p style="color: rgba(255, 255, 255, 0.9); margin: 0; font-size: 16px; font-weight: 300;">すべてのSNS、ワンタップで</p>
+                        <p style="color: #ffffff; margin: 0; font-size: 16px;">すべてのSNS、ワンタップで</p>
                       </td>
                     </tr>
                   </table>
@@ -79,18 +79,18 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
                       <td align="center" style="padding: 40px 0;">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td>
+                            <td style="background-color: #3B82F6; border-radius: 8px;">
                               <a href="${verificationUrl}" 
-                                 style="background: linear-gradient(135deg, #3B82F6 0%, #1E40AF 100%); 
-                                        color: white !important; 
+                                 style="background-color: #3B82F6; 
+                                        color: #ffffff; 
                                         text-decoration: none; 
                                         padding: 16px 32px; 
-                                        border-radius: 50px; 
-                                        font-weight: 600; 
+                                        border-radius: 8px; 
+                                        font-weight: bold; 
                                         font-size: 16px; 
-                                        display: inline-block;
+                                        display: block;
                                         text-align: center;
-                                        min-width: 200px;
+                                        width: 280px;
                                         box-sizing: border-box;">
                                 🔐 メールアドレスを認証する
                               </a>
