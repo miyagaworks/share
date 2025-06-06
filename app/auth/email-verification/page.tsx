@@ -195,7 +195,7 @@ function EmailVerificationContent() {
               <div className="ml-3">
                 <h3 className="text-sm font-medium text-blue-800">認証手順</h3>
                 <div className="mt-2 text-sm text-blue-700">
-                  <ol className="list-decimal list-inside space-y-1 text-justify">
+                  <ol className="list-decimal list-inside space-y-1">
                     <li>
                       登録されたメールアドレス
                       {userEmail ? (
