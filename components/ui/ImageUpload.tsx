@@ -131,10 +131,9 @@ const SimpleCropper = ({
     adjustZoomFromCenter(newZoom);
   };
 
-  // 中央基準でズームを調整する関数
+  // 画像の中央基準でズームを調整する関数
   const adjustZoomFromCenter = (newZoom: number) => {
     const containerSize = 300;
-    const containerCenter = containerSize / 2;
 
     // 現在の画像サイズ
     const currentWidth = containerSize * zoom;
@@ -144,15 +143,18 @@ const SimpleCropper = ({
     const newWidth = containerSize * newZoom;
     const newHeight = newWidth / imageAspectRatio;
 
-    // サイズ変化量
-    const widthDiff = newWidth - currentWidth;
-    const heightDiff = newHeight - currentHeight;
+    // 画像の現在の中央位置を計算
+    const currentImageCenterX = crop.x + currentWidth / 2;
+    const currentImageCenterY = crop.y + currentHeight / 2;
 
-    // 中央基準なので、サイズ変化量の半分だけ位置を調整
-    setCrop((prev) => ({
-      x: prev.x - widthDiff / 2,
-      y: prev.y - heightDiff / 2,
-    }));
+    // 新しいサイズで同じ中央位置を維持するための左上座標を計算
+    const newX = currentImageCenterX - newWidth / 2;
+    const newY = currentImageCenterY - newHeight / 2;
+
+    setCrop({
+      x: newX,
+      y: newY,
+    });
 
     setZoom(newZoom);
   };
