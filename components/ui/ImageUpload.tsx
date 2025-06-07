@@ -112,14 +112,11 @@ export function ImageUpload({
     const aspectRatio = img.naturalWidth / img.naturalHeight;
     setImageAspectRatio(aspectRatio);
 
-    // 最小スケールを計算（丸い範囲をカバーする最小サイズ）
-    const minScale = Math.max(
-      CROP_SIZE / EDITOR_SIZE, // 最低でも切り抜き範囲をカバー
-      CROP_SIZE / (EDITOR_SIZE * aspectRatio), // 縦長画像への対応
-    );
+    // 最小スケールを小さく設定（画像の一部でも切り抜けるように）
+    const minScale = 0.1;
 
-    // 初期スケールは最小スケールの1.2倍
-    const initialScale = Math.max(minScale * 1.2, 0.5);
+    // 初期スケールは1.0に設定
+    const initialScale = 1.0;
 
     // 初期位置は中央に配置
     setCropArea({
@@ -162,15 +159,16 @@ export function ImageUpload({
     };
   };
 
-  // 画像位置を制限する関数
+  // 画像位置を制限する関数（最小限の制限のみ）
   const constrainPosition = (x: number, y: number, scale: number): { x: number; y: number } => {
     const { width: imgDisplayWidth, height: imgDisplayHeight } = getImageDisplaySize(scale);
 
-    // 切り抜き範囲がはみ出さないように制限
-    const minX = EDITOR_CENTER - CROP_RADIUS - imgDisplayWidth + CROP_SIZE;
-    const maxX = EDITOR_CENTER - CROP_RADIUS;
-    const minY = EDITOR_CENTER - CROP_RADIUS - imgDisplayHeight + CROP_SIZE;
-    const maxY = EDITOR_CENTER - CROP_RADIUS;
+    // 切り抜き範囲が完全に画像の外に出ないよう最小限の制限
+    // 画像の端が切り抜き範囲の中心を超えないようにする
+    const minX = -(imgDisplayWidth - CROP_RADIUS);
+    const maxX = EDITOR_SIZE - CROP_RADIUS;
+    const minY = -(imgDisplayHeight - CROP_RADIUS);
+    const maxY = EDITOR_SIZE - CROP_RADIUS;
 
     return {
       x: Math.max(minX, Math.min(maxX, x)),
@@ -246,11 +244,9 @@ export function ImageUpload({
       const distance = getTouchDistance(touches);
 
       const scaleChange = distance / initialTouchDistance;
-      const minScale = Math.max(
-        CROP_SIZE / EDITOR_SIZE,
-        CROP_SIZE / (EDITOR_SIZE * imageAspectRatio),
-      );
-      const newScale = Math.max(minScale, Math.min(5, initialScale * scaleChange));
+      const minScale = 0.1; // 最小スケールを小さく設定
+      const maxScale = 10; // 最大スケールを大きく設定
+      const newScale = Math.max(minScale, Math.min(maxScale, initialScale * scaleChange));
 
       setCropArea((prev) => {
         const newPos = constrainPosition(prev.x, prev.y, newScale);
@@ -360,10 +356,7 @@ export function ImageUpload({
     const { width: imgDisplayWidth, height: imgDisplayHeight } = getImageDisplaySize(
       cropArea.scale,
     );
-    const minScale = Math.max(
-      CROP_SIZE / EDITOR_SIZE,
-      CROP_SIZE / (EDITOR_SIZE * imageAspectRatio),
-    );
+    const minScale = 0.1;
 
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -432,16 +425,16 @@ export function ImageUpload({
               <label className="block text-sm font-medium mb-2">拡大・縮小</label>
               <input
                 type="range"
-                min={minScale}
-                max="3"
+                min="0.1"
+                max="10"
                 step="0.05"
                 value={cropArea.scale}
                 onChange={handleScaleChange}
                 className="w-full"
               />
               <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>最小</span>
-                <span>最大</span>
+                <span>0.1x</span>
+                <span>10x</span>
               </div>
             </div>
           )}
