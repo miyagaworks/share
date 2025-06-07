@@ -1,4 +1,4 @@
-/* app/globals.css - 法人メニュークラス追加版 */
+/* app/globals.css - 既存設定保持 + ピンチアウト拡大防止強化版 */
 
 @import "tailwindcss";
 
@@ -9,6 +9,18 @@
 /* ===== 基本設定 ===== */
 html {
     color-scheme: light dark;
+    /* 🚀 強化されたピンチアウト防止 */
+    touch-action: pan-x pan-y !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -webkit-text-size-adjust: none !important;
+    -ms-touch-action: pan-x pan-y !important;
+    -ms-text-size-adjust: none !important;
+    user-zoom: fixed !important;
+    zoom: 1 !important;
+    /* iOS Safari 専用設定 */
+    -webkit-user-zoom: fixed !important;
+    -moz-user-zoom: fixed !important;
 }
 
 body {
@@ -17,18 +29,41 @@ body {
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
+    /* 🚀 ピンチアウト防止の強化 */
+    touch-action: pan-x pan-y !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -webkit-text-size-adjust: none !important;
+    -ms-touch-action: pan-x pan-y !important;
+    -ms-text-size-adjust: none !important;
+    user-zoom: fixed !important;
+    zoom: 1 !important;
+    /* 拡大に関わる全てのプロパティを無効化 */
+    -webkit-user-zoom: fixed !important;
+    -moz-user-zoom: fixed !important;
+    overflow-x: hidden !important;
+}
+
+/* 🚀 全要素に対するピンチ防止設定 */
+*,
+*::before,
+*::after {
+    touch-action: pan-x pan-y !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    -webkit-text-size-adjust: none !important;
+    -ms-touch-action: pan-x pan-y !important;
+    -ms-text-size-adjust: none !important;
+    user-zoom: fixed !important;
 }
 
 /* ===== ダークモード基本対応 ===== */
 @media (prefers-color-scheme: dark) {
     body {
         background-color: #ffffff !important;
-        /* 白背景を強制維持 */
         color: #1f2937 !important;
-        /* 黒文字を強制維持 */
     }
 
-    /* フォーム要素も白背景・黒文字 */
     input,
     textarea,
     select {
@@ -42,7 +77,6 @@ body {
         color: #9ca3af !important;
     }
 
-    /* チェックボックスの色設定 */
     input[type="checkbox"] {
         background-color: #ffffff !important;
         border-color: #d1d5db !important;
@@ -55,6 +89,36 @@ body {
     }
 }
 
+/* ===== 入力フィールド専用設定 ===== */
+input,
+textarea,
+select,
+button {
+    /* 🚀 入力時の拡大防止を強化 */
+    font-size: 16px !important;
+    -webkit-text-size-adjust: none !important;
+    -ms-text-size-adjust: none !important;
+    text-size-adjust: none !important;
+    touch-action: pan-x pan-y !important;
+    -webkit-touch-callout: none !important;
+    -webkit-user-select: none !important;
+    /* iOS Safari でのフォーカス時拡大防止 */
+    transform: translateZ(0) !important;
+    -webkit-transform: translateZ(0) !important;
+}
+
+/* テキスト選択可能な要素 */
+p,
+span,
+div[contenteditable],
+.selectable-text,
+.allow-select {
+    -webkit-user-select: text !important;
+    -moz-user-select: text !important;
+    -ms-user-select: text !important;
+    user-select: text !important;
+}
+
 /* ===== 法人メニュー専用クラス ===== */
 .corporate-menu-active {
     background-color: rgba(30, 58, 138, 0.1) !important;
@@ -65,7 +129,6 @@ body {
     color: #1E3A8A !important;
 }
 
-/* ホバー効果用のクラス */
 .hover\:corporate-menu-active:hover {
     background-color: rgba(30, 58, 138, 0.1) !important;
     color: #1E3A8A !important;
@@ -196,6 +259,25 @@ body {
         margin-left: auto !important;
         margin-right: auto !important;
     }
+
+    /* 🚀 モバイル専用のピンチ防止強化 */
+    * {
+        -webkit-user-select: none !important;
+        -webkit-touch-callout: none !important;
+        -webkit-text-size-adjust: none !important;
+        touch-action: pan-x pan-y !important;
+        user-zoom: fixed !important;
+    }
+
+    /* テキスト選択が必要な要素のみ選択可能にする */
+    p,
+    span,
+    div[contenteditable],
+    .selectable-text,
+    .allow-select {
+        -webkit-user-select: text !important;
+        user-select: text !important;
+    }
 }
 
 /* ===== 色反転モード対応（iOS） ===== */
@@ -236,29 +318,41 @@ body {
     background: var(--gray-400);
 }
 
-/* ===== スマホ拡大防止（強制） ===== */
-html,
-body {
-    touch-action: manipulation !important;
-    -webkit-user-select: none !important;
-    -webkit-touch-callout: none !important;
-    -webkit-text-size-adjust: none !important;
-    user-zoom: fixed !important;
-    zoom: 1 !important;
-}
+/* 🚀 iOS Safari 専用の強力な拡大防止 */
+@supports (-webkit-touch-callout: none) {
 
-/* 入力フィールドでの拡大も防止 */
-input,
-textarea,
-select {
-    font-size: 16px !important;
-    -webkit-text-size-adjust: none !important;
-}
-
-@media screen and (max-width: 768px) {
-    * {
-        -webkit-user-select: none !important;
-        -webkit-touch-callout: none !important;
+    html,
+    body {
         -webkit-text-size-adjust: none !important;
+        -webkit-user-zoom: fixed !important;
+        -webkit-touch-callout: none !important;
+        touch-action: pan-x pan-y !important;
+    }
+
+    * {
+        -webkit-touch-callout: none !important;
+        -webkit-user-select: none !important;
+        touch-action: pan-x pan-y !important;
+    }
+
+    /* テキスト選択が必要な要素のみ選択可能にする */
+    p,
+    span,
+    div[contenteditable],
+    .selectable-text,
+    .allow-select {
+        -webkit-user-select: text !important;
+        user-select: text !important;
+    }
+}
+
+/* 🚀 Android Chrome 専用設定 */
+@media screen and (-webkit-min-device-pixel-ratio: 0) {
+
+    html,
+    body {
+        touch-action: pan-x pan-y !important;
+        -ms-touch-action: pan-x pan-y !important;
+        user-zoom: fixed !important;
     }
 }

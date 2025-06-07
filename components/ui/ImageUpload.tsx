@@ -43,6 +43,10 @@ const SimpleCropper = ({
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // 円形切り抜き範囲の中心座標（固定）
+  const CROP_CENTER_X = 150;
+  const CROP_CENTER_Y = 150;
+
   // モバイル判定と初期化
   useState(() => {
     setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
@@ -127,12 +131,12 @@ const SimpleCropper = ({
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     const newZoom = Math.max(0.1, zoom * delta);
 
-    // 中央基準でズーム調整
-    adjustZoomFromCenter(newZoom);
+    // 円形切り抜き範囲の中心を固定点としてズーム調整
+    adjustZoomFromCropCenter(newZoom);
   };
 
-  // 画像の中央基準でズームを調整する関数
-  const adjustZoomFromCenter = (newZoom: number) => {
+  // 円形切り抜き範囲の中心（150,150）を固定点としてズームを調整する関数
+  const adjustZoomFromCropCenter = (newZoom: number) => {
     const containerSize = 300;
 
     // 現在の画像サイズ
@@ -143,13 +147,28 @@ const SimpleCropper = ({
     const newWidth = containerSize * newZoom;
     const newHeight = newWidth / imageAspectRatio;
 
-    // 画像の現在の中央位置を計算
+    // 円形切り抜き範囲の中心から見た現在の画像の中心位置
     const currentImageCenterX = crop.x + currentWidth / 2;
     const currentImageCenterY = crop.y + currentHeight / 2;
 
-    // 新しいサイズで同じ中央位置を維持するための左上座標を計算
-    const newX = currentImageCenterX - newWidth / 2;
-    const newY = currentImageCenterY - newHeight / 2;
+    // 円形切り抜き範囲の中心からの相対位置を計算
+    const relativeCenterX = currentImageCenterX - CROP_CENTER_X;
+    const relativeCenterY = currentImageCenterY - CROP_CENTER_Y;
+
+    // ズーム比率
+    const zoomRatio = newZoom / zoom;
+
+    // 新しい相対位置（ズーム比率に応じてスケール）
+    const newRelativeCenterX = relativeCenterX * zoomRatio;
+    const newRelativeCenterY = relativeCenterY * zoomRatio;
+
+    // 新しい画像の中心位置
+    const newImageCenterX = CROP_CENTER_X + newRelativeCenterX;
+    const newImageCenterY = CROP_CENTER_Y + newRelativeCenterY;
+
+    // 新しい左上座標を計算
+    const newX = newImageCenterX - newWidth / 2;
+    const newY = newImageCenterY - newHeight / 2;
 
     setCrop({
       x: newX,
@@ -200,8 +219,8 @@ const SimpleCropper = ({
       const scaleChange = distance / initialTouchDistance;
       const newZoom = Math.max(0.1, initialZoom * scaleChange); // 無限拡大
 
-      // 中央基準でズーム調整
-      adjustZoomFromCenter(newZoom);
+      // 円形切り抜き範囲の中心を固定点としてズーム調整
+      adjustZoomFromCropCenter(newZoom);
     }
   };
 
@@ -324,8 +343,8 @@ const SimpleCropper = ({
 
           <p className="text-sm text-gray-600 mt-2 text-center">
             {isMobile
-              ? 'ドラッグで移動、2本指でピンチズーム（無制限）'
-              : 'ドラッグで移動、ホイールまたはスライダーで拡大縮小（無制限）'}
+              ? 'ドラッグで移動、2本指でピンチズーム（円形範囲中心固定）'
+              : 'ドラッグで移動、ホイールまたはスライダーで拡大縮小（円形範囲中心固定）'}
           </p>
         </div>
 
@@ -341,7 +360,7 @@ const SimpleCropper = ({
               value={zoom}
               onChange={(e) => {
                 const newZoom = Number(e.target.value);
-                adjustZoomFromCenter(newZoom);
+                adjustZoomFromCropCenter(newZoom);
               }}
               className="w-full"
             />
