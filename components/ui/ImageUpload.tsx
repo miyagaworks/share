@@ -34,17 +34,75 @@ const SimpleCropper = ({
   const [zoom, setZoom] = useState(1);
   const [isDragging, setIsDragging] = useState(false);
   const [lastPosition, setLastPosition] = useState({ x: 0, y: 0 });
+  const [imageLoaded, setImageLoaded] = useState(false);
+  const [imageAspectRatio, setImageAspectRatio] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
+  const [initialTouchDistance, setInitialTouchDistance] = useState<number | null>(null);
+  const [initialZoom, setInitialZoom] = useState(1);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
+  // モバイル判定と初期化
+  useState(() => {
+    setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  });
+
+  // 画像ロード時の処理（中央配置と縦横比設定）
+  const handleImageLoad = () => {
+    if (!imageRef.current) return;
+
+    const img = imageRef.current;
+    const aspectRatio = img.naturalWidth / img.naturalHeight;
+    setImageAspectRatio(aspectRatio);
+
+    // 画像を中央に配置
+    const containerSize = 300;
+    const initialImageSize = containerSize; // 初期サイズは300px
+    const imageWidth = initialImageSize;
+    const imageHeight = initialImageSize / aspectRatio;
+
+    // 中央配置のための座標計算
+    const centerX = (containerSize - imageWidth) / 2;
+    const centerY = (containerSize - imageHeight) / 2;
+
+    setCrop({ x: centerX, y: centerY });
+    setZoom(1);
+    setImageLoaded(true);
+  };
+
+  // タッチ間距離の計算
+  const getTouchDistance = (touches: React.TouchList): number => {
+    if (touches.length < 2) return 0;
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+    return Math.sqrt(
+      Math.pow(touch2.clientX - touch1.clientX, 2) + Math.pow(touch2.clientY - touch1.clientY, 2),
+    );
+  };
+
+  // タッチの中心点計算
+  const getTouchCenter = (touches: React.TouchList) => {
+    if (touches.length === 1) {
+      return { x: touches[0].clientX, y: touches[0].clientY };
+    }
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2,
+    };
+  };
+
+  // マウスイベント（PC用）
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isMobile) return;
     setIsDragging(true);
     setLastPosition({ x: e.clientX, y: e.clientY });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging) return;
+    if (!isDragging || isMobile) return;
 
     const deltaX = e.clientX - lastPosition.x;
     const deltaY = e.clientY - lastPosition.y;
@@ -61,14 +119,66 @@ const SimpleCropper = ({
     setIsDragging(false);
   };
 
+  // ホイールイベント（PC用ズーム）
   const handleWheel = (e: React.WheelEvent) => {
+    if (isMobile) return;
     e.preventDefault();
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom((prev) => Math.max(0.1, Math.min(10, prev * delta)));
+    setZoom((prev) => Math.max(0.1, prev * delta)); // 無限拡大（制限なし）
+  };
+
+  // タッチイベント（モバイル用）
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const touches = e.touches;
+
+    if (touches.length === 1) {
+      // 単一タッチ - ドラッグ開始
+      setIsDragging(true);
+      const center = getTouchCenter(touches);
+      setLastPosition({ x: center.x, y: center.y });
+    } else if (touches.length === 2) {
+      // 2本指 - ピンチズーム開始
+      setIsDragging(false);
+      const distance = getTouchDistance(touches);
+      setInitialTouchDistance(distance);
+      setInitialZoom(zoom);
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const touches = e.touches;
+
+    if (touches.length === 1 && isDragging) {
+      // 単一タッチ - ドラッグ
+      const center = getTouchCenter(touches);
+      const deltaX = center.x - lastPosition.x;
+      const deltaY = center.y - lastPosition.y;
+
+      setCrop((prev) => ({
+        x: prev.x + deltaX,
+        y: prev.y + deltaY,
+      }));
+
+      setLastPosition({ x: center.x, y: center.y });
+    } else if (touches.length === 2 && initialTouchDistance) {
+      // 2本指 - ピンチズーム
+      const distance = getTouchDistance(touches);
+      const scaleChange = distance / initialTouchDistance;
+      const newZoom = Math.max(0.1, initialZoom * scaleChange); // 無限拡大
+      setZoom(newZoom);
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    setInitialTouchDistance(null);
   };
 
   const handleCrop = useCallback(() => {
-    if (!canvasRef.current || !imageRef.current) return;
+    if (!canvasRef.current || !imageRef.current || !imageLoaded) return;
 
     const canvas = canvasRef.current;
     const ctx = canvas.getContext('2d');
@@ -96,9 +206,9 @@ const SimpleCropper = ({
     ctx.arc(cropRadius, cropRadius, cropRadius, 0, Math.PI * 2);
     ctx.clip();
 
-    // 画像の表示サイズを計算
+    // 画像の実際の表示サイズを計算（縦横比固定）
     const imgDisplayWidth = containerSize * zoom;
-    const imgDisplayHeight = (img.naturalHeight / img.naturalWidth) * imgDisplayWidth;
+    const imgDisplayHeight = imgDisplayWidth / imageAspectRatio;
 
     // 切り抜き範囲の計算
     const scaleX = img.naturalWidth / imgDisplayWidth;
@@ -108,14 +218,14 @@ const SimpleCropper = ({
     const sourceY = (containerCenter - cropRadius - crop.y) * scaleY;
     const sourceSize = cropSize * scaleX;
 
-    // 画像を描画
+    // 画像を描画（縦横比を完全に保持）
     ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, cropSize, cropSize);
 
     ctx.restore();
 
     const croppedDataUrl = canvas.toDataURL('image/jpeg', 0.9);
     onComplete(croppedDataUrl);
-  }, [crop, zoom, onComplete]);
+  }, [crop, zoom, onComplete, imageLoaded, imageAspectRatio]);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
@@ -125,12 +235,16 @@ const SimpleCropper = ({
         <div className="relative mb-4">
           <div
             ref={containerRef}
-            className="relative w-[300px] h-[300px] mx-auto border border-gray-300 overflow-hidden bg-gray-100 cursor-move"
+            className="relative w-[300px] h-[300px] mx-auto border border-gray-300 overflow-hidden bg-gray-100 cursor-move select-none"
             onMouseDown={handleMouseDown}
             onMouseMove={handleMouseMove}
             onMouseUp={handleMouseUp}
             onMouseLeave={handleMouseUp}
             onWheel={handleWheel}
+            onTouchStart={handleTouchStart}
+            onTouchMove={handleTouchMove}
+            onTouchEnd={handleTouchEnd}
+            style={{ touchAction: 'none' }}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
@@ -140,10 +254,11 @@ const SimpleCropper = ({
               className="absolute select-none pointer-events-none"
               style={{
                 width: `${300 * zoom}px`,
-                height: 'auto',
+                height: `${(300 * zoom) / imageAspectRatio}px`, // 縦横比完全固定
                 left: `${crop.x}px`,
                 top: `${crop.y}px`,
               }}
+              onLoad={handleImageLoad}
               draggable={false}
             />
 
@@ -167,26 +282,32 @@ const SimpleCropper = ({
           </div>
 
           <p className="text-sm text-gray-600 mt-2 text-center">
-            ドラッグで移動、ホイールで拡大縮小
+            {isMobile
+              ? 'ドラッグで移動、2本指でピンチズーム（無制限）'
+              : 'ドラッグで移動、ホイールまたはスライダーで拡大縮小（無制限）'}
           </p>
         </div>
 
-        <div className="mb-4">
-          <label className="block text-sm font-medium mb-2">拡大・縮小</label>
-          <input
-            type="range"
-            min="0.1"
-            max="10"
-            step="0.1"
-            value={zoom}
-            onChange={(e) => setZoom(Number(e.target.value))}
-            className="w-full"
-          />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>0.1x</span>
-            <span>10x</span>
+        {/* PC用スライダー */}
+        {!isMobile && (
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">拡大・縮小</label>
+            <input
+              type="range"
+              min="0.1"
+              max="50"
+              step="0.1"
+              value={zoom}
+              onChange={(e) => setZoom(Number(e.target.value))}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>0.1x</span>
+              <span>現在: {zoom.toFixed(1)}x</span>
+              <span>50x+</span>
+            </div>
           </div>
-        </div>
+        )}
 
         <div className="flex gap-3">
           <button
