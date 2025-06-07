@@ -214,7 +214,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         flexDirection: 'column',
         alignItems: 'center',
         position: 'relative',
-        paddingBottom: '80px', // CTAエリア分のスペースを確保
+        paddingBottom: '100px', // CTAエリア分のスペースを確保
       }}
     >
       <div
