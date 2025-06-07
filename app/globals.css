@@ -235,3 +235,30 @@ body {
 ::-webkit-scrollbar-thumb:hover {
     background: var(--gray-400);
 }
+
+/* ===== スマホ拡大防止（強制） ===== */
+html,
+body {
+    touch-action: manipulation !important;
+    -webkit-user-select: none !important;
+    -webkit-touch-callout: none !important;
+    -webkit-text-size-adjust: none !important;
+    user-zoom: fixed !important;
+    zoom: 1 !important;
+}
+
+/* 入力フィールドでの拡大も防止 */
+input,
+textarea,
+select {
+    font-size: 16px !important;
+    -webkit-text-size-adjust: none !important;
+}
+
+@media screen and (max-width: 768px) {
+    * {
+        -webkit-user-select: none !important;
+        -webkit-touch-callout: none !important;
+        -webkit-text-size-adjust: none !important;
+    }
+}

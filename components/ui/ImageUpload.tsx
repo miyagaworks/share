@@ -16,9 +16,13 @@ interface ImageUploadProps {
 interface CropArea {
   x: number;
   y: number;
-  width: number;
-  height: number;
   scale: number;
+}
+
+interface TouchInfo {
+  x: number;
+  y: number;
+  distance?: number;
 }
 
 export function ImageUpload({
@@ -34,16 +38,23 @@ export function ImageUpload({
   const [cropArea, setCropArea] = useState<CropArea>({
     x: 0,
     y: 0,
-    width: 200,
-    height: 200,
     scale: 1,
   });
   const [isDragging, setIsDragging] = useState(false);
-  const [dragStart, setDragStart] = useState({ x: 0, y: 0 });
+  const [lastTouch, setLastTouch] = useState<TouchInfo | null>(null);
+  const [initialTouchDistance, setInitialTouchDistance] = useState<number | null>(null);
+  const [initialScale, setInitialScale] = useState(1);
+  const [isMobile, setIsMobile] = useState(false);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
+  const editorRef = useRef<HTMLDivElement>(null);
+
+  // モバイル判定
+  useEffect(() => {
+    setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
+  }, []);
 
   const handleClick = () => {
     if (disabled) return;
@@ -55,13 +66,11 @@ export function ImageUpload({
 
     const file = e.target.files[0];
 
-    // ファイルサイズチェック
     if (file.size > maxSizeKB * 1024) {
       toast.error(`ファイルサイズは${maxSizeKB / 1024}MB以下にしてください`);
       return;
     }
 
-    // ファイル形式チェック
     if (!/^image\/(jpeg|png|jpg)$/.test(file.type)) {
       toast.error('JPGまたはPNG形式の画像をアップロードしてください');
       return;
@@ -93,54 +102,152 @@ export function ImageUpload({
     if (!imageRef.current) return;
 
     const img = imageRef.current;
-    const containerSize = 300; // エディター表示領域のサイズ
-    const scale = Math.min(containerSize / img.naturalWidth, containerSize / img.naturalHeight);
+    const containerSize = 300;
+    const scale =
+      Math.max(containerSize / img.naturalWidth, containerSize / img.naturalHeight) * 0.8; // 少し小さめに初期設定
 
     setCropArea({
       x: 0,
       y: 0,
-      width: 200,
-      height: 200,
       scale: scale,
     });
   }, []);
 
+  // タッチ間の距離を計算
+  const getTouchDistance = (touches: React.TouchList): number => {
+    if (touches.length < 2) return 0;
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+    return Math.sqrt(
+      Math.pow(touch2.clientX - touch1.clientX, 2) + Math.pow(touch2.clientY - touch1.clientY, 2),
+    );
+  };
+
+  // タッチの中心点を計算
+  const getTouchCenter = (touches: React.TouchList): { x: number; y: number } => {
+    if (touches.length === 1) {
+      return { x: touches[0].clientX, y: touches[0].clientY };
+    }
+    const touch1 = touches[0];
+    const touch2 = touches[1];
+    return {
+      x: (touch1.clientX + touch2.clientX) / 2,
+      y: (touch1.clientY + touch2.clientY) / 2,
+    };
+  };
+
+  // デスクトップ用マウスイベント
   const handleMouseDown = (e: React.MouseEvent) => {
+    if (isMobile) return;
     setIsDragging(true);
-    setDragStart({
-      x: e.clientX,
-      y: e.clientY,
-    });
+    setLastTouch({ x: e.clientX, y: e.clientY });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
-    if (!isDragging || !imageRef.current) return;
+    if (!isDragging || !lastTouch || !imageRef.current || isMobile) return;
 
-    const rect = e.currentTarget.getBoundingClientRect();
-    const newX = cropArea.x + (e.clientX - dragStart.x);
-    const newY = cropArea.y + (e.clientY - dragStart.y);
+    const deltaX = e.clientX - lastTouch.x;
+    const deltaY = e.clientY - lastTouch.y;
 
-    // 画像の境界内に制限
-    const img = imageRef.current;
-    const imgWidth = img.naturalWidth * cropArea.scale;
-    const imgHeight = img.naturalHeight * cropArea.scale;
-    const maxX = Math.min(0, 300 - imgWidth);
-    const maxY = Math.min(0, 300 - imgHeight);
+    setCropArea((prev) => {
+      const img = imageRef.current!;
+      const imgWidth = img.naturalWidth * prev.scale;
+      const imgHeight = img.naturalHeight * prev.scale;
 
-    setCropArea((prev) => ({
-      ...prev,
-      x: Math.max(maxX, Math.min(0, newX)),
-      y: Math.max(maxY, Math.min(0, newY)),
-    }));
+      const maxX = Math.min(0, 300 - imgWidth);
+      const maxY = Math.min(0, 300 - imgHeight);
+      const minX = Math.max(maxX, -imgWidth + 300);
+      const minY = Math.max(maxY, -imgHeight + 300);
 
-    setDragStart({ x: e.clientX, y: e.clientY });
+      return {
+        ...prev,
+        x: Math.max(maxX, Math.min(0, prev.x + deltaX)),
+        y: Math.max(maxY, Math.min(0, prev.y + deltaY)),
+      };
+    });
+
+    setLastTouch({ x: e.clientX, y: e.clientY });
   };
 
   const handleMouseUp = () => {
     setIsDragging(false);
+    setLastTouch(null);
   };
 
+  // モバイル用タッチイベント
+  const handleTouchStart = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const touches = e.touches;
+
+    if (touches.length === 1) {
+      // 単一タッチ - ドラッグ開始
+      setIsDragging(true);
+      const center = getTouchCenter(touches);
+      setLastTouch({ x: center.x, y: center.y });
+    } else if (touches.length === 2) {
+      // 2本指 - ピンチ開始
+      setIsDragging(false);
+      const distance = getTouchDistance(touches);
+      const center = getTouchCenter(touches);
+      setInitialTouchDistance(distance);
+      setInitialScale(cropArea.scale);
+      setLastTouch({ x: center.x, y: center.y, distance });
+    }
+  };
+
+  const handleTouchMove = (e: React.TouchEvent) => {
+    e.preventDefault();
+    const touches = e.touches;
+
+    if (touches.length === 1 && isDragging && lastTouch) {
+      // 単一タッチ - ドラッグ
+      const center = getTouchCenter(touches);
+      const deltaX = center.x - lastTouch.x;
+      const deltaY = center.y - lastTouch.y;
+
+      setCropArea((prev) => {
+        const img = imageRef.current!;
+        const imgWidth = img.naturalWidth * prev.scale;
+        const imgHeight = img.naturalHeight * prev.scale;
+
+        const maxX = Math.min(0, 300 - imgWidth);
+        const maxY = Math.min(0, 300 - imgHeight);
+
+        return {
+          ...prev,
+          x: Math.max(maxX, Math.min(0, prev.x + deltaX)),
+          y: Math.max(maxY, Math.min(0, prev.y + deltaY)),
+        };
+      });
+
+      setLastTouch({ x: center.x, y: center.y });
+    } else if (touches.length === 2 && initialTouchDistance && lastTouch) {
+      // 2本指 - ピンチズーム
+      const distance = getTouchDistance(touches);
+      const center = getTouchCenter(touches);
+
+      const scaleChange = distance / initialTouchDistance;
+      const newScale = Math.max(0.5, Math.min(3, initialScale * scaleChange));
+
+      setCropArea((prev) => ({
+        ...prev,
+        scale: newScale,
+      }));
+
+      setLastTouch({ x: center.x, y: center.y, distance });
+    }
+  };
+
+  const handleTouchEnd = (e: React.TouchEvent) => {
+    e.preventDefault();
+    setIsDragging(false);
+    setLastTouch(null);
+    setInitialTouchDistance(null);
+  };
+
+  // デスクトップ用スケール変更
   const handleScaleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isMobile) return;
     const newScale = parseFloat(e.target.value);
     setCropArea((prev) => ({ ...prev, scale: newScale }));
   };
@@ -168,19 +275,22 @@ export function ImageUpload({
     ctx.arc(100, 100, 100, 0, Math.PI * 2);
     ctx.clip();
 
-    // 元画像から中央の丸い部分を切り抜いて描画
+    // 画像の描画計算を修正
     const centerX = 150; // エディターの中心X
     const centerY = 150; // エディターの中心Y
     const radius = 100; // 丸い範囲の半径
 
-    // 画像上での切り抜き範囲を計算
-    const sourceX = (centerX + cropArea.x) / cropArea.scale - radius / cropArea.scale;
-    const sourceY = (centerY + cropArea.y) / cropArea.scale - radius / cropArea.scale;
-    const sourceWidth = (radius * 2) / cropArea.scale;
-    const sourceHeight = (radius * 2) / cropArea.scale;
+    // 実際の画像位置から切り抜き範囲を正確に計算
+    const imgPosX = cropArea.x;
+    const imgPosY = cropArea.y;
+
+    // 中央の丸い部分が画像上のどの部分に対応するかを計算
+    const sourceX = (centerX - imgPosX) / cropArea.scale - radius / cropArea.scale;
+    const sourceY = (centerY - imgPosY) / cropArea.scale - radius / cropArea.scale;
+    const sourceSize = (radius * 2) / cropArea.scale;
 
     // 画像を描画
-    ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, 200, 200);
+    ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 200, 200);
 
     ctx.restore();
     return canvas.toDataURL('image/jpeg', 0.9);
@@ -192,12 +302,14 @@ export function ImageUpload({
       onChange(croppedImage);
       setShowEditor(false);
       setOriginalImage(null);
+      setCropArea({ x: 0, y: 0, scale: 1 });
     }
   };
 
   const handleCancel = () => {
     setShowEditor(false);
     setOriginalImage(null);
+    setCropArea({ x: 0, y: 0, scale: 1 });
   };
 
   const handleRemove = (e: React.MouseEvent) => {
@@ -214,22 +326,28 @@ export function ImageUpload({
 
           <div className="relative mb-4">
             <div
-              className="relative w-[300px] h-[300px] mx-auto border border-gray-300 overflow-hidden"
+              ref={editorRef}
+              className="relative w-[300px] h-[300px] mx-auto border border-gray-300 overflow-hidden touch-none"
+              onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
               onMouseLeave={handleMouseUp}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 ref={imageRef}
                 src={originalImage}
                 alt="編集中の画像"
-                className="absolute"
+                className="absolute select-none"
                 style={{
                   width: `${100 * cropArea.scale}%`,
                   height: 'auto',
-                  left: `-${cropArea.x}px`,
-                  top: `-${cropArea.y}px`,
+                  left: `${cropArea.x}px`,
+                  top: `${cropArea.y}px`,
+                  touchAction: 'none',
                 }}
                 onLoad={handleImageLoad}
                 draggable={false}
@@ -237,42 +355,46 @@ export function ImageUpload({
 
               {/* 白いオーバーレイと丸い透明部分 */}
               <div
-                className="absolute inset-0 cursor-move"
-                onMouseDown={handleMouseDown}
+                className="absolute inset-0 pointer-events-none"
                 style={{
-                  background: `radial-gradient(circle ${cropArea.width / 2}px at ${150}px ${150}px, transparent ${cropArea.width / 2}px, rgba(255, 255, 255, 0.8) ${cropArea.width / 2 + 1}px)`,
+                  background: `radial-gradient(circle 100px at 150px 150px, transparent 100px, rgba(255, 255, 255, 0.8) 101px)`,
                 }}
               >
                 {/* 丸い境界線 */}
                 <div
-                  className="absolute border-2 border-blue-500 rounded-full pointer-events-none"
+                  className="absolute border-2 border-blue-500 rounded-full"
                   style={{
-                    left: 150 - cropArea.width / 2,
-                    top: 150 - cropArea.height / 2,
-                    width: cropArea.width,
-                    height: cropArea.height,
+                    left: 50,
+                    top: 50,
+                    width: 200,
+                    height: 200,
                   }}
                 />
               </div>
             </div>
 
             <p className="text-sm text-gray-600 mt-2 text-center">
-              画像をドラッグして位置を調整できます
+              {isMobile
+                ? 'ドラッグで移動、2本指で拡大縮小'
+                : '画像をドラッグして位置を調整できます'}
             </p>
           </div>
 
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">拡大・縮小</label>
-            <input
-              type="range"
-              min="0.5"
-              max="3"
-              step="0.1"
-              value={cropArea.scale}
-              onChange={handleScaleChange}
-              className="w-full"
-            />
-          </div>
+          {/* デスクトップ用スライダー */}
+          {!isMobile && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">拡大・縮小</label>
+              <input
+                type="range"
+                min="0.5"
+                max="3"
+                step="0.1"
+                value={cropArea.scale}
+                onChange={handleScaleChange}
+                className="w-full"
+              />
+            </div>
+          )}
 
           <div className="flex gap-3">
             <button
