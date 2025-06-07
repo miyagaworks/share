@@ -223,7 +223,7 @@ export default function DashboardPage() {
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-4 right-4 opacity-20">
-            <HiUser className="h-16 w-16 text-blue-600" />
+            <HiUser className="h-48 w-48 text-blue-600" />
           </div>
         </div>
 
@@ -250,7 +250,7 @@ export default function DashboardPage() {
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-4 right-4 opacity-20">
-            <HiLink className="h-16 w-16 text-blue-600" />
+            <HiLink className="h-48 w-48 text-blue-600" />
           </div>
         </div>
 
@@ -271,7 +271,7 @@ export default function DashboardPage() {
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-4 right-4 opacity-20">
-            <HiColorSwatch className="h-16 w-16 text-blue-600" />
+            <HiColorSwatch className="h-48 w-48 text-blue-600" />
           </div>
         </div>
 
@@ -292,7 +292,7 @@ export default function DashboardPage() {
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-4 right-4 opacity-20">
-            <HiShare className="h-16 w-16 text-blue-600" />
+            <HiShare className="h-48 w-48 text-blue-600" />
           </div>
         </div>
 
@@ -313,7 +313,7 @@ export default function DashboardPage() {
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-4 right-4 opacity-20">
-            <HiQrcode className="h-16 w-16 text-blue-600" />
+            <HiQrcode className="h-48 w-48 text-blue-600" />
           </div>
         </div>
       </div>
