@@ -207,19 +207,24 @@ const SimpleCropper = ({
     ctx.clip();
 
     // 画像の実際の表示サイズを計算（縦横比固定）
+    // 幅を基準にして高さを計算（これにより縦横比が保持される）
     const imgDisplayWidth = containerSize * zoom;
     const imgDisplayHeight = imgDisplayWidth / imageAspectRatio;
 
-    // 切り抜き範囲の計算
+    // 元画像のピクセル比率を計算
     const scaleX = img.naturalWidth / imgDisplayWidth;
     const scaleY = img.naturalHeight / imgDisplayHeight;
 
+    // 切り抜き範囲の左上座標を計算
     const sourceX = (containerCenter - cropRadius - crop.x) * scaleX;
     const sourceY = (containerCenter - cropRadius - crop.y) * scaleY;
-    const sourceSize = cropSize * scaleX;
 
-    // 画像を描画（縦横比を完全に保持）
-    ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, cropSize, cropSize);
+    // 正方形の切り抜きサイズ
+    const sourceSizeX = cropSize * scaleX;
+    const sourceSizeY = cropSize * scaleY;
+
+    // 画像を描画（元画像の縦横比を維持しながら正方形に切り抜き）
+    ctx.drawImage(img, sourceX, sourceY, sourceSizeX, sourceSizeY, 0, 0, cropSize, cropSize);
 
     ctx.restore();
 
@@ -257,6 +262,8 @@ const SimpleCropper = ({
                 height: `${(300 * zoom) / imageAspectRatio}px`, // 縦横比完全固定
                 left: `${crop.x}px`,
                 top: `${crop.y}px`,
+                maxWidth: 'none', // 最大幅制限を解除
+                maxHeight: 'none', // 最大高さ制限を解除
               }}
               onLoad={handleImageLoad}
               draggable={false}
