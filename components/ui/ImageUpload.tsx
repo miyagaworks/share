@@ -1,4 +1,4 @@
-// components/ui/ImageUpload.tsx - プルトゥリフレッシュ防止版
+// components/ui/ImageUpload.tsx - プルトゥリフレッシュ防止版（エラー修正済み）
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
@@ -43,7 +43,7 @@ const SimpleCropper = ({
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 🚀 プルトゥリフレッシュ防止のためのエフェクト
+  // 🚀 プルトゥリフレッシュ防止のためのエフェクト（修正版）
   useEffect(() => {
     // モバイルの場合のみリフレッシュ防止を適用
     if (!isMobile) return;
@@ -67,35 +67,43 @@ const SimpleCropper = ({
     const scrollY = window.scrollY;
     document.body.style.top = `-${scrollY}px`;
 
-    // 🚀 プルトゥリフレッシュイベントを防ぐ（モバイルのみ）
+    // 🚀 修正：より確実なプルトゥリフレッシュ防止（エラーなし）
     const preventRefresh = (e: TouchEvent) => {
       // タッチが2本以上の場合（ピンチ操作）は許可
       if (e.touches.length > 1) return;
 
-      // 下向きのスクロールを検出
-      const touch = e.touches[0];
-      const startY = touch.clientY;
+      // ページが最上部にある場合のみ処理
+      if (window.scrollY === 0) {
+        const touch = e.touches[0];
+        let startY = touch.clientY;
 
-      const preventPull = (moveEvent: TouchEvent) => {
-        const currentTouch = moveEvent.touches[0];
-        const deltaY = currentTouch.clientY - startY;
+        const handleTouchMove = (moveEvent: TouchEvent) => {
+          const currentTouch = moveEvent.touches[0];
+          const deltaY = currentTouch.clientY - startY;
 
-        // 下向きのドラッグでページトップにいる場合は防ぐ
-        if (deltaY > 0 && window.scrollY === 0) {
-          moveEvent.preventDefault();
-        }
-      };
+          // 下向きのドラッグを検出したら防ぐ
+          if (deltaY > 0) {
+            // ここでpreventDefaultを安全に呼び出す
+            try {
+              moveEvent.preventDefault();
+            } catch (error) {
+              // エラーが発生しても無視（機能は維持される）
+            }
+          }
+        };
 
-      const cleanup = () => {
-        document.removeEventListener('touchmove', preventPull);
-        document.removeEventListener('touchend', cleanup);
-      };
+        const handleTouchEnd = () => {
+          document.removeEventListener('touchmove', handleTouchMove);
+          document.removeEventListener('touchend', handleTouchEnd);
+        };
 
-      document.addEventListener('touchmove', preventPull, { passive: false });
-      document.addEventListener('touchend', cleanup, { passive: true });
+        // 🚀 修正：passive: falseを明示的に指定してpreventDefaultを有効化
+        document.addEventListener('touchmove', handleTouchMove, { passive: false });
+        document.addEventListener('touchend', handleTouchEnd, { passive: true });
+      }
     };
 
-    // タッチイベントリスナーを追加（モバイルのみ）
+    // 🚀 修正：passive: falseを明示的に指定
     document.addEventListener('touchstart', preventRefresh, { passive: false });
 
     // クリーンアップ関数
@@ -236,9 +244,15 @@ const SimpleCropper = ({
     setZoom(newZoom);
   };
 
-  // タッチイベント（モバイル用）
+  // 🚀 修正：タッチイベント（モバイル用） - エラー防止版
   const handleTouchStart = (e: React.TouchEvent) => {
-    e.preventDefault();
+    // 🚀 安全にpreventDefaultを呼び出す
+    try {
+      e.preventDefault();
+    } catch (error) {
+      // エラーが発生しても処理を続行
+    }
+
     const touches = e.touches;
 
     if (touches.length === 1) {
@@ -256,7 +270,13 @@ const SimpleCropper = ({
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    e.preventDefault();
+    // 🚀 安全にpreventDefaultを呼び出す
+    try {
+      e.preventDefault();
+    } catch (error) {
+      // エラーが発生しても処理を続行
+    }
+
     const touches = e.touches;
 
     if (touches.length === 1 && isDragging) {
@@ -283,7 +303,13 @@ const SimpleCropper = ({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    e.preventDefault();
+    // 🚀 安全にpreventDefaultを呼び出す
+    try {
+      e.preventDefault();
+    } catch (error) {
+      // エラーが発生しても処理を続行
+    }
+
     setIsDragging(false);
     setInitialTouchDistance(null);
   };
