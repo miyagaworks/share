@@ -1,15 +1,18 @@
-// app/dashboard/corporate-member/layout.tsx (完全版)
+// app/dashboard/corporate-member/layout.tsx - フッター統合版
 'use client';
 import React, { ReactNode, useState, useEffect } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { HiUser, HiLink, HiColorSwatch, HiShare, HiOfficeBuilding, HiMenu } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
+import { MobileFooter } from '@/components/layout/MobileFooter';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
+
 interface CorporateMemberLayoutProps {
   children: ReactNode;
 }
+
 interface AccessData {
   hasAccess: boolean;
   isAdmin: boolean;
@@ -17,6 +20,7 @@ interface AccessData {
   tenantId: string | null;
   error: string | null;
 }
+
 interface TenantData {
   id: string;
   name: string;
@@ -24,6 +28,7 @@ interface TenantData {
   primaryColor: string | null;
   secondaryColor: string | null;
 }
+
 export default function CorporateMemberLayout({ children }: CorporateMemberLayoutProps) {
   const { data: session, status } = useSession();
   const pathname = usePathname();
@@ -33,6 +38,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+
   // シンプルな初期化処理
   useEffect(() => {
     if (status === 'loading') return;
@@ -40,16 +46,19 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       router.push('/auth/signin');
       return;
     }
+
     const initializeAccess = async () => {
       try {
         setIsLoading(true);
         setError(null);
+
         // 1. アクセス権限をチェック
         const accessResponse = await fetch('/api/corporate/access');
         if (!accessResponse.ok) {
           throw new Error('アクセス権限の確認に失敗しました');
         }
         const accessResult = await accessResponse.json();
+
         // 2. アクセス権限の検証（シンプル化）
         if (!accessResult.hasAccess) {
           // 🔥 修正: 個人プランユーザーを個人ダッシュボードにリダイレクト
@@ -66,7 +75,9 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           setIsLoading(false);
           return;
         }
+
         setAccessData(accessResult);
+
         // 3. テナント情報を取得
         try {
           const tenantResponse = await fetch('/api/corporate-profile');
@@ -97,8 +108,10 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
         setIsLoading(false);
       }
     };
+
     initializeAccess();
   }, [session, status, router]);
+
   // CSSテーマの設定
   useEffect(() => {
     document.documentElement.classList.add('corporate-theme');
@@ -106,6 +119,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       document.documentElement.classList.remove('corporate-theme');
     };
   }, []);
+
   // ナビゲーション項目の定義（シンプル化）
   const navItems = [
     {
@@ -145,15 +159,18 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       adminOnly: true,
     },
   ];
+
   // フィルタリング（管理者のみのアイテムを制御）
   const filteredNavItems = navItems.filter(
     (item) => !item.adminOnly || accessData?.isAdmin === true,
   );
+
   // 現在のページタイトルを取得
   const getCurrentPageTitle = () => {
     const currentItem = filteredNavItems.find((item) => item.href === pathname);
     return currentItem ? currentItem.label : '法人メンバープロフィール';
   };
+
   // ローディング表示
   if (isLoading) {
     return (
@@ -165,6 +182,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
       </div>
     );
   }
+
   // エラー表示
   if (error) {
     return (
@@ -194,14 +212,18 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
             </button>
           </div>
         </div>
+        {/* モバイルフッターをエラー画面にも追加 */}
+        <MobileFooter />
       </div>
     );
   }
+
   // プライマリカラーの設定
   const primaryColor = '#1E3A8A';
+
   return (
     <div
-      className="corporate-theme"
+      className="corporate-theme min-h-screen"
       style={
         {
           '--color-corporate-primary': primaryColor,
@@ -220,6 +242,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           <HiMenu className="h-6 w-6" />
         </button>
       </div>
+
       {/* モバイルメニュー */}
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-50 md:hidden">
@@ -262,6 +285,7 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           </div>
         </div>
       )}
+
       {/* デスクトップ用タブナビゲーション */}
       <div className="hidden px-1 md:block mb-6 overflow-x-auto">
         <div className="flex space-x-2 min-w-max pb-2">
@@ -280,8 +304,12 @@ export default function CorporateMemberLayout({ children }: CorporateMemberLayou
           ))}
         </div>
       </div>
+
       {/* メインコンテンツ */}
-      <div className="px-1">{children}</div>
+      <div className="px-1 pb-16 md:pb-0">{children}</div>
+
+      {/* モバイル専用フッター */}
+      <MobileFooter />
     </div>
   );
 }

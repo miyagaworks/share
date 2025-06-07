@@ -1,4 +1,4 @@
-/* app/globals.css - 既存設定保持 + ピンチアウト拡大防止強化版 */
+/* app/globals.css - フッター対応版 */
 
 @import "tailwindcss";
 
@@ -117,6 +117,33 @@ div[contenteditable],
     -moz-user-select: text !important;
     -ms-user-select: text !important;
     user-select: text !important;
+}
+
+/* ===== 🚀 モバイルフッター専用スタイル ===== */
+/* モバイルフッターが表示される場合のページ下部パディング調整 */
+@media (max-width: 767px) {
+
+    /* プロフィール更新ボタンなど、重要なボタンの下部マージン確保 */
+    .mobile-button-spacing {
+        margin-bottom: 5rem !important;
+        /* フッター高さ + 余裕 */
+    }
+
+    /* フォーム送信ボタンの特別処理 */
+    button[type="submit"],
+    .submit-button {
+        margin-bottom: 1.5rem !important;
+    }
+
+    /* ダッシュボードカードの下部マージン調整 */
+    .dashboard-card:last-child {
+        margin-bottom: 5rem !important;
+    }
+
+    /* コンテンツエリア全体の下部パディング */
+    main {
+        padding-bottom: 5rem !important;
+    }
 }
 
 /* ===== 法人メニュー専用クラス ===== */
