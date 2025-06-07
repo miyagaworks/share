@@ -1,6 +1,6 @@
-// components/ui/ImageUpload.tsx
+// components/ui/ImageUpload.tsx - プルトゥリフレッシュ防止版
 'use client';
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { toast } from 'react-hot-toast';
@@ -43,14 +43,80 @@ const SimpleCropper = ({
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 円形切り抜き範囲の中心座標（固定）
-  const CROP_CENTER_X = 150;
-  const CROP_CENTER_Y = 150;
+  // 🚀 プルトゥリフレッシュ防止のためのエフェクト
+  useEffect(() => {
+    // モーダル表示時にbodyのスクロールとリフレッシュを防ぐ
+    const originalStyle = {
+      overflow: document.body.style.overflow,
+      touchAction: document.body.style.touchAction,
+      position: document.body.style.position,
+      height: document.body.style.height,
+    };
+
+    // bodyを固定してリフレッシュを防ぐ
+    document.body.style.overflow = 'hidden';
+    document.body.style.touchAction = 'none';
+    document.body.style.position = 'fixed';
+    document.body.style.height = '100%';
+    document.body.style.width = '100%';
+
+    // スクロール位置を保存
+    const scrollY = window.scrollY;
+    document.body.style.top = `-${scrollY}px`;
+
+    // 🚀 プルトゥリフレッシュイベントを防ぐ
+    const preventRefresh = (e: TouchEvent) => {
+      // タッチが2本以上の場合（ピンチ操作）は許可
+      if (e.touches.length > 1) return;
+
+      // 下向きのスクロールを検出
+      const touch = e.touches[0];
+      const startY = touch.clientY;
+
+      const preventPull = (moveEvent: TouchEvent) => {
+        const currentTouch = moveEvent.touches[0];
+        const deltaY = currentTouch.clientY - startY;
+
+        // 下向きのドラッグでページトップにいる場合は防ぐ
+        if (deltaY > 0 && window.scrollY === 0) {
+          moveEvent.preventDefault();
+        }
+      };
+
+      const cleanup = () => {
+        document.removeEventListener('touchmove', preventPull, { passive: false } as any);
+        document.removeEventListener('touchend', cleanup);
+      };
+
+      document.addEventListener('touchmove', preventPull, { passive: false });
+      document.addEventListener('touchend', cleanup);
+    };
+
+    // タッチイベントリスナーを追加
+    document.addEventListener('touchstart', preventRefresh, { passive: false });
+
+    // クリーンアップ関数
+    return () => {
+      // 元のスタイルを復元
+      document.body.style.overflow = originalStyle.overflow;
+      document.body.style.touchAction = originalStyle.touchAction;
+      document.body.style.position = originalStyle.position;
+      document.body.style.height = originalStyle.height;
+      document.body.style.width = '';
+      document.body.style.top = '';
+
+      // スクロール位置を復元
+      window.scrollTo(0, scrollY);
+
+      // イベントリスナーを削除
+      document.removeEventListener('touchstart', preventRefresh);
+    };
+  }, []);
 
   // モバイル判定と初期化
-  useState(() => {
+  useEffect(() => {
     setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  });
+  }, []);
 
   // 画像ロード時の処理（中央配置と縦横比設定）
   const handleImageLoad = () => {
@@ -131,12 +197,12 @@ const SimpleCropper = ({
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     const newZoom = Math.max(0.1, zoom * delta);
 
-    // 円形切り抜き範囲の中心を固定点としてズーム調整
-    adjustZoomFromCropCenter(newZoom);
+    // 中央基準でズーム調整
+    adjustZoomFromCenter(newZoom);
   };
 
-  // 円形切り抜き範囲の中心（150,150）を固定点としてズームを調整する関数
-  const adjustZoomFromCropCenter = (newZoom: number) => {
+  // 画像の中央基準でズームを調整する関数
+  const adjustZoomFromCenter = (newZoom: number) => {
     const containerSize = 300;
 
     // 現在の画像サイズ
@@ -147,28 +213,13 @@ const SimpleCropper = ({
     const newWidth = containerSize * newZoom;
     const newHeight = newWidth / imageAspectRatio;
 
-    // 円形切り抜き範囲の中心から見た現在の画像の中心位置
+    // 画像の現在の中央位置を計算
     const currentImageCenterX = crop.x + currentWidth / 2;
     const currentImageCenterY = crop.y + currentHeight / 2;
 
-    // 円形切り抜き範囲の中心からの相対位置を計算
-    const relativeCenterX = currentImageCenterX - CROP_CENTER_X;
-    const relativeCenterY = currentImageCenterY - CROP_CENTER_Y;
-
-    // ズーム比率
-    const zoomRatio = newZoom / zoom;
-
-    // 新しい相対位置（ズーム比率に応じてスケール）
-    const newRelativeCenterX = relativeCenterX * zoomRatio;
-    const newRelativeCenterY = relativeCenterY * zoomRatio;
-
-    // 新しい画像の中心位置
-    const newImageCenterX = CROP_CENTER_X + newRelativeCenterX;
-    const newImageCenterY = CROP_CENTER_Y + newRelativeCenterY;
-
-    // 新しい左上座標を計算
-    const newX = newImageCenterX - newWidth / 2;
-    const newY = newImageCenterY - newHeight / 2;
+    // 新しいサイズで同じ中央位置を維持するための左上座標を計算
+    const newX = currentImageCenterX - newWidth / 2;
+    const newY = currentImageCenterY - newHeight / 2;
 
     setCrop({
       x: newX,
@@ -219,8 +270,8 @@ const SimpleCropper = ({
       const scaleChange = distance / initialTouchDistance;
       const newZoom = Math.max(0.1, initialZoom * scaleChange); // 無限拡大
 
-      // 円形切り抜き範囲の中心を固定点としてズーム調整
-      adjustZoomFromCropCenter(newZoom);
+      // 中央基準でズーム調整
+      adjustZoomFromCenter(newZoom);
     }
   };
 
@@ -343,8 +394,8 @@ const SimpleCropper = ({
 
           <p className="text-sm text-gray-600 mt-2 text-center">
             {isMobile
-              ? 'ドラッグで移動、2本指でピンチズーム（円形範囲中心固定）'
-              : 'ドラッグで移動、ホイールまたはスライダーで拡大縮小（円形範囲中心固定）'}
+              ? 'ドラッグで移動、2本指でピンチズーム（無制限）'
+              : 'ドラッグで移動、ホイールまたはスライダーで拡大縮小（無制限）'}
           </p>
         </div>
 
@@ -360,7 +411,7 @@ const SimpleCropper = ({
               value={zoom}
               onChange={(e) => {
                 const newZoom = Number(e.target.value);
-                adjustZoomFromCropCenter(newZoom);
+                adjustZoomFromCenter(newZoom);
               }}
               className="w-full"
             />
