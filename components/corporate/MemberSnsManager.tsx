@@ -108,6 +108,7 @@ export function MemberSnsManager({
   // カスタムリンク管理の状態
   const [isAddingCustom, setIsAddingCustom] = useState(false);
   const [editingCustomId, setEditingCustomId] = useState<string | null>(null);
+  const [customItems, setCustomItems] = useState(customLinks);
 
   // フォーム状態
   const [snsForm, setSnsForm] = useState({
@@ -131,6 +132,10 @@ export function MemberSnsManager({
   useEffect(() => {
     setSnsItems(personalSnsLinks);
   }, [personalSnsLinks]);
+
+  useEffect(() => {
+    setCustomItems(customLinks);
+  }, [customLinks]);
 
   // URL検証
   useEffect(() => {
@@ -401,6 +406,38 @@ export function MemberSnsManager({
     [snsItems, personalSnsLinks, onSnsLinkUpdate],
   );
 
+  const handleCustomDragEnd = useCallback(
+    async (result: DropResult) => {
+      if (!result.destination) return;
+
+      const reorderedItems = Array.from(customItems);
+      const [removed] = reorderedItems.splice(result.source.index, 1);
+      reorderedItems.splice(result.destination.index, 0, removed);
+
+      setCustomItems(reorderedItems);
+
+      try {
+        setIsProcessing(true);
+        const linkIds = reorderedItems.map((item) => item.id);
+
+        const response = await updateCustomLinkOrder(linkIds);
+
+        if (response.error) {
+          throw new Error(response.error);
+        }
+
+        onCustomLinkUpdate(reorderedItems);
+        toast.success('表示順を更新しました');
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : '表示順の更新に失敗しました');
+        setCustomItems(customLinks);
+      } finally {
+        setIsProcessing(false);
+      }
+    },
+    [customItems, customLinks, onCustomLinkUpdate],
+  );
+
   // カスタムリンク処理
   const handleAddCustom = async () => {
     if (!customForm.name || !customForm.url) {
@@ -549,7 +586,7 @@ export function MemberSnsManager({
         <p className="text-sm text-gray-600 mb-6">
           プロフィールに表示するSNSアカウントを管理します。
         </p>
-
+   
         {/* SNS追加フォーム */}
         <AnimatePresence>
           {isAddingSns && (
@@ -605,7 +642,7 @@ export function MemberSnsManager({
                     </div>
                   )}
                 </div>
-
+   
                 <AnimatePresence>
                   {selectedPlatform && (
                     <motion.div
@@ -637,7 +674,7 @@ export function MemberSnsManager({
                             </Button>
                           </div>
                         </div>
-
+   
                         <div className="relative">
                           {selectedPlatform === 'line' ? (
                             <Input
@@ -668,7 +705,7 @@ export function MemberSnsManager({
                               disabled={isProcessing}
                             />
                           )}
-
+   
                           <AnimatePresence>
                             {showHelp && (
                               <motion.div
@@ -690,7 +727,7 @@ export function MemberSnsManager({
                           </AnimatePresence>
                         </div>
                       </div>
-
+   
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -714,7 +751,7 @@ export function MemberSnsManager({
                           </p>
                         </div>
                       </motion.div>
-
+   
                       {/* URL表示 */}
                       <div>
                         <label className="text-sm font-medium leading-none block mb-2">URL</label>
@@ -737,7 +774,7 @@ export function MemberSnsManager({
                     </motion.div>
                   )}
                 </AnimatePresence>
-
+   
                 <div className="flex justify-end space-x-2 pt-2">
                   <Button variant="outline" onClick={resetSnsForm} disabled={isProcessing}>
                     キャンセル
@@ -754,7 +791,7 @@ export function MemberSnsManager({
             </motion.div>
           )}
         </AnimatePresence>
-
+   
         {/* SNSリンクリスト */}
         {snsItems.length > 0 ? (
           <DragDropContext onDragEnd={handleDragEnd}>
@@ -788,7 +825,7 @@ export function MemberSnsManager({
                                     link.platform}
                                 </h3>
                               </div>
-
+   
                               {selectedPlatform === 'line' ? (
                                 <Input
                                   value={lineInputValue}
@@ -830,7 +867,7 @@ export function MemberSnsManager({
                                   />
                                 </>
                               )}
-
+   
                               <div className="flex justify-end space-x-2">
                                 <Button
                                   variant="outline"
@@ -918,7 +955,7 @@ export function MemberSnsManager({
           </div>
         )}
       </div>
-
+   
       {/* カスタムリンク管理セクション */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -938,7 +975,7 @@ export function MemberSnsManager({
         <p className="text-sm text-gray-600 mb-6">
           SNS以外のカスタムリンクを管理します（ブログ、ポートフォリオなど）。
         </p>
-
+   
         {/* カスタムリンク追加フォーム */}
         <AnimatePresence>
           {isAddingCustom && (
@@ -988,106 +1025,126 @@ export function MemberSnsManager({
             </motion.div>
           )}
         </AnimatePresence>
-
+   
         {/* カスタムリンクリスト */}
         <div className="space-y-4">
-          {customLinks.length === 0 ? (
+          {customItems.length === 0 ? (
             <p className="text-gray-500 text-center py-4">カスタムリンクがありません</p>
           ) : (
-            customLinks.map((link) => (
-              <div
-                key={link.id}
-                className="border rounded-md p-4"
-                style={{ borderColor: `${primaryColor}20` }}
-              >
-                {editingCustomId === link.id ? (
-                  // 編集モード
-                  <div className="space-y-3">
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">表示名</label>
-                      <Input
-                        placeholder="ブログ、ポートフォリオなど"
-                        value={customForm.name}
-                        onChange={(e) => setCustomForm({ ...customForm, name: e.target.value })}
-                        disabled={isProcessing}
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
-                      <Input
-                        placeholder="https://..."
-                        value={customForm.url}
-                        onChange={(e) => setCustomForm({ ...customForm, url: e.target.value })}
-                        disabled={isProcessing}
-                      />
-                    </div>
-                    <div className="flex justify-end space-x-2">
-                      <Button
-                        variant="outline"
-                        onClick={() => {
-                          setEditingCustomId(null);
-                          setCustomForm({ name: '', url: '' });
-                        }}
-                        disabled={isProcessing}
-                      >
-                        キャンセル
-                      </Button>
-                      <Button
-                        variant="corporate"
-                        onClick={() => handleUpdateCustom(link.id)}
-                        disabled={isProcessing}
-                      >
-                        更新
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  // 表示モード
-                  <div className="flex items-start">
-                    <div className="w-10 h-10 rounded-md flex items-center justify-center mr-4 flex-shrink-0 bg-blue-50">
-                      <HiLink className="h-5 w-5" style={{ color: primaryColor }} />
-                    </div>
-                    <div className="flex-1">
-                      <h3 className="font-medium">{link.name}</h3>
-                      <a
-                        href={link.url}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm text-blue-600 hover:underline break-all flex items-center"
-                      >
-                        {link.url}
-                        <HiExternalLink className="ml-1 h-3 w-3" />
-                      </a>
-                      <div className="flex items-center mt-3 space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => startEditingCustom(link)}
-                          disabled={isProcessing}
-                        >
-                          <HiPencil className="mr-1 h-3 w-3" />
-                          編集
-                        </Button>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          className="text-red-600 border-red-300 hover:bg-red-600 hover:text-white"
-                          onClick={() => handleDeleteCustom(link.id)}
-                          disabled={isProcessing}
-                        >
-                          <HiTrash className="mr-1 h-3 w-3" />
-                          削除
-                        </Button>
-                      </div>
-                    </div>
+            <DragDropContext onDragEnd={handleCustomDragEnd}>
+              <DroppableComponent droppableId="member-custom-links">
+                {(provided: DroppableProvided) => (
+                  <div className="space-y-4" ref={provided.innerRef} {...provided.droppableProps}>
+                    {customItems.map((link, index) => (
+                      <DraggableComponent key={link.id} draggableId={link.id} index={index}>
+                        {(dragProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
+                          <div
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            className="border rounded-md p-4"
+                            style={{
+                              ...dragProvided.draggableProps.style,
+                              borderColor: `${primaryColor}20`,
+                            }}
+                          >
+                            {editingCustomId === link.id ? (
+                              // 編集モード
+                              <div className="space-y-3">
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">表示名</label>
+                                  <Input
+                                    placeholder="ブログ、ポートフォリオなど"
+                                    value={customForm.name}
+                                    onChange={(e) => setCustomForm({ ...customForm, name: e.target.value })}
+                                    disabled={isProcessing}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                                  <Input
+                                    placeholder="https://..."
+                                    value={customForm.url}
+                                    onChange={(e) => setCustomForm({ ...customForm, url: e.target.value })}
+                                    disabled={isProcessing}
+                                  />
+                                </div>
+                                <div className="flex justify-end space-x-2">
+                                  <Button
+                                    variant="outline"
+                                    onClick={() => {
+                                      setEditingCustomId(null);
+                                      setCustomForm({ name: '', url: '' });
+                                    }}
+                                    disabled={isProcessing}
+                                  >
+                                    キャンセル
+                                  </Button>
+                                  <Button
+                                    variant="corporate"
+                                    onClick={() => handleUpdateCustom(link.id)}
+                                    disabled={isProcessing}
+                                  >
+                                    更新
+                                  </Button>
+                                </div>
+                              </div>
+                            ) : (
+                              // 表示モード
+                              <div className="flex items-start">
+                                <div className="cursor-move mr-3 mt-2" {...dragProvided.dragHandleProps}>
+                                  <HiDotsVertical className="w-5 h-5 text-gray-400" />
+                                </div>
+                                <div className="w-10 h-10 rounded-md flex items-center justify-center mr-4 flex-shrink-0 bg-blue-50">
+                                  <HiLink className="h-5 w-5" style={{ color: primaryColor }} />
+                                </div>
+                                <div className="flex-1">
+                                  <h3 className="font-medium">{link.name}</h3>
+                                  <a
+                                    href={link.url}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-sm text-blue-600 hover:underline break-all flex items-center"
+                                  >
+                                    {link.url}
+                                    <HiExternalLink className="ml-1 h-3 w-3" />
+                                  </a>
+                                  <div className="flex items-center mt-3 space-x-2">
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() => startEditingCustom(link)}
+                                      disabled={isProcessing}
+                                    >
+                                      <HiPencil className="mr-1 h-3 w-3" />
+                                      編集
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="text-red-600 border-red-300 hover:bg-red-600 hover:text-white"
+                                      onClick={() => handleDeleteCustom(link.id)}
+                                      disabled={isProcessing}
+                                    >
+                                      <HiTrash className="mr-1 h-3 w-3" />
+                                      削除
+                                    </Button>
+                                  </div>
+                                </div>
+                              </div>
+                            )}
+                          </div>
+                        )}
+                      </DraggableComponent>
+                    ))}
+                    {provided.placeholder}
                   </div>
                 )}
-              </div>
-            ))
+              </DroppableComponent>
+            </DragDropContext>
           )}
         </div>
       </div>
-
+   
       {/* SNSガイドモーダル */}
       {showGuide && selectedPlatform && (
         <SnsGuideModalWithDescription
@@ -1097,5 +1154,5 @@ export function MemberSnsManager({
         />
       )}
     </div>
-  );
+   );
 }
