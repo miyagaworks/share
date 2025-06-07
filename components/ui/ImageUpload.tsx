@@ -197,13 +197,16 @@ const SimpleCropper = ({
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
     const newZoom = Math.max(0.1, zoom * delta);
 
-    // 中央基準でズーム調整
+    // 🚀 青い円の中心基準でズーム調整
     adjustZoomFromCenter(newZoom);
   };
 
-  // 画像の中央基準でズームを調整する関数
+  // 🚀 青い円（切り抜き範囲）の中心を基準にズームを調整する関数
   const adjustZoomFromCenter = (newZoom: number) => {
     const containerSize = 300;
+    const cropRadius = 100; // 切り抜き範囲の半径（200px / 2）
+    const cropCenterX = containerSize / 2; // 青い円の中心X座標（150px）
+    const cropCenterY = containerSize / 2; // 青い円の中心Y座標（150px）
 
     // 現在の画像サイズ
     const currentWidth = containerSize * zoom;
@@ -213,13 +216,14 @@ const SimpleCropper = ({
     const newWidth = containerSize * newZoom;
     const newHeight = newWidth / imageAspectRatio;
 
-    // 画像の現在の中央位置を計算
-    const currentImageCenterX = crop.x + currentWidth / 2;
-    const currentImageCenterY = crop.y + currentHeight / 2;
+    // 🚀 青い円の中心から見た、現在の画像上の対応点を計算
+    // 切り抜き範囲の中心が画像上のどの位置に対応するかを求める
+    const currentRelativeX = (cropCenterX - crop.x) / currentWidth;
+    const currentRelativeY = (cropCenterY - crop.y) / currentHeight;
 
-    // 新しいサイズで同じ中央位置を維持するための左上座標を計算
-    const newX = currentImageCenterX - newWidth / 2;
-    const newY = currentImageCenterY - newHeight / 2;
+    // 🚀 新しいズームレベルでも同じ相対位置が青い円の中心に来るように調整
+    const newX = cropCenterX - currentRelativeX * newWidth;
+    const newY = cropCenterY - currentRelativeY * newHeight;
 
     setCrop({
       x: newX,
@@ -265,12 +269,12 @@ const SimpleCropper = ({
 
       setLastPosition({ x: center.x, y: center.y });
     } else if (touches.length === 2 && initialTouchDistance) {
-      // 2本指 - ピンチズーム
+      // 🚀 2本指 - ピンチズーム（青い円の中心基準）
       const distance = getTouchDistance(touches);
       const scaleChange = distance / initialTouchDistance;
-      const newZoom = Math.max(0.1, initialZoom * scaleChange); // 無限拡大
+      const newZoom = Math.max(0.1, initialZoom * scaleChange);
 
-      // 中央基準でズーム調整
+      // 青い円の中心基準でズーム調整
       adjustZoomFromCenter(newZoom);
     }
   };

@@ -302,7 +302,7 @@ export function MemberProfileForm({
             <div className="flex items-center mb-2">
               <HiSparkles className="h-5 w-5 mr-2" style={{ color: '#1E3A8A' }} />
               <h3 className="font-medium" style={{ color: 'rgba(30, 58, 138, 0.9)' }}>
-                自己紹介文を簡単に作成
+                自己紹介文を作成する
               </h3>
             </div>
             <p className="text-sm mb-4 text-justify" style={{ color: 'rgba(30, 58, 138, 0.8)' }}>
