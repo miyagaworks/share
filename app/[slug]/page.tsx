@@ -214,6 +214,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         flexDirection: 'column',
         alignItems: 'center',
         position: 'relative',
+        paddingBottom: '80px', // CTAエリア分のスペースを確保
       }}
     >
       <div
@@ -623,13 +624,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
           {/* フッター */}
           <div style={{ marginTop: '2rem', textAlign: 'center' }}>
-            <Link
-              href="https://sns-share.com"
-              style={{ color: '#2563EB', fontSize: '0.875rem', textDecoration: 'none' }}
-              className="hover:underline profile-text"
-            >
-              このサービスを使ってみる
-            </Link>
             <div
               style={{
                 borderTop: '1px solid #B8B8B8',
@@ -645,12 +639,60 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         </div>
       </div>
 
+      {/* 🆕 CTA（Call To Action）エリア */}
+      <div
+        style={{
+          position: 'fixed',
+          bottom: '0',
+          left: '0',
+          right: '0',
+          backgroundColor: mainColor,
+          padding: '12px 16px',
+          zIndex: 40,
+          borderTop: '1px solid rgba(255,255,255,0.2)',
+          boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+        }}
+      >
+        <Link
+          href="https://sns-share.com"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            color: textColor,
+            textDecoration: 'none',
+            fontWeight: '600',
+            fontSize: '14px',
+          }}
+          className="profile-text"
+        >
+          <svg
+            xmlns="http://www.w3.org/2000/svg"
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            style={{ marginRight: '8px' }}
+          >
+            <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
+            <circle cx="8.5" cy="7" r="4" />
+            <line x1="20" y1="8" x2="20" y2="14" />
+            <line x1="23" y1="11" x2="17" y2="11" />
+          </svg>
+          このサービスを使ってみる
+        </Link>
+      </div>
+
       {/* 文字拡大ボタン */}
       <button
         id="zoom-toggle-btn"
         style={{
           position: 'fixed',
-          bottom: '20px',
+          bottom: '70px',
           left: '20px',
           width: '50px',
           height: '50px',
