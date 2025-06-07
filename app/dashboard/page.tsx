@@ -222,8 +222,8 @@ export default function DashboardPage() {
             </Link>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-4 right-4 opacity-20">
-            <HiUser className="h-48 w-48 text-blue-600" />
+          <div className="absolute bottom-1 right-1 opacity-10">
+            <HiUser className="h-42 w-42 text-blue-600" />
           </div>
         </div>
 
@@ -249,8 +249,8 @@ export default function DashboardPage() {
             </Link>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-4 right-4 opacity-20">
-            <HiLink className="h-48 w-48 text-blue-600" />
+          <div className="absolute bottom-1 right-1 opacity-10">
+            <HiLink className="h-42 w-42 text-blue-600" />
           </div>
         </div>
 
@@ -270,8 +270,8 @@ export default function DashboardPage() {
             </Link>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-4 right-4 opacity-20">
-            <HiColorSwatch className="h-48 w-48 text-blue-600" />
+          <div className="absolute bottom-1 right-1 opacity-10">
+            <HiColorSwatch className="h-42 w-42 text-blue-600" />
           </div>
         </div>
 
@@ -291,8 +291,8 @@ export default function DashboardPage() {
             </Link>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-4 right-4 opacity-20">
-            <HiShare className="h-48 w-48 text-blue-600" />
+          <div className="absolute bottom-1 right-1 opacity-10">
+            <HiShare className="h-42 w-42 text-blue-600" />
           </div>
         </div>
 
@@ -312,8 +312,8 @@ export default function DashboardPage() {
             </Link>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-4 right-4 opacity-20">
-            <HiQrcode className="h-48 w-48 text-blue-600" />
+          <div className="absolute bottom-1 right-1 opacity-10">
+            <HiQrcode className="h-42 w-42 text-blue-600" />
           </div>
         </div>
       </div>
