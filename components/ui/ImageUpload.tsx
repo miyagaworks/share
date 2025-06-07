@@ -108,23 +108,32 @@ export function ImageUpload({
   const handleMouseDown = (e: React.MouseEvent) => {
     setIsDragging(true);
     setDragStart({
-      x: e.clientX - cropArea.x,
-      y: e.clientY - cropArea.y,
+      x: e.clientX,
+      y: e.clientY,
     });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || !imageRef.current) return;
 
+    const rect = e.currentTarget.getBoundingClientRect();
+    const newX = cropArea.x + (e.clientX - dragStart.x);
+    const newY = cropArea.y + (e.clientY - dragStart.y);
+
+    // 画像の境界内に制限
     const img = imageRef.current;
-    const containerSize = 300;
-    const maxX = img.naturalWidth * cropArea.scale - cropArea.width;
-    const maxY = img.naturalHeight * cropArea.scale - cropArea.height;
+    const imgWidth = img.naturalWidth * cropArea.scale;
+    const imgHeight = img.naturalHeight * cropArea.scale;
+    const maxX = Math.min(0, 300 - imgWidth);
+    const maxY = Math.min(0, 300 - imgHeight);
 
-    const newX = Math.max(0, Math.min(maxX, e.clientX - dragStart.x));
-    const newY = Math.max(0, Math.min(maxY, e.clientY - dragStart.y));
+    setCropArea((prev) => ({
+      ...prev,
+      x: Math.max(maxX, Math.min(0, newX)),
+      y: Math.max(maxY, Math.min(0, newY)),
+    }));
 
-    setCropArea((prev) => ({ ...prev, x: newX, y: newY }));
+    setDragStart({ x: e.clientX, y: e.clientY });
   };
 
   const handleMouseUp = () => {
@@ -149,19 +158,31 @@ export function ImageUpload({
     canvas.width = 200;
     canvas.height = 200;
 
-    // 元画像から切り抜く領域を計算
-    const sourceX = cropArea.x / cropArea.scale;
-    const sourceY = cropArea.y / cropArea.scale;
-    const sourceWidth = cropArea.width / cropArea.scale;
-    const sourceHeight = cropArea.height / cropArea.scale;
-
     // 背景を白で塗りつぶし
     ctx.fillStyle = '#ffffff';
     ctx.fillRect(0, 0, 200, 200);
 
+    // 丸いクリッピングパスを作成
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(100, 100, 100, 0, Math.PI * 2);
+    ctx.clip();
+
+    // 元画像から中央の丸い部分を切り抜いて描画
+    const centerX = 150; // エディターの中心X
+    const centerY = 150; // エディターの中心Y
+    const radius = 100; // 丸い範囲の半径
+
+    // 画像上での切り抜き範囲を計算
+    const sourceX = (centerX + cropArea.x) / cropArea.scale - radius / cropArea.scale;
+    const sourceY = (centerY + cropArea.y) / cropArea.scale - radius / cropArea.scale;
+    const sourceWidth = (radius * 2) / cropArea.scale;
+    const sourceHeight = (radius * 2) / cropArea.scale;
+
     // 画像を描画
     ctx.drawImage(img, sourceX, sourceY, sourceWidth, sourceHeight, 0, 0, 200, 200);
 
+    ctx.restore();
     return canvas.toDataURL('image/jpeg', 0.9);
   }, [cropArea]);
 
@@ -214,20 +235,30 @@ export function ImageUpload({
                 draggable={false}
               />
 
-              {/* クロップ領域 */}
+              {/* 白いオーバーレイと丸い透明部分 */}
               <div
-                className="absolute border-2 border-blue-500 bg-blue-500 bg-opacity-20 cursor-move"
-                style={{
-                  left: cropArea.x,
-                  top: cropArea.y,
-                  width: cropArea.width,
-                  height: cropArea.height,
-                }}
+                className="absolute inset-0 cursor-move"
                 onMouseDown={handleMouseDown}
+                style={{
+                  background: `radial-gradient(circle ${cropArea.width / 2}px at ${150}px ${150}px, transparent ${cropArea.width / 2}px, rgba(255, 255, 255, 0.8) ${cropArea.width / 2 + 1}px)`,
+                }}
               >
-                <div className="absolute inset-0 border border-white"></div>
+                {/* 丸い境界線 */}
+                <div
+                  className="absolute border-2 border-blue-500 rounded-full pointer-events-none"
+                  style={{
+                    left: 150 - cropArea.width / 2,
+                    top: 150 - cropArea.height / 2,
+                    width: cropArea.width,
+                    height: cropArea.height,
+                  }}
+                />
               </div>
             </div>
+
+            <p className="text-sm text-gray-600 mt-2 text-center">
+              画像をドラッグして位置を調整できます
+            </p>
           </div>
 
           <div className="mb-4">
