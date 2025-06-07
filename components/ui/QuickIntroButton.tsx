@@ -25,7 +25,7 @@ export function QuickIntroButton() {
           }`}
         >
           <HiSparkles className="mr-2 h-5 w-5 text-yellow-300 animate-pulse" />
-          <span className="text-white font-medium">かんたん自己紹介文を作成</span>
+          <span className="text-white font-medium">自己紹介文を作成する</span>
           <HiExternalLink className="ml-2 h-4 w-4 text-white opacity-70 group-hover:opacity-100 transition-opacity" />
         </Button>
       </Link>

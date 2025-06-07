@@ -45,7 +45,10 @@ const SimpleCropper = ({
 
   // 🚀 プルトゥリフレッシュ防止のためのエフェクト
   useEffect(() => {
-    // モーダル表示時にbodyのスクロールとリフレッシュを防ぐ
+    // モバイルの場合のみリフレッシュ防止を適用
+    if (!isMobile) return;
+
+    // モーダル表示時にbodyのスクロールとリフレッシュを防ぐ（モバイルのみ）
     const originalStyle = {
       overflow: document.body.style.overflow,
       touchAction: document.body.style.touchAction,
@@ -53,7 +56,7 @@ const SimpleCropper = ({
       height: document.body.style.height,
     };
 
-    // bodyを固定してリフレッシュを防ぐ
+    // bodyを固定してリフレッシュを防ぐ（モバイルのみ）
     document.body.style.overflow = 'hidden';
     document.body.style.touchAction = 'none';
     document.body.style.position = 'fixed';
@@ -64,7 +67,7 @@ const SimpleCropper = ({
     const scrollY = window.scrollY;
     document.body.style.top = `-${scrollY}px`;
 
-    // 🚀 プルトゥリフレッシュイベントを防ぐ
+    // 🚀 プルトゥリフレッシュイベントを防ぐ（モバイルのみ）
     const preventRefresh = (e: TouchEvent) => {
       // タッチが2本以上の場合（ピンチ操作）は許可
       if (e.touches.length > 1) return;
@@ -84,15 +87,15 @@ const SimpleCropper = ({
       };
 
       const cleanup = () => {
-        document.removeEventListener('touchmove', preventPull, { passive: false } as any);
+        document.removeEventListener('touchmove', preventPull);
         document.removeEventListener('touchend', cleanup);
       };
 
       document.addEventListener('touchmove', preventPull, { passive: false });
-      document.addEventListener('touchend', cleanup);
+      document.addEventListener('touchend', cleanup, { passive: true });
     };
 
-    // タッチイベントリスナーを追加
+    // タッチイベントリスナーを追加（モバイルのみ）
     document.addEventListener('touchstart', preventRefresh, { passive: false });
 
     // クリーンアップ関数
@@ -111,7 +114,7 @@ const SimpleCropper = ({
       // イベントリスナーを削除
       document.removeEventListener('touchstart', preventRefresh);
     };
-  }, []);
+  }, [isMobile]);
 
   // モバイル判定と初期化
   useEffect(() => {
@@ -341,108 +344,110 @@ const SimpleCropper = ({
   }, [crop, zoom, onComplete, imageLoaded, imageAspectRatio]);
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
-        <h3 className="text-lg font-semibold mb-4">画像を調整</h3>
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+      <div className="bg-white rounded-lg w-full max-w-md max-h-[90vh] overflow-y-auto">
+        <div className="p-6">
+          <h3 className="text-lg font-semibold mb-4">画像を調整</h3>
 
-        <div className="relative mb-4">
-          <div
-            ref={containerRef}
-            className="relative w-[300px] h-[300px] mx-auto border border-gray-300 overflow-hidden bg-gray-100 cursor-move select-none"
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-            onWheel={handleWheel}
-            onTouchStart={handleTouchStart}
-            onTouchMove={handleTouchMove}
-            onTouchEnd={handleTouchEnd}
-            style={{ touchAction: 'none' }}
-          >
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              ref={imageRef}
-              src={image}
-              alt="編集中の画像"
-              className="absolute select-none pointer-events-none"
-              style={{
-                width: `${300 * zoom}px`,
-                height: `${(300 * zoom) / imageAspectRatio}px`, // 縦横比完全固定
-                left: `${crop.x}px`,
-                top: `${crop.y}px`,
-                maxWidth: 'none', // 最大幅制限を解除
-                maxHeight: 'none', // 最大高さ制限を解除
-              }}
-              onLoad={handleImageLoad}
-              draggable={false}
-            />
-
-            {/* 円形オーバーレイ */}
+          <div className="relative mb-4">
             <div
-              className="absolute inset-0 pointer-events-none"
-              style={{
-                background: `radial-gradient(circle 100px at 150px 150px, transparent 100px, rgba(255, 255, 255, 0.8) 101px)`,
-              }}
+              ref={containerRef}
+              className="relative w-[300px] h-[300px] mx-auto border border-gray-300 overflow-hidden bg-gray-100 cursor-move select-none"
+              onMouseDown={handleMouseDown}
+              onMouseMove={handleMouseMove}
+              onMouseUp={handleMouseUp}
+              onMouseLeave={handleMouseUp}
+              onWheel={handleWheel}
+              onTouchStart={handleTouchStart}
+              onTouchMove={handleTouchMove}
+              onTouchEnd={handleTouchEnd}
+              style={{ touchAction: 'none' }}
             >
-              <div
-                className="absolute border-2 border-blue-500 rounded-full"
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                ref={imageRef}
+                src={image}
+                alt="編集中の画像"
+                className="absolute select-none pointer-events-none"
                 style={{
-                  left: 50,
-                  top: 50,
-                  width: 200,
-                  height: 200,
+                  width: `${300 * zoom}px`,
+                  height: `${(300 * zoom) / imageAspectRatio}px`, // 縦横比完全固定
+                  left: `${crop.x}px`,
+                  top: `${crop.y}px`,
+                  maxWidth: 'none', // 最大幅制限を解除
+                  maxHeight: 'none', // 最大高さ制限を解除
                 }}
+                onLoad={handleImageLoad}
+                draggable={false}
               />
+
+              {/* 円形オーバーレイ */}
+              <div
+                className="absolute inset-0 pointer-events-none"
+                style={{
+                  background: `radial-gradient(circle 100px at 150px 150px, transparent 100px, rgba(255, 255, 255, 0.8) 101px)`,
+                }}
+              >
+                <div
+                  className="absolute border-2 border-blue-500 rounded-full"
+                  style={{
+                    left: 50,
+                    top: 50,
+                    width: 200,
+                    height: 200,
+                  }}
+                />
+              </div>
             </div>
+
+            <p className="text-sm text-gray-600 mt-2 text-center">
+              {isMobile
+                ? 'ドラッグで移動、2本指でピンチズーム（無制限）'
+                : 'ドラッグで移動、ホイールまたはスライダーで拡大縮小（無制限）'}
+            </p>
           </div>
 
-          <p className="text-sm text-gray-600 mt-2 text-center">
-            {isMobile
-              ? 'ドラッグで移動、2本指でピンチズーム（無制限）'
-              : 'ドラッグで移動、ホイールまたはスライダーで拡大縮小（無制限）'}
-          </p>
-        </div>
-
-        {/* PC用スライダー */}
-        {!isMobile && (
-          <div className="mb-4">
-            <label className="block text-sm font-medium mb-2">拡大・縮小</label>
-            <input
-              type="range"
-              min="0.1"
-              max="50"
-              step="0.1"
-              value={zoom}
-              onChange={(e) => {
-                const newZoom = Number(e.target.value);
-                adjustZoomFromCenter(newZoom);
-              }}
-              className="w-full"
-            />
-            <div className="flex justify-between text-xs text-gray-500 mt-1">
-              <span>0.1x</span>
-              <span>現在: {zoom.toFixed(1)}x</span>
-              <span>50x+</span>
+          {/* PC用スライダー */}
+          {!isMobile && (
+            <div className="mb-4">
+              <label className="block text-sm font-medium mb-2">拡大・縮小</label>
+              <input
+                type="range"
+                min="0.1"
+                max="50"
+                step="0.1"
+                value={zoom}
+                onChange={(e) => {
+                  const newZoom = Number(e.target.value);
+                  adjustZoomFromCenter(newZoom);
+                }}
+                className="w-full"
+              />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>0.1x</span>
+                <span>現在: {zoom.toFixed(1)}x</span>
+                <span>50x+</span>
+              </div>
             </div>
+          )}
+
+          <div className="flex gap-3">
+            <button
+              onClick={onCancel}
+              className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
+            >
+              キャンセル
+            </button>
+            <button
+              onClick={handleCrop}
+              className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
+            >
+              適用
+            </button>
           </div>
-        )}
 
-        <div className="flex gap-3">
-          <button
-            onClick={onCancel}
-            className="flex-1 px-4 py-2 border border-gray-300 rounded-md text-gray-700 hover:bg-gray-50"
-          >
-            キャンセル
-          </button>
-          <button
-            onClick={handleCrop}
-            className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700"
-          >
-            適用
-          </button>
+          <canvas ref={canvasRef} className="hidden" />
         </div>
-
-        <canvas ref={canvasRef} className="hidden" />
       </div>
     </div>
   );
