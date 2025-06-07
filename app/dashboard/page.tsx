@@ -192,6 +192,7 @@ export default function DashboardPage() {
               <HiUser className="h-5 w-5 text-gray-700" />
               <h2 className="ml-2 text-lg font-semibold">プロフィール</h2>
             </div>
+            <p className="text-sm text-gray-500 mt-1">基本情報や自己紹介を設定できます</p>
           </div>
           <div className="p-6">
             <div className="flex items-center mb-6">
@@ -222,7 +223,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-1 right-1 opacity-10">
+          <div className="absolute bottom-0 right-0 opacity-10">
             <HiUser className="h-42 w-42 text-blue-600" />
           </div>
         </div>
@@ -234,6 +235,9 @@ export default function DashboardPage() {
               <HiLink className="h-5 w-5 text-gray-700" />
               <h2 className="ml-2 text-lg font-semibold">SNSリンク</h2>
             </div>
+            <p className="text-sm text-gray-500 mt-1">
+              SNSアカウントとWebサイトリンクを管理できます
+            </p>
           </div>
           <div className="p-6">
             <div className="flex items-center mb-6">
@@ -249,7 +253,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-1 right-1 opacity-10">
+          <div className="absolute bottom-0 right-0 opacity-10">
             <HiLink className="h-42 w-42 text-blue-600" />
           </div>
         </div>
@@ -261,6 +265,9 @@ export default function DashboardPage() {
               <HiColorSwatch className="h-5 w-5 text-gray-700" />
               <h2 className="ml-2 text-lg font-semibold">デザイン設定</h2>
             </div>
+            <p className="text-sm text-gray-500 mt-1">
+              プロフィールのカラーやデザインをカスタマイズできます
+            </p>
           </div>
           <div className="p-6">
             <Link href="/dashboard/design">
@@ -270,7 +277,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-1 right-1 opacity-10">
+          <div className="absolute bottom-0 right-0 opacity-10">
             <HiColorSwatch className="h-42 w-42 text-blue-600" />
           </div>
         </div>
@@ -282,6 +289,9 @@ export default function DashboardPage() {
               <HiShare className="h-5 w-5 text-gray-700" />
               <h2 className="ml-2 text-lg font-semibold">共有設定</h2>
             </div>
+            <p className="text-sm text-gray-500 mt-1">
+              プロフィールの公開設定や共有方法を管理できます
+            </p>
           </div>
           <div className="p-6">
             <Link href="/dashboard/share">
@@ -291,7 +301,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-1 right-1 opacity-10">
+          <div className="absolute bottom-0 right-0 opacity-10">
             <HiShare className="h-42 w-42 text-blue-600" />
           </div>
         </div>
@@ -303,6 +313,7 @@ export default function DashboardPage() {
               <HiQrcode className="h-5 w-5 text-gray-700" />
               <h2 className="ml-2 text-lg font-semibold">QRコード</h2>
             </div>
+            <p className="text-sm text-gray-500 mt-1">プロフィール共有用のQRコードを作成できます</p>
           </div>
           <div className="p-6">
             <Link href="/qrcode">
@@ -312,7 +323,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-1 right-1 opacity-10">
+          <div className="absolute bottom-0 right-0 opacity-10">
             <HiQrcode className="h-42 w-42 text-blue-600" />
           </div>
         </div>
