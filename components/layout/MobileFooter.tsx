@@ -16,9 +16,6 @@ export function MobileFooter() {
       <footer className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 z-40 md:hidden">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            {/* コピーライト */}
-            <div className="text-xs text-gray-500">&copy; {currentYear} Bialpha Inc.</div>
-
             {/* お問い合わせリンク */}
             <Link
               href="/support/contact"
@@ -27,6 +24,12 @@ export function MobileFooter() {
               <HiOutlineMail className="h-4 w-4 mr-1" />
               お問い合わせ
             </Link>
+
+            {/* 中央コピーライト */}
+            <div className="text-xs text-gray-500">&copy; {currentYear} B-alpha</div>
+
+            {/* 右側は空のスペース（バランス調整） */}
+            <div className="w-20"></div>
           </div>
         </div>
       </footer>
