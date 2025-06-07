@@ -104,21 +104,18 @@ export function ImageUpload({
     const img = imageRef.current;
     const containerSize = 300;
 
-    // 丸い範囲（直径200px）をカバーする最小スケールを計算
-    const minScale = Math.max(200 / img.naturalWidth, 200 / img.naturalHeight);
+    // 最小スケールを計算（丸い範囲をカバーする最小サイズ）
+    const minScaleX = 200 / img.naturalWidth;
+    const minScaleY = 200 / img.naturalHeight;
+    const minScale = Math.max(minScaleX, minScaleY);
 
-    // 初期スケールは最小スケールの1.2倍程度に設定
+    // 初期スケールは最小スケールの1.2倍
     const initialScale = minScale * 1.2;
 
     // 初期位置は中央に配置
-    const scaledWidth = img.naturalWidth * initialScale;
-    const scaledHeight = img.naturalHeight * initialScale;
-    const centerX = (containerSize - scaledWidth) / 2;
-    const centerY = (containerSize - scaledHeight) / 2;
-
     setCropArea({
-      x: centerX,
-      y: centerY,
+      x: 0,
+      y: 0,
       scale: initialScale,
     });
   }, []);
@@ -146,18 +143,18 @@ export function ImageUpload({
     };
   };
 
-  // 画像位置を制限する関数（制限を大幅に緩和）
+  // 画像位置を制限する関数（より緩い制限）
   const constrainPosition = (x: number, y: number, scale: number): { x: number; y: number } => {
     if (!imageRef.current) return { x, y };
 
     const img = imageRef.current;
-    const scaledWidth = img.naturalWidth * scale;
-    const scaledHeight = img.naturalHeight * scale;
+    const imgDisplayWidth = 300 * scale; // 表示幅
+    const imgDisplayHeight = (img.naturalHeight / img.naturalWidth) * imgDisplayWidth; // 縦横比保持
 
-    // より緩い制限：画像が完全に外に出ない程度
-    const minX = -scaledWidth + 50; // 50px以上は見えるように
-    const maxX = 300 - 50; // 50px以上は見えるように
-    const minY = -scaledHeight + 50;
+    // より緩い制限
+    const minX = -imgDisplayWidth + 50;
+    const maxX = 300 - 50;
+    const minY = -imgDisplayHeight + 50;
     const maxY = 300 - 50;
 
     return {
@@ -286,32 +283,26 @@ export function ImageUpload({
     ctx.arc(100, 100, 100, 0, Math.PI * 2);
     ctx.clip();
 
-    // 現在の画像位置とスケールから正確な切り抜き計算
-    const cropCenterX = 150; // エディターの中心X座標
-    const cropCenterY = 150; // エディターの中心Y座標
+    // 座標計算の修正
+    const containerCenter = 150; // エディターの中心座標（300px / 2）
     const cropRadius = 100; // 切り抜き半径
 
-    // 画像上での座標を計算（現在のcropAreaを使用）
-    const imgX = cropArea.x;
-    const imgY = cropArea.y;
-    const imgScale = cropArea.scale;
+    // 画像の表示サイズ（縦横比保持）
+    const imgDisplayWidth = 300 * cropArea.scale;
+    const imgDisplayHeight = (img.naturalHeight / img.naturalWidth) * imgDisplayWidth;
 
-    // 切り抜き範囲の左上角が画像上のどの位置に対応するかを計算
-    const sourceX = (cropCenterX - cropRadius - imgX) / imgScale;
-    const sourceY = (cropCenterY - cropRadius - imgY) / imgScale;
-    const sourceSize = (cropRadius * 2) / imgScale;
+    // 切り抜き範囲の中心が画像上のどの位置に対応するかを計算
+    const cropCenterOnImageX =
+      ((containerCenter - cropArea.x) / imgDisplayWidth) * img.naturalWidth;
+    const cropCenterOnImageY =
+      ((containerCenter - cropArea.y) / imgDisplayHeight) * img.naturalHeight;
 
-    // デバッグ用ログ（本番では削除）
-    console.log('Crop params:', {
-      imgX,
-      imgY,
-      imgScale,
-      sourceX,
-      sourceY,
-      sourceSize,
-      naturalWidth: img.naturalWidth,
-      naturalHeight: img.naturalHeight,
-    });
+    // 元画像での切り抜きサイズ
+    const sourceSize = ((cropRadius * 2) / imgDisplayWidth) * img.naturalWidth;
+
+    // 元画像での切り抜き範囲
+    const sourceX = cropCenterOnImageX - sourceSize / 2;
+    const sourceY = cropCenterOnImageY - sourceSize / 2;
 
     // 画像を描画
     ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 200, 200);
@@ -367,8 +358,8 @@ export function ImageUpload({
                 alt="編集中の画像"
                 className="absolute select-none"
                 style={{
-                  width: `${imageRef.current ? imageRef.current.naturalWidth * cropArea.scale : 0}px`,
-                  height: `${imageRef.current ? imageRef.current.naturalHeight * cropArea.scale : 0}px`,
+                  width: `${100 * cropArea.scale}%`,
+                  height: 'auto',
                   left: `${cropArea.x}px`,
                   top: `${cropArea.y}px`,
                   touchAction: 'none',
