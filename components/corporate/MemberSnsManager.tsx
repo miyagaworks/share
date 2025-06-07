@@ -1,4 +1,4 @@
-// components/corporate/MemberSnsManager.tsx (個人プランと同じロジック版)
+// components/corporate/MemberSnsManager.tsx (並び替え修正版)
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import type {
@@ -24,6 +24,9 @@ import {
   HiInformationCircle,
   HiDotsVertical,
 } from 'react-icons/hi';
+
+// 🚀 追加: Server Actionsをインポート
+import { updateSnsLinkOrder, updateCustomLinkOrder } from '@/actions/sns';
 
 // 型キャストヘルパー
 const DroppableComponent = Droppable as React.ComponentType<{
@@ -364,7 +367,7 @@ export function MemberSnsManager({
     }
   };
 
-  // ドラッグ&ドロップ処理
+  // 🚀 修正: Server Actionを使用したドラッグ&ドロップ処理
   const handleDragEnd = useCallback(
     async (result: DropResult) => {
       if (!result.destination) return;
@@ -379,20 +382,17 @@ export function MemberSnsManager({
         setIsProcessing(true);
         const linkIds = reorderedItems.map((item) => item.id);
 
-        const response = await fetch('/api/corporate-member/links/sns/reorder', {
-          method: 'PATCH',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ linkIds }),
-        });
+        // 🔥 重要: Server Actionを使用
+        const response = await updateSnsLinkOrder(linkIds);
 
-        if (!response.ok) {
-          throw new Error('表示順の更新に失敗しました');
+        if (response.error) {
+          throw new Error(response.error);
         }
 
         onSnsLinkUpdate(reorderedItems);
         toast.success('表示順を更新しました');
       } catch (err) {
-        toast.error('表示順の更新に失敗しました');
+        toast.error(err instanceof Error ? err.message : '表示順の更新に失敗しました');
         setSnsItems(personalSnsLinks);
       } finally {
         setIsProcessing(false);
