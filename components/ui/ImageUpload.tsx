@@ -45,11 +45,18 @@ export function ImageUpload({
   const [initialTouchDistance, setInitialTouchDistance] = useState<number | null>(null);
   const [initialScale, setInitialScale] = useState(1);
   const [isMobile, setIsMobile] = useState(false);
+  const [imageAspectRatio, setImageAspectRatio] = useState(1);
 
   const fileInputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const editorRef = useRef<HTMLDivElement>(null);
+
+  // エディターのサイズ定数
+  const EDITOR_SIZE = 300;
+  const CROP_SIZE = 200;
+  const CROP_RADIUS = CROP_SIZE / 2;
+  const EDITOR_CENTER = EDITOR_SIZE / 2;
 
   // モバイル判定
   useEffect(() => {
@@ -102,15 +109,17 @@ export function ImageUpload({
     if (!imageRef.current) return;
 
     const img = imageRef.current;
-    const containerSize = 300;
+    const aspectRatio = img.naturalWidth / img.naturalHeight;
+    setImageAspectRatio(aspectRatio);
 
     // 最小スケールを計算（丸い範囲をカバーする最小サイズ）
-    const minScaleX = 200 / img.naturalWidth;
-    const minScaleY = 200 / img.naturalHeight;
-    const minScale = Math.max(minScaleX, minScaleY);
+    const minScale = Math.max(
+      CROP_SIZE / EDITOR_SIZE, // 最低でも切り抜き範囲をカバー
+      CROP_SIZE / (EDITOR_SIZE * aspectRatio), // 縦長画像への対応
+    );
 
     // 初期スケールは最小スケールの1.2倍
-    const initialScale = minScale * 1.2;
+    const initialScale = Math.max(minScale * 1.2, 0.5);
 
     // 初期位置は中央に配置
     setCropArea({
@@ -119,6 +128,16 @@ export function ImageUpload({
       scale: initialScale,
     });
   }, []);
+
+  // 画像の表示サイズを計算
+  const getImageDisplaySize = useCallback(
+    (scale: number) => {
+      const displayWidth = EDITOR_SIZE * scale;
+      const displayHeight = displayWidth / imageAspectRatio;
+      return { width: displayWidth, height: displayHeight };
+    },
+    [imageAspectRatio],
+  );
 
   // タッチ間の距離を計算
   const getTouchDistance = (touches: React.TouchList): number => {
@@ -143,19 +162,15 @@ export function ImageUpload({
     };
   };
 
-  // 画像位置を制限する関数（より緩い制限）
+  // 画像位置を制限する関数
   const constrainPosition = (x: number, y: number, scale: number): { x: number; y: number } => {
-    if (!imageRef.current) return { x, y };
+    const { width: imgDisplayWidth, height: imgDisplayHeight } = getImageDisplaySize(scale);
 
-    const img = imageRef.current;
-    const imgDisplayWidth = 300 * scale; // 表示幅
-    const imgDisplayHeight = (img.naturalHeight / img.naturalWidth) * imgDisplayWidth; // 縦横比保持
-
-    // より緩い制限
-    const minX = -imgDisplayWidth + 50;
-    const maxX = 300 - 50;
-    const minY = -imgDisplayHeight + 50;
-    const maxY = 300 - 50;
+    // 切り抜き範囲がはみ出さないように制限
+    const minX = EDITOR_CENTER - CROP_RADIUS - imgDisplayWidth + CROP_SIZE;
+    const maxX = EDITOR_CENTER - CROP_RADIUS;
+    const minY = EDITOR_CENTER - CROP_RADIUS - imgDisplayHeight + CROP_SIZE;
+    const maxY = EDITOR_CENTER - CROP_RADIUS;
 
     return {
       x: Math.max(minX, Math.min(maxX, x)),
@@ -215,10 +230,10 @@ export function ImageUpload({
     const touches = e.touches;
 
     if (touches.length === 1 && isDragging && lastTouch) {
-      // 単一タッチ - ドラッグ（スマホでは感度を高く）
+      // 単一タッチ - ドラッグ
       const center = getTouchCenter(touches);
-      const deltaX = (center.x - lastTouch.x) * 1.5; // スマホでは感度1.5倍
-      const deltaY = (center.y - lastTouch.y) * 1.5;
+      const deltaX = center.x - lastTouch.x;
+      const deltaY = center.y - lastTouch.y;
 
       setCropArea((prev) => {
         const newPos = constrainPosition(prev.x + deltaX, prev.y + deltaY, prev.scale);
@@ -227,19 +242,20 @@ export function ImageUpload({
 
       setLastTouch({ x: center.x, y: center.y });
     } else if (touches.length === 2 && initialTouchDistance && lastTouch) {
-      // 2本指 - ピンチズーム（スマホでは制限を緩く）
+      // 2本指 - ピンチズーム
       const distance = getTouchDistance(touches);
-      const center = getTouchCenter(touches);
 
       const scaleChange = distance / initialTouchDistance;
-      const newScale = Math.max(0.3, Math.min(5, initialScale * scaleChange)); // より広い範囲
+      const minScale = Math.max(
+        CROP_SIZE / EDITOR_SIZE,
+        CROP_SIZE / (EDITOR_SIZE * imageAspectRatio),
+      );
+      const newScale = Math.max(minScale, Math.min(5, initialScale * scaleChange));
 
       setCropArea((prev) => {
         const newPos = constrainPosition(prev.x, prev.y, newScale);
         return { ...prev, scale: newScale, ...newPos };
       });
-
-      setLastTouch({ x: center.x, y: center.y, distance });
     }
   };
 
@@ -270,46 +286,53 @@ export function ImageUpload({
     const img = imageRef.current;
 
     // 出力サイズを200x200に設定
-    canvas.width = 200;
-    canvas.height = 200;
+    canvas.width = CROP_SIZE;
+    canvas.height = CROP_SIZE;
 
     // 背景を白で塗りつぶし
     ctx.fillStyle = '#ffffff';
-    ctx.fillRect(0, 0, 200, 200);
+    ctx.fillRect(0, 0, CROP_SIZE, CROP_SIZE);
 
     // 丸いクリッピングパスを作成
     ctx.save();
     ctx.beginPath();
-    ctx.arc(100, 100, 100, 0, Math.PI * 2);
+    ctx.arc(CROP_RADIUS, CROP_RADIUS, CROP_RADIUS, 0, Math.PI * 2);
     ctx.clip();
 
-    // 座標計算の修正
-    const containerCenter = 150; // エディターの中心座標（300px / 2）
-    const cropRadius = 100; // 切り抜き半径
+    // 画像の表示サイズを計算
+    const { width: imgDisplayWidth, height: imgDisplayHeight } = getImageDisplaySize(
+      cropArea.scale,
+    );
 
-    // 画像の表示サイズ（縦横比保持）
-    const imgDisplayWidth = 300 * cropArea.scale;
-    const imgDisplayHeight = (img.naturalHeight / img.naturalWidth) * imgDisplayWidth;
+    // 切り抜き範囲の左上角の座標（画像上での位置）
+    const cropLeft = EDITOR_CENTER - CROP_RADIUS - cropArea.x;
+    const cropTop = EDITOR_CENTER - CROP_RADIUS - cropArea.y;
 
-    // 切り抜き範囲の中心が画像上のどの位置に対応するかを計算
-    const cropCenterOnImageX =
-      ((containerCenter - cropArea.x) / imgDisplayWidth) * img.naturalWidth;
-    const cropCenterOnImageY =
-      ((containerCenter - cropArea.y) / imgDisplayHeight) * img.naturalHeight;
-
-    // 元画像での切り抜きサイズ
-    const sourceSize = ((cropRadius * 2) / imgDisplayWidth) * img.naturalWidth;
+    // 元画像でのピクセル比率
+    const scaleX = img.naturalWidth / imgDisplayWidth;
+    const scaleY = img.naturalHeight / imgDisplayHeight;
 
     // 元画像での切り抜き範囲
-    const sourceX = cropCenterOnImageX - sourceSize / 2;
-    const sourceY = cropCenterOnImageY - sourceSize / 2;
+    const sourceX = cropLeft * scaleX;
+    const sourceY = cropTop * scaleY;
+    const sourceSize = CROP_SIZE * scaleX; // 正方形なのでwidthとheightは同じ
 
-    // 画像を描画
-    ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 200, 200);
+    // 画像を描画（元画像の縦横比を保持）
+    ctx.drawImage(
+      img,
+      sourceX,
+      sourceY,
+      sourceSize,
+      sourceSize * (scaleY / scaleX),
+      0,
+      0,
+      CROP_SIZE,
+      CROP_SIZE,
+    );
 
     ctx.restore();
     return canvas.toDataURL('image/jpeg', 0.9);
-  }, [cropArea]);
+  }, [cropArea, CROP_SIZE, CROP_RADIUS, EDITOR_CENTER, getImageDisplaySize]);
 
   const handleApply = () => {
     const croppedImage = cropImage();
@@ -334,6 +357,14 @@ export function ImageUpload({
   };
 
   if (showEditor && originalImage) {
+    const { width: imgDisplayWidth, height: imgDisplayHeight } = getImageDisplaySize(
+      cropArea.scale,
+    );
+    const minScale = Math.max(
+      CROP_SIZE / EDITOR_SIZE,
+      CROP_SIZE / (EDITOR_SIZE * imageAspectRatio),
+    );
+
     return (
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white rounded-lg p-6 max-w-md w-full mx-4">
@@ -358,8 +389,8 @@ export function ImageUpload({
                 alt="編集中の画像"
                 className="absolute select-none"
                 style={{
-                  width: `${100 * cropArea.scale}%`,
-                  height: 'auto',
+                  width: `${imgDisplayWidth}px`,
+                  height: `${imgDisplayHeight}px`,
                   left: `${cropArea.x}px`,
                   top: `${cropArea.y}px`,
                   touchAction: 'none',
@@ -372,17 +403,17 @@ export function ImageUpload({
               <div
                 className="absolute inset-0 pointer-events-none"
                 style={{
-                  background: `radial-gradient(circle 100px at 150px 150px, transparent 100px, rgba(255, 255, 255, 0.8) 101px)`,
+                  background: `radial-gradient(circle ${CROP_RADIUS}px at ${EDITOR_CENTER}px ${EDITOR_CENTER}px, transparent ${CROP_RADIUS}px, rgba(255, 255, 255, 0.8) ${CROP_RADIUS + 1}px)`,
                 }}
               >
                 {/* 丸い境界線 */}
                 <div
                   className="absolute border-2 border-blue-500 rounded-full"
                   style={{
-                    left: 50,
-                    top: 50,
-                    width: 200,
-                    height: 200,
+                    left: EDITOR_CENTER - CROP_RADIUS,
+                    top: EDITOR_CENTER - CROP_RADIUS,
+                    width: CROP_SIZE,
+                    height: CROP_SIZE,
                   }}
                 />
               </div>
@@ -390,7 +421,7 @@ export function ImageUpload({
 
             <p className="text-sm text-gray-600 mt-2 text-center">
               {isMobile
-                ? 'ドラッグで移動、2本指でピンチズーム（感度高め）'
+                ? 'ドラッグで移動、2本指でピンチズーム'
                 : 'ドラッグで移動、スライダーで拡大縮小'}
             </p>
           </div>
@@ -401,13 +432,17 @@ export function ImageUpload({
               <label className="block text-sm font-medium mb-2">拡大・縮小</label>
               <input
                 type="range"
-                min="0.2"
-                max="4"
-                step="0.1"
+                min={minScale}
+                max="3"
+                step="0.05"
                 value={cropArea.scale}
                 onChange={handleScaleChange}
                 className="w-full"
               />
+              <div className="flex justify-between text-xs text-gray-500 mt-1">
+                <span>最小</span>
+                <span>最大</span>
+              </div>
             </div>
           )}
 
