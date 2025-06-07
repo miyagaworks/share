@@ -224,7 +224,7 @@ export default function DashboardPage() {
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-0 right-0 opacity-10">
-            <HiUser className="h-50 w-50 text-blue-600" />
+            <HiUser className="h-52 w-52 text-blue-600" />
           </div>
         </div>
 
@@ -254,7 +254,7 @@ export default function DashboardPage() {
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-0 right-0 opacity-10">
-            <HiLink className="h-48 w-48 text-blue-600" />
+            <HiLink className="h-47 w-47 text-blue-600" />
           </div>
         </div>
 

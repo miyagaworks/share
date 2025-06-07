@@ -103,13 +103,23 @@ export function ImageUpload({
 
     const img = imageRef.current;
     const containerSize = 300;
-    const scale =
-      Math.max(containerSize / img.naturalWidth, containerSize / img.naturalHeight) * 0.8; // 少し小さめに初期設定
+
+    // 丸い範囲（直径200px）をカバーする最小スケールを計算
+    const minScale = Math.max(200 / img.naturalWidth, 200 / img.naturalHeight);
+
+    // 初期スケールは最小スケールの1.2倍程度に設定
+    const initialScale = minScale * 1.2;
+
+    // 初期位置は中央に配置
+    const scaledWidth = img.naturalWidth * initialScale;
+    const scaledHeight = img.naturalHeight * initialScale;
+    const centerX = (containerSize - scaledWidth) / 2;
+    const centerY = (containerSize - scaledHeight) / 2;
 
     setCropArea({
-      x: 0,
-      y: 0,
-      scale: scale,
+      x: centerX,
+      y: centerY,
+      scale: initialScale,
     });
   }, []);
 
@@ -136,6 +146,26 @@ export function ImageUpload({
     };
   };
 
+  // 画像位置を制限する関数（制限を大幅に緩和）
+  const constrainPosition = (x: number, y: number, scale: number): { x: number; y: number } => {
+    if (!imageRef.current) return { x, y };
+
+    const img = imageRef.current;
+    const scaledWidth = img.naturalWidth * scale;
+    const scaledHeight = img.naturalHeight * scale;
+
+    // より緩い制限：画像が完全に外に出ない程度
+    const minX = -scaledWidth + 50; // 50px以上は見えるように
+    const maxX = 300 - 50; // 50px以上は見えるように
+    const minY = -scaledHeight + 50;
+    const maxY = 300 - 50;
+
+    return {
+      x: Math.max(minX, Math.min(maxX, x)),
+      y: Math.max(minY, Math.min(maxY, y)),
+    };
+  };
+
   // デスクトップ用マウスイベント
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isMobile) return;
@@ -150,20 +180,8 @@ export function ImageUpload({
     const deltaY = e.clientY - lastTouch.y;
 
     setCropArea((prev) => {
-      const img = imageRef.current!;
-      const imgWidth = img.naturalWidth * prev.scale;
-      const imgHeight = img.naturalHeight * prev.scale;
-
-      const maxX = Math.min(0, 300 - imgWidth);
-      const maxY = Math.min(0, 300 - imgHeight);
-      const minX = Math.max(maxX, -imgWidth + 300);
-      const minY = Math.max(maxY, -imgHeight + 300);
-
-      return {
-        ...prev,
-        x: Math.max(maxX, Math.min(0, prev.x + deltaX)),
-        y: Math.max(maxY, Math.min(0, prev.y + deltaY)),
-      };
+      const newPos = constrainPosition(prev.x + deltaX, prev.y + deltaY, prev.scale);
+      return { ...prev, ...newPos };
     });
 
     setLastTouch({ x: e.clientX, y: e.clientY });
@@ -200,39 +218,29 @@ export function ImageUpload({
     const touches = e.touches;
 
     if (touches.length === 1 && isDragging && lastTouch) {
-      // 単一タッチ - ドラッグ
+      // 単一タッチ - ドラッグ（スマホでは感度を高く）
       const center = getTouchCenter(touches);
-      const deltaX = center.x - lastTouch.x;
-      const deltaY = center.y - lastTouch.y;
+      const deltaX = (center.x - lastTouch.x) * 1.5; // スマホでは感度1.5倍
+      const deltaY = (center.y - lastTouch.y) * 1.5;
 
       setCropArea((prev) => {
-        const img = imageRef.current!;
-        const imgWidth = img.naturalWidth * prev.scale;
-        const imgHeight = img.naturalHeight * prev.scale;
-
-        const maxX = Math.min(0, 300 - imgWidth);
-        const maxY = Math.min(0, 300 - imgHeight);
-
-        return {
-          ...prev,
-          x: Math.max(maxX, Math.min(0, prev.x + deltaX)),
-          y: Math.max(maxY, Math.min(0, prev.y + deltaY)),
-        };
+        const newPos = constrainPosition(prev.x + deltaX, prev.y + deltaY, prev.scale);
+        return { ...prev, ...newPos };
       });
 
       setLastTouch({ x: center.x, y: center.y });
     } else if (touches.length === 2 && initialTouchDistance && lastTouch) {
-      // 2本指 - ピンチズーム
+      // 2本指 - ピンチズーム（スマホでは制限を緩く）
       const distance = getTouchDistance(touches);
       const center = getTouchCenter(touches);
 
       const scaleChange = distance / initialTouchDistance;
-      const newScale = Math.max(0.5, Math.min(3, initialScale * scaleChange));
+      const newScale = Math.max(0.3, Math.min(5, initialScale * scaleChange)); // より広い範囲
 
-      setCropArea((prev) => ({
-        ...prev,
-        scale: newScale,
-      }));
+      setCropArea((prev) => {
+        const newPos = constrainPosition(prev.x, prev.y, newScale);
+        return { ...prev, scale: newScale, ...newPos };
+      });
 
       setLastTouch({ x: center.x, y: center.y, distance });
     }
@@ -249,7 +257,10 @@ export function ImageUpload({
   const handleScaleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (isMobile) return;
     const newScale = parseFloat(e.target.value);
-    setCropArea((prev) => ({ ...prev, scale: newScale }));
+    setCropArea((prev) => {
+      const newPos = constrainPosition(prev.x, prev.y, newScale);
+      return { ...prev, scale: newScale, ...newPos };
+    });
   };
 
   const cropImage = useCallback(() => {
@@ -275,19 +286,32 @@ export function ImageUpload({
     ctx.arc(100, 100, 100, 0, Math.PI * 2);
     ctx.clip();
 
-    // 画像の描画計算を修正
-    const centerX = 150; // エディターの中心X
-    const centerY = 150; // エディターの中心Y
-    const radius = 100; // 丸い範囲の半径
+    // 現在の画像位置とスケールから正確な切り抜き計算
+    const cropCenterX = 150; // エディターの中心X座標
+    const cropCenterY = 150; // エディターの中心Y座標
+    const cropRadius = 100; // 切り抜き半径
 
-    // 実際の画像位置から切り抜き範囲を正確に計算
-    const imgPosX = cropArea.x;
-    const imgPosY = cropArea.y;
+    // 画像上での座標を計算（現在のcropAreaを使用）
+    const imgX = cropArea.x;
+    const imgY = cropArea.y;
+    const imgScale = cropArea.scale;
 
-    // 中央の丸い部分が画像上のどの部分に対応するかを計算
-    const sourceX = (centerX - imgPosX) / cropArea.scale - radius / cropArea.scale;
-    const sourceY = (centerY - imgPosY) / cropArea.scale - radius / cropArea.scale;
-    const sourceSize = (radius * 2) / cropArea.scale;
+    // 切り抜き範囲の左上角が画像上のどの位置に対応するかを計算
+    const sourceX = (cropCenterX - cropRadius - imgX) / imgScale;
+    const sourceY = (cropCenterY - cropRadius - imgY) / imgScale;
+    const sourceSize = (cropRadius * 2) / imgScale;
+
+    // デバッグ用ログ（本番では削除）
+    console.log('Crop params:', {
+      imgX,
+      imgY,
+      imgScale,
+      sourceX,
+      sourceY,
+      sourceSize,
+      naturalWidth: img.naturalWidth,
+      naturalHeight: img.naturalHeight,
+    });
 
     // 画像を描画
     ctx.drawImage(img, sourceX, sourceY, sourceSize, sourceSize, 0, 0, 200, 200);
@@ -327,7 +351,7 @@ export function ImageUpload({
           <div className="relative mb-4">
             <div
               ref={editorRef}
-              className="relative w-[300px] h-[300px] mx-auto border border-gray-300 overflow-hidden touch-none"
+              className="relative w-[300px] h-[300px] mx-auto border border-gray-300 overflow-hidden touch-none bg-gray-100"
               onMouseDown={handleMouseDown}
               onMouseMove={handleMouseMove}
               onMouseUp={handleMouseUp}
@@ -343,8 +367,8 @@ export function ImageUpload({
                 alt="編集中の画像"
                 className="absolute select-none"
                 style={{
-                  width: `${100 * cropArea.scale}%`,
-                  height: 'auto',
+                  width: `${imageRef.current ? imageRef.current.naturalWidth * cropArea.scale : 0}px`,
+                  height: `${imageRef.current ? imageRef.current.naturalHeight * cropArea.scale : 0}px`,
                   left: `${cropArea.x}px`,
                   top: `${cropArea.y}px`,
                   touchAction: 'none',
@@ -375,8 +399,8 @@ export function ImageUpload({
 
             <p className="text-sm text-gray-600 mt-2 text-center">
               {isMobile
-                ? 'ドラッグで移動、2本指で拡大縮小'
-                : '画像をドラッグして位置を調整できます'}
+                ? 'ドラッグで移動、2本指でピンチズーム（感度高め）'
+                : 'ドラッグで移動、スライダーで拡大縮小'}
             </p>
           </div>
 
@@ -386,8 +410,8 @@ export function ImageUpload({
               <label className="block text-sm font-medium mb-2">拡大・縮小</label>
               <input
                 type="range"
-                min="0.5"
-                max="3"
+                min="0.2"
+                max="4"
                 step="0.1"
                 value={cropArea.scale}
                 onChange={handleScaleChange}
