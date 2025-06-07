@@ -123,8 +123,38 @@ const SimpleCropper = ({
   const handleWheel = (e: React.WheelEvent) => {
     if (isMobile) return;
     e.preventDefault();
+
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    setZoom((prev) => Math.max(0.1, prev * delta)); // 無限拡大（制限なし）
+    const newZoom = Math.max(0.1, zoom * delta);
+
+    // 中央基準でズーム調整
+    adjustZoomFromCenter(newZoom);
+  };
+
+  // 中央基準でズームを調整する関数
+  const adjustZoomFromCenter = (newZoom: number) => {
+    const containerSize = 300;
+    const containerCenter = containerSize / 2;
+
+    // 現在の画像サイズ
+    const currentWidth = containerSize * zoom;
+    const currentHeight = currentWidth / imageAspectRatio;
+
+    // 新しい画像サイズ
+    const newWidth = containerSize * newZoom;
+    const newHeight = newWidth / imageAspectRatio;
+
+    // サイズ変化量
+    const widthDiff = newWidth - currentWidth;
+    const heightDiff = newHeight - currentHeight;
+
+    // 中央基準なので、サイズ変化量の半分だけ位置を調整
+    setCrop((prev) => ({
+      x: prev.x - widthDiff / 2,
+      y: prev.y - heightDiff / 2,
+    }));
+
+    setZoom(newZoom);
   };
 
   // タッチイベント（モバイル用）
@@ -167,7 +197,9 @@ const SimpleCropper = ({
       const distance = getTouchDistance(touches);
       const scaleChange = distance / initialTouchDistance;
       const newZoom = Math.max(0.1, initialZoom * scaleChange); // 無限拡大
-      setZoom(newZoom);
+
+      // 中央基準でズーム調整
+      adjustZoomFromCenter(newZoom);
     }
   };
 
@@ -305,7 +337,10 @@ const SimpleCropper = ({
               max="50"
               step="0.1"
               value={zoom}
-              onChange={(e) => setZoom(Number(e.target.value))}
+              onChange={(e) => {
+                const newZoom = Number(e.target.value);
+                adjustZoomFromCenter(newZoom);
+              }}
               className="w-full"
             />
             <div className="flex justify-between text-xs text-gray-500 mt-1">
