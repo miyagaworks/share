@@ -186,7 +186,7 @@ export default function DashboardPage() {
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* プロフィールカード */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden relative">
           <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center">
               <HiUser className="h-5 w-5 text-gray-700" />
@@ -221,10 +221,14 @@ export default function DashboardPage() {
               </button>
             </Link>
           </div>
+          {/* 右下のアイコン */}
+          <div className="absolute bottom-4 right-4 opacity-20">
+            <HiUser className="h-16 w-16 text-blue-600" />
+          </div>
         </div>
 
         {/* SNSリンクカード */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden relative">
           <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center">
               <HiLink className="h-5 w-5 text-gray-700" />
@@ -244,10 +248,14 @@ export default function DashboardPage() {
               </button>
             </Link>
           </div>
+          {/* 右下のアイコン */}
+          <div className="absolute bottom-4 right-4 opacity-20">
+            <HiLink className="h-16 w-16 text-blue-600" />
+          </div>
         </div>
 
         {/* デザイン設定カード */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden relative">
           <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center">
               <HiColorSwatch className="h-5 w-5 text-gray-700" />
@@ -261,10 +269,14 @@ export default function DashboardPage() {
               </button>
             </Link>
           </div>
+          {/* 右下のアイコン */}
+          <div className="absolute bottom-4 right-4 opacity-20">
+            <HiColorSwatch className="h-16 w-16 text-blue-600" />
+          </div>
         </div>
 
         {/* 共有設定カード */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden relative">
           <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center">
               <HiShare className="h-5 w-5 text-gray-700" />
@@ -278,10 +290,14 @@ export default function DashboardPage() {
               </button>
             </Link>
           </div>
+          {/* 右下のアイコン */}
+          <div className="absolute bottom-4 right-4 opacity-20">
+            <HiShare className="h-16 w-16 text-blue-600" />
+          </div>
         </div>
 
         {/* QRコードカード */}
-        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden relative">
           <div className="border-b border-gray-200 px-6 py-4">
             <div className="flex items-center">
               <HiQrcode className="h-5 w-5 text-gray-700" />
@@ -294,6 +310,10 @@ export default function DashboardPage() {
                 作成する
               </button>
             </Link>
+          </div>
+          {/* 右下のアイコン */}
+          <div className="absolute bottom-4 right-4 opacity-20">
+            <HiQrcode className="h-16 w-16 text-blue-600" />
           </div>
         </div>
       </div>
