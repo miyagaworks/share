@@ -369,7 +369,7 @@ export function MemberProfileForm({
             </label>
             <Input
               name="phone"
-              placeholder="090-XXXX-XXXX"
+              placeholder="090XXXXXXXX"
               value={formData.phone}
               onChange={handleChange}
               disabled={isSaving}

@@ -242,7 +242,7 @@ export function ProfileForm({ user }: ProfileFormProps) {
         <div>
           <Input
             label="電話番号"
-            placeholder="090-XXXX-XXXX"
+            placeholder="090XXXXXXXX"
             {...register('phone')}
             error={errors.phone?.message}
             disabled={isPending}
