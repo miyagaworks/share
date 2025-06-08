@@ -654,6 +654,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           zIndex: 40,
           borderTop: '1px solid rgba(255,255,255,0.2)',
           boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
+          boxSizing: 'border-box',
+          padding: '0',
+          margin: '0',
         }}
       >
         <Link
