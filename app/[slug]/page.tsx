@@ -647,6 +647,8 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           right: '0',
           backgroundColor: 'rgb(29, 78, 216)',
           height: '100px',
+          maxHeight: '100px',
+          minHeight: '100px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
@@ -654,8 +656,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           borderTop: '1px solid rgba(255,255,255,0.2)',
           boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
           boxSizing: 'border-box',
-          padding: '0',
+          padding: '20px',
           margin: '0',
+          overflow: 'hidden',
         }}
       >
         <Link
@@ -697,7 +700,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         id="zoom-toggle-btn"
         style={{
           position: 'fixed',
-          bottom: '110px',
+          bottom: '120px',
           left: '20px',
           width: '50px',
           height: '50px',
