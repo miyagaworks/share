@@ -700,7 +700,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         id="zoom-toggle-btn"
         style={{
           position: 'fixed',
-          bottom: '120px',
+          bottom: '80px',
           left: '20px',
           width: '50px',
           height: '50px',
