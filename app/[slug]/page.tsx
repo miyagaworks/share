@@ -214,7 +214,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         flexDirection: 'column',
         alignItems: 'center',
         position: 'relative',
-        paddingBottom: '100px', // CTAエリア分のスペースを確保
       }}
     >
       <div
@@ -252,7 +251,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           </p>
         </div>
 
-        <div style={{ padding: '1.5rem' }}>
+        <div style={{ padding: '1.5rem', paddingBottom: '120px' }}>
           {/* 法人ロゴ */}
           {tenant?.logoUrl && (
             <div
