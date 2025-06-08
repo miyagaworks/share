@@ -646,8 +646,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           bottom: '0',
           left: '0',
           right: '0',
-          backgroundColor: mainColor,
-          padding: '12px 16px',
+          backgroundColor: 'rgb(29, 78, 216)',
+          height: '100px',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
           zIndex: 40,
           borderTop: '1px solid rgba(255,255,255,0.2)',
           boxShadow: '0 -2px 10px rgba(0,0,0,0.1)',
@@ -659,17 +662,17 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            color: textColor,
+            color: 'white',
             textDecoration: 'none',
             fontWeight: '600',
-            fontSize: '14px',
+            fontSize: '16px',
           }}
           className="profile-text"
         >
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="18"
-            height="18"
+            width="20"
+            height="20"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
@@ -692,7 +695,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         id="zoom-toggle-btn"
         style={{
           position: 'fixed',
-          bottom: '70px',
+          bottom: '110px',
           left: '20px',
           width: '50px',
           height: '50px',
