@@ -1,4 +1,4 @@
-// components/forms/SNSLinkFormWithGuideIntegration.tsx (修正版 - API Route対応)
+// components/forms/SNSLinkFormWithGuideIntegration.tsx (修正版 - ボタン間隔統一)
 'use client';
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
@@ -12,16 +12,20 @@ import { SnsGuideModalWithDescription } from '@/components/shared/SnsGuideModalW
 import { SNS_PLATFORMS, SNS_METADATA, type SnsPlatform } from '@/types/sns';
 import { motion, AnimatePresence } from 'framer-motion';
 import { HiInformationCircle } from 'react-icons/hi';
+
 const SnsLinkSchema = z.object({
   platform: z.enum(SNS_PLATFORMS),
   username: z.string().optional(),
   url: z.string().url({ message: '有効なURLを入力してください' }),
 });
+
 type FormData = z.infer<typeof SnsLinkSchema>;
+
 interface SNSLinkFormWithGuideIntegrationProps {
   onSuccess: () => void;
   existingPlatforms: string[];
 }
+
 export function SNSLinkFormWithGuideIntegration({
   onSuccess,
   existingPlatforms,
@@ -34,6 +38,7 @@ export function SNSLinkFormWithGuideIntegration({
   const [lineInputValue, setLineInputValue] = useState('');
   const [officialLineInputValue, setOfficialLineInputValue] = useState('');
   const [berealInputValue, setBerealInputValue] = useState('');
+
   const {
     register,
     handleSubmit,
@@ -49,8 +54,10 @@ export function SNSLinkFormWithGuideIntegration({
       url: '',
     },
   });
+
   const urlValue = watch('url');
   const usernameValue = watch('username');
+
   // URL検証
   useEffect(() => {
     if (!urlValue) {
@@ -64,14 +71,17 @@ export function SNSLinkFormWithGuideIntegration({
       setUrlValid(false);
     }
   }, [urlValue]);
+
   const availablePlatforms = SNS_PLATFORMS.filter(
     (platform) => !existingPlatforms.includes(platform),
   );
+
   const extractLineId = (url: string): string => {
     const lineUrlPattern = /(?:https?:\/\/)?line\.me\/ti\/p\/([^?#\s]+)/i;
     const match = url.match(lineUrlPattern);
     return match && match[1] ? match[1] : url;
   };
+
   const processOfficialLineUrl = (url: string): string => {
     try {
       new URL(url);
@@ -80,11 +90,13 @@ export function SNSLinkFormWithGuideIntegration({
       return '';
     }
   };
+
   const extractBerealUsername = (url: string): string => {
     const berealUrlPattern = /(?:https?:\/\/)?bere\.al\/([^?#\s\/]+)/i;
     const match = url.match(berealUrlPattern);
     return match && match[1] ? match[1] : url;
   };
+
   const handlePlatformSelect = (platform: SnsPlatform) => {
     setSelectedPlatform(platform);
     setValue('platform', platform);
@@ -105,6 +117,7 @@ export function SNSLinkFormWithGuideIntegration({
       setValue('username', '');
     }
   };
+
   const handleLineInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     setLineInputValue(inputValue);
@@ -112,12 +125,14 @@ export function SNSLinkFormWithGuideIntegration({
     setValue('username', extractedId);
     setValue('url', `https://line.me/ti/p/${extractedId}`);
   };
+
   const handleOfficialLineInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     setOfficialLineInputValue(inputValue);
     setValue('username', '');
     setValue('url', processOfficialLineUrl(inputValue));
   };
+
   const handleBerealInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const inputValue = e.target.value;
     setBerealInputValue(inputValue);
@@ -125,6 +140,7 @@ export function SNSLinkFormWithGuideIntegration({
     setValue('username', extractedUsername);
     setValue('url', `https://bere.al/${extractedUsername}`);
   };
+
   const handleUsernameChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const username = e.target.value;
     setValue('username', username);
@@ -133,7 +149,7 @@ export function SNSLinkFormWithGuideIntegration({
       setValue('url', url);
     }
   };
-  // 🚀 修正: API Route経由でSNSリンクを追加
+
   const onSubmit = async (data: FormData) => {
     try {
       setIsPending(true);
@@ -141,7 +157,7 @@ export function SNSLinkFormWithGuideIntegration({
       if (selectedPlatform === 'line') {
         finalUrl = `https://line.me/ti/p/${extractLineId(data.url)}`;
       }
-      // 🔥 重要: Server ActionではなくAPI Routeを使用
+
       const response = await fetch('/api/links/sns', {
         method: 'POST',
         headers: {
@@ -153,6 +169,7 @@ export function SNSLinkFormWithGuideIntegration({
           url: finalUrl,
         }),
       });
+
       if (!response.ok) {
         const responseText = await response.text();
         let errorMessage = 'SNSリンクの追加に失敗しました';
@@ -162,14 +179,16 @@ export function SNSLinkFormWithGuideIntegration({
             errorMessage = errorData.error;
           }
         } catch (err) {
+          // JSON解析エラーは無視
         }
         throw new Error(errorMessage);
       }
+
       const result = await response.json();
       if (!result.success) {
         throw new Error(result.error || 'SNSリンクの追加に失敗しました');
       }
-      // 成功時の処理
+
       toast.success(`${SNS_METADATA[data.platform].name}を追加しました`);
       reset();
       setSelectedPlatform(null);
@@ -185,14 +204,17 @@ export function SNSLinkFormWithGuideIntegration({
       setIsPending(false);
     }
   };
+
   const handleOpenGuide = () => {
     if (selectedPlatform) {
       setShowGuide(true);
     }
   };
+
   const handleCloseGuide = () => {
     setShowGuide(false);
   };
+
   return (
     <div className="space-y-6">
       <div className="space-y-4">
@@ -213,13 +235,13 @@ export function SNSLinkFormWithGuideIntegration({
                   key={platform}
                   onClick={() => handlePlatformSelect(platform)}
                   className={`
-                                        flex flex-col items-center p-3 rounded-md border cursor-pointer transition-all
-                                        ${
-                                          selectedPlatform === platform
-                                            ? 'border-blue-500 bg-blue-50'
-                                            : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
-                                        }
-                                    `}
+                    flex flex-col items-center p-3 rounded-md border cursor-pointer transition-all
+                    ${
+                      selectedPlatform === platform
+                        ? 'border-blue-500 bg-blue-50'
+                        : 'border-gray-200 hover:border-blue-300 hover:bg-blue-50'
+                    }
+                  `}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.2, delay: index * 0.03 }}
@@ -240,6 +262,7 @@ export function SNSLinkFormWithGuideIntegration({
             <p className="text-sm text-destructive mt-1">{errors.platform.message}</p>
           )}
         </div>
+
         <AnimatePresence>
           {selectedPlatform && (
             <motion.div
@@ -322,6 +345,7 @@ export function SNSLinkFormWithGuideIntegration({
                   </AnimatePresence>
                 </div>
               </div>
+
               <motion.div
                 initial={{ opacity: 0, y: -10 }}
                 animate={{ opacity: 1, y: 0 }}
@@ -344,6 +368,7 @@ export function SNSLinkFormWithGuideIntegration({
                   </p>
                 </div>
               </motion.div>
+
               {selectedPlatform === 'line' && usernameValue && (
                 <div>
                   <label className="text-sm font-medium leading-none block mb-2">
@@ -353,6 +378,7 @@ export function SNSLinkFormWithGuideIntegration({
                   <p className="mt-1 text-xs text-gray-500">URLから自動的に抽出されたLINE IDです</p>
                 </div>
               )}
+
               {selectedPlatform === 'official-line' && urlValue && (
                 <div>
                   <label className="text-sm font-medium leading-none block mb-2">
@@ -362,6 +388,7 @@ export function SNSLinkFormWithGuideIntegration({
                   <p className="mt-1 text-xs text-gray-500">公式LINEのURLはそのまま使用されます</p>
                 </div>
               )}
+
               {selectedPlatform === 'bereal' && usernameValue && (
                 <div>
                   <label className="text-sm font-medium leading-none block mb-2">
@@ -373,6 +400,7 @@ export function SNSLinkFormWithGuideIntegration({
                   </p>
                 </div>
               )}
+
               <div>
                 <label className="text-sm font-medium leading-none block mb-2">URL</label>
                 <div className="relative">
@@ -408,8 +436,9 @@ export function SNSLinkFormWithGuideIntegration({
           )}
         </AnimatePresence>
       </div>
-      {/* 追加ボタン（中央配置） */}
-      <div className="flex justify-center">
+
+      {/* 🚀 修正: mb-2を追加してキャンセルボタンとの間隔を統一 */}
+      <div className="flex justify-center mb-2">
         <Button
           type="button"
           disabled={isPending || !selectedPlatform || !urlValid}
@@ -447,6 +476,7 @@ export function SNSLinkFormWithGuideIntegration({
           )}
         </Button>
       </div>
+
       {selectedPlatform && (
         <SnsGuideModalWithDescription
           platform={selectedPlatform}
