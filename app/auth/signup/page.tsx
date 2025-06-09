@@ -411,7 +411,7 @@ export default function SignupPage() {
                     onClick={togglePasswordVisibility}
                     tabIndex={-1}
                     style={{
-                      top: 'calc(50% + 6px)', // ラベル分を考慮してinputフィールドの中央
+                      top: 'calc(50% + 5px)', // ラベル分を考慮してinputフィールドの中央
                       transform: 'translateY(-50%)',
                     }}
                   >
