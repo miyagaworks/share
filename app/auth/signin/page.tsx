@@ -553,7 +553,7 @@ export default function SigninPage() {
             <div>
               <Button
                 type="submit"
-                className={`w-full text-white transition-colors shadow-md ${
+                className={`w-full text-white transition-colors shadow-md min-h-[48px] md:min-h-0 ${
                   isFormValid
                     ? 'bg-blue-600 hover:bg-blue-800 transform hover:-translate-y-0.5'
                     : 'bg-blue-300 hover:bg-blue-400'
@@ -644,7 +644,7 @@ export default function SigninPage() {
 
             <div className="mt-4">
               <Button
-                className={`w-full bg-white text-gray-700 border border-gray-300 flex items-center justify-center transform hover:-translate-y-0.5 transition ${
+                className={`w-full bg-white text-gray-700 border border-gray-300 flex items-center justify-center transform hover:-translate-y-0.5 transition min-h-[48px] md:min-h-0 ${
                   termsAccepted ? 'hover:bg-gray-50 shadow-sm' : 'opacity-50 cursor-not-allowed'
                 }`}
                 variant="outline"
