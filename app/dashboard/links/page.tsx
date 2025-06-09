@@ -182,21 +182,21 @@ export default function LinksPage() {
         </div>
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6">
-          <TabsList className="mb-4 sm:mb-0 bg-blue-50 p-1 rounded-lg border border-blue-100">
+        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
+          <TabsList className="mb-4 sm:mb-0 bg-blue-50 p-1 rounded-lg border border-blue-100 w-full sm:w-auto">
             <TabsTrigger
               value="sns"
-              className={`px-4 py-2 rounded-md transition-all ${
+              className={`px-2 sm:px-4 py-2 rounded-md transition-all text-xs sm:text-sm ${
                 activeTab === 'sns'
                   ? 'bg-blue-600 shadow-sm text-white font-medium'
                   : 'text-blue-700 hover:bg-blue-100'
               }`}
             >
               <span className="flex items-center">
-                <HiLink className="mr-2 h-4 w-4" />
-                SNSリンク
+                <HiLink className="mr-1 sm:mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">SNSリンク</span>
                 {snsLinks.length > 0 && (
-                  <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-medium text-blue-600">
+                  <span className="ml-1 sm:ml-2 inline-flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-white text-xs font-medium text-blue-600">
                     {snsLinks.length}
                   </span>
                 )}
@@ -204,24 +204,24 @@ export default function LinksPage() {
             </TabsTrigger>
             <TabsTrigger
               value="custom"
-              className={`px-4 py-2 rounded-md transition-all ${
+              className={`px-2 sm:px-4 py-2 rounded-md transition-all text-xs sm:text-sm ${
                 activeTab === 'custom'
                   ? 'bg-blue-600 shadow-sm text-white font-medium'
                   : 'text-blue-700 hover:bg-blue-100'
               }`}
             >
               <span className="flex items-center">
-                <HiGlobeAlt className="mr-2 h-4 w-4" />
-                カスタムリンク
+                <HiGlobeAlt className="mr-1 sm:mr-2 h-4 w-4 flex-shrink-0" />
+                <span className="whitespace-nowrap">カスタムリンク</span>
                 {customLinks.length > 0 && (
-                  <span className="ml-2 inline-flex h-5 w-5 items-center justify-center rounded-full bg-white text-xs font-medium text-blue-600">
+                  <span className="ml-1 sm:ml-2 inline-flex h-4 w-4 sm:h-5 sm:w-5 items-center justify-center rounded-full bg-white text-xs font-medium text-blue-600">
                     {customLinks.length}
                   </span>
                 )}
               </span>
             </TabsTrigger>
           </TabsList>
-          <div>
+          <div className="w-full sm:w-auto">
             {activeTab === 'sns' && (
               <Button
                 onClick={() => setIsAddingSns(true)}
@@ -335,7 +335,7 @@ export default function LinksPage() {
                 <div className="flex justify-center mt-6">
                   <Button
                     onClick={() => setIsAddingCustom(true)}
-                    className="flex items-center justify-center"
+                    className="flex items-center min-h-[48px] md:min-h-0 text-base md:text-sm"
                     disabled={isProcessing}
                   >
                     <HiPlus className="mr-2 h-4 w-4" />
