@@ -235,7 +235,7 @@ export default function LinksPage() {
             {activeTab === 'custom' && (
               <Button
                 onClick={() => setIsAddingCustom(true)}
-                className="flex items-center"
+                className="flex items-center justify-center min-h-[48px] md:min-h-0 text-base md:text-sm"
                 disabled={isProcessing}
               >
                 <HiPlus className="mr-2 h-4 w-4" />
