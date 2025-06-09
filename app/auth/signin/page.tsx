@@ -496,9 +496,13 @@ export default function SigninPage() {
                   />
                   <button
                     type="button"
-                    className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none"
+                    className="absolute right-3 top-8 h-5 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none z-10"
                     onClick={togglePasswordVisibility}
                     tabIndex={-1}
+                    style={{
+                      top: 'calc(50% + 10px)', // ラベル分を考慮してinputフィールドの中央
+                      transform: 'translateY(-50%)',
+                    }}
                   >
                     {showPassword ? (
                       <svg
