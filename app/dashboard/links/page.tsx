@@ -282,7 +282,7 @@ export default function LinksPage() {
                       existingPlatforms={snsLinks.map((link) => link.platform)}
                       onSuccess={handleSnsAddSuccess}
                     />
-                    <div className="mt-4 flex justify-center">
+                    <div className="mt-2 flex justify-center">
                       <Button
                         variant="outline"
                         onClick={() => setIsAddingSns(false)}
@@ -355,11 +355,12 @@ export default function LinksPage() {
                       key={`custom-form-${refreshKey}`}
                       onSuccess={handleCustomAddSuccess}
                     />
-                    <div className="mt-4 flex justify-center">
+                    <div className="mt-2 flex justify-center">
                       <Button
                         variant="outline"
                         onClick={() => setIsAddingCustom(false)}
                         disabled={isProcessing}
+                        className="min-h-[48px] md:min-h-0 text-base md:text-sm"
                       >
                         キャンセル
                       </Button>
