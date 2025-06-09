@@ -351,7 +351,6 @@ export default function LinksPage() {
                   <DashboardCard
                     title="新規カスタムリンク追加"
                     icon={<HiPlus className="h-5 w-5 text-gray-500" />}
-                    className="mb-6"
                   >
                     <div className="mb-2">
                       <CustomLinkForm
