@@ -391,7 +391,7 @@ export function MemberProfileForm({
           onMouseEnter={() => setIsSecondaryHovered(true)}
           onMouseLeave={() => setIsSecondaryHovered(false)}
           onClick={() => (window.location.href = '/dashboard/corporate-member')}
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto min-h-[48px] md:min-h-0 text-base md:text-sm flex items-center justify-center"
         >
           キャンセル
         </Button>
@@ -402,7 +402,7 @@ export function MemberProfileForm({
           disabled={isSaving}
           loading={isSaving}
           loadingText="更新中..."
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto min-h-[48px] md:min-h-0 text-base md:text-sm flex items-center justify-center"
         >
           プロフィールを更新
         </Button>

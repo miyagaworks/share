@@ -20,7 +20,7 @@ export function QuickIntroButton() {
         <Button
           type="button"
           variant={isCorporateMember ? 'corporate' : 'default'}
-          className={`w-full py-3 group relative flex items-center justify-center ${
+          className={`w-full py-3 group relative flex items-center justify-center min-h-[48px] md:min-h-0 text-base md:text-sm ${
             !isCorporateMember ? 'bg-blue-700 hover:bg-blue-800' : ''
           }`}
         >
