@@ -1,10 +1,9 @@
-// app/dashboard/page.tsx (ボタン修正版)
+// app/dashboard/page.tsx (完全修正版)
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
-import Link from 'next/link';
 import Image from 'next/image';
 import { HiUser, HiLink, HiColorSwatch, HiShare, HiQrcode } from 'react-icons/hi';
 
@@ -29,6 +28,18 @@ export default function DashboardPage() {
 
   const [userData, setUserData] = useState<UserData | null>(null);
   const [snsCount, setSnsCount] = useState(0);
+
+  // ナビゲーション関数
+  const handleNavigation = (path: string) => {
+    console.log('Navigation clicked:', path);
+    try {
+      router.push(path);
+    } catch (error) {
+      console.error('Navigation error:', error);
+      // フォールバック: window.location を使用
+      window.location.href = path;
+    }
+  };
 
   // ユーザータイプ判定とリダイレクト処理
   useEffect(() => {
@@ -176,7 +187,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 relative z-10">
       <div className="flex items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">個人ダッシュボード</h1>
@@ -194,7 +205,7 @@ export default function DashboardPage() {
             </div>
             <p className="text-sm text-gray-500 mt-1">基本情報や自己紹介を設定できます</p>
           </div>
-          <div className="p-6">
+          <div className="p-6 relative z-20">
             <div className="flex items-center mb-6">
               {userData?.image ? (
                 <Image
@@ -217,15 +228,19 @@ export default function DashboardPage() {
               </div>
             </div>
             <button
-              onClick={() => router.push('/dashboard/profile')}
-              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-800 active:bg-blue-900 active:scale-95 transition-all duration-150 min-h-[48px] md:min-h-0 touch-manipulation cursor-pointer"
-              style={{ WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)' }}
+              onClick={() => handleNavigation('/dashboard/profile')}
+              className="relative w-full py-3 md:py-2 px-4 bg-blue-600 border border-blue-600 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-800 active:scale-[0.98] transition-all duration-150 min-h-[48px] md:min-h-0 flex items-center justify-center cursor-pointer select-none z-30"
+              style={{
+                WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)',
+                WebkitUserSelect: 'none',
+                touchAction: 'manipulation',
+              }}
             >
               編 集
             </button>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-0 right-0 opacity-10">
+          <div className="absolute bottom-0 right-0 opacity-10 pointer-events-none">
             <HiUser className="h-52 w-52 text-blue-600" />
           </div>
         </div>
@@ -241,7 +256,7 @@ export default function DashboardPage() {
               SNSアカウントとWebサイトリンクを管理できます
             </p>
           </div>
-          <div className="p-6">
+          <div className="p-6 relative z-20">
             <div className="flex items-center mb-6">
               <div className="h-10 w-10 rounded-full bg-blue-100 flex items-center justify-center">
                 <span className="text-blue-700 font-medium">{snsCount}</span>
@@ -249,15 +264,19 @@ export default function DashboardPage() {
               <span className="ml-3 text-gray-600">/ 12 SNS設定済み</span>
             </div>
             <button
-              onClick={() => router.push('/dashboard/links')}
-              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-800 active:bg-blue-900 active:scale-95 transition-all duration-150 min-h-[48px] md:min-h-0 touch-manipulation cursor-pointer"
-              style={{ WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)' }}
+              onClick={() => handleNavigation('/dashboard/links')}
+              className="relative w-full py-3 md:py-2 px-4 bg-blue-600 border border-blue-600 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-800 active:scale-[0.98] transition-all duration-150 min-h-[48px] md:min-h-0 flex items-center justify-center cursor-pointer select-none z-30"
+              style={{
+                WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)',
+                WebkitUserSelect: 'none',
+                touchAction: 'manipulation',
+              }}
             >
               管 理
             </button>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-0 right-0 opacity-10">
+          <div className="absolute bottom-0 right-0 opacity-10 pointer-events-none">
             <HiLink className="h-47 w-47 text-blue-600" />
           </div>
         </div>
@@ -273,17 +292,21 @@ export default function DashboardPage() {
               プロフィールのカラーやデザインをカスタマイズできます
             </p>
           </div>
-          <div className="p-6">
+          <div className="p-6 relative z-20">
             <button
-              onClick={() => router.push('/dashboard/design')}
-              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-800 active:bg-blue-900 active:scale-95 transition-all duration-150 min-h-[48px] md:min-h-0 touch-manipulation cursor-pointer"
-              style={{ WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)' }}
+              onClick={() => handleNavigation('/dashboard/design')}
+              className="relative w-full py-3 md:py-2 px-4 bg-blue-600 border border-blue-600 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-800 active:scale-[0.98] transition-all duration-150 min-h-[48px] md:min-h-0 flex items-center justify-center cursor-pointer select-none z-30"
+              style={{
+                WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)',
+                WebkitUserSelect: 'none',
+                touchAction: 'manipulation',
+              }}
             >
               設定する
             </button>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-0 right-0 opacity-10">
+          <div className="absolute bottom-0 right-0 opacity-10 pointer-events-none">
             <HiColorSwatch className="h-45 w-45 text-blue-600" />
           </div>
         </div>
@@ -299,17 +322,21 @@ export default function DashboardPage() {
               プロフィールの公開設定や共有方法を管理できます
             </p>
           </div>
-          <div className="p-6">
+          <div className="p-6 relative z-20">
             <button
-              onClick={() => router.push('/dashboard/share')}
-              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-800 active:bg-blue-900 active:scale-95 transition-all duration-150 min-h-[48px] md:min-h-0 touch-manipulation cursor-pointer"
-              style={{ WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)' }}
+              onClick={() => handleNavigation('/dashboard/share')}
+              className="relative w-full py-3 md:py-2 px-4 bg-blue-600 border border-blue-600 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-800 active:scale-[0.98] transition-all duration-150 min-h-[48px] md:min-h-0 flex items-center justify-center cursor-pointer select-none z-30"
+              style={{
+                WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)',
+                WebkitUserSelect: 'none',
+                touchAction: 'manipulation',
+              }}
             >
               設定する
             </button>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-0 right-0 opacity-10">
+          <div className="absolute bottom-0 right-0 opacity-10 pointer-events-none">
             <HiShare className="h-45 w-45 text-blue-600" />
           </div>
         </div>
@@ -323,17 +350,21 @@ export default function DashboardPage() {
             </div>
             <p className="text-sm text-gray-500 mt-1">プロフィール共有用のQRコードを作成できます</p>
           </div>
-          <div className="p-6">
+          <div className="p-6 relative z-20">
             <button
-              onClick={() => router.push('/qrcode')}
-              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-800 active:bg-blue-900 active:scale-95 transition-all duration-150 min-h-[48px] md:min-h-0 touch-manipulation cursor-pointer"
-              style={{ WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)' }}
+              onClick={() => handleNavigation('/qrcode')}
+              className="relative w-full py-3 md:py-2 px-4 bg-blue-600 border border-blue-600 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-700 active:bg-blue-800 active:scale-[0.98] transition-all duration-150 min-h-[48px] md:min-h-0 flex items-center justify-center cursor-pointer select-none z-30"
+              style={{
+                WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)',
+                WebkitUserSelect: 'none',
+                touchAction: 'manipulation',
+              }}
             >
               作成する
             </button>
           </div>
           {/* 右下のアイコン */}
-          <div className="absolute bottom-0 right-0 opacity-10">
+          <div className="absolute bottom-0 right-0 opacity-10 pointer-events-none">
             <HiQrcode className="h-45 w-45 text-blue-600" />
           </div>
         </div>

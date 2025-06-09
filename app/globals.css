@@ -1,4 +1,4 @@
-/* app/globals.css - フッター対応版 */
+/* app/globals.css - ボタン問題修正版 */
 
 @import "tailwindcss";
 
@@ -12,7 +12,6 @@ html {
     /* 🚀 強化されたピンチアウト防止 */
     touch-action: pan-x pan-y !important;
     -webkit-touch-callout: none !important;
-    -webkit-user-select: none !important;
     -webkit-text-size-adjust: none !important;
     -ms-touch-action: pan-x pan-y !important;
     -ms-text-size-adjust: none !important;
@@ -32,7 +31,6 @@ body {
     /* 🚀 ピンチアウト防止の強化 */
     touch-action: pan-x pan-y !important;
     -webkit-touch-callout: none !important;
-    -webkit-user-select: none !important;
     -webkit-text-size-adjust: none !important;
     -ms-touch-action: pan-x pan-y !important;
     -ms-text-size-adjust: none !important;
@@ -44,17 +42,31 @@ body {
     overflow-x: hidden !important;
 }
 
-/* 🚀 全要素に対するピンチ防止設定 */
-*,
-*::before,
-*::after {
+/* 🚀 修正: ボタンとインタラクティブ要素は除外 */
+*:not(button):not(a):not(input):not(textarea):not(select):not([role="button"]):not(.interactive),
+*:not(button):not(a):not(input):not(textarea):not(select):not([role="button"]):not(.interactive)::before,
+*:not(button):not(a):not(input):not(textarea):not(select):not([role="button"]):not(.interactive)::after {
     touch-action: pan-x pan-y !important;
     -webkit-touch-callout: none !important;
     -webkit-user-select: none !important;
     -webkit-text-size-adjust: none !important;
     -ms-touch-action: pan-x pan-y !important;
     -ms-text-size-adjust: none !important;
-    user-zoom: fixed !important;
+}
+
+/* 🚀 インタラクティブ要素の明示的設定 */
+button,
+a,
+input,
+textarea,
+select,
+[role="button"],
+.interactive {
+    touch-action: manipulation !important;
+    -webkit-user-select: none !important;
+    user-select: none !important;
+    cursor: pointer !important;
+    pointer-events: auto !important;
 }
 
 /* ===== ダークモード基本対応 ===== */
@@ -99,9 +111,8 @@ button {
     -webkit-text-size-adjust: none !important;
     -ms-text-size-adjust: none !important;
     text-size-adjust: none !important;
-    touch-action: pan-x pan-y !important;
+    touch-action: manipulation !important;
     -webkit-touch-callout: none !important;
-    -webkit-user-select: none !important;
     /* iOS Safari でのフォーカス時拡大防止 */
     transform: translateZ(0) !important;
     -webkit-transform: translateZ(0) !important;
@@ -287,8 +298,8 @@ div[contenteditable],
         margin-right: auto !important;
     }
 
-    /* 🚀 モバイル専用のピンチ防止強化 */
-    * {
+    /* 🚀 モバイル専用のピンチ防止強化（ボタン除外） */
+    *:not(button):not(a):not(input):not(textarea):not(select):not([role="button"]):not(.interactive) {
         -webkit-user-select: none !important;
         -webkit-touch-callout: none !important;
         -webkit-text-size-adjust: none !important;
@@ -345,7 +356,7 @@ div[contenteditable],
     background: var(--gray-400);
 }
 
-/* 🚀 iOS Safari 専用の強力な拡大防止 */
+/* 🚀 iOS Safari 専用の強力な拡大防止（ボタン除外） */
 @supports (-webkit-touch-callout: none) {
 
     html,
@@ -356,10 +367,22 @@ div[contenteditable],
         touch-action: pan-x pan-y !important;
     }
 
-    * {
+    *:not(button):not(a):not(input):not(textarea):not(select):not([role="button"]):not(.interactive) {
         -webkit-touch-callout: none !important;
         -webkit-user-select: none !important;
         touch-action: pan-x pan-y !important;
+    }
+
+    /* インタラクティブ要素の明示的設定 */
+    button,
+    a,
+    input,
+    textarea,
+    select,
+    [role="button"],
+    .interactive {
+        touch-action: manipulation !important;
+        pointer-events: auto !important;
     }
 
     /* テキスト選択が必要な要素のみ選択可能にする */
@@ -373,7 +396,7 @@ div[contenteditable],
     }
 }
 
-/* 🚀 Android Chrome 専用設定 */
+/* 🚀 Android Chrome 専用設定（ボタン除外） */
 @media screen and (-webkit-min-device-pixel-ratio: 0) {
 
     html,
@@ -381,5 +404,16 @@ div[contenteditable],
         touch-action: pan-x pan-y !important;
         -ms-touch-action: pan-x pan-y !important;
         user-zoom: fixed !important;
+    }
+
+    button,
+    a,
+    input,
+    textarea,
+    select,
+    [role="button"],
+    .interactive {
+        touch-action: manipulation !important;
+        pointer-events: auto !important;
     }
 }
