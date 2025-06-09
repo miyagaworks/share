@@ -216,12 +216,13 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-500">{userData?.email || session?.user?.email}</p>
               </div>
             </div>
-            <Link
-              href="/dashboard/profile"
-              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors min-h-[48px] md:min-h-0"
+            <button
+              onClick={() => router.push('/dashboard/profile')}
+              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-800 active:bg-blue-900 active:scale-95 transition-all duration-150 min-h-[48px] md:min-h-0 touch-manipulation cursor-pointer"
+              style={{ WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)' }}
             >
-              編集
-            </Link>
+              編 集
+            </button>
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-0 right-0 opacity-10">
@@ -247,12 +248,13 @@ export default function DashboardPage() {
               </div>
               <span className="ml-3 text-gray-600">/ 12 SNS設定済み</span>
             </div>
-            <Link
-              href="/dashboard/links"
-              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors min-h-[48px] md:min-h-0"
+            <button
+              onClick={() => router.push('/dashboard/links')}
+              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-800 active:bg-blue-900 active:scale-95 transition-all duration-150 min-h-[48px] md:min-h-0 touch-manipulation cursor-pointer"
+              style={{ WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)' }}
             >
-              管理
-            </Link>
+              管 理
+            </button>
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-0 right-0 opacity-10">
@@ -272,12 +274,13 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="p-6">
-            <Link
-              href="/dashboard/design"
-              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors min-h-[48px] md:min-h-0"
+            <button
+              onClick={() => router.push('/dashboard/design')}
+              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-800 active:bg-blue-900 active:scale-95 transition-all duration-150 min-h-[48px] md:min-h-0 touch-manipulation cursor-pointer"
+              style={{ WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)' }}
             >
               設定する
-            </Link>
+            </button>
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-0 right-0 opacity-10">
@@ -297,12 +300,13 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="p-6">
-            <Link
-              href="/dashboard/share"
-              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors min-h-[48px] md:min-h-0"
+            <button
+              onClick={() => router.push('/dashboard/share')}
+              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-800 active:bg-blue-900 active:scale-95 transition-all duration-150 min-h-[48px] md:min-h-0 touch-manipulation cursor-pointer"
+              style={{ WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)' }}
             >
               設定する
-            </Link>
+            </button>
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-0 right-0 opacity-10">
@@ -320,12 +324,13 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-500 mt-1">プロフィール共有用のQRコードを作成できます</p>
           </div>
           <div className="p-6">
-            <Link
-              href="/qrcode"
-              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors min-h-[48px] md:min-h-0"
+            <button
+              onClick={() => router.push('/qrcode')}
+              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-base md:text-sm font-medium text-white hover:bg-blue-800 active:bg-blue-900 active:scale-95 transition-all duration-150 min-h-[48px] md:min-h-0 touch-manipulation cursor-pointer"
+              style={{ WebkitTapHighlightColor: 'rgba(59, 130, 246, 0.3)' }}
             >
               作成する
-            </Link>
+            </button>
           </div>
           {/* 右下のアイコン */}
           <div className="absolute bottom-0 right-0 opacity-10">
