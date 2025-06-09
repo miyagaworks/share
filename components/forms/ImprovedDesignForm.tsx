@@ -323,7 +323,11 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
           </p>
         </div>
       </div>
-      <Button type="submit" disabled={isPending} className="w-full relative overflow-hidden group">
+      <Button
+        type="submit"
+        disabled={isPending}
+        className="w-full relative overflow-hidden group min-h-[48px] text-base md:text-sm"
+      >
         <span
           className={`transition-all duration-300 ${isSubmitting ? 'opacity-0' : 'opacity-100'}`}
         >
