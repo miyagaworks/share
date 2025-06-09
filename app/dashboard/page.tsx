@@ -1,4 +1,4 @@
-// app/dashboard/page.tsx (本番版)
+// app/dashboard/page.tsx (ボタン修正版)
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -216,10 +216,11 @@ export default function DashboardPage() {
                 <p className="text-sm text-gray-500">{userData?.email || session?.user?.email}</p>
               </div>
             </div>
-            <Link href="/dashboard/profile">
-              <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
-                編集
-              </button>
+            <Link
+              href="/dashboard/profile"
+              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors min-h-[48px] md:min-h-0"
+            >
+              編集
             </Link>
           </div>
           {/* 右下のアイコン */}
@@ -246,10 +247,11 @@ export default function DashboardPage() {
               </div>
               <span className="ml-3 text-gray-600">/ 12 SNS設定済み</span>
             </div>
-            <Link href="/dashboard/links">
-              <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
-                管理
-              </button>
+            <Link
+              href="/dashboard/links"
+              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors min-h-[48px] md:min-h-0"
+            >
+              管理
             </Link>
           </div>
           {/* 右下のアイコン */}
@@ -270,10 +272,11 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="p-6">
-            <Link href="/dashboard/design">
-              <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
-                設定する
-              </button>
+            <Link
+              href="/dashboard/design"
+              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors min-h-[48px] md:min-h-0"
+            >
+              設定する
             </Link>
           </div>
           {/* 右下のアイコン */}
@@ -294,10 +297,11 @@ export default function DashboardPage() {
             </p>
           </div>
           <div className="p-6">
-            <Link href="/dashboard/share">
-              <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
-                設定する
-              </button>
+            <Link
+              href="/dashboard/share"
+              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors min-h-[48px] md:min-h-0"
+            >
+              設定する
             </Link>
           </div>
           {/* 右下のアイコン */}
@@ -316,10 +320,11 @@ export default function DashboardPage() {
             <p className="text-sm text-gray-500 mt-1">プロフィール共有用のQRコードを作成できます</p>
           </div>
           <div className="p-6">
-            <Link href="/qrcode">
-              <button className="flex items-center justify-center w-full py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors">
-                作成する
-              </button>
+            <Link
+              href="/qrcode"
+              className="flex items-center justify-center w-full py-3 md:py-2 px-4 bg-blue-600 border border-gray-300 rounded-md text-sm font-medium text-white hover:bg-blue-800 transition-colors min-h-[48px] md:min-h-0"
+            >
+              作成する
             </Link>
           </div>
           {/* 右下のアイコン */}
