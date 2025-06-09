@@ -359,7 +359,7 @@ export default function LinksPage() {
                         onSuccess={handleCustomAddSuccess}
                       />
                     </div>
-                    <div className="mt-4 flex justify-center">
+                    <div className="flex justify-center">
                       <Button
                         variant="outline"
                         onClick={() => setIsAddingCustom(false)}

@@ -106,7 +106,7 @@ export function CustomLinkForm({ onSuccess }: CustomLinkFormProps) {
       </div>
 
       {/* 🚀 修正: mb-2を追加してキャンセルボタンとの間隔を統一 */}
-      <div className="flex justify-center mb-2">
+      <div className="flex justify-center">
         <Button
           type="submit"
           disabled={isPending}
