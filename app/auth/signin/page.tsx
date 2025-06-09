@@ -500,7 +500,7 @@ export default function SigninPage() {
                     onClick={togglePasswordVisibility}
                     tabIndex={-1}
                     style={{
-                      top: 'calc(50% + 5px)', // ラベル分を考慮してinputフィールドの中央
+                      top: 'calc(50% + 3px)', // ラベル分を考慮してinputフィールドの中央
                       transform: 'translateY(-50%)',
                     }}
                   >
