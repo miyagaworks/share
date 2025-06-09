@@ -183,10 +183,10 @@ export default function LinksPage() {
       </div>
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4">
-          <TabsList className="mb-4 sm:mb-0 bg-blue-50 p-1 rounded-lg border border-blue-100 w-full sm:w-auto">
+          <TabsList className="mb-4 sm:mb-0 bg-blue-50 p-1 rounded-lg border border-blue-100 w-full sm:w-auto flex">
             <TabsTrigger
               value="sns"
-              className={`px-2 sm:px-4 py-2 rounded-md transition-all text-xs sm:text-sm ${
+              className={`flex-1 px-2 sm:px-4 py-2 rounded-md transition-all text-xs sm:text-sm ${
                 activeTab === 'sns'
                   ? 'bg-blue-600 shadow-sm text-white font-medium'
                   : 'text-blue-700 hover:bg-blue-100'
@@ -204,7 +204,7 @@ export default function LinksPage() {
             </TabsTrigger>
             <TabsTrigger
               value="custom"
-              className={`px-2 sm:px-4 py-2 rounded-md transition-all text-xs sm:text-sm ${
+              className={`flex-1 px-2 sm:px-4 py-2 rounded-md transition-all text-xs sm:text-sm ${
                 activeTab === 'custom'
                   ? 'bg-blue-600 shadow-sm text-white font-medium'
                   : 'text-blue-700 hover:bg-blue-100'
