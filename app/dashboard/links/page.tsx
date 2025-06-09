@@ -277,11 +277,13 @@ export default function LinksPage() {
               <DashboardSection>
                 {isAddingSns && (
                   <DashboardCard title="新規SNSリンク追加" className="mb-6">
-                    <SNSLinkFormWithGuideIntegration
-                      key={`sns-form-${refreshKey}`}
-                      existingPlatforms={snsLinks.map((link) => link.platform)}
-                      onSuccess={handleSnsAddSuccess}
-                    />
+                    <div className="mb-2">
+                      <SNSLinkFormWithGuideIntegration
+                        key={`sns-form-${refreshKey}`}
+                        existingPlatforms={snsLinks.map((link) => link.platform)}
+                        onSuccess={handleSnsAddSuccess}
+                      />
+                    </div>
                     <div className="mt-4 flex justify-center">
                       <Button
                         variant="outline"
@@ -351,10 +353,12 @@ export default function LinksPage() {
                     icon={<HiPlus className="h-5 w-5 text-gray-500" />}
                     className="mb-6"
                   >
-                    <CustomLinkForm
-                      key={`custom-form-${refreshKey}`}
-                      onSuccess={handleCustomAddSuccess}
-                    />
+                    <div className="mb-2">
+                      <CustomLinkForm
+                        key={`custom-form-${refreshKey}`}
+                        onSuccess={handleCustomAddSuccess}
+                      />
+                    </div>
                     <div className="mt-4 flex justify-center">
                       <Button
                         variant="outline"
