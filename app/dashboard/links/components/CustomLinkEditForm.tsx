@@ -77,65 +77,57 @@ export function CustomLinkEditForm({ link, onCancel, onSuccess }: CustomLinkEdit
         }
     };
     return (
-        <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="flex items-center gap-3 mb-4">
-                <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10">
-                    <HiLink className="w-5 h-5 text-primary" />
-                </div>
-                <div>
-                    <p className="font-medium">
-                        カスタムリンクを編集
-                    </p>
-                </div>
-            </div>
-            {error && (
-                <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">
-                    {error}
-                </div>
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="flex items-center gap-3 mb-4">
+          <div className="flex items-center justify-center w-10 h-10 rounded-md bg-primary/10">
+            <HiLink className="w-5 h-5 text-primary" />
+          </div>
+          <div>
+            <p className="font-medium">カスタムリンクを編集</p>
+          </div>
+        </div>
+        {error && (
+          <div className="p-3 rounded-md bg-destructive/10 text-destructive text-sm">{error}</div>
+        )}
+        <div>
+          <label className="text-sm font-medium block mb-2">リンク名</label>
+          <Input
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+            placeholder="ポートフォリオ"
+            disabled={isSubmitting}
+          />
+        </div>
+        <div>
+          <label className="text-sm font-medium block mb-2">URL</label>
+          <Input
+            value={url}
+            onChange={(e) => setUrl(e.target.value)}
+            placeholder="https://"
+            disabled={isSubmitting}
+          />
+        </div>
+        <div className="flex justify-end space-x-2 pt-2">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+            className="min-h-[48px] md:min-h-0 text-base md:text-sm"
+          >
+            キャンセル
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? (
+              <div className="flex items-center">
+                <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2" />
+                更新中...
+              </div>
+            ) : (
+              '更新する'
             )}
-            <div>
-                <label className="text-sm font-medium block mb-2">
-                    リンク名
-                </label>
-                <Input
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                    placeholder="ポートフォリオ"
-                    disabled={isSubmitting}
-                />
-            </div>
-            <div>
-                <label className="text-sm font-medium block mb-2">
-                    URL
-                </label>
-                <Input
-                    value={url}
-                    onChange={(e) => setUrl(e.target.value)}
-                    placeholder="https://"
-                    disabled={isSubmitting}
-                />
-            </div>
-            <div className="flex justify-end space-x-2 pt-2">
-                <Button
-                    type="button"
-                    variant="outline"
-                    onClick={onCancel}
-                    disabled={isSubmitting}
-                >
-                    キャンセル
-                </Button>
-                <Button
-                    type="submit"
-                    disabled={isSubmitting}
-                >
-                    {isSubmitting ? (
-                        <div className="flex items-center">
-                            <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2" />
-                            更新中...
-                        </div>
-                    ) : "更新する"}
-                </Button>
-            </div>
-        </form>
+          </Button>
+        </div>
+      </form>
     );
 }

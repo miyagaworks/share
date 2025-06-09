@@ -225,7 +225,7 @@ export default function LinksPage() {
             {activeTab === 'sns' && (
               <Button
                 onClick={() => setIsAddingSns(true)}
-                className="flex items-center"
+                className="flex items-center justify-center min-h-[48px] md:min-h-0 text-base md:text-sm"
                 disabled={isProcessing}
               >
                 <HiPlus className="mr-2 h-4 w-4" />
@@ -265,7 +265,7 @@ export default function LinksPage() {
                 <div className="flex justify-center mt-6">
                   <Button
                     onClick={() => setIsAddingSns(true)}
-                    className="flex items-center justify-center"
+                    className="flex items-center justify-center min-h-[48px] md:min-h-0 text-base md:text-sm"
                     disabled={isProcessing}
                   >
                     <HiPlus className="mr-2 h-4 w-4" />
@@ -286,25 +286,13 @@ export default function LinksPage() {
                       <Button
                         variant="outline"
                         onClick={() => setIsAddingSns(false)}
-                        className="flex items-center"
+                        className="flex items-center min-h-[48px] md:min-h-0 text-base md:text-sm"
                         disabled={isProcessing}
                       >
                         キャンセル
                       </Button>
                     </div>
                   </DashboardCard>
-                )}
-                {snsLinks.length > 0 && !isAddingSns && (
-                  <div className="flex justify-center mb-4">
-                    <Button
-                      onClick={() => setIsAddingSns(true)}
-                      className="flex items-center"
-                      disabled={isProcessing}
-                    >
-                      <HiPlus className="mr-2 h-4 w-4" />
-                      SNSリンクを追加
-                    </Button>
-                  </div>
                 )}
                 {snsLinks.length > 0 && (
                   <DashboardCard
@@ -377,18 +365,6 @@ export default function LinksPage() {
                       </Button>
                     </div>
                   </DashboardCard>
-                )}
-                {customLinks.length > 0 && !isAddingCustom && (
-                  <div className="flex justify-center mb-4">
-                    <Button
-                      onClick={() => setIsAddingCustom(true)}
-                      className="flex items-center"
-                      disabled={isProcessing}
-                    >
-                      <HiPlus className="mr-2 h-4 w-4" />
-                      カスタムリンクを追加
-                    </Button>
-                  </div>
                 )}
                 {customLinks.length > 0 && (
                   <DashboardCard

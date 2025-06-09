@@ -336,7 +336,7 @@ export function SNSLinkFormWithGuideIntegration({
                       type="button"
                       variant="default"
                       onClick={handleOpenGuide}
-                      className="mx-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded text-xs inline-flex items-center h-6"
+                      className="mx-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded text-xs inline-flex items-center h-6 min-h-[24px]"
                     >
                       詳しいガイド
                     </Button>
@@ -413,7 +413,7 @@ export function SNSLinkFormWithGuideIntegration({
         <Button
           type="button"
           disabled={isPending || !selectedPlatform || !urlValid}
-          className="w-full max-w-xs relative overflow-hidden group"
+          className="w-full max-w-xs relative overflow-hidden group min-h-[48px] md:min-h-0 text-base md:text-sm"
           onClick={handleSubmit(onSubmit)}
         >
           <span

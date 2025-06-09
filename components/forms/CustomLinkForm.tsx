@@ -96,7 +96,11 @@ export function CustomLinkForm({ onSuccess }: CustomLinkFormProps) {
           />
         </div>
       </div>
-      <Button type="submit" disabled={isPending} className="w-full">
+      <Button
+        type="submit"
+        disabled={isPending}
+        className="w-full min-h-[48px] md:min-h-0 text-base md:text-sm"
+      >
         {isPending ? (
           <div className="flex items-center">
             <div className="w-4 h-4 border-2 border-t-transparent border-white rounded-full animate-spin mr-2" />

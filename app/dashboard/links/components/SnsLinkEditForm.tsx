@@ -193,7 +193,13 @@ export function SnsLinkEditForm({ link, onCancel, onSuccess }: SnsLinkEditFormPr
         </>
       )}
       <div className="flex justify-end space-x-2 pt-2">
-        <Button type="button" variant="outline" onClick={onCancel} disabled={isPending}>
+        <Button
+          type="button"
+          variant="outline"
+          onClick={onCancel}
+          disabled={isPending}
+          className="min-h-[48px] md:min-h-0 text-base md:text-sm"
+        >
           キャンセル
         </Button>
         <Button type="submit" disabled={isPending || (!watchUsername && !isLineLink) || !watchUrl}>
