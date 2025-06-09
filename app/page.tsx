@@ -97,13 +97,13 @@ export default function HomePage() {
             <div className="pt-8 space-y-4">
               <button
                 onClick={() => handleNavigate('/auth/signin')}
-                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-all transform hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                className="w-full bg-blue-600 hover:bg-blue-700 text-white font-medium py-3 px-4 rounded-lg transition-all transform hover:-translate-y-0.5 hover:shadow-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 min-h-[48px] md:min-h-0 flex items-center justify-center text-base md:text-sm"
               >
                 ログイン
               </button>
               <button
                 onClick={() => handleNavigate('/auth/signup')}
-                className="w-full bg-white hover:bg-gray-50 text-blue-600 font-medium py-3 px-4 rounded-lg border border-blue-600 transition-all transform hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50"
+                className="w-full bg-white hover:bg-gray-50 text-blue-600 font-medium py-3 px-4 rounded-lg border border-blue-600 transition-all transform hover:-translate-y-0.5 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50 min-h-[48px] md:min-h-0 flex items-center justify-center text-base md:text-sm"
               >
                 新規登録
               </button>

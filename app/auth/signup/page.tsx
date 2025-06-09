@@ -407,10 +407,9 @@ export default function SignupPage() {
                   />
                   <button
                     type="button"
-                    className="absolute right-3 inset-y-0 my-auto h-5 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none"
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none"
                     onClick={togglePasswordVisibility}
                     tabIndex={-1}
-                    style={{ top: '50%', transform: 'translateY(-50%)', marginTop: '12px' }}
                   >
                     {showPassword ? (
                       <svg
