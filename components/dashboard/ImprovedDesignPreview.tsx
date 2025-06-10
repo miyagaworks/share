@@ -1,21 +1,25 @@
-// components/dashboard/ImprovedDesignPreview.tsx (最終修正版)
+// components/dashboard/ImprovedDesignPreview.tsx (修正版 - 横幅制御とヘッダーレイアウト修正)
 'use client';
 import { useState, useEffect, useMemo } from 'react';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
 import type { User } from '@prisma/client';
 import { motion } from 'framer-motion';
+
 // 型拡張
 interface ExtendedUser extends User {
   snsIconColor: string | null;
   headerText: string | null;
   textColor: string | null;
 }
+
 interface ImprovedDesignPreviewProps {
   user: User;
 }
+
 export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
   const extendedUser = user as ExtendedUser;
+
   // 🚀 useMemoで値を安定化
   const previewData = useMemo(() => {
     const data = {
@@ -27,8 +31,10 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
     };
     return data;
   }, [user.mainColor, extendedUser.snsIconColor, extendedUser.headerText, extendedUser.textColor]);
+
   // 🚀 強制更新用のキー
   const [updateKey, setUpdateKey] = useState(0);
+
   // 🚀 プレビューデータが変更されたら強制更新
   useEffect(() => {
     setUpdateKey((prev) => {
@@ -36,6 +42,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
       return newKey;
     });
   }, [previewData]);
+
   // テスト用のダミーデータ
   const dummySnsLinks = [
     { platform: 'line', name: 'LINE' },
@@ -43,45 +50,52 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
     { platform: 'x', name: 'X' },
     { platform: 'instagram', name: 'Instagram' },
   ];
+
   return (
     <div className="flex justify-center w-full">
       <motion.div
-        key={`preview-${updateKey}`} // 🔥 強制更新キー
+        key={`preview-${updateKey}`}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.3 }}
-        className="w-full max-w-xs overflow-hidden rounded-lg border shadow-sm mx-auto"
-        style={{ backgroundColor: '#e8eaee' }}
+        className="border border-gray-200 rounded-lg overflow-hidden shadow-sm max-w-xs mx-auto"
+        style={{
+          backgroundColor: '#e8eaee',
+          width: '100%',
+          maxWidth: '320px', // より小さな最大幅に設定
+        }}
       >
-        {/* ヘッダー部分 */}
+        {/* ヘッダー部分 - 法人版と同じレイアウトに修正 */}
         <div
-          key={`header-${updateKey}`} // 🔥 個別に強制更新
-          className="h-12 w-full relative overflow-hidden flex items-center justify-center"
+          key={`header-${updateKey}`}
+          className="w-full relative overflow-hidden flex items-center justify-center py-3"
           style={{
             backgroundColor: previewData.mainColor,
           }}
         >
-          <p
-            key={`header-text-${updateKey}`} // 🔥 テキストも強制更新
-            className="text-sm px-2 text-center"
+          <div
+            key={`header-text-${updateKey}`}
+            className="text-sm px-4 text-center whitespace-pre-wrap"
             style={{
               color: previewData.textColor,
             }}
           >
             {previewData.headerText}
-          </p>
+          </div>
         </div>
+
         <div className="p-5">
           {/* ユーザー名 */}
           <div className="text-center mt-2 mb-6">
             <h3 className="text-lg font-bold">{user.name || 'Your Name'}</h3>
             {user.nameEn && <p className="text-sm text-muted-foreground">{user.nameEn}</p>}
           </div>
+
           {/* SNSリンク（サンプル） */}
           <div className="grid grid-cols-4 gap-3">
             {dummySnsLinks.map((link, index) => (
               <motion.div
-                key={`${link.platform}-${updateKey}`} // 🔥 SNSアイコンも強制更新
+                key={`${link.platform}-${updateKey}`}
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.2, delay: index * 0.05 }}
@@ -98,10 +112,11 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
                     }
                   />
                 </div>
-                <span className="text-xs">{link.name}</span>
+                <span className="text-xs text-center">{link.name}</span>
               </motion.div>
             ))}
           </div>
+
           {/* アクションボタン（プロフィール情報、会社HP、メール、電話） */}
           <div className="mt-6">
             <div className="grid grid-cols-4 gap-3">
@@ -130,6 +145,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
                 </div>
                 <span className="text-xs text-gray-900">自己紹介</span>
               </motion.div>
+
               {/* 会社HPボタン */}
               <motion.div
                 className="flex flex-col items-center"
@@ -156,6 +172,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
                 </div>
                 <span className="text-xs text-gray-900">会社HP</span>
               </motion.div>
+
               {/* メールボタン */}
               <motion.div
                 className="flex flex-col items-center"
@@ -181,6 +198,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
                 </div>
                 <span className="text-xs text-gray-900">メール</span>
               </motion.div>
+
               {/* 電話ボタン */}
               <motion.div
                 className="flex flex-col items-center"
@@ -207,10 +225,11 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
               </motion.div>
             </div>
           </div>
+
           {/* 主要アクションボタン */}
           <div className="mt-6 space-y-3">
             <motion.button
-              key={`phone-button-${updateKey}`} // 🔥 ボタンも強制更新
+              key={`phone-button-${updateKey}`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="w-full py-2 rounded-md text-sm font-medium transition-all flex items-center justify-center"
@@ -236,7 +255,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
               電話をかける
             </motion.button>
             <motion.button
-              key={`contact-button-${updateKey}`} // 🔥 ボタンも強制更新
+              key={`contact-button-${updateKey}`}
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               className="w-full py-2 rounded-md text-sm font-medium border transition-all flex items-center justify-center bg-white"
@@ -262,6 +281,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
               連絡先に追加
             </motion.button>
           </div>
+
           {/* フッター */}
           <div className="mt-6 text-center">
             <a href="#" className="text-sm text-blue-600">
