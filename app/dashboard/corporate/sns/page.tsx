@@ -24,13 +24,16 @@ import { CorporateSnsLink } from './types';
 import { CorporateSnsAddForm, CorporateSnsEditForm, CorporateSnsDeleteConfirm } from './components';
 import { DndProvider, useDrag, useDrop } from 'react-dnd';
 import { HTML5Backend } from 'react-dnd-html5-backend';
+
 // ドラッグアイテムの型定義
 interface DragItem {
   id: string;
   index: number;
 }
+
 // ドラッグアイテムタイプ
 const ITEM_TYPE = 'snsLink';
+
 // ドラッグ可能なSNSリンク項目コンポーネント
 const DraggableSnsItem = ({
   link,
@@ -50,6 +53,7 @@ const DraggableSnsItem = ({
   onDragEnd: () => void;
 }) => {
   const ref = useRef<HTMLTableRowElement>(null);
+
   // ドラッグの設定
   const [{ isDragging }, drag] = useDrag({
     type: ITEM_TYPE,
@@ -62,6 +66,7 @@ const DraggableSnsItem = ({
       onDragEnd(); // ドラッグ終了時に呼び出す
     },
   });
+
   // ドロップの設定
   const [, drop] = useDrop({
     accept: ITEM_TYPE,
@@ -71,18 +76,22 @@ const DraggableSnsItem = ({
       }
       const dragIndex = item.index;
       const hoverIndex = index;
+
       // 自分自身の上にドラッグしている場合は何もしない
       if (dragIndex === hoverIndex) {
         return;
       }
+
       // ドラッグしている要素の位置を更新
       moveItem(dragIndex, hoverIndex);
       // 監視しているインデックスを更新
       item.index = hoverIndex;
     },
   });
+
   // ドラッグとドロップの参照を結合
   drag(drop(ref));
+
   return (
     <tr
       ref={ref}
@@ -129,26 +138,25 @@ const DraggableSnsItem = ({
         )}
       </td>
       <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-blue-600 hover:text-blue-800 mr-2"
-          onClick={() => onEdit(link)}
-        >
-          <HiPencil className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-red-600 hover:text-red-800"
-          onClick={() => onDelete(link.id)}
-        >
-          <HiTrash className="h-4 w-4" />
-        </Button>
+        <div className="flex items-center justify-end gap-2">
+          <button
+            className="h-[48px] px-3 bg-white border border-blue-200 text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+            onClick={() => onEdit(link)}
+          >
+            <HiPencil className="h-4 w-4" />
+          </button>
+          <button
+            className="h-[48px] px-3 bg-white border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+            onClick={() => onDelete(link.id)}
+          >
+            <HiTrash className="h-4 w-4" />
+          </button>
+        </div>
       </td>
     </tr>
   );
 };
+
 // ドラッグ可能なSNSリンクカードコンポーネント（モバイル用）
 const DraggableSnsCard = ({
   link,
@@ -168,6 +176,7 @@ const DraggableSnsCard = ({
   onDragEnd: () => void;
 }) => {
   const ref = useRef<HTMLTableRowElement>(null);
+
   // ドラッグの設定
   const [{ isDragging }, drag] = useDrag({
     type: ITEM_TYPE,
@@ -180,6 +189,7 @@ const DraggableSnsCard = ({
       onDragEnd(); // ドラッグ終了時に呼び出す
     },
   });
+
   // ドロップの設定
   const [, drop] = useDrop({
     accept: ITEM_TYPE,
@@ -189,18 +199,22 @@ const DraggableSnsCard = ({
       }
       const dragIndex = item.index;
       const hoverIndex = index;
+
       // 自分自身の上にドラッグしている場合は何もしない
       if (dragIndex === hoverIndex) {
         return;
       }
+
       // ドラッグしている要素の位置を更新
       moveItem(dragIndex, hoverIndex);
       // 監視しているインデックスを更新
       item.index = hoverIndex;
     },
   });
+
   // ドラッグとドロップの参照を結合
   drag(drop(ref));
+
   return (
     <div
       ref={ref}
@@ -245,26 +259,23 @@ const DraggableSnsCard = ({
         </a>
       </div>
       <div className="flex justify-end space-x-2">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-blue-600 hover:text-blue-800"
+        <button
+          className="h-[48px] px-3 bg-white border border-blue-200 text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
           onClick={() => onEdit(link)}
         >
           <HiPencil className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          className="text-red-600 hover:text-red-800"
+        </button>
+        <button
+          className="h-[48px] px-3 bg-white border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors text-base sm:text-sm flex items-center justify-center"
           onClick={() => onDelete(link.id)}
         >
           <HiTrash className="h-4 w-4" />
-        </Button>
+        </button>
       </div>
     </div>
   );
 };
+
 export default function CorporateSnsMangementPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -277,6 +288,7 @@ export default function CorporateSnsMangementPage() {
   const [isDeleteConfirmOpen, setIsDeleteConfirmOpen] = useState(false);
   const [deletingLinkId, setDeletingLinkId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
   // 法人共通SNSリンク情報を取得
   useEffect(() => {
     const fetchCorporateSnsLinks = async () => {
@@ -297,8 +309,10 @@ export default function CorporateSnsMangementPage() {
         setIsLoading(false);
       }
     };
+
     fetchCorporateSnsLinks();
   }, [session]);
+
   // アイテムの順序を変更する関数
   const moveItem = (fromIndex: number, toIndex: number) => {
     setCorporateSnsLinks((prevLinks) => {
@@ -308,10 +322,12 @@ export default function CorporateSnsMangementPage() {
       return updatedLinks;
     });
   };
+
   // SNSリンク編集を開始
   const handleEditLink = (link: CorporateSnsLink) => {
     setEditingLink(link);
   };
+
   // SNSリンク削除確認ダイアログを表示
   const handleDeleteConfirm = (linkId: string) => {
     // 削除するリンクのオブジェクトを検索
@@ -323,12 +339,14 @@ export default function CorporateSnsMangementPage() {
     setDeletingLinkId(linkId);
     setIsDeleteConfirmOpen(true);
   };
+
   // 削除成功時のコールバック
   const handleDeleteSuccess = (deletedId: string) => {
     setCorporateSnsLinks(corporateSnsLinks.filter((link) => link.id !== deletedId));
     setIsDeleteConfirmOpen(false);
     setDeletingLinkId(null);
   };
+
   // SNSリンクの同期
   const handleSyncToUsers = async () => {
     try {
@@ -342,10 +360,12 @@ export default function CorporateSnsMangementPage() {
           operation: 'sync',
         }),
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'SNSリンクの同期に失敗しました');
       }
+
       const data = await response.json();
       toast.success(data.message || 'SNSリンクを同期しました');
     } catch (err) {
@@ -354,6 +374,7 @@ export default function CorporateSnsMangementPage() {
       setIsSyncing(false);
     }
   };
+
   // ドラッグ終了時に呼び出される関数
   const handleDragEnd = async () => {
     try {
@@ -368,10 +389,12 @@ export default function CorporateSnsMangementPage() {
           data: corporateSnsLinks.map((item) => item.id),
         }),
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '表示順の更新に失敗しました');
       }
+
       toast.success('SNSリンクの表示順を更新しました');
     } catch (err) {
       toast.error(err instanceof Error ? err.message : '表示順の更新に失敗しました');
@@ -383,6 +406,7 @@ export default function CorporateSnsMangementPage() {
       }
     }
   };
+
   // 読み込み中
   if (isLoading) {
     return (
@@ -391,6 +415,7 @@ export default function CorporateSnsMangementPage() {
       </div>
     );
   }
+
   // エラー表示
   if (error) {
     return (
@@ -400,18 +425,18 @@ export default function CorporateSnsMangementPage() {
           <div>
             <h3 className="text-lg font-medium text-red-800">エラーが発生しました</h3>
             <p className="mt-2 text-red-700">{error}</p>
-            <Button
-              variant="corporateOutline"
-              className="mt-4"
+            <button
+              className="mt-4 h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
               onClick={() => window.location.reload()}
             >
               再読み込み
-            </Button>
+            </button>
           </div>
         </div>
       </div>
     );
   }
+
   // 管理者権限がない場合
   if (!isAdmin) {
     return (
@@ -423,18 +448,18 @@ export default function CorporateSnsMangementPage() {
             <p className="mt-2 text-yellow-700">
               法人共通SNS設定の管理には法人管理者権限が必要です。
             </p>
-            <Button
-              variant="corporate"
-              className="mt-4"
+            <button
+              className="mt-4 h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
               onClick={() => router.push('/dashboard/corporate')}
             >
               管理者ダッシュボードへ戻る
-            </Button>
+            </button>
           </div>
         </div>
       </div>
     );
   }
+
   return (
     <DndProvider backend={HTML5Backend}>
       <div className="space-y-6 max-w-full overflow-hidden px-2 sm:px-4 corporate-theme">
@@ -445,19 +470,17 @@ export default function CorporateSnsMangementPage() {
             <p className="text-gray-500 mt-1">全社員に共通のSNSリンクを設定・管理します</p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <Button
-              variant="corporate"
+            <button
+              className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
               onClick={() => setIsAddFormOpen(true)}
-              className="flex items-center"
             >
               <HiPlus className="mr-2 h-4 w-4" />
               SNSリンクを追加
-            </Button>
-            <Button
-              variant="corporateOutline"
+            </button>
+            <button
+              className="h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
               onClick={handleSyncToUsers}
               disabled={isSyncing || corporateSnsLinks.length === 0}
-              className="flex items-center"
             >
               {isSyncing ? (
                 <>
@@ -470,9 +493,10 @@ export default function CorporateSnsMangementPage() {
                   ユーザーに同期
                 </>
               )}
-            </Button>
+            </button>
           </div>
         </div>
+
         {/* SNSリンク一覧 - PC表示用テーブル */}
         {corporateSnsLinks.length > 0 ? (
           <>
@@ -519,6 +543,7 @@ export default function CorporateSnsMangementPage() {
                 </div>
               </div>
             </div>
+
             {/* SNSリンク一覧 - スマホ表示用カード */}
             <div className="block sm:hidden space-y-4 w-full">
               {corporateSnsLinks.map((link, index) => (
@@ -534,6 +559,7 @@ export default function CorporateSnsMangementPage() {
                 />
               ))}
             </div>
+
             {/* 説明セクション */}
             <div
               className="mt-6 rounded-md p-4"
@@ -570,12 +596,16 @@ export default function CorporateSnsMangementPage() {
             <p className="mt-2 text-gray-500 mb-6">
               「SNSリンクを追加」ボタンをクリックして、法人共通のSNSリンクを設定してください。
             </p>
-            <Button variant="corporate" onClick={() => setIsAddFormOpen(true)}>
+            <button
+              className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center mx-auto"
+              onClick={() => setIsAddFormOpen(true)}
+            >
               <HiPlus className="mr-2 h-4 w-4" />
               SNSリンクを追加
-            </Button>
+            </button>
           </div>
         )}
+
         {/* SNSリンク追加ダイアログ */}
         <Dialog open={isAddFormOpen} onOpenChange={setIsAddFormOpen}>
           {isAddFormOpen && (
@@ -589,6 +619,7 @@ export default function CorporateSnsMangementPage() {
             />
           )}
         </Dialog>
+
         {/* SNSリンク編集ダイアログ */}
         <Dialog open={!!editingLink} onOpenChange={(open) => !open && setEditingLink(null)}>
           {editingLink && (
@@ -606,6 +637,7 @@ export default function CorporateSnsMangementPage() {
             />
           )}
         </Dialog>
+
         {/* 削除確認ダイアログ */}
         <Dialog
           open={isDeleteConfirmOpen}

@@ -405,7 +405,7 @@ export default function DepartmentsPage() {
                 </div>
                 <div className="flex flex-col gap-3 mt-6">
                   <button
-                    type="button"
+                    type="submit"
                     disabled={isSaving}
                     className="w-full h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
                   >
@@ -415,12 +415,12 @@ export default function DepartmentsPage() {
                         保存中...
                       </>
                     ) : (
-                      '保 存'
+                      '保存'
                     )}
                   </button>
                   <button
                     type="button"
-                    className="w-full h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+                    className="w-full h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                     onClick={closeModal}
                   >
                     キャンセル
