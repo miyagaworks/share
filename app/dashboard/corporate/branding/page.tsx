@@ -473,7 +473,6 @@ export default function ImprovedCorporateBrandingPage() {
               <div className="mt-4">
                 <Button
                   variant="corporateOutline"
-                  size="sm"
                   onClick={() => {
                     setPrimaryColor('#3B82F6');
                     setSecondaryColor('#1E40AF');
