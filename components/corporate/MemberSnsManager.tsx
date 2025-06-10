@@ -610,7 +610,7 @@ export function MemberSnsManager({
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-3 mt-2">
+                    <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 mt-2">
                       {availablePlatforms.map((platform, index) => (
                         <motion.div
                           key={platform}
@@ -681,6 +681,7 @@ export function MemberSnsManager({
                               onChange={handleLineInputChange}
                               placeholder="https://line.me/ti/p/..."
                               disabled={isProcessing}
+                              className="w-full min-w-0"
                             />
                           ) : selectedPlatform === 'official-line' ? (
                             <Input
@@ -688,6 +689,7 @@ export function MemberSnsManager({
                               onChange={handleOfficialLineInputChange}
                               placeholder="https://lin.ee/xxxx"
                               disabled={isProcessing}
+                              className="w-full min-w-0"
                             />
                           ) : selectedPlatform === 'bereal' ? (
                             <Input
@@ -695,6 +697,7 @@ export function MemberSnsManager({
                               onChange={handleBerealInputChange}
                               placeholder="BeRealのユーザー名"
                               disabled={isProcessing}
+                              className="w-full min-w-0"
                             />
                           ) : (
                             <Input
@@ -702,6 +705,7 @@ export function MemberSnsManager({
                               placeholder={SNS_METADATA[selectedPlatform].placeholderText}
                               onChange={handleUsernameChange}
                               disabled={isProcessing}
+                              className="w-full min-w-0"
                             />
                           )}
 
@@ -759,9 +763,10 @@ export function MemberSnsManager({
                             value={snsForm.url}
                             placeholder="https://"
                             disabled={true}
-                            className={
-                              urlValid ? 'pr-8 border-green-500 bg-gray-50' : 'pr-8 bg-gray-50'
-                            }
+                            className={`
+                              w-full min-w-0 pr-8 bg-gray-50 
+                              ${urlValid ? 'border-green-500' : ''}
+                            `}
                           />
                           {urlValid && (
                             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500">
@@ -831,6 +836,7 @@ export function MemberSnsManager({
                                   onChange={handleLineInputChange}
                                   placeholder="https://line.me/ti/p/..."
                                   disabled={isProcessing}
+                                  className="w-full min-w-0"
                                 />
                               ) : selectedPlatform === 'official-line' ? (
                                 <Input
@@ -838,6 +844,7 @@ export function MemberSnsManager({
                                   onChange={handleOfficialLineInputChange}
                                   placeholder="https://lin.ee/xxxx"
                                   disabled={isProcessing}
+                                  className="w-full min-w-0"
                                 />
                               ) : selectedPlatform === 'bereal' ? (
                                 <Input
@@ -845,6 +852,7 @@ export function MemberSnsManager({
                                   onChange={handleBerealInputChange}
                                   placeholder="BeRealのユーザー名"
                                   disabled={isProcessing}
+                                  className="w-full min-w-0"
                                 />
                               ) : (
                                 <>
@@ -855,6 +863,7 @@ export function MemberSnsManager({
                                       SNS_METADATA[link.platform as SnsPlatform]?.placeholderText
                                     }
                                     disabled={isProcessing}
+                                    className="w-full min-w-0"
                                   />
                                   <Input
                                     value={snsForm.url}
@@ -863,6 +872,7 @@ export function MemberSnsManager({
                                     }
                                     placeholder="https://..."
                                     disabled={isProcessing}
+                                    className="w-full min-w-0"
                                   />
                                 </>
                               )}
@@ -899,8 +909,8 @@ export function MemberSnsManager({
                                   size={24}
                                   color="original"
                                 />
-                                <div className="min-w-0">
-                                  <p className="font-medium">
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-medium text-sm sm:text-base truncate">
                                     {SNS_METADATA[link.platform as SnsPlatform]?.name ||
                                       link.platform}
                                   </p>
@@ -908,14 +918,16 @@ export function MemberSnsManager({
                                     href={link.url}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-sm text-blue-600 hover:underline break-all flex items-center"
+                                    className="text-xs sm:text-sm text-blue-600 hover:underline break-all block pr-2"
                                   >
-                                    {link.url}
-                                    <HiExternalLink className="ml-1 h-3 w-3" />
+                                    <span className="inline-block max-w-full overflow-hidden text-ellipsis">
+                                      {link.url}
+                                    </span>
+                                    <HiExternalLink className="inline ml-1 h-3 w-3 flex-shrink-0" />
                                   </a>
                                 </div>
                               </div>
-                              <div className="flex space-x-2 shrink-0">
+                              <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 shrink-0 mt-2 sm:mt-0">
                                 <Button
                                   variant="ghost"
                                   onClick={() => startEditingSns(link)}
@@ -990,6 +1002,7 @@ export function MemberSnsManager({
                     value={customForm.name}
                     onChange={(e) => setCustomForm({ ...customForm, name: e.target.value })}
                     disabled={isProcessing}
+                    className="w-full min-w-0"
                   />
                 </div>
                 <div>
@@ -999,6 +1012,7 @@ export function MemberSnsManager({
                     value={customForm.url}
                     onChange={(e) => setCustomForm({ ...customForm, url: e.target.value })}
                     disabled={isProcessing}
+                    className="w-full min-w-0"
                   />
                 </div>
                 <div className="flex justify-end space-x-2">
@@ -1056,6 +1070,7 @@ export function MemberSnsManager({
                                       setCustomForm({ ...customForm, name: e.target.value })
                                     }
                                     disabled={isProcessing}
+                                    className="w-full min-w-0"
                                   />
                                 </div>
                                 <div>
@@ -1069,6 +1084,7 @@ export function MemberSnsManager({
                                       setCustomForm({ ...customForm, url: e.target.value })
                                     }
                                     disabled={isProcessing}
+                                    className="w-full min-w-0"
                                   />
                                 </div>
                                 <div className="flex justify-end space-x-2">
@@ -1120,16 +1136,14 @@ export function MemberSnsManager({
                                       onClick={() => startEditingCustom(link)}
                                       disabled={isProcessing}
                                     >
-                                      <HiPencil className="mr-1 h-3 w-3" />
-                                      編 集
+                                      <HiPencil className="mr-1 h-3 w-3" />編 集
                                     </Button>
                                     <Button
                                       variant="destructive"
                                       onClick={() => handleDeleteCustom(link.id)}
                                       disabled={isProcessing}
                                     >
-                                      <HiTrash className="mr-1 h-3 w-3" />
-                                      削 除
+                                      <HiTrash className="mr-1 h-3 w-3" />削 除
                                     </Button>
                                   </div>
                                 </div>
