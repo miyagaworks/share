@@ -7,11 +7,13 @@ import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { HiMail, HiArrowLeft, HiInformationCircle } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
+
 // 部署情報の型定義
 interface Department {
   id: string;
   name: string;
 }
+
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -20,6 +22,7 @@ interface TenantData {
   currentUserCount: number;
   departments: Department[];
 }
+
 export default function InviteUserPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -31,6 +34,7 @@ export default function InviteUserPage() {
   const [isSending, setIsSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [departments, setDepartments] = useState<Department[]>([]);
+
   // テナント情報と部署情報を取得
   useEffect(() => {
     const fetchTenantData = async () => {
@@ -43,11 +47,13 @@ export default function InviteUserPage() {
           throw new Error('テナント情報の取得に失敗しました');
         }
         const tenantData = await tenantResponse.json();
+
         // 管理者権限がない場合はリダイレクト
         if (tenantData.userRole !== 'admin') {
           router.push('/dashboard/corporate/users');
           return;
         }
+
         // 部署情報取得API
         const deptResponse = await fetch('/api/corporate/departments');
         if (!deptResponse.ok) {
@@ -74,8 +80,10 @@ export default function InviteUserPage() {
         setIsLoading(false);
       }
     };
+
     fetchTenantData();
   }, [session, router]);
+
   // ユーザー招待を送信する処理
   const handleInviteSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,17 +91,20 @@ export default function InviteUserPage() {
       toast.error('メールアドレスを入力してください');
       return;
     }
+
     // 複数のメールアドレスを配列に変換（カンマまたは改行で区切り）
     const emailList = emails
       .split(/[,\n]/)
       .map((email) => email.trim())
       .filter((email) => email.length > 0);
+
     // メールアドレスの形式を検証
     const invalidEmails = emailList.filter((email) => !validateEmail(email));
     if (invalidEmails.length > 0) {
       toast.error(`無効なメールアドレスがあります: ${invalidEmails.join(', ')}`);
       return;
     }
+
     // テナントのユーザー上限を超えるかどうかをチェック
     if (tenantData && tenantData.currentUserCount + emailList.length > tenantData.maxUsers) {
       toast.error(
@@ -101,6 +112,7 @@ export default function InviteUserPage() {
       );
       return;
     }
+
     try {
       setIsSending(true);
       // 招待APIを呼び出す
@@ -113,11 +125,14 @@ export default function InviteUserPage() {
           departmentId: departmentId || null,
         }),
       });
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.message || data.error || '招待の送信に失敗しました');
       }
+
       const result = await response.json();
+
       // 招待結果の処理
       if (result.errors && result.errors.length > 0) {
         // エラーがあるが一部成功した場合
@@ -132,6 +147,7 @@ export default function InviteUserPage() {
         // すべて成功した場合
         toast.success(`${result.invitedCount}人のユーザーに招待を送信しました`);
       }
+
       // ユーザー一覧ページに戻る
       router.push('/dashboard/corporate/users');
     } catch (error) {
@@ -140,10 +156,12 @@ export default function InviteUserPage() {
       setIsSending(false);
     }
   };
+
   // メールアドレスの検証
   const validateEmail = (email: string) => {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
   };
+
   // 読み込み中
   if (isLoading) {
     return (
@@ -152,47 +170,49 @@ export default function InviteUserPage() {
       </div>
     );
   }
+
   // エラー表示
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-red-800 mb-2">エラーが発生しました</h3>
         <p className="text-red-700">{error}</p>
-        <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+        <button
+          className="mt-4 h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+          onClick={() => window.location.reload()}
+        >
           再読み込み
-        </Button>
+        </button>
       </div>
     );
   }
+
   // テナントデータがない場合
   if (!tenantData) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-yellow-800 mb-2">法人プランが有効ではありません</h3>
         <p className="text-yellow-700">法人プランにアップグレードしてこの機能をご利用ください。</p>
-        <Button
-          className="mt-4"
-          variant="corporate"
+        <button
+          className="mt-4 h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
           onClick={() => router.push('/dashboard/subscription')}
         >
           プランを見る
-        </Button>
+        </button>
       </div>
     );
   }
-  // 部署情報のデバッグ出力
+
   return (
     <div className="space-y-6">
       {/* ヘッダー部分 */}
       <div className="flex items-center mb-6">
-        <Button
-          variant="ghost"
-          size="sm"
-          className="mr-4"
+        <button
+          className="mr-4 h-[48px] w-[48px] bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center"
           onClick={() => router.push('/dashboard/corporate/users')}
         >
           <HiArrowLeft className="h-5 w-5 text-gray-500" />
-        </Button>
+        </button>
         <div>
           <h1 className="text-2xl font-bold">ユーザーを招待</h1>
           <p className="text-gray-500 mt-1">
@@ -200,6 +220,7 @@ export default function InviteUserPage() {
           </p>
         </div>
       </div>
+
       {/* 招待フォーム */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
         <form onSubmit={handleInviteSubmit}>
@@ -276,20 +297,18 @@ export default function InviteUserPage() {
                 </p>
               </div>
             )}
-            <div className="flex justify-end space-x-4">
-              <Button
+            <div className="flex flex-col sm:flex-row justify-end gap-3">
+              <button
                 type="button"
-                variant="corporateOutline"
+                className="h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                 onClick={() => router.push('/dashboard/corporate/users')}
               >
                 キャンセル
-              </Button>
-              <Button
+              </button>
+              <button
                 type="submit"
-                variant="corporate"
                 disabled={isSending}
-                className="flex items-center"
-                style={{ backgroundColor: '#1E3A8A', color: 'white' }}
+                className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
               >
                 {isSending ? (
                   <>
@@ -302,11 +321,12 @@ export default function InviteUserPage() {
                     招待を送信
                   </>
                 )}
-              </Button>
+              </button>
             </div>
           </div>
         </form>
       </div>
+
       {/* ヘルプセクション - スタイルクラスを変更 */}
       <div className="bg-blue-50 border border-blue-100 rounded-lg p-4 mb-6 w-full">
         <div className="flex flex-row items-start">

@@ -20,12 +20,14 @@ import {
   HiOfficeBuilding,
   HiRefresh,
 } from 'react-icons/hi';
+
 // 型定義
 interface Department {
   id: string;
   name: string;
   description?: string;
 }
+
 interface CorporateUser {
   id: string;
   name: string;
@@ -40,6 +42,7 @@ interface CorporateUser {
   invitedAt?: string;
   createdAt: string;
 }
+
 export default function CorporateUsersPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -55,6 +58,7 @@ export default function CorporateUsersPage() {
   const [isUpdating, setIsUpdating] = useState(false);
   const [selectedUser, setSelectedUser] = useState<CorporateUser | null>(null);
   const [resendingInvites, setResendingInvites] = useState<Record<string, boolean>>({});
+
   // ユーザー情報と部署情報を取得
   useEffect(() => {
     const fetchData = async () => {
@@ -75,6 +79,7 @@ export default function CorporateUsersPage() {
         const userData = await userResponse.json();
         setUsers(userData.users || []);
         setIsAdmin(userData.isAdmin);
+
         // 部署情報取得を改善
         const deptResponse = await fetch('/api/corporate/departments', {
           method: 'GET',
@@ -98,10 +103,12 @@ export default function CorporateUsersPage() {
     };
     fetchData();
   }, [session]);
+
   // ユーザー招待ダイアログを開く
   const handleOpenInviteDialog = () => {
     router.push('/dashboard/corporate/users/invite');
   };
+
   // ユーザー編集ダイアログを開く
   const handleEditUser = (user: CorporateUser) => {
     setSelectedUser(user);
@@ -109,11 +116,13 @@ export default function CorporateUsersPage() {
     setSelectedDepartmentId(user.department?.id || '');
     setIsEditRoleDialogOpen(true);
   };
+
   // ユーザー削除ダイアログを開く
   const handleDeleteUser = (user: CorporateUser) => {
     setSelectedUser(user);
     setIsDeleteDialogOpen(true);
   };
+
   // ユーザー情報更新処理
   const handleUpdateUser = async () => {
     if (!selectedUser) return;
@@ -129,10 +138,12 @@ export default function CorporateUsersPage() {
           departmentId: selectedDepartmentId || null,
         }),
       });
+
       const responseData = await response.json();
       if (!response.ok) {
         throw new Error(responseData.error || 'ユーザー情報の更新に失敗しました');
       }
+
       // 成功時の処理
       // ユーザーリストを更新
       setUsers(
@@ -154,6 +165,7 @@ export default function CorporateUsersPage() {
           return user;
         }),
       );
+
       toast.success(`${selectedUser.name}の情報を更新しました`);
       setIsEditRoleDialogOpen(false);
       setSelectedUser(null);
@@ -163,6 +175,7 @@ export default function CorporateUsersPage() {
       setIsUpdating(false);
     }
   };
+
   // 招待再送信処理
   const handleResendInvitation = async (userId: string) => {
     try {
@@ -174,14 +187,17 @@ export default function CorporateUsersPage() {
           'Content-Type': 'application/json',
         },
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || '招待の再送信に失敗しました');
       }
+
       // レスポンスのJSONを取得して使用する
       const result = await response.json();
       // resultのmessageを使ってトースト表示（もしAPIから返ってくる場合）
       toast.success(result.message || '招待を再送信しました');
+
       // 必要に応じてユーザーリストを更新
       setUsers(
         users.map((user) => {
@@ -202,6 +218,7 @@ export default function CorporateUsersPage() {
       setResendingInvites((prev) => ({ ...prev, [userId]: false }));
     }
   };
+
   // 削除処理の実装
   const handleConfirmDelete = async () => {
     if (!selectedUser) return;
@@ -212,10 +229,12 @@ export default function CorporateUsersPage() {
           'Content-Type': 'application/json',
         },
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'ユーザーの削除に失敗しました');
       }
+
       toast.success(`${selectedUser.name}のアカウントを削除しました`);
       setUsers(users.filter((user) => user.id !== selectedUser.id));
       setIsDeleteDialogOpen(false);
@@ -223,6 +242,7 @@ export default function CorporateUsersPage() {
       toast.error(err instanceof Error ? err.message : 'ユーザーの削除に失敗しました');
     }
   };
+
   // 役割名の表示
   const getRoleName = (role?: string) => {
     switch (role) {
@@ -236,6 +256,7 @@ export default function CorporateUsersPage() {
         return '一般メンバー';
     }
   };
+
   // 読み込み中表示
   if (isLoading) {
     return (
@@ -244,6 +265,7 @@ export default function CorporateUsersPage() {
       </div>
     );
   }
+
   // エラー表示
   if (error) {
     return (
@@ -253,18 +275,18 @@ export default function CorporateUsersPage() {
           <div>
             <h3 className="text-lg font-medium text-red-800">エラーが発生しました</h3>
             <p className="mt-2 text-red-700">{error}</p>
-            <Button
-              variant="corporateOutline"
-              className="mt-4"
+            <button
+              className="mt-4 h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
               onClick={() => window.location.reload()}
             >
               再読み込み
-            </Button>
+            </button>
           </div>
         </div>
       </div>
     );
   }
+
   // 管理者権限がない場合
   if (!isAdmin) {
     return (
@@ -274,18 +296,18 @@ export default function CorporateUsersPage() {
           <div>
             <h3 className="text-lg font-medium text-yellow-800">管理者権限が必要です</h3>
             <p className="mt-2 text-yellow-700">ユーザー管理には法人管理者権限が必要です。</p>
-            <Button
-              className="mt-4"
-              variant="corporate"
+            <button
+              className="mt-4 h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
               onClick={() => router.push('/dashboard/corporate')}
             >
               管理者ダッシュボードへ戻る
-            </Button>
+            </button>
           </div>
         </div>
       </div>
     );
   }
+
   return (
     <div className="space-y-6 max-w-full overflow-hidden px-2 sm:px-4 corporate-theme">
       {/* ヘッダー部分 */}
@@ -295,16 +317,16 @@ export default function CorporateUsersPage() {
           <p className="text-gray-500 mt-1">法人アカウントに所属するユーザーを管理します</p>
         </div>
         <div className="flex gap-2 flex-wrap">
-          <Button
-            variant="corporate"
+          <button
+            className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
             onClick={handleOpenInviteDialog}
-            className="flex items-center"
           >
             <HiPlus className="mr-2 h-4 w-4" />
             ユーザーを招待
-          </Button>
+          </button>
         </div>
       </div>
+
       {/* 説明セクション */}
       <div
         className="mt-6 rounded-md p-4"
@@ -325,6 +347,7 @@ export default function CorporateUsersPage() {
           </div>
         </div>
       </div>
+
       {/* ユーザー一覧 - PC表示用テーブル */}
       {users.length > 0 ? (
         <>
@@ -401,13 +424,11 @@ export default function CorporateUsersPage() {
                         </td>
                         {/* PC表示のボタン部分 */}
                         <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                          <div className="flex items-center justify-end">
+                          <div className="flex items-center justify-end gap-2">
                             {/* 招待中のユーザーに対しては招待再送ボタンを表示 */}
                             {user.isInvited && (
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="text-blue-600 hover:text-blue-800 mr-2"
+                              <button
+                                className="h-[48px] px-3 bg-white border border-blue-200 text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                                 onClick={() => handleResendInvitation(user.id)}
                                 disabled={resendingInvites[user.id]}
                               >
@@ -417,35 +438,32 @@ export default function CorporateUsersPage() {
                                   <HiRefresh className="h-4 w-4 mr-1" />
                                 )}
                                 招待再送
-                              </Button>
+                              </button>
                             )}
                             {/* 全てのユーザーに対して編集ボタンを表示 */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="text-blue-600 hover:text-blue-800 mr-2"
+                            <button
+                              className="h-[48px] px-3 bg-white border border-blue-200 text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                               onClick={() => handleEditUser(user)}
                             >
                               <HiPencil className="h-4 w-4" />
-                            </Button>
+                            </button>
                             {/* 管理者の場合は削除ボタンを無効化 */}
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className={`${
+                            <button
+                              className={`h-[48px] px-3 rounded-md transition-colors text-base sm:text-sm flex items-center justify-center ${
                                 user.corporateRole === 'admin'
-                                  ? 'text-gray-400 cursor-not-allowed'
-                                  : 'text-red-600 hover:text-red-800'
+                                  ? 'bg-gray-100 border border-gray-200 text-gray-400 cursor-not-allowed'
+                                  : 'bg-white border border-red-200 text-red-600 hover:bg-red-50'
                               }`}
                               onClick={() =>
                                 user.corporateRole !== 'admin' && handleDeleteUser(user)
                               }
+                              disabled={user.corporateRole === 'admin'}
                               title={
                                 user.corporateRole === 'admin' ? '管理者は削除できません' : '削除'
                               }
                             >
                               <HiTrash className="h-4 w-4" />
-                            </Button>
+                            </button>
                           </div>
                         </td>
                       </tr>
@@ -455,6 +473,7 @@ export default function CorporateUsersPage() {
               </div>
             </div>
           </div>
+
           {/* ユーザー一覧 - スマホ表示用カード（改善） */}
           <div className="block sm:hidden space-y-4 w-full">
             {users.map((user) => (
@@ -508,10 +527,8 @@ export default function CorporateUsersPage() {
                 <div className="flex items-center justify-end space-x-2 border-t pt-3 mt-2">
                   {/* 招待中のユーザーに対しては招待再送ボタンを表示 */}
                   {user.isInvited && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-blue-600 border-blue-200"
+                    <button
+                      className="h-[48px] px-3 border border-blue-200 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                       onClick={() => handleResendInvitation(user.id)}
                       disabled={resendingInvites[user.id]}
                     >
@@ -526,29 +543,25 @@ export default function CorporateUsersPage() {
                           招待再送
                         </>
                       )}
-                    </Button>
+                    </button>
                   )}
                   {/* 全てのユーザーに対して編集ボタンを表示 */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-blue-600 border-blue-200"
+                  <button
+                    className="h-[48px] px-3 border border-blue-200 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                     onClick={() => handleEditUser(user)}
                   >
                     <HiPencil className="h-4 w-4 mr-1" />
                     編集
-                  </Button>
+                  </button>
                   {/* 管理者の場合は削除ボタンを無効化 */}
                   {user.corporateRole !== 'admin' && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 border-red-200"
+                    <button
+                      className="h-[48px] px-3 border border-red-200 bg-white text-red-600 rounded-md hover:bg-red-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                       onClick={() => handleDeleteUser(user)}
                     >
                       <HiTrash className="h-4 w-4 mr-1" />
                       削除
-                    </Button>
+                    </button>
                   )}
                 </div>
               </div>
@@ -564,12 +577,16 @@ export default function CorporateUsersPage() {
           <p className="mt-2 text-gray-500 mb-6">
             「ユーザーを招待」ボタンをクリックして、法人アカウントにユーザーを追加してください。
           </p>
-          <Button variant="corporate" onClick={handleOpenInviteDialog}>
+          <button
+            className="h-[48px] px-6 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center mx-auto"
+            onClick={handleOpenInviteDialog}
+          >
             <HiPlus className="mr-2 h-4 w-4" />
             ユーザーを招待
-          </Button>
+          </button>
         </div>
       )}
+
       {/* 役割編集ダイアログ（レスポンシブ改善） */}
       <Dialog open={isEditRoleDialogOpen} onOpenChange={setIsEditRoleDialogOpen}>
         <div className="p-4 sm:p-6 w-full max-w-md mx-auto">
@@ -624,8 +641,8 @@ export default function CorporateUsersPage() {
                 )}
               </div>
               <div className="flex justify-end space-x-3 mt-6">
-                <Button
-                  variant="corporateOutline"
+                <button
+                  className="h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                   onClick={() => {
                     setIsEditRoleDialogOpen(false);
                     setSelectedUser(null);
@@ -634,9 +651,9 @@ export default function CorporateUsersPage() {
                   disabled={isUpdating}
                 >
                   キャンセル
-                </Button>
-                <Button
-                  variant="corporate"
+                </button>
+                <button
+                  className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
                   onClick={handleUpdateUser}
                   type="button"
                   disabled={isUpdating}
@@ -649,12 +666,13 @@ export default function CorporateUsersPage() {
                   ) : (
                     '更新する'
                   )}
-                </Button>
+                </button>
               </div>
             </div>
           )}
         </div>
       </Dialog>
+
       {/* 削除確認ダイアログ（レスポンシブ改善） */}
       <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <div className="p-4 sm:p-6 w-full max-w-md mx-auto">
@@ -675,21 +693,24 @@ export default function CorporateUsersPage() {
                   </div>
                 </div>
               </div>
-              <div className="flex flex-col sm:flex-row sm:justify-end space-y-2 sm:space-y-0 sm:space-x-3">
-                <Button
-                  variant="corporateOutline"
+              <div className="flex flex-col gap-3">
+                <button
+                  className="w-full h-[48px] px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-base sm:text-sm flex items-center justify-center"
+                  onClick={handleConfirmDelete}
+                  type="button"
+                >
+                  削除する
+                </button>
+                <button
+                  className="w-full h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                   onClick={() => {
                     setIsDeleteDialogOpen(false);
-                    setSelectedUser(null); // 選択ユーザーもクリア
+                    setSelectedUser(null);
                   }}
                   type="button"
-                  className="w-full sm:w-auto"
                 >
                   キャンセル
-                </Button>
-                <Button variant="destructive" onClick={handleConfirmDelete} type="button">
-                  削除する
-                </Button>
+                </button>
               </div>
             </>
           )}
