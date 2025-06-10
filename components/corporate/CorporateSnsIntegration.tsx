@@ -188,29 +188,21 @@ export function CorporateSnsIntegration({
                     <div className="text-xs text-gray-500 break-all">{link.url}</div>
                   </div>
 
-                  {/* ボタン部分 - レスポンシブ対応 */}
+                  {/* ボタン部分 - レスポンシブ対応・統一スタイル */}
                   <div className="flex justify-start sm:justify-end pl-13">
                     {status === 'set' ? (
-                      <Link href={navigateToSnsSettings(link.platform)}>
+                      <Link href={navigateToSnsSettings(link.platform)} className="inline-block">
                         <Button
-                          size="sm"
-                          className="w-full sm:w-auto text-sm text-white hover:opacity-90"
-                          style={{
-                            backgroundColor: corporatePrimary,
-                            borderColor: corporatePrimary,
-                          }}
+                          variant="corporate"
+                          className="h-[48px] text-base sm:text-sm w-auto sm:w-auto"
                         >
                           設定変更
                         </Button>
                       </Link>
                     ) : (
                       <Button
-                        size="sm"
-                        className="w-full sm:w-auto text-sm text-white hover:opacity-90"
-                        style={{
-                          backgroundColor: corporatePrimary,
-                          borderColor: corporatePrimary,
-                        }}
+                        variant="corporate"
+                        className="h-[48px] text-base sm:text-sm w-full sm:w-auto"
                         onClick={() => handleAddSns(link)}
                       >
                         設定する

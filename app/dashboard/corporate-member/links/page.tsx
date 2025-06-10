@@ -9,6 +9,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { CorporateSnsIntegration } from '@/components/corporate/CorporateSnsIntegration';
 import { MemberSnsManager } from '@/components/corporate/MemberSnsManager';
+
 // SNSリンクの型定義
 interface SnsLink {
   id: string;
@@ -17,10 +18,12 @@ interface SnsLink {
   url: string;
   displayOrder: number;
 }
+
 // 法人SNSリンクの型定義
 interface CorporateSnsLink extends SnsLink {
   isRequired: boolean;
 }
+
 // カスタムリンクの型定義
 interface CustomLink {
   id: string;
@@ -28,6 +31,7 @@ interface CustomLink {
   url: string;
   displayOrder: number;
 }
+
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -35,12 +39,14 @@ interface TenantData {
   primaryColor: string | null;
   secondaryColor: string | null;
 }
+
 interface CorporatePlatformUrls {
   [key: string]: {
     username: string | null;
     url: string;
   };
 }
+
 interface CorporateSnsLink {
   id: string;
   platform: string;
@@ -50,6 +56,7 @@ interface CorporateSnsLink {
   isRequired: boolean;
   description: string | null;
 }
+
 export default function CorporateMemberLinksPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -61,11 +68,13 @@ export default function CorporateMemberLinksPage() {
   const [tenantData, setTenantData] = useState<TenantData | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [corporatePlatformUrls, setCorporatePlatformUrls] = useState<CorporatePlatformUrls>({});
-  // ここに挿入 - 個人SNSリンク更新時のハンドラ
+
+  // 個人SNSリンク更新時のハンドラ
   const handleSnsLinkUpdate = (updatedLinks: SnsLink[]) => {
     setPersonalSnsLinks(updatedLinks);
     // 必要に応じてここでページ全体のリロードなども可能
   };
+
   // 初期データ取得
   useEffect(() => {
     if (status === 'loading') return;
@@ -73,6 +82,7 @@ export default function CorporateMemberLinksPage() {
       router.push('/auth/signin');
       return;
     }
+
     const fetchData = async () => {
       try {
         setIsLoading(true);
@@ -82,6 +92,7 @@ export default function CorporateMemberLinksPage() {
           fetch('/api/corporate-member/links'),
           fetch('/api/corporate/sns'), // 法人共通SNS情報を取得
         ]);
+
         // 各レスポンスを処理
         if (!profileResponse.ok) {
           throw new Error('法人プロフィール情報の取得に失敗しました');
@@ -92,13 +103,16 @@ export default function CorporateMemberLinksPage() {
         if (!corporateSnsResponse.ok) {
           throw new Error('法人共通SNS情報の取得に失敗しました');
         }
+
         const profileData = await profileResponse.json();
         const linksData = await linksResponse.json();
         const corporateSnsData = await corporateSnsResponse.json();
+
         setTenantData(profileData.tenant);
         setCorporateSnsLinks(linksData.corporateSnsLinks || []);
         setPersonalSnsLinks(linksData.personalSnsLinks);
         setCustomLinks(linksData.customLinks);
+
         // 法人共通SNSのURLマップを作成
         const urlMap: CorporatePlatformUrls = {};
         (corporateSnsData.snsLinks as CorporateSnsLink[]).forEach((link) => {
@@ -108,6 +122,7 @@ export default function CorporateMemberLinksPage() {
           };
         });
         setCorporatePlatformUrls(urlMap);
+
         setError(null);
       } catch {
         setError('リンク情報の取得に失敗しました');
@@ -115,8 +130,10 @@ export default function CorporateMemberLinksPage() {
         setIsLoading(false);
       }
     };
+
     fetchData();
   }, [session, status, router]);
+
   // URL上のハッシュフラグメントを処理
   useEffect(() => {
     // URL上のハッシュフラグメントをチェック
@@ -131,6 +148,7 @@ export default function CorporateMemberLinksPage() {
       }
     }
   }, [searchParams]);
+
   // テナントデータを変換して渡す
   const adjustedTenantData = tenantData
     ? {
@@ -139,6 +157,7 @@ export default function CorporateMemberLinksPage() {
         corporateSecondary: tenantData.secondaryColor || 'var(--color-corporate-secondary)',
       }
     : null;
+
   return (
     <CorporateMemberGuard>
       <div className="space-y-6 corporate-theme">
@@ -151,6 +170,7 @@ export default function CorporateMemberLinksPage() {
             </p>
           </div>
         </div>
+
         {isLoading ? (
           <div className="flex flex-col items-center justify-center min-h-[400px]">
             <Spinner size="lg" />
@@ -159,7 +179,11 @@ export default function CorporateMemberLinksPage() {
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-6">
             <p className="text-red-700">{error}</p>
-            <Button variant="corporate" onClick={() => window.location.reload()} className="mt-4">
+            <Button
+              variant="corporate"
+              className="h-[48px] text-base sm:text-sm mt-4"
+              onClick={() => window.location.reload()}
+            >
               再読み込み
             </Button>
           </div>
@@ -171,6 +195,7 @@ export default function CorporateMemberLinksPage() {
               personalSnsLinks={personalSnsLinks}
               tenantData={adjustedTenantData}
             />
+
             {/* 個人SNS管理コンポーネント */}
             <MemberSnsManager
               personalSnsLinks={personalSnsLinks}

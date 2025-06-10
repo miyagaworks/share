@@ -87,7 +87,7 @@ export function MemberSnsManager({
   onSnsLinkUpdate,
   onCustomLinkUpdate,
 }: MemberSnsManagerProps) {
-  const primaryColor = tenantData?.primaryColor || tenantData?.corporatePrimary || '#3B82F6';
+  const primaryColor = tenantData?.primaryColor || tenantData?.corporatePrimary || '#1E3A8A';
 
   // SNSリンク管理の状態
   const [snsItems, setSnsItems] = useState(personalSnsLinks);
@@ -574,13 +574,10 @@ export function MemberSnsManager({
             </p>
           </div>
           <Button
+            variant="corporate"
+            className="h-[48px] text-base sm:text-sm w-full sm:w-auto"
             onClick={() => setIsAddingSns(true)}
             disabled={isAddingSns || availablePlatforms.length === 0 || isProcessing}
-            className="w-full sm:w-auto text-white hover:opacity-90"
-            style={{
-              backgroundColor: primaryColor,
-              borderColor: primaryColor,
-            }}
           >
             <HiPlus className="mr-1 h-4 w-4" />
             追加
@@ -665,8 +662,8 @@ export function MemberSnsManager({
                           </label>
                           <Button
                             variant="ghost"
+                            className="h-[48px] text-base sm:text-sm w-full sm:w-auto"
                             onClick={() => setShowHelp(!showHelp)}
-                            className="w-full sm:w-auto text-xs"
                           >
                             {showHelp ? 'ヘルプを隠す' : 'ヘルプ表示'}
                           </Button>
@@ -737,13 +734,9 @@ export function MemberSnsManager({
                             {SNS_METADATA[selectedPlatform].name}
                             のアカウント情報を正しく取得するには
                             <Button
-                              type="button"
+                              variant="corporate"
+                              className="h-[48px] text-base sm:text-sm mx-1 px-2"
                               onClick={() => setShowGuide(true)}
-                              className="mx-1 px-2 text-xs text-white hover:opacity-90"
-                              style={{
-                                backgroundColor: primaryColor,
-                                borderColor: primaryColor,
-                              }}
                             >
                               詳しいガイド
                             </Button>
@@ -777,21 +770,18 @@ export function MemberSnsManager({
 
                 <div className="flex flex-col sm:flex-row gap-2 pt-2">
                   <Button
-                    variant="outline"
+                    variant="corporateOutline"
+                    className="h-[48px] text-base sm:text-sm w-full sm:w-auto order-2 sm:order-1"
                     onClick={resetSnsForm}
                     disabled={isProcessing}
-                    className="w-full sm:w-auto order-2 sm:order-1"
                   >
                     キャンセル
                   </Button>
                   <Button
+                    variant="corporate"
+                    className="h-[48px] text-base sm:text-sm w-full sm:w-auto order-1 sm:order-2"
                     onClick={handleAddSns}
                     disabled={!selectedPlatform || !urlValid || isProcessing}
-                    className="w-full sm:w-auto order-1 sm:order-2 text-white hover:opacity-90"
-                    style={{
-                      backgroundColor: primaryColor,
-                      borderColor: primaryColor,
-                    }}
                   >
                     {isProcessing ? '追加中...' : '追加'}
                   </Button>
@@ -879,24 +869,21 @@ export function MemberSnsManager({
 
                               <div className="flex flex-col sm:flex-row gap-2">
                                 <Button
-                                  variant="outline"
+                                  variant="corporateOutline"
+                                  className="h-[48px] text-base sm:text-sm w-full sm:w-auto order-2 sm:order-1"
                                   onClick={() => {
                                     setEditingSnsId(null);
                                     resetSnsForm();
                                   }}
                                   disabled={isProcessing}
-                                  className="w-full sm:w-auto order-2 sm:order-1"
                                 >
                                   キャンセル
                                 </Button>
                                 <Button
+                                  variant="corporate"
+                                  className="h-[48px] text-base sm:text-sm w-full sm:w-auto order-1 sm:order-2"
                                   onClick={() => handleUpdateSns(link.id)}
                                   disabled={isProcessing}
-                                  className="w-full sm:w-auto order-1 sm:order-2 text-white hover:opacity-90"
-                                  style={{
-                                    backgroundColor: primaryColor,
-                                    borderColor: primaryColor,
-                                  }}
                                 >
                                   更新
                                 </Button>
@@ -939,19 +926,19 @@ export function MemberSnsManager({
                                     <div className="flex gap-2 flex-shrink-0">
                                       <Button
                                         variant="ghost"
+                                        className="h-[48px] w-[48px] p-0"
                                         onClick={() => startEditingSns(link)}
                                         disabled={isProcessing}
-                                        className="h-8 w-8 p-0"
                                       >
                                         <HiPencil className="h-4 w-4" />
                                       </Button>
                                       <Button
                                         variant="destructive"
+                                        className="h-[48px] w-[48px] p-0"
                                         onClick={() => handleDeleteSns(link.id, link.platform)}
                                         disabled={
                                           isProcessing || corporatePlatforms.includes(link.platform)
                                         }
-                                        className="h-8 w-8 p-0"
                                       >
                                         <HiTrash className="h-4 w-4" />
                                       </Button>
@@ -990,13 +977,10 @@ export function MemberSnsManager({
             </p>
           </div>
           <Button
+            variant="corporate"
+            className="h-[48px] text-base sm:text-sm w-full sm:w-auto"
             onClick={() => setIsAddingCustom(true)}
             disabled={isAddingCustom || isProcessing}
-            className="w-full sm:w-auto text-white hover:opacity-90"
-            style={{
-              backgroundColor: primaryColor,
-              borderColor: primaryColor,
-            }}
           >
             <HiPlus className="mr-1 h-4 w-4" />
             追加
@@ -1035,24 +1019,21 @@ export function MemberSnsManager({
                 </div>
                 <div className="flex flex-col sm:flex-row gap-2">
                   <Button
-                    variant="outline"
+                    variant="corporateOutline"
+                    className="h-[48px] text-base sm:text-sm w-full sm:w-auto order-2 sm:order-1"
                     onClick={() => {
                       setIsAddingCustom(false);
                       setCustomForm({ name: '', url: '' });
                     }}
                     disabled={isProcessing}
-                    className="w-full sm:w-auto order-2 sm:order-1"
                   >
                     キャンセル
                   </Button>
                   <Button
+                    variant="corporate"
+                    className="h-[48px] text-base sm:text-sm w-full sm:w-auto order-1 sm:order-2"
                     onClick={handleAddCustom}
                     disabled={isProcessing}
-                    className="w-full sm:w-auto order-1 sm:order-2 text-white hover:opacity-90"
-                    style={{
-                      backgroundColor: primaryColor,
-                      borderColor: primaryColor,
-                    }}
                   >
                     追加
                   </Button>
@@ -1114,24 +1095,21 @@ export function MemberSnsManager({
                                 </div>
                                 <div className="flex flex-col sm:flex-row gap-2">
                                   <Button
-                                    variant="outline"
+                                    variant="corporateOutline"
+                                    className="h-[48px] text-base sm:text-sm w-full sm:w-auto order-2 sm:order-1"
                                     onClick={() => {
                                       setEditingCustomId(null);
                                       setCustomForm({ name: '', url: '' });
                                     }}
                                     disabled={isProcessing}
-                                    className="w-full sm:w-auto order-2 sm:order-1"
                                   >
                                     キャンセル
                                   </Button>
                                   <Button
+                                    variant="corporate"
+                                    className="h-[48px] text-base sm:text-sm w-full sm:w-auto order-1 sm:order-2"
                                     onClick={() => handleUpdateCustom(link.id)}
                                     disabled={isProcessing}
-                                    className="w-full sm:w-auto order-1 sm:order-2 text-white hover:opacity-90"
-                                    style={{
-                                      backgroundColor: primaryColor,
-                                      borderColor: primaryColor,
-                                    }}
                                   >
                                     更新
                                   </Button>
@@ -1170,17 +1148,17 @@ export function MemberSnsManager({
                                       <div className="flex gap-2 flex-shrink-0">
                                         <Button
                                           variant="ghost"
+                                          className="h-[48px] w-[48px] p-0"
                                           onClick={() => startEditingCustom(link)}
                                           disabled={isProcessing}
-                                          className="h-8 w-8 p-0"
                                         >
                                           <HiPencil className="h-4 w-4" />
                                         </Button>
                                         <Button
                                           variant="destructive"
+                                          className="h-[48px] w-[48px] p-0"
                                           onClick={() => handleDeleteCustom(link.id)}
                                           disabled={isProcessing}
-                                          className="h-8 w-8 p-0"
                                         >
                                           <HiTrash className="h-4 w-4" />
                                         </Button>
