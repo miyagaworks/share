@@ -912,8 +912,7 @@ export function MemberSnsManager({
                                 />
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium text-sm sm:text-base">
-                                    {SNS_METADATA[link.platform as SnsPlatform]?.name ||
-                                      link.platform}
+                                    {SNS_METADATA[link.platform as SnsPlatform]?.name || link.platform}
                                   </p>
                                   <div className="max-w-full overflow-hidden">
                                     <a
@@ -941,9 +940,7 @@ export function MemberSnsManager({
                                 <Button
                                   variant="destructive"
                                   onClick={() => handleDeleteSns(link.id, link.platform)}
-                                  disabled={
-                                    isProcessing || corporatePlatforms.includes(link.platform)
-                                  }
+                                  disabled={isProcessing || corporatePlatforms.includes(link.platform)}
                                 >
                                   <HiTrash className="h-4 w-4" />
                                 </Button>
