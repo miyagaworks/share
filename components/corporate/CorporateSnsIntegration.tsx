@@ -55,29 +55,6 @@ export function CorporateSnsIntegration({
   personalSnsLinks,
   tenantData,
 }: CorporateSnsIntegrationProps) {
-  // ★★★ useEffectを追加 ★★★
-  useEffect(() => {
-    const debugAndFix = () => {
-      // 全ボタンを確認
-      const allButtons = document.querySelectorAll('button');
-      // 対象ボタンを探す
-      const targetButtons = Array.from(allButtons).filter(
-        (btn) => btn.textContent?.includes('設定を変更') || btn.textContent?.includes('設定する'),
-      );
-      targetButtons.forEach((btn) => {
-        // 色を変更
-        btn.style.setProperty('background-color', '#1E3A8A', 'important');
-        btn.style.setProperty('border-color', '#1E3A8A', 'important');
-        btn.style.setProperty('color', 'white', 'important');
-      });
-    };
-    // 複数のタイミングで実行
-    debugAndFix();
-    setTimeout(debugAndFix, 100);
-    setTimeout(debugAndFix, 500);
-    setTimeout(debugAndFix, 1000);
-  }, [corporateSnsLinks, personalSnsLinks]);
-
   // テナントカラーの取得（優先順位を考慮）
   const corporatePrimary = tenantData?.primaryColor || tenantData?.corporatePrimary || '#1E3A8A';
 
@@ -140,7 +117,7 @@ export function CorporateSnsIntegration({
   };
 
   return (
-    <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-6 shadow-sm">
+    <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-4 sm:p-6 shadow-sm">
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-lg font-semibold flex items-center">
           <HiOfficeBuilding className="mr-2 h-5 w-5 text-gray-600" />
@@ -158,7 +135,7 @@ export function CorporateSnsIntegration({
           </p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-3 sm:space-y-4">
           {corporateSnsLinks.map((link) => {
             const status = getSetupStatus(link);
             const statusColor =
@@ -184,9 +161,11 @@ export function CorporateSnsIntegration({
                 className="border rounded-md p-3 sm:p-4"
                 style={{ borderColor: `${corporatePrimary}20` }}
               >
-                <div className="flex flex-col sm:flex-row gap-3">
+                {/* レスポンシブ対応のレイアウト修正 */}
+                <div className="flex items-center gap-3">
+                  {/* アイコン部分 */}
                   <div
-                    className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0 mx-auto sm:mx-0"
+                    className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
                     style={{ backgroundColor: `${corporatePrimary}15` }}
                   >
                     <ImprovedSnsIcon
@@ -195,8 +174,10 @@ export function CorporateSnsIntegration({
                       size={24}
                     />
                   </div>
-                  <div className="flex-1 min-w-0 text-center sm:text-left">
-                    <div className="flex flex-wrap items-center justify-center sm:justify-start gap-2 mb-1">
+
+                  {/* コンテンツ部分 */}
+                  <div className="flex-1 min-w-0">
+                    <div className="flex flex-wrap items-center gap-2 mb-2">
                       <h3 className="font-medium text-sm sm:text-base">
                         {getDisplayName(link.platform)}
                       </h3>
@@ -212,25 +193,34 @@ export function CorporateSnsIntegration({
                         </div>
                       )}
                     </div>
-                    <div className="flex flex-wrap gap-2 mt-4 justify-center sm:justify-start">
-                      {status === 'set' ? (
-                        // 設定済みの場合は編集リンク
-                        <Link href={navigateToSnsSettings(link.platform)}>
-                          <Button variant="corporate" style={{ backgroundColor: corporatePrimary }}>
-                            設定を変更
-                          </Button>
-                        </Link>
-                      ) : (
-                        // 未設定の場合は直接追加ボタン
+                  </div>
+
+                  {/* ボタン部分 - レスポンシブ対応 */}
+                  <div className="flex-shrink-0">
+                    {status === 'set' ? (
+                      // 設定済みの場合は編集リンク
+                      <Link href={navigateToSnsSettings(link.platform)}>
                         <Button
                           variant="corporate"
+                          size="sm"
+                          className="text-xs sm:text-sm whitespace-nowrap"
                           style={{ backgroundColor: corporatePrimary }}
-                          onClick={() => handleAddSns(link)}
                         >
-                          設定する
+                          設定変更
                         </Button>
-                      )}
-                    </div>
+                      </Link>
+                    ) : (
+                      // 未設定の場合は直接追加ボタン
+                      <Button
+                        variant="corporate"
+                        size="sm"
+                        className="text-xs sm:text-sm whitespace-nowrap"
+                        style={{ backgroundColor: corporatePrimary }}
+                        onClick={() => handleAddSns(link)}
+                      >
+                        設定する
+                      </Button>
+                    )}
                   </div>
                 </div>
               </div>
