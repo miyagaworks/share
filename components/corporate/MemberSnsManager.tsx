@@ -1132,18 +1132,18 @@ export function MemberSnsManager({
                                   </a>
                                   <div className="flex items-center mt-3 space-x-2">
                                     <Button
-                                      variant="outline"
+                                      variant="ghost"
                                       onClick={() => startEditingCustom(link)}
                                       disabled={isProcessing}
                                     >
-                                      <HiPencil className="mr-1 h-3 w-3" />編 集
+                                      <HiPencil className="h-4 w-4" />
                                     </Button>
                                     <Button
                                       variant="destructive"
                                       onClick={() => handleDeleteCustom(link.id)}
                                       disabled={isProcessing}
                                     >
-                                      <HiTrash className="mr-1 h-3 w-3" />削 除
+                                      <HiTrash className="h-4 w-4" />
                                     </Button>
                                   </div>
                                 </div>
