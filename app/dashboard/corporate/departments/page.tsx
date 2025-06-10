@@ -6,8 +6,16 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Spinner } from '@/components/ui/Spinner';
 import { Input } from '@/components/ui/Input';
-import { HiPlus, HiPencil, HiTrash, HiOfficeBuilding, HiInformationCircle, HiUsers } from 'react-icons/hi';
+import {
+  HiPlus,
+  HiPencil,
+  HiTrash,
+  HiOfficeBuilding,
+  HiInformationCircle,
+  HiUsers,
+} from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
+
 // 部署情報の型定義
 interface Department {
   id: string;
@@ -15,6 +23,7 @@ interface Department {
   description: string | null;
   userCount?: number;
 }
+
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -27,6 +36,7 @@ interface TenantData {
     departmentId: string | null;
   }>;
 }
+
 export default function DepartmentsPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -35,6 +45,7 @@ export default function DepartmentsPage() {
   const [departments, setDepartments] = useState<Department[]>([]);
   const [isAdmin, setIsAdmin] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
   // 部署追加・編集モーダル用の状態
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
@@ -42,6 +53,7 @@ export default function DepartmentsPage() {
   const [departmentName, setDepartmentName] = useState('');
   const [departmentDescription, setDepartmentDescription] = useState('');
   const [isSaving, setIsSaving] = useState(false);
+
   // テナント情報を取得
   useEffect(() => {
     const fetchTenantData = async () => {
@@ -56,6 +68,7 @@ export default function DepartmentsPage() {
         const data = await response.json();
         setTenantData(data.tenant);
         setIsAdmin(data.userRole === 'admin');
+
         // 部署情報を取得
         const deptResponse = await fetch('/api/corporate/departments');
         if (!deptResponse.ok) {
@@ -70,8 +83,10 @@ export default function DepartmentsPage() {
         setIsLoading(false);
       }
     };
+
     fetchTenantData();
   }, [session]);
+
   // 部署追加モーダルを開く
   const openAddModal = () => {
     setIsEditing(false);
@@ -80,6 +95,7 @@ export default function DepartmentsPage() {
     setDepartmentDescription('');
     setIsModalOpen(true);
   };
+
   // 部署編集モーダルを開く
   const openEditModal = (department: Department) => {
     setIsEditing(true);
@@ -88,10 +104,12 @@ export default function DepartmentsPage() {
     setDepartmentDescription(department.description || '');
     setIsModalOpen(true);
   };
+
   // モーダルを閉じる
   const closeModal = () => {
     setIsModalOpen(false);
   };
+
   // 部署追加・更新処理
   const handleSaveDepartment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -99,6 +117,7 @@ export default function DepartmentsPage() {
       toast.error('部署名を入力してください');
       return;
     }
+
     try {
       setIsSaving(true);
       if (isEditing && editingDepartment) {
@@ -111,10 +130,12 @@ export default function DepartmentsPage() {
             description: departmentDescription || null,
           }),
         });
+
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error || '部署の更新に失敗しました');
         }
+
         const data = await response.json();
         // APIから返ってきた値を使用
         const updatedDepartments = departments.map((dept) =>
@@ -138,10 +159,12 @@ export default function DepartmentsPage() {
             description: departmentDescription || null,
           }),
         });
+
         if (!response.ok) {
           const data = await response.json();
           throw new Error(data.error || '部署の追加に失敗しました');
         }
+
         const data = await response.json();
         // 新しい部署を追加
         const newDepartment = {
@@ -153,6 +176,7 @@ export default function DepartmentsPage() {
         setDepartments([...departments, newDepartment]);
         toast.success('部署を追加しました');
       }
+
       // モーダルを閉じる
       closeModal();
     } catch (error) {
@@ -161,6 +185,7 @@ export default function DepartmentsPage() {
       setIsSaving(false);
     }
   };
+
   // 部署削除処理
   const handleDeleteDepartment = async (department: Department) => {
     if (department.userCount && department.userCount > 0) {
@@ -169,20 +194,24 @@ export default function DepartmentsPage() {
       );
       return;
     }
+
     if (
       !confirm(`「${department.name}」部署を削除してもよろしいですか？この操作は元に戻せません。`)
     ) {
       return;
     }
+
     try {
       // 部署削除API
       const response = await fetch(`/api/corporate/departments/${department.id}`, {
         method: 'DELETE',
       });
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || '部署の削除に失敗しました');
       }
+
       // 部署リストから削除
       setDepartments(departments.filter((dept) => dept.id !== department.id));
       toast.success('部署を削除しました');
@@ -190,6 +219,7 @@ export default function DepartmentsPage() {
       toast.error(error instanceof Error ? error.message : '部署の削除に失敗しました');
     }
   };
+
   // 読み込み中
   if (isLoading) {
     return (
@@ -198,38 +228,39 @@ export default function DepartmentsPage() {
       </div>
     );
   }
+
   // エラー表示
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-red-800 mb-2">エラーが発生しました</h3>
         <p className="text-red-700">{error}</p>
-        <Button
-          variant="corporateOutline"
-          className="mt-4"
+        <button
+          className="mt-4 h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
           onClick={() => window.location.reload()}
         >
           再読み込み
-        </Button>
+        </button>
       </div>
     );
   }
+
   // テナントデータがない場合
   if (!tenantData) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-yellow-800 mb-2">法人プランが有効ではありません</h3>
         <p className="text-yellow-700">法人プランにアップグレードしてこの機能をご利用ください。</p>
-        <Button
-          variant="corporate"
-          className="mt-4"
+        <button
+          className="mt-4 h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
           onClick={() => router.push('/dashboard/subscription')}
         >
           プランを見る
-        </Button>
+        </button>
       </div>
     );
   }
+
   return (
     <div className="space-y-6 corporate-theme">
       {/* ヘッダー部分 */}
@@ -239,12 +270,16 @@ export default function DepartmentsPage() {
           <p className="text-gray-500 mt-1">部署を作成・管理し、ユーザーを適切に分類します</p>
         </div>
         {isAdmin && (
-          <Button variant="corporate" onClick={openAddModal} className="flex items-center">
+          <button
+            className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
+            onClick={openAddModal}
+          >
             <HiPlus className="mr-2 h-4 w-4" />
             部署を追加
-          </Button>
+          </button>
         )}
       </div>
+
       {/* 部署リスト */}
       {departments.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
@@ -265,14 +300,23 @@ export default function DepartmentsPage() {
                     <div className="flex space-x-1">
                       <button
                         onClick={() => openEditModal(dept)}
-                        className="text-gray-500 hover:text-blue-600"
+                        className="h-[48px] w-[48px] text-gray-500 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors flex items-center justify-center"
                       >
                         <HiPencil className="h-5 w-5" />
                       </button>
                       <button
                         onClick={() => handleDeleteDepartment(dept)}
-                        className="text-gray-500 hover:text-red-600"
+                        className={`h-[48px] w-[48px] rounded-md transition-colors flex items-center justify-center ${
+                          dept.userCount && dept.userCount > 0
+                            ? 'text-gray-300 cursor-not-allowed'
+                            : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
+                        }`}
                         disabled={dept.userCount ? dept.userCount > 0 : false}
+                        title={
+                          dept.userCount && dept.userCount > 0
+                            ? 'ユーザーが所属している部署は削除できません'
+                            : '部署を削除'
+                        }
                       >
                         <HiTrash className="h-5 w-5" />
                       </button>
@@ -288,13 +332,12 @@ export default function DepartmentsPage() {
                 </div>
               </div>
               <div className="border-t border-gray-200 bg-gray-50 px-6 py-3">
-                <Button
-                  variant="ghost"
-                  size="sm"
+                <button
+                  className="h-[48px] px-4 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                   onClick={() => router.push(`/dashboard/corporate/users?department=${dept.id}`)}
                 >
                   ユーザーを見る
-                </Button>
+                </button>
               </div>
             </div>
           ))}
@@ -309,13 +352,17 @@ export default function DepartmentsPage() {
             「部署を追加」ボタンをクリックして、最初の部署を作成してください。
           </p>
           {isAdmin && (
-            <Button variant="corporate" onClick={openAddModal}>
+            <button
+              className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center mx-auto"
+              onClick={openAddModal}
+            >
               <HiPlus className="mr-2 h-4 w-4" />
               部署を追加
-            </Button>
+            </button>
           )}
         </div>
       )}
+
       {/* 部署追加/編集モーダル */}
       {isModalOpen && (
         <div className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center p-4">
@@ -356,11 +403,12 @@ export default function DepartmentsPage() {
                     />
                   </div>
                 </div>
-                <div className="flex justify-end space-x-3 mt-6">
-                  <Button type="button" variant="corporateOutline" onClick={closeModal}>
-                    キャンセル
-                  </Button>
-                  <Button variant="corporate" type="submit" disabled={isSaving}>
+                <div className="flex flex-col gap-3 mt-6">
+                  <button
+                    type="submit"
+                    disabled={isSaving}
+                    className="w-full h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
+                  >
                     {isSaving ? (
                       <>
                         <Spinner size="sm" className="mr-2" />
@@ -369,13 +417,21 @@ export default function DepartmentsPage() {
                     ) : (
                       '保存'
                     )}
-                  </Button>
+                  </button>
+                  <button
+                    type="button"
+                    className="w-full h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+                    onClick={closeModal}
+                  >
+                    キャンセル
+                  </button>
                 </div>
               </form>
             </div>
           </div>
         </div>
       )}
+
       {/* 部署管理のヒント */}
       <div
         className="mt-6 rounded-md p-4"

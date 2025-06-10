@@ -300,7 +300,7 @@ export default function InviteUserPage() {
             <div className="flex flex-col sm:flex-row justify-end gap-3">
               <button
                 type="button"
-                className="h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+                className="h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                 onClick={() => router.push('/dashboard/corporate/users')}
               >
                 キャンセル
