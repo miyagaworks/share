@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { HiEye, HiEyeOff, HiInformationCircle, HiClock, HiUsers } from 'react-icons/hi';
 import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
+
 interface ShareSettingsProps {
   initialValues: {
     isPublic: boolean;
@@ -16,6 +17,7 @@ interface ShareSettingsProps {
   isLoading: boolean;
   onSave: (values: { isPublic?: boolean; slug?: string | null }) => Promise<void>;
 }
+
 export function MemberShareSettings({
   initialValues,
   baseUrl,
@@ -28,16 +30,19 @@ export function MemberShareSettings({
   const [slugError, setSlugError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [formChanged, setFormChanged] = useState(false);
+
   // 初期値が変更された場合、フォームを更新
   useEffect(() => {
     setIsPublic(initialValues.isPublic);
     setSlug(initialValues.slug || '');
   }, [initialValues]);
+
   // 変更検知
   useEffect(() => {
     const isChanged = isPublic !== initialValues.isPublic || slug !== (initialValues.slug || '');
     setFormChanged(isChanged);
   }, [isPublic, slug, initialValues]);
+
   // スラッグのバリデーション
   const validateSlug = (value: string) => {
     if (!value.trim()) {
@@ -59,6 +64,7 @@ export function MemberShareSettings({
     setSlugError(null);
     return true;
   };
+
   // スラッグ変更ハンドラー
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -67,13 +73,16 @@ export function MemberShareSettings({
     validateSlug(value);
     setFormChanged(true); // 入力があったことを記録
   };
+
   // 保存処理を修正
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
     // スラッグのバリデーション
     if (!validateSlug(slug)) {
       return;
     }
+
     try {
       setIsSaving(true);
       await onSave({
@@ -94,6 +103,7 @@ export function MemberShareSettings({
       setIsSaving(false);
     }
   };
+
   // 最終アクセス日時のフォーマット
   const formatLastAccessed = (dateString: string | null) => {
     if (!dateString) return '未アクセス';
@@ -106,6 +116,7 @@ export function MemberShareSettings({
       minute: '2-digit',
     });
   };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* 公開・非公開設定 */}
@@ -114,7 +125,7 @@ export function MemberShareSettings({
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center space-y-2 sm:space-y-0 sm:space-x-4">
           <button
             type="button"
-            className={`flex items-center justify-center px-4 py-2 rounded-md border w-full ${
+            className={`flex items-center justify-center px-4 py-2 h-[48px] rounded-md border w-full text-base sm:text-sm ${
               isPublic
                 ? 'bg-green-50 border-green-500 text-green-700'
                 : 'bg-gray-50 border-gray-300 text-gray-500'
@@ -126,7 +137,7 @@ export function MemberShareSettings({
           </button>
           <button
             type="button"
-            className={`flex items-center justify-center px-4 py-2 rounded-md border w-full ${
+            className={`flex items-center justify-center px-4 py-2 h-[48px] rounded-md border w-full text-base sm:text-sm ${
               !isPublic
                 ? 'bg-red-50 border-red-500 text-red-700'
                 : 'bg-gray-50 border-gray-300 text-gray-500'
@@ -143,17 +154,18 @@ export function MemberShareSettings({
             : '非公開設定にすると、プロフィールは外部から閲覧できなくなります。'}
         </p>
       </div>
+
       {/* URLスラッグ設定 */}
       <div className="space-y-2">
         <label className="block text-sm font-medium text-gray-700">カスタムURL</label>
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center">
-          <span className="bg-gray-100 px-3 py-2 rounded-t-md sm:rounded-l-md sm:rounded-tr-none border border-b-0 sm:border-b sm:border-r-0 border-gray-300 text-gray-500 text-center sm:text-left">
+          <span className="bg-gray-100 px-3 py-2 h-[48px] flex items-center rounded-t-md sm:rounded-l-md sm:rounded-tr-none border border-b-0 sm:border-b sm:border-r-0 border-gray-300 text-gray-500 text-center sm:text-left text-base sm:text-sm">
             {baseUrl}/
           </span>
           <Input
             value={slug}
             onChange={handleSlugChange}
-            className="rounded-b-md sm:rounded-l-none sm:rounded-r-md"
+            className="rounded-b-md sm:rounded-l-none sm:rounded-r-md h-[48px]"
             placeholder="yourname"
             disabled={isLoading || isSaving}
             error={slugError || undefined}
@@ -167,6 +179,7 @@ export function MemberShareSettings({
           </p>
         )}
       </div>
+
       {/* アクセス統計情報 */}
       <div className="flex flex-col sm:flex-row gap-4">
         <div className="flex items-center gap-2">
@@ -184,6 +197,7 @@ export function MemberShareSettings({
           </div>
         </div>
       </div>
+
       {/* 法人ブランディングに関する注意書き */}
       <div className="bg-yellow-50 border border-yellow-100 rounded-md p-4">
         <div className="flex">
@@ -196,6 +210,7 @@ export function MemberShareSettings({
           </div>
         </div>
       </div>
+
       {/* 送信ボタン - 修正：variant="corporate"を使用してstyleプロパティを削除 */}
       <div className="flex justify-center sm:justify-end">
         <Button
@@ -204,7 +219,7 @@ export function MemberShareSettings({
           disabled={!formChanged || isLoading || isSaving || !!slugError}
           loading={isSaving}
           loadingText="保存中..."
-          className="w-full sm:w-auto"
+          className="w-full sm:w-auto h-[48px] text-base sm:text-sm"
           hoverScale="subtle"
         >
           共有設定を保存

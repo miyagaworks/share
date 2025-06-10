@@ -240,7 +240,7 @@ function SharePageContent() {
             <div className="mb-6">
               <Link
                 href="/qrcode"
-                className="inline-flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 hover:shadow-lg text-white px-4 py-3 rounded-md transition-all duration-200 transform hover:scale-105 qr-designer-button"
+                className="inline-flex items-center justify-center w-full bg-blue-600 hover:bg-blue-700 hover:shadow-lg text-white px-4 py-3 rounded-md transition-all duration-200 transform hover:scale-105 qr-designer-button text-justify"
               >
                 <HiQrcode className="mr-2 h-5 w-5" />
                 QRコードデザイナーを使用する

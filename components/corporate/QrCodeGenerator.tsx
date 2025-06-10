@@ -5,17 +5,20 @@ import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { FaImage, FaCode } from 'react-icons/fa';
 import { HiEye } from 'react-icons/hi';
+
 // 型定義
 interface QRColorOption {
   id: string;
   name: string;
   value: string | null;
 }
+
 const QR_COLOR_OPTIONS: QRColorOption[] = [
   { id: 'corporate', name: '法人カラー', value: null },
   { id: 'black', name: 'ブラック', value: '#000000' },
   { id: 'darkGray', name: 'ダークグレー', value: '#333333' },
 ];
+
 interface QrCodeGeneratorProps {
   profileUrl: string;
   primaryColor: string | null;
@@ -26,6 +29,7 @@ interface QrCodeGeneratorProps {
   hideSlugInput?: boolean;
   hideGenerateButton?: boolean;
 }
+
 export function QrCodeGenerator({
   profileUrl,
   primaryColor: corporatePrimaryColor,
@@ -40,8 +44,10 @@ export function QrCodeGenerator({
   const [selectedColor, setSelectedColor] = useState('corporate');
   const qrRef = useRef<HTMLDivElement>(null);
   const [isGenerating, setIsGenerating] = useState(false);
+
   // 法人カラーを設定
   const corporateColor = corporatePrimaryColor || '#1E3A8A';
+
   const getButtonColor = (option: QRColorOption, corporateColor: string): string => {
     if (option.id === 'corporate') {
       return corporateColor;
@@ -54,15 +60,18 @@ export function QrCodeGenerator({
     }
     return option.value || '#000000';
   };
+
   const colorOption =
     QR_COLOR_OPTIONS.find((option) => option.id === selectedColor) || QR_COLOR_OPTIONS[0];
   const qrColor = getButtonColor(colorOption, corporateColor);
   const bgColor = 'white';
+
   // 残りの状態変数
   const [internalSlug, setInternalSlug] = useState(qrCodeSlug || '');
   const [isSlugAvailable, setIsSlugAvailable] = useState(false);
   const [isCheckingSlug, setIsCheckingSlug] = useState(false);
   const [isExistingQrCode, setIsExistingQrCode] = useState(false);
+
   // 外部から渡されたスラグが変更された場合、内部状態も更新
   useEffect(() => {
     if (qrCodeSlug && qrCodeSlug !== internalSlug) {
@@ -70,9 +79,10 @@ export function QrCodeGenerator({
       checkSlugAvailability(qrCodeSlug);
     }
   }, [qrCodeSlug, internalSlug]);
+
   // useEffect を追加してコンソールで確認
-  useEffect(() => {
-  }, [corporateColor, selectedColor, colorOption, qrColor]);
+  useEffect(() => {}, [corporateColor, selectedColor, colorOption, qrColor]);
+
   // QRコードのスタイル
   const qrStyle = {
     width: size,
@@ -82,6 +92,7 @@ export function QrCodeGenerator({
     borderRadius: 8,
     margin: '0 auto',
   };
+
   // サイズ調整
   const handleSizeChange = (increment: boolean) => {
     const newSize = increment ? size + 50 : size - 50;
@@ -89,6 +100,7 @@ export function QrCodeGenerator({
       setSize(newSize);
     }
   };
+
   // カスタムURLスラグの利用可能性をチェック
   const checkSlugAvailability = async (slug: string) => {
     if (!slug || slug.length < 3) {
@@ -96,11 +108,13 @@ export function QrCodeGenerator({
       setIsExistingQrCode(false);
       return;
     }
+
     setIsCheckingSlug(true);
     try {
       // APIエンドポイントを呼び出してスラグが利用可能かどうかをチェック
       const response = await fetch(`/api/qrcode/check-slug?slug=${slug}`);
       const data = await response.json();
+
       if (!data.available) {
         // 既に使用されているスラグ
         if (data.ownedByCurrentUser) {
@@ -124,14 +138,17 @@ export function QrCodeGenerator({
       setIsCheckingSlug(false);
     }
   };
+
   // スラグ入力の変更を処理
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
     setInternalSlug(newSlug);
+
     // 親コンポーネントの変更ハンドラーがある場合は呼び出す
     if (onQrCodeSlugChange) {
       onQrCodeSlugChange(newSlug);
     }
+
     // 入力後にスラグの利用可能性をチェック
     if (newSlug.length >= 3) {
       checkSlugAvailability(newSlug);
@@ -140,16 +157,19 @@ export function QrCodeGenerator({
       setIsExistingQrCode(false);
     }
   };
+
   // QRコードページ生成処理
   const handleGenerateQrCode = async () => {
     if (!internalSlug || internalSlug.length < 3) {
       toast.error('有効なURLスラグを入力してください');
       return;
     }
+
     if (!isSlugAvailable && !isExistingQrCode) {
       toast.error('このURLは既に使用されています');
       return;
     }
+
     setIsGenerating(true);
     try {
       // 外部提供の生成ハンドラーがある場合はそれを使用
@@ -168,6 +188,7 @@ export function QrCodeGenerator({
           userName: '',
           profileUrl,
         };
+
         const response = await fetch('/api/qrcode/create', {
           method: 'POST',
           headers: {
@@ -175,12 +196,15 @@ export function QrCodeGenerator({
           },
           body: JSON.stringify(qrCodeData),
         });
+
         if (!response.ok) {
           const errorData = await response.json();
           throw new Error(errorData.error || 'QRコードページの作成に失敗しました');
         }
+
         await response.json();
       }
+
       // 🔧 修正: 成功後もプロフィールURLを使用
       toast.success(isExistingQrCode ? 'QRコードを更新しました' : 'QRコードを作成しました');
     } catch (error) {
@@ -189,9 +213,11 @@ export function QrCodeGenerator({
       setIsGenerating(false);
     }
   };
+
   // PNGとしてダウンロード
   const downloadQrAsPng = () => {
     if (!qrRef.current) return;
+
     try {
       // SVGをキャンバスに描画してPNG化
       const svg = qrRef.current.querySelector('svg');
@@ -199,33 +225,41 @@ export function QrCodeGenerator({
         toast.error('QRコードが見つかりません');
         return;
       }
+
       const canvas = document.createElement('canvas');
       const ctx = canvas.getContext('2d');
       const svgData = new XMLSerializer().serializeToString(svg);
+
       // キャンバスサイズを設定（余白を付ける）
       canvas.width = size + 32;
       canvas.height = size + 32;
+
       if (ctx) {
         // 背景を白く
         ctx.fillStyle = bgColor;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
+
         // SVGを画像に変換
         const img = new Image();
         const blob = new Blob([svgData], { type: 'image/svg+xml' });
         const url = URL.createObjectURL(blob);
+
         img.onload = () => {
           // 中央に配置
           ctx.drawImage(img, 16, 16, size, size);
+
           // ダウンロード
           const pngUrl = canvas.toDataURL('image/png');
           const downloadLink = document.createElement('a');
           downloadLink.href = pngUrl;
           downloadLink.download = 'corporate-profile-qrcode.png';
           downloadLink.click();
+
           // ブロブURLの解放
           URL.revokeObjectURL(url);
           toast.success('QRコード（PNG）をダウンロードしました');
         };
+
         img.src = url;
       } else {
         toast.error('キャンバスの作成に失敗しました');
@@ -234,9 +268,11 @@ export function QrCodeGenerator({
       toast.error('QRコードのダウンロードに失敗しました');
     }
   };
+
   // SVGとしてダウンロード
   const downloadQrAsSvg = () => {
     if (!qrRef.current) return;
+
     try {
       // SVG要素を取得
       const svg = qrRef.current.querySelector('svg');
@@ -244,30 +280,37 @@ export function QrCodeGenerator({
         toast.error('QRコードが見つかりません');
         return;
       }
+
       // SVGに白背景を追加（印刷時の透明背景問題を防ぐ）
       const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
       rect.setAttribute('width', '100%');
       rect.setAttribute('height', '100%');
       rect.setAttribute('fill', 'white');
       svg.insertBefore(rect, svg.firstChild);
+
       // SVGデータを文字列化
       const svgData = new XMLSerializer().serializeToString(svg);
       const svgBlob = new Blob([svgData], { type: 'image/svg+xml' });
       const svgUrl = URL.createObjectURL(svgBlob);
+
       // ダウンロードリンクを作成
       const downloadLink = document.createElement('a');
       downloadLink.href = svgUrl;
       downloadLink.download = 'corporate-profile-qrcode.svg';
       downloadLink.click();
+
       // ブロブURLの解放
       URL.revokeObjectURL(svgUrl);
+
       // 追加した白背景要素を削除（表示上の問題を防ぐ）
       svg.removeChild(rect);
+
       toast.success('QRコード（SVG）をダウンロードしました');
     } catch {
       toast.error('QRコードのダウンロードに失敗しました');
     }
   };
+
   return (
     <div className="space-y-4">
       {/* カスタムURLスラグ入力欄 - hideSlugInputがtrueの場合は非表示 */}
@@ -307,6 +350,7 @@ export function QrCodeGenerator({
           </div>
         </div>
       )}
+
       <div ref={qrRef} className="flex justify-center">
         <div style={qrStyle}>
           <QRCodeSVG
@@ -319,12 +363,14 @@ export function QrCodeGenerator({
           />
         </div>
       </div>
+
       <div className="flex justify-center items-center gap-2 mt-2">
         <Button
           variant="corporate"
           size="sm"
           onClick={() => handleSizeChange(false)}
           disabled={size <= 150}
+          className="h-[48px] text-base sm:text-sm"
         >
           -
         </Button>
@@ -334,10 +380,12 @@ export function QrCodeGenerator({
           size="sm"
           onClick={() => handleSizeChange(true)}
           disabled={size >= 400}
+          className="h-[48px] text-base sm:text-sm"
         >
           +
         </Button>
       </div>
+
       <div className="mt-4">
         <label className="text-sm font-medium block mb-2">QRコードの色</label>
         <div className="grid grid-cols-3 gap-2">
@@ -351,6 +399,7 @@ export function QrCodeGenerator({
                 : option.id === 'darkGray'
                   ? '#333333'
                   : buttonColor;
+
             return (
               <div key={option.id} className="flex flex-col">
                 <button
@@ -410,12 +459,13 @@ export function QrCodeGenerator({
           })}
         </div>
       </div>
+
       {/* QRコード生成ボタン - hideGenerateButton が true の場合は非表示 */}
       {!hideGenerateButton && (
         <div className="mt-4">
           <Button
             variant="corporate"
-            className="w-full flex items-center justify-center gap-2"
+            className="w-full flex items-center justify-center gap-2 h-[48px] text-base sm:text-sm"
             onClick={handleGenerateQrCode}
             disabled={
               isGenerating || (!isSlugAvailable && !isExistingQrCode) || internalSlug.length < 3
@@ -435,11 +485,12 @@ export function QrCodeGenerator({
           </Button>
         </div>
       )}
+
       {/* ダウンロードボタンは残す */}
       <div className="flex justify-center space-x-4 mt-4">
         <Button
           variant="corporate"
-          className="flex-1 flex items-center gap-2 justify-center"
+          className="flex-1 flex items-center gap-2 justify-center h-[48px] text-base sm:text-sm"
           onClick={downloadQrAsPng}
         >
           <FaImage className="h-4 w-4" />
@@ -448,7 +499,7 @@ export function QrCodeGenerator({
         </Button>
         <Button
           variant="corporate"
-          className="flex-1 flex items-center gap-2 justify-center"
+          className="flex-1 flex items-center gap-2 justify-center h-[48px] text-base sm:text-sm"
           onClick={downloadQrAsSvg}
         >
           <FaCode className="h-4 w-4" />
@@ -456,6 +507,7 @@ export function QrCodeGenerator({
           <span style={{ fontSize: '0.75rem', margin: '0 -6px' }}>(印刷用)</span>
         </Button>
       </div>
+
       <div className="mt-2 text-xs text-gray-500 text-center">
         <p>※SVG形式は高解像度印刷に最適です</p>
       </div>
