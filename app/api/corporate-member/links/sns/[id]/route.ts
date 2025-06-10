@@ -6,10 +6,9 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
 
-// バリデーションスキーマ
+// バリデーションスキーマ - 更新時用
 const SnsLinkUpdateSchema = z.object({
-  platform: z.string(),
-  username: z.string().optional(),
+  username: z.string().nullable().optional(),
   url: z.string().url({ message: '有効なURLを入力してください' }),
   displayOrder: z.number().optional(),
 });
@@ -31,7 +30,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
     const validationResult = SnsLinkUpdateSchema.safeParse(body);
     if (!validationResult.success) {
       const errors = validationResult.error.flatten();
-      return NextResponse.json({ error: '入力データが無効です', details: errors }, { status: 400 });
+      logger.error('SNSリンク更新バリデーションエラー:', { errors, body });
+      return NextResponse.json(
+        {
+          error: '入力データが無効です',
+          details: errors,
+          receivedData: body,
+        },
+        { status: 400 },
+      );
     }
 
     const data = validationResult.data;
@@ -53,16 +60,15 @@ export async function PUT(req: NextRequest, { params }: { params: Promise<{ id: 
       return NextResponse.json({ error: '権限がありません' }, { status: 403 });
     }
 
-    // SNSリンクを更新
+    // SNSリンクを更新（platformは変更しない）
     const updatedSnsLink = await prisma.snsLink.update({
       where: {
         id: linkId,
       },
       data: {
-        platform: data.platform,
         username: data.username,
         url: data.url,
-        displayOrder: data.displayOrder || snsLink.displayOrder,
+        displayOrder: data.displayOrder !== undefined ? data.displayOrder : snsLink.displayOrder,
       },
     });
 
