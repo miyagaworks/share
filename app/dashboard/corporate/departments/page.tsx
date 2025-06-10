@@ -405,14 +405,14 @@ export default function DepartmentsPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-3 mt-6">
-                  <Button variant="corporate" type="submit" disabled={isSaving}>
+                  <Button variant="corporate" type="button" disabled={isSaving}>
                     {isSaving ? (
                       <>
                         <Spinner size="sm" className="mr-2" />
                         保存中...
                       </>
                     ) : (
-                      '保存'
+                      '保 存'
                     )}
                   </Button>
                   <Button variant="corporateOutline" type="button" onClick={closeModal}>
