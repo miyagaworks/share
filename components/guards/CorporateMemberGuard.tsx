@@ -1,5 +1,6 @@
 // components/guards/CorporateMemberGuard.tsx
 import { ReactNode, useEffect, useState } from 'react';
+import { Button } from '@/components/ui/Button';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { checkCorporateAccess } from '@/lib/corporateAccess';
@@ -121,12 +122,9 @@ export function CorporateMemberGuard({ children }: { children: ReactNode }) {
           <div className="mt-4 p-3 bg-yellow-50 border border-yellow-200 rounded-md">
             <p className="text-yellow-800 text-sm">{error}</p>
             {error.includes('接続') && (
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-2 px-3 py-1 bg-yellow-600 text-white rounded text-sm hover:bg-yellow-700"
-              >
+              <Button variant="outline" onClick={() => window.location.reload()} className="mt-2">
                 ページを再読み込み
-              </button>
+              </Button>
             )}
           </div>
         )}

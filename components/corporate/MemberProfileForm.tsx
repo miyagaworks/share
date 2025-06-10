@@ -52,8 +52,7 @@ export function MemberProfileForm({
   });
   // テナントのカラー設定
   const corporatePrimary = tenantData?.corporatePrimary || 'var(--color-corporate-primary)';
-  // Reactの状態でホバーを管理
-  const [isSecondaryHovered, setIsSecondaryHovered] = useState(false);
+
   // 姓名とフリガナを分割する関数
   const splitNameAndKana = (user: UserData) => {
     // 姓名の分割
@@ -381,17 +380,9 @@ export function MemberProfileForm({
         {/* セカンダリーボタン */}
         <Button
           type="button"
-          variant="outline"
-          style={{
-            color: isSecondaryHovered ? 'white' : '#1E3A8A',
-            backgroundColor: isSecondaryHovered ? '#1E3A8A' : 'transparent',
-            borderColor: '#1E3A8A',
-            transition: 'all 0.2s',
-          }}
-          onMouseEnter={() => setIsSecondaryHovered(true)}
-          onMouseLeave={() => setIsSecondaryHovered(false)}
+          variant="corporateOutline"
           onClick={() => (window.location.href = '/dashboard/corporate-member')}
-          className="w-full sm:w-auto min-h-[48px] md:min-h-0 text-base md:text-sm flex items-center justify-center"
+          className="w-full sm:w-auto"
         >
           キャンセル
         </Button>
@@ -402,7 +393,7 @@ export function MemberProfileForm({
           disabled={isSaving}
           loading={isSaving}
           loadingText="更新中..."
-          className="w-full sm:w-auto min-h-[48px] md:min-h-0 text-base md:text-sm flex items-center justify-center"
+          className="w-full sm:w-auto"
         >
           プロフィールを更新
         </Button>
