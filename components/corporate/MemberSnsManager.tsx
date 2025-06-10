@@ -25,10 +25,8 @@ import {
   HiDotsVertical,
 } from 'react-icons/hi';
 
-// 🚀 追加: Server Actionsをインポート
 import { updateSnsLinkOrder, updateCustomLinkOrder } from '@/actions/sns';
 
-// 型キャストヘルパー
 const DroppableComponent = Droppable as React.ComponentType<{
   droppableId: string;
   children: (provided: DroppableProvided) => React.ReactNode;
@@ -89,7 +87,6 @@ export function MemberSnsManager({
   onSnsLinkUpdate,
   onCustomLinkUpdate,
 }: MemberSnsManagerProps) {
-  // テナントカラーの取得
   const primaryColor = tenantData?.primaryColor || tenantData?.corporatePrimary || '#3B82F6';
 
   // SNSリンク管理の状態
@@ -122,7 +119,6 @@ export function MemberSnsManager({
     url: '',
   });
 
-  // corporatePlatformUrlsの参照を保存
   const corporatePlatformUrlsRef = useRef(corporatePlatformUrls);
 
   useEffect(() => {
@@ -285,7 +281,6 @@ export function MemberSnsManager({
       onSnsLinkUpdate(newLinks);
       setSnsItems(newLinks);
 
-      // フォームリセット
       resetSnsForm();
       toast.success(`${SNS_METADATA[selectedPlatform].name}を追加しました`);
     } catch (err) {
@@ -372,7 +367,7 @@ export function MemberSnsManager({
     }
   };
 
-  // 🚀 修正: Server Actionを使用したドラッグ&ドロップ処理
+  // ドラッグ&ドロップ処理
   const handleDragEnd = useCallback(
     async (result: DropResult) => {
       if (!result.destination) return;
@@ -387,7 +382,6 @@ export function MemberSnsManager({
         setIsProcessing(true);
         const linkIds = reorderedItems.map((item) => item.id);
 
-        // 🔥 重要: Server Actionを使用
         const response = await updateSnsLinkOrder(linkIds);
 
         if (response.error) {
@@ -568,24 +562,27 @@ export function MemberSnsManager({
   return (
     <div id="member-sns-section" className="space-y-6">
       {/* SNSリンク管理セクション */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center">
-            <HiLink className="mr-2 h-5 w-5 text-gray-600" />
-            SNSリンク管理
-          </h2>
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center mb-2 sm:mb-0">
+              <HiLink className="mr-2 h-5 w-5 text-gray-600 flex-shrink-0" />
+              SNSリンク管理
+            </h2>
+            <p className="text-sm text-gray-600">
+              プロフィールに表示するSNSアカウントを管理します。
+            </p>
+          </div>
           <Button
             variant="corporate"
             onClick={() => setIsAddingSns(true)}
             disabled={isAddingSns || availablePlatforms.length === 0 || isProcessing}
+            className="w-full sm:w-auto"
           >
             <HiPlus className="mr-1 h-4 w-4" />
             追加
           </Button>
         </div>
-        <p className="text-sm text-gray-600 mb-6">
-          プロフィールに表示するSNSアカウントを管理します。
-        </p>
 
         {/* SNS追加フォーム */}
         <AnimatePresence>
@@ -610,13 +607,13 @@ export function MemberSnsManager({
                       </p>
                     </div>
                   ) : (
-                    <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-4 md:grid-cols-6 gap-2 sm:gap-3 mt-2">
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-2 mt-2">
                       {availablePlatforms.map((platform, index) => (
                         <motion.div
                           key={platform}
                           onClick={() => handlePlatformSelect(platform)}
                           className={`
-                            flex flex-col items-center p-3 rounded-md border cursor-pointer transition-all
+                            flex flex-col items-center p-2 sm:p-3 rounded-md border cursor-pointer transition-all
                             ${
                               selectedPlatform === platform
                                 ? 'border-blue-500 bg-blue-50'
@@ -631,10 +628,10 @@ export function MemberSnsManager({
                         >
                           <ImprovedSnsIcon
                             platform={platform}
-                            size={24}
+                            size={20}
                             color={selectedPlatform === platform ? 'primary' : 'default'}
                           />
-                          <span className="text-xs mt-2 text-center">
+                          <span className="text-xs mt-1 text-center leading-tight">
                             {SNS_METADATA[platform].name}
                           </span>
                         </motion.div>
@@ -653,7 +650,7 @@ export function MemberSnsManager({
                       className="space-y-4 overflow-hidden"
                     >
                       <div>
-                        <div className="flex justify-between items-center mb-2">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-2 mb-2">
                           <label className="text-sm font-medium leading-none">
                             {selectedPlatform === 'line'
                               ? 'LINEのURL'
@@ -663,25 +660,22 @@ export function MemberSnsManager({
                                   ? 'BeRealのユーザー名'
                                   : SNS_METADATA[selectedPlatform].placeholderText}
                           </label>
-                          <div className="flex items-center gap-2">
-                            <Button
-                              variant="ghost"
-                              onClick={() => setShowHelp(!showHelp)}
-                              className="px-2"
-                            >
-                              {showHelp ? 'ヘルプを隠す' : 'ヘルプ表示'}
-                            </Button>
-                          </div>
+                          <Button
+                            variant="ghost"
+                            onClick={() => setShowHelp(!showHelp)}
+                            className="w-full sm:w-auto text-xs"
+                          >
+                            {showHelp ? 'ヘルプを隠す' : 'ヘルプ表示'}
+                          </Button>
                         </div>
 
-                        <div className="relative">
+                        <div className="space-y-2">
                           {selectedPlatform === 'line' ? (
                             <Input
                               value={lineInputValue}
                               onChange={handleLineInputChange}
                               placeholder="https://line.me/ti/p/..."
                               disabled={isProcessing}
-                              className="w-full min-w-0"
                             />
                           ) : selectedPlatform === 'official-line' ? (
                             <Input
@@ -689,7 +683,6 @@ export function MemberSnsManager({
                               onChange={handleOfficialLineInputChange}
                               placeholder="https://lin.ee/xxxx"
                               disabled={isProcessing}
-                              className="w-full min-w-0"
                             />
                           ) : selectedPlatform === 'bereal' ? (
                             <Input
@@ -697,7 +690,6 @@ export function MemberSnsManager({
                               onChange={handleBerealInputChange}
                               placeholder="BeRealのユーザー名"
                               disabled={isProcessing}
-                              className="w-full min-w-0"
                             />
                           ) : (
                             <Input
@@ -705,7 +697,6 @@ export function MemberSnsManager({
                               placeholder={SNS_METADATA[selectedPlatform].placeholderText}
                               onChange={handleUsernameChange}
                               disabled={isProcessing}
-                              className="w-full min-w-0"
                             />
                           )}
 
@@ -716,7 +707,7 @@ export function MemberSnsManager({
                                 animate={{ opacity: 1, y: 0 }}
                                 exit={{ opacity: 0, y: -10 }}
                                 transition={{ duration: 0.2 }}
-                                className="mt-2 p-3 bg-gray-50 rounded-md"
+                                className="p-3 bg-gray-50 rounded-md"
                               >
                                 <p className="text-xs">
                                   {selectedPlatform === 'line'
@@ -735,9 +726,9 @@ export function MemberSnsManager({
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.3, delay: 0.2 }}
-                        className="bg-blue-50 border border-blue-100 rounded-md p-3 flex items-start"
+                        className="bg-blue-50 border border-blue-100 rounded-md p-3 flex flex-col sm:flex-row sm:items-start gap-2"
                       >
-                        <HiInformationCircle className="text-blue-500 w-5 h-5 mt-0.5 mr-2 flex-shrink-0" />
+                        <HiInformationCircle className="text-blue-500 w-5 h-5 mt-0.5 flex-shrink-0" />
                         <div className="flex-1">
                           <p className="text-sm text-blue-700">
                             {SNS_METADATA[selectedPlatform].name}
@@ -746,7 +737,7 @@ export function MemberSnsManager({
                               type="button"
                               variant="corporate"
                               onClick={() => setShowGuide(true)}
-                              className="mx-1 px-2"
+                              className="mx-1 px-2 text-xs"
                             >
                               詳しいガイド
                             </Button>
@@ -764,9 +755,7 @@ export function MemberSnsManager({
                             placeholder="https://"
                             disabled={true}
                             className={
-                              urlValid
-                                ? 'w-full min-w-0 pr-8 border-green-500 bg-gray-50'
-                                : 'w-full min-w-0 pr-8 bg-gray-50'
+                              urlValid ? 'pr-8 border-green-500 bg-gray-50' : 'pr-8 bg-gray-50'
                             }
                           />
                           {urlValid && (
@@ -780,14 +769,20 @@ export function MemberSnsManager({
                   )}
                 </AnimatePresence>
 
-                <div className="flex justify-end space-x-2 pt-2">
-                  <Button variant="outline" onClick={resetSnsForm} disabled={isProcessing}>
+                <div className="flex flex-col sm:flex-row gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    onClick={resetSnsForm}
+                    disabled={isProcessing}
+                    className="w-full sm:w-auto order-2 sm:order-1"
+                  >
                     キャンセル
                   </Button>
                   <Button
                     variant="corporate"
                     onClick={handleAddSns}
                     disabled={!selectedPlatform || !urlValid || isProcessing}
+                    className="w-full sm:w-auto order-1 sm:order-2"
                   >
                     {isProcessing ? '追加中...' : '追加'}
                   </Button>
@@ -837,7 +832,6 @@ export function MemberSnsManager({
                                   onChange={handleLineInputChange}
                                   placeholder="https://line.me/ti/p/..."
                                   disabled={isProcessing}
-                                  className="w-full min-w-0"
                                 />
                               ) : selectedPlatform === 'official-line' ? (
                                 <Input
@@ -845,7 +839,6 @@ export function MemberSnsManager({
                                   onChange={handleOfficialLineInputChange}
                                   placeholder="https://lin.ee/xxxx"
                                   disabled={isProcessing}
-                                  className="w-full min-w-0"
                                 />
                               ) : selectedPlatform === 'bereal' ? (
                                 <Input
@@ -853,10 +846,9 @@ export function MemberSnsManager({
                                   onChange={handleBerealInputChange}
                                   placeholder="BeRealのユーザー名"
                                   disabled={isProcessing}
-                                  className="w-full min-w-0"
                                 />
                               ) : (
-                                <>
+                                <div className="space-y-3">
                                   <Input
                                     value={snsForm.username}
                                     onChange={handleUsernameChange}
@@ -864,7 +856,6 @@ export function MemberSnsManager({
                                       SNS_METADATA[link.platform as SnsPlatform]?.placeholderText
                                     }
                                     disabled={isProcessing}
-                                    className="w-full min-w-0"
                                   />
                                   <Input
                                     value={snsForm.url}
@@ -873,12 +864,11 @@ export function MemberSnsManager({
                                     }
                                     placeholder="https://..."
                                     disabled={isProcessing}
-                                    className="w-full min-w-0"
                                   />
-                                </>
+                                </div>
                               )}
 
-                              <div className="flex justify-end space-x-2">
+                              <div className="flex flex-col sm:flex-row gap-2">
                                 <Button
                                   variant="outline"
                                   onClick={() => {
@@ -886,6 +876,7 @@ export function MemberSnsManager({
                                     resetSnsForm();
                                   }}
                                   disabled={isProcessing}
+                                  className="w-full sm:w-auto order-2 sm:order-1"
                                 >
                                   キャンセル
                                 </Button>
@@ -893,22 +884,23 @@ export function MemberSnsManager({
                                   variant="corporate"
                                   onClick={() => handleUpdateSns(link.id)}
                                   disabled={isProcessing}
+                                  className="w-full sm:w-auto order-1 sm:order-2"
                                 >
                                   更新
                                 </Button>
                               </div>
                             </div>
                           ) : (
-                            // 表示モード - レスポンシブ対応
-                            <div className="flex items-center justify-between p-3">
-                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                            // 表示モード - モバイル最適化
+                            <div className="p-3">
+                              <div className="flex items-start gap-3">
                                 <div
-                                  className="cursor-move flex-shrink-0"
+                                  className="cursor-move flex-shrink-0 mt-1"
                                   {...dragProvided.dragHandleProps}
                                 >
                                   <HiDotsVertical className="w-5 h-5 text-gray-400" />
                                 </div>
-                                <div className="flex-shrink-0">
+                                <div className="flex-shrink-0 mt-1">
                                   <ImprovedSnsIcon
                                     platform={link.platform as SnsPlatform}
                                     size={24}
@@ -916,44 +908,44 @@ export function MemberSnsManager({
                                   />
                                 </div>
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm sm:text-base">
-                                    {SNS_METADATA[link.platform as SnsPlatform]?.name ||
-                                      link.platform}
-                                  </p>
-                                  <div className="max-w-full overflow-hidden">
-                                    <a
-                                      href={link.url}
-                                      target="_blank"
-                                      rel="noopener noreferrer"
-                                      className="text-xs sm:text-sm text-blue-600 hover:underline block break-all"
-                                    >
-                                      <span className="inline-block max-w-[calc(100%-20px)] truncate align-top">
-                                        {link.url}
-                                      </span>
-                                      <HiExternalLink className="inline ml-1 h-3 w-3 flex-shrink-0" />
-                                    </a>
+                                  <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                    <div className="min-w-0">
+                                      <p className="font-medium text-sm mb-1">
+                                        {SNS_METADATA[link.platform as SnsPlatform]?.name ||
+                                          link.platform}
+                                      </p>
+                                      <a
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs text-blue-600 hover:underline break-all flex items-start gap-1"
+                                      >
+                                        <span className="break-all">{link.url}</span>
+                                        <HiExternalLink className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                                      </a>
+                                    </div>
+                                    <div className="flex gap-2 flex-shrink-0">
+                                      <Button
+                                        variant="ghost"
+                                        onClick={() => startEditingSns(link)}
+                                        disabled={isProcessing}
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <HiPencil className="h-4 w-4" />
+                                      </Button>
+                                      <Button
+                                        variant="destructive"
+                                        onClick={() => handleDeleteSns(link.id, link.platform)}
+                                        disabled={
+                                          isProcessing || corporatePlatforms.includes(link.platform)
+                                        }
+                                        className="h-8 w-8 p-0"
+                                      >
+                                        <HiTrash className="h-4 w-4" />
+                                      </Button>
+                                    </div>
                                   </div>
                                 </div>
-                              </div>
-                              <div className="flex flex-col xs:flex-row gap-1 xs:gap-2 flex-shrink-0 ml-2">
-                                <Button
-                                  variant="ghost"
-                                  onClick={() => startEditingSns(link)}
-                                  disabled={isProcessing}
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <HiPencil className="h-4 w-4" />
-                                </Button>
-                                <Button
-                                  variant="destructive"
-                                  onClick={() => handleDeleteSns(link.id, link.platform)}
-                                  disabled={
-                                    isProcessing || corporatePlatforms.includes(link.platform)
-                                  }
-                                  className="h-8 w-8 p-0"
-                                >
-                                  <HiTrash className="h-4 w-4" />
-                                </Button>
                               </div>
                             </div>
                           )}
@@ -974,24 +966,27 @@ export function MemberSnsManager({
       </div>
 
       {/* カスタムリンク管理セクション */}
-      <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold flex items-center">
-            <HiLink className="mr-2 h-5 w-5 text-gray-600" />
-            カスタムリンク管理
-          </h2>
+      <div className="rounded-lg border border-gray-200 bg-white p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-4">
+          <div>
+            <h2 className="text-lg font-semibold flex items-center mb-2 sm:mb-0">
+              <HiLink className="mr-2 h-5 w-5 text-gray-600 flex-shrink-0" />
+              カスタムリンク管理
+            </h2>
+            <p className="text-sm text-gray-600">
+              SNS以外のカスタムリンクを管理します（ブログ、ポートフォリオなど）。
+            </p>
+          </div>
           <Button
             variant="corporate"
             onClick={() => setIsAddingCustom(true)}
             disabled={isAddingCustom || isProcessing}
+            className="w-full sm:w-auto"
           >
             <HiPlus className="mr-1 h-4 w-4" />
             追加
           </Button>
         </div>
-        <p className="text-sm text-gray-600 mb-6">
-          SNS以外のカスタムリンクを管理します（ブログ、ポートフォリオなど）。
-        </p>
 
         {/* カスタムリンク追加フォーム */}
         <AnimatePresence>
@@ -1012,7 +1007,6 @@ export function MemberSnsManager({
                     value={customForm.name}
                     onChange={(e) => setCustomForm({ ...customForm, name: e.target.value })}
                     disabled={isProcessing}
-                    className="w-full min-w-0"
                   />
                 </div>
                 <div>
@@ -1022,10 +1016,9 @@ export function MemberSnsManager({
                     value={customForm.url}
                     onChange={(e) => setCustomForm({ ...customForm, url: e.target.value })}
                     disabled={isProcessing}
-                    className="w-full min-w-0"
                   />
                 </div>
-                <div className="flex justify-end space-x-2">
+                <div className="flex flex-col sm:flex-row gap-2">
                   <Button
                     variant="outline"
                     onClick={() => {
@@ -1033,10 +1026,16 @@ export function MemberSnsManager({
                       setCustomForm({ name: '', url: '' });
                     }}
                     disabled={isProcessing}
+                    className="w-full sm:w-auto order-2 sm:order-1"
                   >
                     キャンセル
                   </Button>
-                  <Button variant="corporate" onClick={handleAddCustom} disabled={isProcessing}>
+                  <Button
+                    variant="corporate"
+                    onClick={handleAddCustom}
+                    disabled={isProcessing}
+                    className="w-full sm:w-auto order-1 sm:order-2"
+                  >
                     追加
                   </Button>
                 </div>
@@ -1053,7 +1052,7 @@ export function MemberSnsManager({
             <DragDropContext onDragEnd={handleCustomDragEnd}>
               <DroppableComponent droppableId="member-custom-links">
                 {(provided: DroppableProvided) => (
-                  <div className="space-y-4" ref={provided.innerRef} {...provided.droppableProps}>
+                  <div className="space-y-3" ref={provided.innerRef} {...provided.droppableProps}>
                     {customItems.map((link, index) => (
                       <DraggableComponent key={link.id} draggableId={link.id} index={index}>
                         {(dragProvided: DraggableProvided, snapshot: DraggableStateSnapshot) => (
@@ -1080,7 +1079,6 @@ export function MemberSnsManager({
                                       setCustomForm({ ...customForm, name: e.target.value })
                                     }
                                     disabled={isProcessing}
-                                    className="w-full min-w-0"
                                   />
                                 </div>
                                 <div>
@@ -1094,10 +1092,9 @@ export function MemberSnsManager({
                                       setCustomForm({ ...customForm, url: e.target.value })
                                     }
                                     disabled={isProcessing}
-                                    className="w-full min-w-0"
                                   />
                                 </div>
-                                <div className="flex justify-end space-x-2">
+                                <div className="flex flex-col sm:flex-row gap-2">
                                   <Button
                                     variant="outline"
                                     onClick={() => {
@@ -1105,6 +1102,7 @@ export function MemberSnsManager({
                                       setCustomForm({ name: '', url: '' });
                                     }}
                                     disabled={isProcessing}
+                                    className="w-full sm:w-auto order-2 sm:order-1"
                                   >
                                     キャンセル
                                   </Button>
@@ -1112,17 +1110,18 @@ export function MemberSnsManager({
                                     variant="corporate"
                                     onClick={() => handleUpdateCustom(link.id)}
                                     disabled={isProcessing}
+                                    className="w-full sm:w-auto order-1 sm:order-2"
                                   >
                                     更新
                                   </Button>
                                 </div>
                               </div>
                             ) : (
-                              // 表示モード - 完全レスポンシブ対応
-                              <div className="flex items-center justify-between p-3">
-                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                              // 表示モード - モバイル最適化
+                              <div className="p-3">
+                                <div className="flex items-start gap-3">
                                   <div
-                                    className="cursor-move flex-shrink-0"
+                                    className="cursor-move flex-shrink-0 mt-1"
                                     {...dragProvided.dragHandleProps}
                                   >
                                     <HiDotsVertical className="w-5 h-5 text-gray-400" />
@@ -1134,39 +1133,39 @@ export function MemberSnsManager({
                                     <HiLink className="h-5 w-5" style={{ color: primaryColor }} />
                                   </div>
                                   <div className="flex-1 min-w-0">
-                                    <p className="font-medium text-sm sm:text-base">{link.name}</p>
-                                    <div className="max-w-full overflow-hidden">
-                                      <a
-                                        href={link.url}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-xs sm:text-sm text-blue-600 hover:underline block break-all"
-                                      >
-                                        <span className="inline-block max-w-[calc(100%-20px)] truncate align-top">
-                                          {link.url}
-                                        </span>
-                                        <HiExternalLink className="inline ml-1 h-3 w-3 flex-shrink-0" />
-                                      </a>
+                                    <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                      <div className="min-w-0">
+                                        <p className="font-medium text-sm mb-1">{link.name}</p>
+                                        <a
+                                          href={link.url}
+                                          target="_blank"
+                                          rel="noopener noreferrer"
+                                          className="text-xs text-blue-600 hover:underline break-all flex items-start gap-1"
+                                        >
+                                          <span className="break-all">{link.url}</span>
+                                          <HiExternalLink className="h-3 w-3 flex-shrink-0 mt-0.5" />
+                                        </a>
+                                      </div>
+                                      <div className="flex gap-2 flex-shrink-0">
+                                        <Button
+                                          variant="ghost"
+                                          onClick={() => startEditingCustom(link)}
+                                          disabled={isProcessing}
+                                          className="h-8 w-8 p-0"
+                                        >
+                                          <HiPencil className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          variant="destructive"
+                                          onClick={() => handleDeleteCustom(link.id)}
+                                          disabled={isProcessing}
+                                          className="h-8 w-8 p-0"
+                                        >
+                                          <HiTrash className="h-4 w-4" />
+                                        </Button>
+                                      </div>
                                     </div>
                                   </div>
-                                </div>
-                                <div className="flex flex-col xs:flex-row gap-1 xs:gap-2 flex-shrink-0 ml-2">
-                                  <Button
-                                    variant="ghost"
-                                    onClick={() => startEditingCustom(link)}
-                                    disabled={isProcessing}
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <HiPencil className="h-4 w-4" />
-                                  </Button>
-                                  <Button
-                                    variant="destructive"
-                                    onClick={() => handleDeleteCustom(link.id)}
-                                    disabled={isProcessing}
-                                    className="h-8 w-8 p-0"
-                                  >
-                                    <HiTrash className="h-4 w-4" />
-                                  </Button>
                                 </div>
                               </div>
                             )}

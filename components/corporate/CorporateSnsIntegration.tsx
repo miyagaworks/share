@@ -42,11 +42,9 @@ interface CorporateSnsIntegrationProps {
 
 // プラットフォーム名を取得する関数
 const getDisplayName = (platformCode: string): string => {
-  // platformCodeが有効なSnsPlatformの場合、SNS_METADATAから名前を取得
   if (Object.keys(SNS_METADATA).includes(platformCode)) {
     return SNS_METADATA[platformCode as SnsPlatform].name;
   }
-  // それ以外の場合はそのまま表示
   return platformCode;
 };
 
@@ -55,35 +53,28 @@ export function CorporateSnsIntegration({
   personalSnsLinks,
   tenantData,
 }: CorporateSnsIntegrationProps) {
-  // テナントカラーの取得（優先順位を考慮）
   const corporatePrimary = tenantData?.primaryColor || tenantData?.corporatePrimary || '#1E3A8A';
 
-  // 法人必須SNSが個人SNSに設定されているかチェック
   const getSetupStatus = (corporateLink: CorporateSnsLink) => {
     const personalLink = personalSnsLinks.find((link) => link.platform === corporateLink.platform);
     return personalLink ? 'set' : 'missing';
   };
 
-  // SNSを直接追加する関数
   const handleAddSns = async (link: CorporateSnsLink) => {
     try {
-      // ユーザー名を抽出するための処理
       let username = link.username;
-      // 各プラットフォーム用のユーザー名がない場合はURLから抽出を試みる
       if (!username && link.url) {
         try {
-          // URLからユーザー名部分を抽出する簡単な例
           const url = new URL(link.url);
           const pathParts = url.pathname.split('/').filter(Boolean);
-          // プラットフォームごとに異なるロジック
           if (link.platform === 'YouTube' && pathParts[0]?.startsWith('@')) {
-            username = pathParts[0].substring(1); // '@' を削除
+            username = pathParts[0].substring(1);
           } else if (pathParts.length > 0) {
-            username = pathParts[pathParts.length - 1]; // 最後のパス部分を使用
+            username = pathParts[pathParts.length - 1];
           }
         } catch {}
       }
-      // APIを呼び出してSNSリンクを追加
+
       const response = await fetch('/api/corporate-member/links/sns', {
         method: 'POST',
         headers: {
@@ -91,42 +82,39 @@ export function CorporateSnsIntegration({
         },
         body: JSON.stringify({
           platform: link.platform,
-          username: username, // 抽出したユーザー名または元の値を使用
+          username: username,
           url: link.url,
         }),
       });
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'SNSリンクの追加に失敗しました');
       }
-      // 成功メッセージを表示
+
       toast.success(`${link.platform}のリンクを追加しました`);
-      // ページをリロード（更新を反映するため）
       window.location.reload();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : 'SNSリンクの追加に失敗しました');
     }
   };
 
-  // SNS設定ページにリンクする関数（編集用）
   const navigateToSnsSettings = (platform: string) => {
-    // プラットフォームコードをURLエンコード
     const encodedPlatform = encodeURIComponent(platform);
-    // 現在のリンク管理ページへのパスを返す（ハッシュ付き）
     return `/dashboard/corporate-member/links#add-sns-${encodedPlatform}`;
   };
 
   return (
     <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-4 sm:p-6 shadow-sm">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-lg font-semibold flex items-center">
-          <HiOfficeBuilding className="mr-2 h-5 w-5 text-gray-600" />
-          法人SNSリンク連携
+      <div className="mb-4">
+        <h2 className="text-lg font-semibold flex items-center mb-2">
+          <HiOfficeBuilding className="mr-2 h-5 w-5 text-gray-600 flex-shrink-0" />
+          <span className="min-w-0">法人SNSリンク連携</span>
         </h2>
+        <p className="text-sm text-gray-600">
+          法人で指定されたSNSリンクです。設定が必要な項目があります。
+        </p>
       </div>
-      <p className="text-sm text-gray-600 mb-6">
-        法人で指定されたSNSリンクです。設定が必要な項目があります。
-      </p>
 
       {corporateSnsLinks.length === 0 ? (
         <div className="bg-blue-50 border border-blue-100 rounded-md p-4">
@@ -135,7 +123,7 @@ export function CorporateSnsIntegration({
           </p>
         </div>
       ) : (
-        <div className="space-y-3 sm:space-y-4">
+        <div className="space-y-3">
           {corporateSnsLinks.map((link) => {
             const status = getSetupStatus(link);
             const statusColor =
@@ -158,63 +146,66 @@ export function CorporateSnsIntegration({
             return (
               <div
                 key={link.id}
-                className="border rounded-md p-3 sm:p-4"
+                className="border rounded-md p-3"
                 style={{ borderColor: `${corporatePrimary}20` }}
               >
-                {/* レスポンシブ対応のレイアウト修正 */}
-                <div className="flex items-center gap-3">
-                  {/* アイコン部分 */}
-                  <div
-                    className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
-                    style={{ backgroundColor: `${corporatePrimary}15` }}
-                  >
-                    <ImprovedSnsIcon
-                      platform={link.platform as SnsPlatform}
-                      color="original"
-                      size={24}
-                    />
-                  </div>
-
-                  {/* コンテンツ部分 */}
-                  <div className="flex-1 min-w-0">
-                    <div className="flex flex-wrap items-center gap-2 mb-2">
-                      <h3 className="font-medium text-sm sm:text-base">
-                        {getDisplayName(link.platform)}
-                      </h3>
+                {/* モバイル最適化: 縦積みレイアウト */}
+                <div className="space-y-3">
+                  {/* ヘッダー部分 */}
+                  <div className="flex items-center gap-3">
+                    <div
+                      className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
+                      style={{ backgroundColor: `${corporatePrimary}15` }}
+                    >
+                      <ImprovedSnsIcon
+                        platform={link.platform as SnsPlatform}
+                        color="original"
+                        size={24}
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-medium text-sm truncate">
+                          {getDisplayName(link.platform)}
+                        </h3>
+                        {link.isRequired && (
+                          <span className="bg-red-50 text-red-700 px-2 py-0.5 rounded-full text-xs whitespace-nowrap">
+                            必須
+                          </span>
+                        )}
+                      </div>
                       <div
-                        className={`px-2 py-0.5 rounded-full text-xs flex items-center ${statusColor}`}
+                        className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs ${statusColor}`}
                       >
                         {statusIcon}
                         <span className="ml-1">{statusText}</span>
                       </div>
-                      {link.isRequired && (
-                        <div className="bg-red-50 text-red-700 px-2 py-0.5 rounded-full text-xs">
-                          必須
-                        </div>
-                      )}
                     </div>
                   </div>
 
-                  {/* ボタン部分 - レスポンシブ対応 */}
-                  <div className="flex-shrink-0">
+                  {/* URL表示部分 - モバイル対応 */}
+                  <div className="pl-13">
+                    <div className="text-xs text-gray-500 break-all">{link.url}</div>
+                  </div>
+
+                  {/* ボタン部分 - モバイル対応 */}
+                  <div className="pl-13">
                     {status === 'set' ? (
-                      // 設定済みの場合は編集リンク
                       <Link href={navigateToSnsSettings(link.platform)}>
                         <Button
                           variant="corporate"
                           size="sm"
-                          className="text-xs sm:text-sm whitespace-nowrap"
+                          className="w-full sm:w-auto text-sm"
                           style={{ backgroundColor: corporatePrimary }}
                         >
                           設定変更
                         </Button>
                       </Link>
                     ) : (
-                      // 未設定の場合は直接追加ボタン
                       <Button
                         variant="corporate"
                         size="sm"
-                        className="text-xs sm:text-sm whitespace-nowrap"
+                        className="w-full sm:w-auto text-sm"
                         style={{ backgroundColor: corporatePrimary }}
                         onClick={() => handleAddSns(link)}
                       >
