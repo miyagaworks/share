@@ -602,15 +602,14 @@ export default function CorporateSettingsPage() {
                 )}
                 {isAdmin && (
                   <div className="flex justify-end">
-                    <Button variant="corporate" type="submit" disabled={isSaving}>
-                      {isSaving ? (
-                        <>
-                          <Spinner size="sm" className="mr-2" />
-                          保存中...
-                        </>
-                      ) : (
-                        '変更を保存'
-                      )}
+                    <Button
+                      variant="corporate"
+                      type="submit"
+                      disabled={isSaving}
+                      loading={isSaving}
+                      loadingText="保存中..."
+                    >
+                      変更を保存
                     </Button>
                   </div>
                 )}
@@ -718,15 +717,10 @@ export default function CorporateSettingsPage() {
                     variant="corporate"
                     onClick={handleSaveSecuritySettings}
                     disabled={isSaving}
+                    loading={isSaving}
+                    loadingText="保存中..."
                   >
-                    {isSaving ? (
-                      <>
-                        <Spinner size="sm" className="mr-2" />
-                        保存中...
-                      </>
-                    ) : (
-                      '設定を保存'
-                    )}
+                    設定を保存
                   </Button>
                 </div>
               )}
@@ -852,15 +846,10 @@ export default function CorporateSettingsPage() {
                   variant="corporate"
                   onClick={handleSaveNotificationSettings}
                   disabled={isSaving || !isAdmin}
+                  loading={isSaving}
+                  loadingText="保存中..."
                 >
-                  {isSaving ? (
-                    <>
-                      <Spinner size="sm" className="mr-2" />
-                      保存中...
-                    </>
-                  ) : (
-                    '設定を保存'
-                  )}
+                  設定を保存
                 </Button>
               </div>
             </div>
@@ -904,7 +893,6 @@ export default function CorporateSettingsPage() {
               <div className="mt-4">
                 <Button
                   variant="corporateOutline"
-                  className="w-full"
                   onClick={() => router.push('/dashboard/subscription')}
                 >
                   プランを管理
@@ -959,15 +947,10 @@ export default function CorporateSettingsPage() {
                       variant="corporate"
                       onClick={handleSaveBillingSettings}
                       disabled={isSaving}
+                      loading={isSaving}
+                      loadingText="保存中..."
                     >
-                      {isSaving ? (
-                        <>
-                          <Spinner size="sm" className="mr-2" />
-                          保存中...
-                        </>
-                      ) : (
-                        '情報を更新'
-                      )}
+                      情報を更新
                     </Button>
                   </div>
                 )}
@@ -1007,7 +990,6 @@ export default function CorporateSettingsPage() {
                   {tenantData.accountStatus === 'suspended' && isAdmin && (
                     <Button
                       variant="outline"
-                      size="sm"
                       className="ml-4 text-green-600 border-green-300 hover:bg-green-50"
                       disabled={isSaving}
                       onClick={() => handleSaveAdvancedSettings('reactivate')}
@@ -1029,15 +1011,10 @@ export default function CorporateSettingsPage() {
                   className="text-blue-600 border-blue-200 hover:bg-blue-50"
                   disabled={!isAdmin || isSaving}
                   onClick={() => handleSaveAdvancedSettings('export')}
+                  loading={isSaving}
+                  loadingText="処理中..."
                 >
-                  {isSaving ? (
-                    <>
-                      <Spinner size="sm" className="mr-2" />
-                      処理中...
-                    </>
-                  ) : (
-                    'データをエクスポート'
-                  )}
+                  データをエクスポート
                 </Button>
               </div>
               <div className="bg-white border border-gray-200 rounded-lg p-4">
@@ -1054,15 +1031,10 @@ export default function CorporateSettingsPage() {
                         className="border-yellow-300 text-yellow-600 hover:bg-yellow-50"
                         disabled={!isAdmin || isSaving}
                         onClick={() => handleSaveAdvancedSettings('suspend')}
+                        loading={isSaving}
+                        loadingText="処理中..."
                       >
-                        {isSaving ? (
-                          <>
-                            <Spinner size="sm" className="mr-2" />
-                            処理中...
-                          </>
-                        ) : (
-                          'アカウントを一時停止'
-                        )}
+                        アカウントを一時停止
                       </Button>
                       <p className="text-xs text-gray-500 mt-1">
                         法人アカウントを一時的に停止します。再開するまですべての機能が利用できなくなります。
@@ -1071,19 +1043,13 @@ export default function CorporateSettingsPage() {
                   )}
                   <div>
                     <Button
-                      variant="outline"
-                      className="border-red-300 text-red-600 hover:bg-red-50"
+                      variant="destructive"
                       disabled={!isAdmin || isSaving}
                       onClick={() => handleSaveAdvancedSettings('delete')}
+                      loading={isSaving}
+                      loadingText="処理中..."
                     >
-                      {isSaving ? (
-                        <>
-                          <Spinner size="sm" className="mr-2" />
-                          処理中...
-                        </>
-                      ) : (
-                        'アカウントを削除'
-                      )}
+                      アカウントを削除
                     </Button>
                     <p className="text-xs text-gray-500 mt-1">
                       法人アカウントとすべてのデータを完全に削除します。この操作は取り消せません。
@@ -1231,7 +1197,6 @@ export default function CorporateSettingsPage() {
                 </p>
                 <Button
                   variant="outline"
-                  size="sm"
                   className="text-[#1E3A8A] border-gray-200 hover:bg-gray-50 w-full mt-4"
                   onClick={() => router.push('/support/contact?subject=法人プランサポート')}
                 >
