@@ -149,10 +149,10 @@ export function CorporateSnsIntegration({
                 className="border rounded-md p-3"
                 style={{ borderColor: `${corporatePrimary}20` }}
               >
-                {/* モバイル最適化: 縦積みレイアウト */}
-                <div className="space-y-3">
-                  {/* ヘッダー部分 */}
-                  <div className="flex items-center gap-3">
+                {/* レスポンシブレイアウト: スマホは縦積み、デスクトップは横並び */}
+                <div className="flex flex-col sm:flex-row sm:items-center gap-3">
+                  {/* 左側: アイコンと情報 */}
+                  <div className="flex items-center gap-3 flex-1 min-w-0">
                     <div
                       className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
                       style={{ backgroundColor: `${corporatePrimary}15` }}
@@ -180,37 +180,44 @@ export function CorporateSnsIntegration({
                         {statusIcon}
                         <span className="ml-1">{statusText}</span>
                       </div>
+                      {/* URL表示 - スマホのみ */}
+                      <div className="sm:hidden mt-2">
+                        <div className="text-xs text-gray-500 break-all">{link.url}</div>
+                      </div>
                     </div>
                   </div>
 
-                  {/* URL表示部分 - モバイル対応 */}
-                  <div className="pl-13">
-                    <div className="text-xs text-gray-500 break-all">{link.url}</div>
-                  </div>
+                  {/* 右側: URL（デスクトップのみ）とボタン */}
+                  <div className="flex flex-col sm:flex-row sm:items-center gap-3 sm:flex-shrink-0">
+                    {/* URL表示 - デスクトップのみ */}
+                    <div className="hidden sm:block">
+                      <div className="text-xs text-gray-500 break-all max-w-xs">{link.url}</div>
+                    </div>
 
-                  {/* ボタン部分 - レスポンシブ対応・統一スタイル */}
-                  <div className="flex justify-start sm:justify-end pl-13">
-                    {status === 'set' ? (
-                      <Link
-                        href={navigateToSnsSettings(link.platform)}
-                        className="w-full sm:w-auto"
-                      >
+                    {/* ボタン部分 */}
+                    <div className="flex justify-start sm:justify-end">
+                      {status === 'set' ? (
+                        <Link
+                          href={navigateToSnsSettings(link.platform)}
+                          className="w-full sm:w-auto"
+                        >
+                          <Button
+                            variant="corporate"
+                            className="h-[48px] text-base sm:text-sm w-full"
+                          >
+                            設定変更
+                          </Button>
+                        </Link>
+                      ) : (
                         <Button
                           variant="corporate"
-                          className="h-[48px] text-base sm:text-sm w-full"
+                          className="h-[48px] text-base sm:text-sm w-full sm:w-auto"
+                          onClick={() => handleAddSns(link)}
                         >
-                          設定変更
+                          設定する
                         </Button>
-                      </Link>
-                    ) : (
-                      <Button
-                        variant="corporate"
-                        className="h-[48px] text-base sm:text-sm w-full sm:w-auto"
-                        onClick={() => handleAddSns(link)}
-                      >
-                        設定する
-                      </Button>
-                    )}
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
