@@ -17,6 +17,19 @@ export function QuickIntroButton() {
     }
   }, [session]);
 
+  // 色設定
+  const colors = isCorporateMember
+    ? {
+        background: '#1E3A8A', // 法人プラン：紺色
+        border: '#1E3A8A',
+        hover: '#1e40af',
+      }
+    : {
+        background: '#3B82F6', // 個人プラン：青色
+        border: '#3B82F6',
+        hover: '#2563eb',
+      };
+
   return (
     <div className="space-y-2">
       <Link href="/jikogene" target="_blank" rel="noopener noreferrer" className="w-full">
@@ -28,32 +41,16 @@ export function QuickIntroButton() {
             group relative flex items-center justify-center 
             text-base sm:text-sm leading-tight whitespace-normal
           `}
-          style={
-            isCorporateMember
-              ? {
-                  backgroundColor: '#1E3A8A',
-                  borderColor: '#1E3A8A',
-                  color: 'white',
-                }
-              : {
-                  backgroundColor: '#3B82F6',
-                  borderColor: '#3B82F6',
-                  color: 'white',
-                }
-          }
+          style={{
+            backgroundColor: colors.background,
+            borderColor: colors.border,
+            color: 'white',
+          }}
           onMouseEnter={(e) => {
-            if (isCorporateMember) {
-              e.currentTarget.style.backgroundColor = '#1e40af';
-            } else {
-              e.currentTarget.style.backgroundColor = '#2563eb';
-            }
+            e.currentTarget.style.backgroundColor = colors.hover;
           }}
           onMouseLeave={(e) => {
-            if (isCorporateMember) {
-              e.currentTarget.style.backgroundColor = '#1E3A8A';
-            } else {
-              e.currentTarget.style.backgroundColor = '#3B82F6';
-            }
+            e.currentTarget.style.backgroundColor = colors.background;
           }}
         >
           <HiSparkles className="mr-2 h-5 w-5 text-yellow-300 animate-pulse flex-shrink-0" />
