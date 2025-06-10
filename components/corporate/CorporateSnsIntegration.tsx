@@ -191,10 +191,13 @@ export function CorporateSnsIntegration({
                   {/* ボタン部分 - レスポンシブ対応・統一スタイル */}
                   <div className="flex justify-start sm:justify-end pl-13">
                     {status === 'set' ? (
-                      <Link href={navigateToSnsSettings(link.platform)} className="inline-block">
+                      <Link
+                        href={navigateToSnsSettings(link.platform)}
+                        className="w-full sm:w-auto"
+                      >
                         <Button
                           variant="corporate"
-                          className="h-[48px] text-base sm:text-sm w-auto sm:w-auto"
+                          className="h-[48px] text-base sm:text-sm w-full"
                         >
                           設定変更
                         </Button>
