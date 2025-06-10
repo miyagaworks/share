@@ -12,6 +12,7 @@ import { HiSave, HiRefresh, HiInformationCircle, HiUpload, HiX } from 'react-ico
 import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccess';
 import Image from 'next/image';
 import tinycolor from 'tinycolor2';
+
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -24,6 +25,7 @@ interface TenantData {
   headerText?: string | null; // 追加
   textColor?: string | null; // 追加
 }
+
 export default function ImprovedCorporateBrandingPage() {
   const { data: session } = useSession();
   const router = useRouter();
@@ -50,12 +52,14 @@ export default function ImprovedCorporateBrandingPage() {
   const [headerText, setHeaderText] = useState<string>('');
   const [textColor, setTextColor] = useState<string>('#FFFFFF');
   const [remainingChars, setRemainingChars] = useState(60);
+
   // ファイル選択トリガー
   const triggerFileInput = () => {
     if (fileInputRef.current) {
       fileInputRef.current.click();
     }
   };
+
   // ロゴの削除
   const handleRemoveLogo = () => {
     setLogoUrl(null);
@@ -67,22 +71,27 @@ export default function ImprovedCorporateBrandingPage() {
     // originalLogoSize をリセット
     originalLogoSize.current = null;
   };
+
   // ファイルアップロード処理
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
+
     // 画像タイプの検証
     if (!file.type.startsWith('image/')) {
       setUploadError('画像ファイルのみアップロードできます');
       return;
     }
+
     // ファイルサイズの検証（5MB以下）
     if (file.size > 5 * 1024 * 1024) {
       setUploadError('ファイルサイズは5MB以下にしてください');
       return;
     }
+
     setIsUploading(true);
     setUploadError(null);
+
     try {
       // FileReaderでファイルをBase64に変換
       const reader = new FileReader();
@@ -124,6 +133,7 @@ export default function ImprovedCorporateBrandingPage() {
       setIsUploading(false);
     }
   };
+
   // テナント情報とユーザー情報を取得
   useEffect(() => {
     const fetchTenantData = async () => {
@@ -132,6 +142,7 @@ export default function ImprovedCorporateBrandingPage() {
         setIsLoading(true);
         // まずグローバル状態をチェック
         await checkCorporateAccess({ force: true }); // 強制的に最新の状態を取得
+
         // テナント情報取得API
         const response = await fetch('/api/corporate/tenant');
         if (!response.ok) {
@@ -141,6 +152,7 @@ export default function ImprovedCorporateBrandingPage() {
         setTenantData(data.tenant);
         // APIから直接isAdminフラグを取得
         setIsAdmin(data.isAdmin === true);
+
         // 色情報を設定
         if (data.tenant.primaryColor) {
           setPrimaryColor(data.tenant.primaryColor);
@@ -148,6 +160,7 @@ export default function ImprovedCorporateBrandingPage() {
         if (data.tenant.secondaryColor) {
           setSecondaryColor(data.tenant.secondaryColor);
         }
+
         // ヘッダーテキストとテキストカラーを設定
         if (data.tenant.headerText) {
           setHeaderText(data.tenant.headerText);
@@ -155,8 +168,10 @@ export default function ImprovedCorporateBrandingPage() {
         if (data.tenant.textColor) {
           setTextColor(data.tenant.textColor);
         }
+
         // ロゴURLを設定
         setLogoUrl(data.tenant.logoUrl);
+
         // ロゴURLが変更された時に画像サイズを取得
         if (data.tenant.logoUrl && (!data.tenant.logoWidth || !data.tenant.logoHeight)) {
           // 画像のサイズを取得するためのHelper関数
@@ -172,6 +187,7 @@ export default function ImprovedCorporateBrandingPage() {
               img.src = url;
             });
           };
+
           // 画像サイズの取得を試みる
           getImageDimensions(data.tenant.logoUrl)
             .then((dimensions) => {
@@ -194,6 +210,7 @@ export default function ImprovedCorporateBrandingPage() {
               setCustomHeight(400);
             });
         }
+
         // ロゴサイズが保存されている場合は設定
         if (data.tenant.logoWidth && data.tenant.logoHeight) {
           // ロゴサイズを設定
@@ -209,6 +226,7 @@ export default function ImprovedCorporateBrandingPage() {
             height: data.tenant.logoHeight,
           };
         }
+
         // ユーザー情報取得API（追加）
         try {
           const userResponse = await fetch('/api/corporate-member/profile');
@@ -219,6 +237,7 @@ export default function ImprovedCorporateBrandingPage() {
         } catch {
           // ユーザー情報取得エラーは致命的ではないので、エラー表示はしない
         }
+
         setError(null);
       } catch {
         // グローバル状態から取得
@@ -240,8 +259,10 @@ export default function ImprovedCorporateBrandingPage() {
         setIsLoading(false);
       }
     };
+
     fetchTenantData();
   }, [session]);
+
   // 文字数カウント用のuseEffect
   useEffect(() => {
     if (headerText) {
@@ -254,6 +275,7 @@ export default function ImprovedCorporateBrandingPage() {
       setRemainingChars(60);
     }
   }, [headerText]);
+
   // ブランディング設定を保存
   const handleSaveBranding = async () => {
     if (!tenantData) return;
@@ -262,6 +284,7 @@ export default function ImprovedCorporateBrandingPage() {
       // 数値型であることを確認
       const logoWidth = Number(logoSize.width);
       const logoHeight = Number(logoSize.height);
+
       // ブランディング設定更新API
       const response = await fetch('/api/corporate/branding', {
         method: 'PUT',
@@ -276,18 +299,22 @@ export default function ImprovedCorporateBrandingPage() {
           textColor, // 追加
         }),
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'ブランディング設定の更新に失敗しました');
       }
+
       const data = await response.json();
       toast.success('ブランディング設定を保存しました');
+
       // テナントデータを更新
       if (data.tenant) {
         // 保存後のロゴサイズを確認
         // undefined の場合は現在のサイズを使用
         const savedLogoWidth = data.tenant.logoWidth || logoSize.width;
         const savedLogoHeight = data.tenant.logoHeight || logoSize.height;
+
         // テナントデータを更新
         setTenantData({
           ...tenantData,
@@ -297,6 +324,7 @@ export default function ImprovedCorporateBrandingPage() {
           logoWidth: savedLogoWidth,
           logoHeight: savedLogoHeight,
         });
+
         // ロゴサイズも保存された値で更新
         setLogoSize({
           width: savedLogoWidth,
@@ -304,6 +332,7 @@ export default function ImprovedCorporateBrandingPage() {
         });
         setCustomWidth(savedLogoWidth);
         setCustomHeight(savedLogoHeight);
+
         // 元のサイズも更新
         originalLogoSize.current = {
           width: savedLogoWidth,
@@ -316,6 +345,7 @@ export default function ImprovedCorporateBrandingPage() {
       setIsSaving(false);
     }
   };
+
   // ユーザー情報の状態を追加
   const [currentUser, setCurrentUser] = useState<{
     name: string | null;
@@ -327,6 +357,7 @@ export default function ImprovedCorporateBrandingPage() {
     position?: string | null;
     // 他に必要なプロパティがあれば追加
   } | null>(null);
+
   // 読み込み中
   if (isLoading) {
     return (
@@ -335,30 +366,41 @@ export default function ImprovedCorporateBrandingPage() {
       </div>
     );
   }
+
   // エラー表示
   if (error) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-red-800 mb-2">エラーが発生しました</h3>
         <p className="text-red-700">{error}</p>
-        <Button variant="outline" className="mt-4" onClick={() => window.location.reload()}>
+        <Button
+          variant="corporateOutline"
+          className="mt-4"
+          onClick={() => window.location.reload()}
+        >
           再読み込み
         </Button>
       </div>
     );
   }
+
   // テナントデータがない場合
   if (!tenantData) {
     return (
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-yellow-800 mb-2">法人プランが有効ではありません</h3>
         <p className="text-yellow-700">法人プランにアップグレードしてこの機能をご利用ください。</p>
-        <Button className="mt-4" onClick={() => router.push('/dashboard/subscription')}>
+        <Button
+          variant="corporate"
+          className="mt-4"
+          onClick={() => router.push('/dashboard/subscription')}
+        >
           プランを見る
         </Button>
       </div>
     );
   }
+
   return (
     <div className="space-y-6">
       {/* ヘッダー部分 */}
@@ -382,21 +424,15 @@ export default function ImprovedCorporateBrandingPage() {
             onClick={handleSaveBranding}
             disabled={isSaving}
             className="flex items-center"
+            loading={isSaving}
+            loadingText="保存中..."
           >
-            {isSaving ? (
-              <>
-                <Spinner size="sm" className="mr-2" />
-                保存中...
-              </>
-            ) : (
-              <>
-                <HiSave className="mr-2 h-4 w-4" />
-                変更を保存
-              </>
-            )}
+            <HiSave className="mr-2 h-4 w-4" />
+            変更を保存
           </Button>
         )}
       </div>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* 設定フォーム */}
         <div className="space-y-6">
@@ -436,7 +472,7 @@ export default function ImprovedCorporateBrandingPage() {
             {isAdmin && (
               <div className="mt-4">
                 <Button
-                  variant="outline"
+                  variant="corporateOutline"
                   size="sm"
                   onClick={() => {
                     setPrimaryColor('#3B82F6');
@@ -450,6 +486,7 @@ export default function ImprovedCorporateBrandingPage() {
               </div>
             )}
           </div>
+
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mt-6">
             <h2 className="text-lg font-medium mb-4 flex items-center">
               <HiColorSwatch className="mr-2 h-5 w-5 text-gray-600" />
@@ -509,6 +546,7 @@ export default function ImprovedCorporateBrandingPage() {
               </div>
             </div>
           </div>
+
           {/* ロゴ設定 */}
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
             <h2 className="text-lg font-medium mb-4 flex items-center">
@@ -538,14 +576,15 @@ export default function ImprovedCorporateBrandingPage() {
                   />
                 </div>
                 {isAdmin && (
-                  <button
-                    type="button"
+                  <Button
+                    variant="destructive"
+                    size="icon"
                     onClick={handleRemoveLogo}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full p-1 hover:bg-red-600 transition-colors"
                     disabled={!isAdmin}
+                    className="absolute top-2 right-2 h-[32px] w-[32px]"
                   >
                     <HiX className="h-4 w-4" />
-                  </button>
+                  </Button>
                 )}
               </div>
             )}
@@ -561,23 +600,15 @@ export default function ImprovedCorporateBrandingPage() {
               />
               <div className="flex space-x-2">
                 <Button
-                  type="button"
+                  variant={logoUrl ? 'corporateOutline' : 'corporate'}
                   onClick={triggerFileInput}
                   disabled={!isAdmin || isUploading}
-                  variant={logoUrl ? 'outline' : 'default'}
                   className="flex items-center"
+                  loading={isUploading}
+                  loadingText="アップロード中..."
                 >
-                  {isUploading ? (
-                    <>
-                      <Spinner size="sm" className="mr-2" />
-                      アップロード中...
-                    </>
-                  ) : (
-                    <>
-                      <HiUpload className="mr-2 h-4 w-4" />
-                      {logoUrl ? 'ロゴを変更' : 'ロゴをアップロード'}
-                    </>
-                  )}
+                  <HiUpload className="mr-2 h-4 w-4" />
+                  {logoUrl ? 'ロゴを変更' : 'ロゴをアップロード'}
                 </Button>
               </div>
               {/* ロゴサイズ設定 */}
@@ -700,6 +731,7 @@ export default function ImprovedCorporateBrandingPage() {
             </div>
           </div>
         </div>
+
         {/* プレビュー */}
         <div className="space-y-6">
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -733,22 +765,16 @@ export default function ImprovedCorporateBrandingPage() {
                   onClick={handleSaveBranding}
                   disabled={isSaving}
                   className="w-full sm:w-auto flex items-center justify-center"
+                  loading={isSaving}
+                  loadingText="保存中..."
                 >
-                  {isSaving ? (
-                    <>
-                      <Spinner size="sm" className="mr-2" />
-                      保存中...
-                    </>
-                  ) : (
-                    <>
-                      <HiSave className="mr-2 h-4 w-4" />
-                      変更を保存
-                    </>
-                  )}
+                  <HiSave className="mr-2 h-4 w-4" />
+                  変更を保存
                 </Button>
               </div>
             )}
           </div>
+
           {/* ブランディングの活用方法 */}
           <div
             className="mt-6 rounded-md p-4"
@@ -773,6 +799,7 @@ export default function ImprovedCorporateBrandingPage() {
     </div>
   );
 }
+
 // HiColorSwatch, HiEyeコンポーネント
 function HiColorSwatch(props: { className: string }) {
   return (
@@ -792,6 +819,7 @@ function HiColorSwatch(props: { className: string }) {
     </svg>
   );
 }
+
 function HiEye(props: { className: string }) {
   return (
     <svg
