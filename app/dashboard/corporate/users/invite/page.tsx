@@ -177,12 +177,13 @@ export default function InviteUserPage() {
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-red-800 mb-2">エラーが発生しました</h3>
         <p className="text-red-700">{error}</p>
-        <button
-          className="mt-4 h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+        <Button
+          variant="corporateOutline"
+          className="mt-4"
           onClick={() => window.location.reload()}
         >
           再読み込み
-        </button>
+        </Button>
       </div>
     );
   }
@@ -193,12 +194,13 @@ export default function InviteUserPage() {
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-yellow-800 mb-2">法人プランが有効ではありません</h3>
         <p className="text-yellow-700">法人プランにアップグレードしてこの機能をご利用ください。</p>
-        <button
-          className="mt-4 h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
+        <Button
+          variant="corporate"
+          className="mt-4"
           onClick={() => router.push('/dashboard/subscription')}
         >
           プランを見る
-        </button>
+        </Button>
       </div>
     );
   }
@@ -207,12 +209,14 @@ export default function InviteUserPage() {
     <div className="space-y-6">
       {/* ヘッダー部分 */}
       <div className="flex items-center mb-6">
-        <button
-          className="mr-4 h-[48px] w-[48px] bg-white border border-gray-300 rounded-md hover:bg-gray-50 transition-colors flex items-center justify-center"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="mr-4"
           onClick={() => router.push('/dashboard/corporate/users')}
         >
           <HiArrowLeft className="h-5 w-5 text-gray-500" />
-        </button>
+        </Button>
         <div>
           <h1 className="text-2xl font-bold">ユーザーを招待</h1>
           <p className="text-gray-500 mt-1">
@@ -298,17 +302,18 @@ export default function InviteUserPage() {
               </div>
             )}
             <div className="flex flex-col sm:flex-row justify-end gap-3">
-              <button
+              <Button
+                variant="corporateOutline"
                 type="button"
-                className="h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                 onClick={() => router.push('/dashboard/corporate/users')}
               >
                 キャンセル
-              </button>
-              <button
+              </Button>
+              <Button
+                variant="corporate"
                 type="submit"
                 disabled={isSending}
-                className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
+                className="flex items-center"
               >
                 {isSending ? (
                   <>
@@ -321,7 +326,7 @@ export default function InviteUserPage() {
                     招待を送信
                   </>
                 )}
-              </button>
+              </Button>
             </div>
           </div>
         </form>

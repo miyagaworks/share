@@ -235,12 +235,13 @@ export default function DepartmentsPage() {
       <div className="bg-red-50 border border-red-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-red-800 mb-2">エラーが発生しました</h3>
         <p className="text-red-700">{error}</p>
-        <button
-          className="mt-4 h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+        <Button
+          variant="corporateOutline"
+          className="mt-4"
           onClick={() => window.location.reload()}
         >
           再読み込み
-        </button>
+        </Button>
       </div>
     );
   }
@@ -251,12 +252,13 @@ export default function DepartmentsPage() {
       <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-6 mb-6">
         <h3 className="text-lg font-medium text-yellow-800 mb-2">法人プランが有効ではありません</h3>
         <p className="text-yellow-700">法人プランにアップグレードしてこの機能をご利用ください。</p>
-        <button
-          className="mt-4 h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
+        <Button
+          className="mt-4"
+          variant="corporate"
           onClick={() => router.push('/dashboard/subscription')}
         >
           プランを見る
-        </button>
+        </Button>
       </div>
     );
   }
@@ -270,13 +272,10 @@ export default function DepartmentsPage() {
           <p className="text-gray-500 mt-1">部署を作成・管理し、ユーザーを適切に分類します</p>
         </div>
         {isAdmin && (
-          <button
-            className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
-            onClick={openAddModal}
-          >
+          <Button variant="corporate" onClick={openAddModal} className="flex items-center">
             <HiPlus className="mr-2 h-4 w-4" />
             部署を追加
-          </button>
+          </Button>
         )}
       </div>
 
@@ -298,19 +297,23 @@ export default function DepartmentsPage() {
                   </div>
                   {isAdmin && (
                     <div className="flex space-x-1">
-                      <button
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-blue-600 hover:text-blue-800"
                         onClick={() => openEditModal(dept)}
-                        className="h-[48px] w-[48px] text-gray-500 hover:text-blue-600 rounded-md hover:bg-blue-50 transition-colors flex items-center justify-center"
                       >
                         <HiPencil className="h-5 w-5" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteDepartment(dept)}
-                        className={`h-[48px] w-[48px] rounded-md transition-colors flex items-center justify-center ${
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className={`${
                           dept.userCount && dept.userCount > 0
                             ? 'text-gray-300 cursor-not-allowed'
-                            : 'text-gray-500 hover:text-red-600 hover:bg-red-50'
+                            : 'text-red-600 hover:text-red-800'
                         }`}
+                        onClick={() => handleDeleteDepartment(dept)}
                         disabled={dept.userCount ? dept.userCount > 0 : false}
                         title={
                           dept.userCount && dept.userCount > 0
@@ -319,7 +322,7 @@ export default function DepartmentsPage() {
                         }
                       >
                         <HiTrash className="h-5 w-5" />
-                      </button>
+                      </Button>
                     </div>
                   )}
                 </div>
@@ -332,12 +335,13 @@ export default function DepartmentsPage() {
                 </div>
               </div>
               <div className="border-t border-gray-200 bg-gray-50 px-6 py-3">
-                <button
-                  className="h-[48px] px-4 bg-white border border-gray-300 text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+                <Button
+                  variant="ghost"
+                  size="sm"
                   onClick={() => router.push(`/dashboard/corporate/users?department=${dept.id}`)}
                 >
                   ユーザーを見る
-                </button>
+                </Button>
               </div>
             </div>
           ))}
@@ -352,13 +356,10 @@ export default function DepartmentsPage() {
             「部署を追加」ボタンをクリックして、最初の部署を作成してください。
           </p>
           {isAdmin && (
-            <button
-              className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center mx-auto"
-              onClick={openAddModal}
-            >
+            <Button variant="corporate" onClick={openAddModal}>
               <HiPlus className="mr-2 h-4 w-4" />
               部署を追加
-            </button>
+            </Button>
           )}
         </div>
       )}
@@ -404,11 +405,7 @@ export default function DepartmentsPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-3 mt-6">
-                  <button
-                    type="submit"
-                    disabled={isSaving}
-                    className="w-full h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
-                  >
+                  <Button variant="corporate" type="submit" disabled={isSaving}>
                     {isSaving ? (
                       <>
                         <Spinner size="sm" className="mr-2" />
@@ -417,14 +414,10 @@ export default function DepartmentsPage() {
                     ) : (
                       '保存'
                     )}
-                  </button>
-                  <button
-                    type="button"
-                    className="w-full h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
-                    onClick={closeModal}
-                  >
+                  </Button>
+                  <Button variant="corporateOutline" type="button" onClick={closeModal}>
                     キャンセル
-                  </button>
+                  </Button>
                 </div>
               </form>
             </div>

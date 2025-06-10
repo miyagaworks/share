@@ -139,18 +139,22 @@ const DraggableSnsItem = ({
       </td>
       <td className="px-4 sm:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
         <div className="flex items-center justify-end gap-2">
-          <button
-            className="h-[48px] px-3 bg-white border border-blue-200 text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-blue-600 hover:text-blue-800"
             onClick={() => onEdit(link)}
           >
             <HiPencil className="h-4 w-4" />
-          </button>
-          <button
-            className="h-[48px] px-3 bg-white border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-red-600 hover:text-red-800"
             onClick={() => onDelete(link.id)}
           >
             <HiTrash className="h-4 w-4" />
-          </button>
+          </Button>
         </div>
       </td>
     </tr>
@@ -259,18 +263,22 @@ const DraggableSnsCard = ({
         </a>
       </div>
       <div className="flex justify-end space-x-2">
-        <button
-          className="h-[48px] px-3 bg-white border border-blue-200 text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-blue-600 hover:text-blue-800"
           onClick={() => onEdit(link)}
         >
           <HiPencil className="h-4 w-4" />
-        </button>
-        <button
-          className="h-[48px] px-3 bg-white border border-red-200 text-red-600 rounded-md hover:bg-red-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+        </Button>
+        <Button
+          variant="ghost"
+          size="sm"
+          className="text-red-600 hover:text-red-800"
           onClick={() => onDelete(link.id)}
         >
           <HiTrash className="h-4 w-4" />
-        </button>
+        </Button>
       </div>
     </div>
   );
@@ -425,12 +433,13 @@ export default function CorporateSnsMangementPage() {
           <div>
             <h3 className="text-lg font-medium text-red-800">エラーが発生しました</h3>
             <p className="mt-2 text-red-700">{error}</p>
-            <button
-              className="mt-4 h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+            <Button
+              variant="corporateOutline"
+              className="mt-4"
               onClick={() => window.location.reload()}
             >
               再読み込み
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -448,12 +457,13 @@ export default function CorporateSnsMangementPage() {
             <p className="mt-2 text-yellow-700">
               法人共通SNS設定の管理には法人管理者権限が必要です。
             </p>
-            <button
-              className="mt-4 h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
+            <Button
+              variant="corporate"
+              className="mt-4"
               onClick={() => router.push('/dashboard/corporate')}
             >
               管理者ダッシュボードへ戻る
-            </button>
+            </Button>
           </div>
         </div>
       </div>
@@ -470,17 +480,19 @@ export default function CorporateSnsMangementPage() {
             <p className="text-gray-500 mt-1">全社員に共通のSNSリンクを設定・管理します</p>
           </div>
           <div className="flex gap-2 flex-wrap">
-            <button
-              className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center"
+            <Button
+              variant="corporate"
               onClick={() => setIsAddFormOpen(true)}
+              className="flex items-center"
             >
               <HiPlus className="mr-2 h-4 w-4" />
               SNSリンクを追加
-            </button>
-            <button
-              className="h-[48px] px-4 border border-blue-300 bg-white text-blue-600 rounded-md hover:bg-blue-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+            </Button>
+            <Button
+              variant="corporateOutline"
               onClick={handleSyncToUsers}
               disabled={isSyncing || corporateSnsLinks.length === 0}
+              className="flex items-center"
             >
               {isSyncing ? (
                 <>
@@ -493,7 +505,7 @@ export default function CorporateSnsMangementPage() {
                   ユーザーに同期
                 </>
               )}
-            </button>
+            </Button>
           </div>
         </div>
 
@@ -596,13 +608,10 @@ export default function CorporateSnsMangementPage() {
             <p className="mt-2 text-gray-500 mb-6">
               「SNSリンクを追加」ボタンをクリックして、法人共通のSNSリンクを設定してください。
             </p>
-            <button
-              className="h-[48px] px-4 bg-[#1E3A8A] text-white rounded-md hover:bg-[#122153] transition-colors text-base sm:text-sm flex items-center justify-center mx-auto"
-              onClick={() => setIsAddFormOpen(true)}
-            >
+            <Button variant="corporate" onClick={() => setIsAddFormOpen(true)}>
               <HiPlus className="mr-2 h-4 w-4" />
               SNSリンクを追加
-            </button>
+            </Button>
           </div>
         )}
 
