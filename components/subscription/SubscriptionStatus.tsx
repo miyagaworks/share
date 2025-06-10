@@ -21,6 +21,7 @@ import {
   PermanentPlanType,
   PLAN_TYPE_DISPLAY_NAMES,
 } from '@/lib/corporateAccess';
+
 // 型定義を修正
 interface SubscriptionData {
   id: string;
@@ -33,6 +34,7 @@ interface SubscriptionData {
   displayStatus?: string;
   interval?: string;
 }
+
 interface SubscriptionStatusProps {
   onReloadSubscription?: () => void;
   userData?: {
@@ -40,6 +42,7 @@ interface SubscriptionStatusProps {
     subscriptionStatus?: string | null;
   } | null;
 }
+
 // GracePeriodInfo型
 interface GracePeriodInfo {
   isInGracePeriod?: boolean;
@@ -47,11 +50,13 @@ interface GracePeriodInfo {
   daysRemaining?: number;
   gracePeriodEndDate?: Date;
 }
+
 // StatusDisplay型
 interface StatusDisplay {
   text: string;
   className: string;
 }
+
 export default function SubscriptionStatus({
   onReloadSubscription,
   userData,
@@ -63,11 +68,14 @@ export default function SubscriptionStatus({
   const [cancelling, setCancelling] = useState(false);
   const [previousPlan, setPreviousPlan] = useState<string | null>(null);
   const [previousInterval, setPreviousInterval] = useState<string | null>(null);
+
   // 永久利用権関連の状態
   const [permanentPlanType, setPermanentPlanType] = useState<PermanentPlanType | null>(null);
   const [permanentPlanLoaded, setPermanentPlanLoaded] = useState(false);
+
   // onReloadSubscriptionの参照を保持するためのref
   const onReloadSubscriptionRef = useRef(onReloadSubscription);
+
   // プラン選択のクリックハンドラー
   const handlePlanSelection = () => {
     // 現在のページが subscription ページかチェック
@@ -90,6 +98,7 @@ export default function SubscriptionStatus({
         const headerHeight = 80; // ヘッダーの高さを考慮
         const offset = 30; // タブボタンがよく見えるように少し余裕を持たせる
         const scrollPosition = absoluteElementTop - headerHeight - offset;
+
         // スムーズスクロールを実行
         window.scrollTo({
           top: scrollPosition,
@@ -126,10 +135,12 @@ export default function SubscriptionStatus({
     // subscription ページに遷移
     window.location.href = '/dashboard/subscription#subscription-plans';
   };
+
   // onReloadSubscriptionが変更されたらrefを更新
   useEffect(() => {
     onReloadSubscriptionRef.current = onReloadSubscription;
   }, [onReloadSubscription]);
+
   // 永久利用権プラン種別を取得
   const loadPermanentPlanType = useCallback(async () => {
     if (!userData?.subscriptionStatus || userData.subscriptionStatus !== 'permanent') {
@@ -144,6 +155,7 @@ export default function SubscriptionStatus({
       setPermanentPlanLoaded(true);
     }
   }, [userData]);
+
   // 日付のフォーマット関数
   const formatDate = (dateString: string) => {
     try {
@@ -157,6 +169,7 @@ export default function SubscriptionStatus({
       return dateString;
     }
   };
+
   // 法人アクセス権をリフレッシュする関数
   const refreshCorporateAccess = useCallback(async () => {
     try {
@@ -174,6 +187,7 @@ export default function SubscriptionStatus({
       return null;
     }
   }, []);
+
   // ご利用プラン情報を取得
   const fetchSubscription = useCallback(async () => {
     try {
@@ -199,22 +213,27 @@ export default function SubscriptionStatus({
       setLoading(false);
     }
   }, [previousPlan]);
+
   // 初回読み込み
   useEffect(() => {
     fetchSubscription();
     loadPermanentPlanType();
   }, [fetchSubscription, loadPermanentPlanType]);
+
   // プラン変更を検知して法人アクセス権を更新
   useEffect(() => {
     if (!subscription) return;
+
     const currentPlan = subscription.plan;
     const currentInterval = subscription.interval || 'month';
+
     // 初回読み込み時
     if (previousPlan === null) {
       setPreviousPlan(currentPlan);
       setPreviousInterval(currentInterval);
       return;
     }
+
     // プランまたは契約期間が変更された場合
     if (previousPlan !== currentPlan || previousInterval !== currentInterval) {
       // 法人プラン関連のプラン変更の場合のみアクセス権をリフレッシュ
@@ -228,6 +247,7 @@ export default function SubscriptionStatus({
             previousPlan.includes('enterprise') ||
             previousPlan.includes('starter') ||
             previousPlan.includes('corp')));
+
       if (isCorporateRelated) {
         // 少し遅延させてリフレッシュする（UI更新の完了を待つため）
         setTimeout(() => {
@@ -243,11 +263,13 @@ export default function SubscriptionStatus({
           });
         }, 500);
       }
+
       // 前回のプラン情報を更新
       setPreviousPlan(currentPlan);
       setPreviousInterval(currentInterval);
     }
   }, [subscription, previousPlan, previousInterval, refreshCorporateAccess]);
+
   // 拡張された再読み込み処理を作成
   const enhancedReload = useCallback(() => {
     // 元の再読み込み処理を実行
@@ -262,9 +284,11 @@ export default function SubscriptionStatus({
       });
     }, 1000);
   }, [fetchSubscription, refreshCorporateAccess]);
+
   // ご利用プランステータスに基づいた表示情報を取得
   const getStatusDisplay = useCallback((sub: SubscriptionData | null): StatusDisplay => {
     if (!sub) return { text: '不明', className: 'bg-gray-100 text-gray-800' };
+
     // 永久利用権ユーザーの場合
     if (sub.isPermanentUser) {
       return {
@@ -272,6 +296,7 @@ export default function SubscriptionStatus({
         className: 'bg-blue-100 text-blue-800',
       };
     }
+
     // 無料トライアル中
     if (sub.status === 'trialing') {
       return {
@@ -279,13 +304,16 @@ export default function SubscriptionStatus({
         className: 'bg-blue-100 text-blue-800',
       };
     }
+
     // アクティブなプラン
     if (sub.status === 'active') {
       let planType = '';
       let renewalInfo = '';
+
       // プランの種類を判定（修正版）
       const planName = sub.plan.toLowerCase();
       const interval = sub.interval || 'month';
+
       // 法人プランの判定
       if (planName.includes('starter') || planName === 'starter') {
         planType = 'スタータープラン';
@@ -313,6 +341,7 @@ export default function SubscriptionStatus({
         planType = '個人プラン';
         renewalInfo = '（年額）';
       }
+
       // 法人プランの場合は「法人」をプレフィックス
       if (
         planName.includes('starter') ||
@@ -321,6 +350,7 @@ export default function SubscriptionStatus({
       ) {
         planType = `法人${planType}`;
       }
+
       // プラン名が決定できた場合
       if (planType) {
         return {
@@ -334,6 +364,7 @@ export default function SubscriptionStatus({
         };
       }
     }
+
     // その他のケース
     switch (sub.status) {
       case 'past_due':
@@ -353,6 +384,7 @@ export default function SubscriptionStatus({
         };
     }
   }, []);
+
   // ご利用プランを再アクティブ化
   const handleReactivate = async () => {
     // 永久利用権ユーザーはプラン変更不可
@@ -361,6 +393,7 @@ export default function SubscriptionStatus({
       return;
     }
     if (!subscription) return;
+
     try {
       setReactivating(true);
       const response = await fetch('/api/subscription/reactivate', {
@@ -368,14 +401,17 @@ export default function SubscriptionStatus({
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({}),
       });
+
       if (!response.ok) {
         const data = await response.json();
         throw new Error(data.error || 'プランの再アクティブ化に失敗しました');
       }
+
       const data = await response.json();
       // 結果を反映
       setSubscription(data.subscription);
       toast.success('プランを再アクティブ化しました');
+
       // 法人アクセス権も更新
       await refreshCorporateAccess();
       // 拡張された再読み込み処理を実行
@@ -386,6 +422,7 @@ export default function SubscriptionStatus({
       setReactivating(false);
     }
   };
+
   // ご利用プランをキャンセル
   const handleCancel = async () => {
     // 永久利用権ユーザーはプラン変更不可
@@ -394,6 +431,7 @@ export default function SubscriptionStatus({
       return;
     }
     if (!subscription) return;
+
     if (
       !window.confirm(
         'このプランをキャンセルしてもよろしいですか？\n\n現在の期間が終了するまではご利用いただけます。',
@@ -401,6 +439,7 @@ export default function SubscriptionStatus({
     ) {
       return;
     }
+
     try {
       setCancelling(true);
       const response = await fetch('/api/subscription/cancel', {
@@ -410,24 +449,30 @@ export default function SubscriptionStatus({
           reason: 'User requested cancellation',
         }),
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'ご利用プランのキャンセルに失敗しました');
       }
+
       const data = await response.json();
       // 結果を反映
       setSubscription(data.subscription);
       toast.success('ご利用のプランをキャンセルしました');
+
       // 法人アクセス権も更新
       await refreshCorporateAccess();
       // 拡張された再読み込み処理を実行
       enhancedReload();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'ご利用プランのキャンセルに失敗しました');
+      toast.error(
+        error instanceof Error ? error.message : 'ご利用プランのキャンセルに失敗しました',
+      );
     } finally {
       setCancelling(false);
     }
   };
+
   // 永久利用権ユーザーかどうかを確認
   const isPermanentUser = () => {
     // サブスクリプションの状態から判定
@@ -437,17 +482,21 @@ export default function SubscriptionStatus({
     // または、ユーザーデータから直接判定
     return userData?.subscriptionStatus === 'permanent';
   };
+
   // 猶予期間の計算関数
   const getGracePeriodInfo = useCallback((): GracePeriodInfo | null => {
     if (!userData?.trialEndsAt) return null;
+
     const trialEndDate = new Date(userData.trialEndsAt);
     const now = new Date();
     const gracePeriodEndDate = addDays(trialEndDate, 7); // 7日間の猶予期間
+
     // トライアル終了後の判定
     if (now > trialEndDate) {
       // アクティブなサブスクリプションの判定
       const hasActiveSubscription =
         subscription && subscription.status === 'active' && !subscription.cancelAtPeriodEnd;
+
       // アクティブなサブスクリプションがない場合
       if (!hasActiveSubscription) {
         // 猶予期間中
@@ -473,11 +522,13 @@ export default function SubscriptionStatus({
     }
     return null;
   }, [userData, subscription]);
+
   // 永久利用権プラン情報表示コンポーネント
   const PermanentPlanInfo = () => {
     const displayName = permanentPlanType
       ? PLAN_TYPE_DISPLAY_NAMES[permanentPlanType]
       : '永久利用権プラン';
+
     return (
       <div className="bg-blue-50 border border-blue-100 rounded-md p-3 mt-4">
         <div className="flex items-center mb-2">
@@ -496,10 +547,12 @@ export default function SubscriptionStatus({
       </div>
     );
   };
+
   const gracePeriodInfo = getGracePeriodInfo();
   const statusDisplay = subscription
     ? getStatusDisplay(subscription)
     : { text: '読み込み中...', className: 'bg-gray-100 text-gray-800' };
+
   // 読み込み中
   if (loading || !permanentPlanLoaded) {
     return (
@@ -511,6 +564,7 @@ export default function SubscriptionStatus({
       </div>
     );
   }
+
   // エラー発生時
   if (error) {
     return (
@@ -531,6 +585,7 @@ export default function SubscriptionStatus({
       </div>
     );
   }
+
   // 猶予期間中の警告表示
   if (gracePeriodInfo?.isInGracePeriod && gracePeriodInfo.gracePeriodEndDate) {
     return (
@@ -549,12 +604,12 @@ export default function SubscriptionStatus({
                 にアカウントが削除され、公開プロフィールが表示されなくなります。
               </p>
               <div className="mt-4">
-                <Button
-                  className="bg-red-600 hover:bg-red-700 text-white mr-3"
+                <button
+                  className="h-[48px] px-6 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-base sm:text-sm flex items-center justify-center"
                   onClick={handlePlanSelection}
                 >
                   今すぐプランを選択する
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -562,6 +617,7 @@ export default function SubscriptionStatus({
       </div>
     );
   }
+
   // 猶予期間終了後（未削除のアカウント）
   if (gracePeriodInfo?.isGracePeriodExpired) {
     return (
@@ -577,12 +633,12 @@ export default function SubscriptionStatus({
                 猶予期間が終了しました。アカウントは近日中に削除される予定です。引き続きサービスをご利用になりたい場合は、今すぐお支払い手続きを完了してください。
               </p>
               <div className="mt-4">
-                <Button
-                  className="bg-red-600 hover:bg-red-700 text-white mr-3"
+                <button
+                  className="h-[48px] px-6 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-base sm:text-sm flex items-center justify-center"
                   onClick={handlePlanSelection}
                 >
                   今すぐプランを選択して復活する
-                </Button>
+                </button>
               </div>
             </div>
           </div>
@@ -590,6 +646,7 @@ export default function SubscriptionStatus({
       </div>
     );
   }
+
   // 永久利用権ユーザーの場合は特別表示
   if (isPermanentUser()) {
     return (
@@ -620,16 +677,19 @@ export default function SubscriptionStatus({
       </div>
     );
   }
+
   // ご利用プランなし（無料トライアル中）
   if (!subscription || subscription.status === 'trialing') {
     // トライアル期間が終了しているかどうかの判定を追加
     const now = new Date();
     const trialEndDate = userData?.trialEndsAt ? new Date(userData.trialEndsAt) : null;
     const isTrialActive = trialEndDate && now < trialEndDate;
+
     // トライアル残日数計算
     const daysRemaining = trialEndDate
       ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
       : 0;
+
     return (
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
         <div className="flex items-start">
@@ -648,15 +708,19 @@ export default function SubscriptionStatus({
                 : `現在、プランが選択されていません。プランを選択して、すべての機能をご利用ください。`}
             </p>
             <div className="mt-4">
-              <Button className="mr-3" onClick={handlePlanSelection}>
+              <button
+                className="h-[48px] px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base sm:text-sm flex items-center justify-center"
+                onClick={handlePlanSelection}
+              >
                 プランを選択
-              </Button>
+              </button>
             </div>
           </div>
         </div>
       </div>
     );
   }
+
   // アクティブなご利用プラン
   return (
     <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -715,6 +779,7 @@ export default function SubscriptionStatus({
                   </span>
                 </div>
               )}
+
               {subscription?.status === 'trialing' && !isPermanentUser() && (
                 <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mt-4">
                   <p className="text-sm text-blue-800 text-justify">
@@ -732,6 +797,7 @@ export default function SubscriptionStatus({
                   </p>
                 </div>
               )}
+
               {subscription?.cancelAtPeriodEnd && !isPermanentUser() && (
                 <div className="bg-amber-50 border border-amber-100 rounded-md p-4 mt-4">
                   <p className="text-sm text-amber-800 mb-3">
@@ -739,10 +805,8 @@ export default function SubscriptionStatus({
                     <strong>{formatDate(subscription.currentPeriodEnd)}</strong>
                     にキャンセルされる予定です。それまではすべての機能をご利用いただけます。
                   </p>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="mt-2"
+                  <button
+                    className="h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
                     onClick={handleReactivate}
                     disabled={reactivating}
                   >
@@ -757,19 +821,18 @@ export default function SubscriptionStatus({
                         プランを継続する
                       </>
                     )}
-                  </Button>
+                  </button>
                 </div>
               )}
             </div>
+
             {/* 🔧 解約ボタンのマージンを増加 */}
             {!isPermanentUser() &&
               !subscription?.cancelAtPeriodEnd &&
               (subscription?.status === 'active' || subscription?.status === 'trialing') && (
                 <div className="mt-8 pt-4 border-t border-gray-100">
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="text-gray-400 hover:text-red-600 hover:bg-red-50"
+                  <button
+                    className="h-[48px] px-4 border border-gray-300 bg-white text-gray-400 rounded-md hover:text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-base sm:text-sm flex items-center justify-center"
                     onClick={handleCancel}
                     disabled={cancelling}
                   >
@@ -784,7 +847,7 @@ export default function SubscriptionStatus({
                         このプランを解約
                       </>
                     )}
-                  </Button>
+                  </button>
                 </div>
               )}
           </div>

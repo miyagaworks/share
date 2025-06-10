@@ -1,4 +1,4 @@
-// components/subscription/SubscriptionSettings.tsx (法人契約中ユーザー対応版)
+// components/subscription/SubscriptionSettings.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import { Spinner } from '@/components/ui/Spinner';
@@ -11,10 +11,12 @@ import { FiUsers } from 'react-icons/fi';
 import { HiUser, HiOfficeBuilding } from 'react-icons/hi';
 // 🔥 新規追加: 法人契約中ユーザーの判定用Hook
 import { useDashboardInfo } from '@/hooks/useDashboardInfo';
+
 // 型定義
 type SubscriptionPlan = 'monthly' | 'yearly' | 'starter' | 'business' | 'enterprise';
 type SubscriptionInterval = 'month' | 'year';
 type PlanPriceIdKey = keyof typeof PLAN_PRICE_IDS;
+
 const PLAN_PRICE_IDS = {
   monthly: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID || 'price_monthly_placeholder',
   yearly: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID || 'price_yearly_placeholder',
@@ -22,6 +24,7 @@ const PLAN_PRICE_IDS = {
   business: process.env.NEXT_PUBLIC_STRIPE_BUSINESS_PRICE_ID || 'price_business_placeholder',
   enterprise: process.env.NEXT_PUBLIC_STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise_placeholder',
 };
+
 const renderFeatures = (plan: SubscriptionPlan) => {
   switch (plan) {
     case 'starter':
@@ -34,38 +37,44 @@ const renderFeatures = (plan: SubscriptionPlan) => {
       return [];
   }
 };
+
 const STARTER_FEATURES = [
   '最大10名のユーザー管理',
   '共通カラーテーマ設定',
   '会社ロゴ表示',
   'メールサポート',
 ];
+
 const BUSINESS_FEATURES = [
   '最大30名のユーザー管理',
   '部署/チーム分け機能',
   '高度なカスタマイズ',
   '優先サポート（営業時間内）',
 ];
+
 const ENTERPRISE_FEATURES = [
   '最大50名のユーザー管理',
   '高度なユーザー権限設定',
   'カスタムドメイン設定',
   '専任サポート担当者',
 ];
+
 export default function SubscriptionSettings() {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlan>('monthly');
   const [selectedInterval, setSelectedInterval] = useState<SubscriptionInterval>('month');
   const [paymentMethodId, setPaymentMethodId] = useState<string | null>(null);
   const [processing, setProcessing] = useState(false);
   const [showCorporatePlans, setShowCorporatePlans] = useState(false);
+
   // 🔥 新規追加: 法人契約中ユーザーの状態管理
   const { data: dashboardInfo } = useDashboardInfo();
   const [isCorporateUser, setIsCorporateUser] = useState(false);
   const [showIndividualWarning, setShowIndividualWarning] = useState(false);
+
   // 法人プラン切り替え警告の状態管理
   const [showCorporateWarning, setShowCorporateWarning] = useState(false);
   const [hasIndividualData, setHasIndividualData] = useState(false);
-  // 🔥 削除: 未使用の状態変数を削除
+
   // 🔥 新規追加: 法人契約中ユーザーの判定とタブ初期設定
   useEffect(() => {
     if (dashboardInfo?.permissions) {
@@ -80,6 +89,7 @@ export default function SubscriptionSettings() {
       }
     }
   }, [dashboardInfo]);
+
   // 個人データの存在チェック
   useEffect(() => {
     const checkIndividualData = async () => {
@@ -94,11 +104,11 @@ export default function SubscriptionSettings() {
             data.user?.bio;
           setHasIndividualData(hasData);
         }
-      } catch {
-      }
+      } catch {}
     };
     checkIndividualData();
   }, []);
+
   // 🔥 新規追加: 法人契約中ユーザーが個人プランタブをクリックした場合の処理
   const handleIndividualPlanClick = () => {
     if (isCorporateUser) {
@@ -107,6 +117,7 @@ export default function SubscriptionSettings() {
       setShowCorporatePlans(false);
     }
   };
+
   // 法人プラン切り替え時の警告表示
   const handleCorporatePlanSelection = () => {
     if (isCorporateUser) {
@@ -118,11 +129,13 @@ export default function SubscriptionSettings() {
       setShowCorporatePlans(true);
     }
   };
+
   // 警告承諦後の処理
   const handleAcceptWarning = () => {
     setShowCorporateWarning(false);
     setShowCorporatePlans(true);
   };
+
   // 🔥 新規追加: 法人プラン申し込み処理（簡略版）
   const handleCorporateSubscribe = async () => {
     if (!paymentMethodId) {
@@ -153,10 +166,12 @@ export default function SubscriptionSettings() {
             return PLAN_PRICE_IDS[plan as PlanPriceIdKey];
         }
       };
+
       const priceId =
         selectedInterval === 'year'
           ? getYearlyPriceId(selectedPlan)
           : PLAN_PRICE_IDS[selectedPlan as keyof typeof PLAN_PRICE_IDS];
+
       const response = await fetch('/api/subscription/create', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -168,12 +183,15 @@ export default function SubscriptionSettings() {
           isCorporate: true,
         }),
       });
+
       if (!response.ok) {
         const errorData = await response.json();
         throw new Error(errorData.error || 'プランの作成に失敗しました');
       }
+
       const data = await response.json();
       toast.success('法人プランの登録が完了しました！');
+
       // リダイレクト処理
       if (data.redirectUrl) {
         setTimeout(() => {
@@ -191,6 +209,7 @@ export default function SubscriptionSettings() {
       setProcessing(false);
     }
   };
+
   // 個人プラン作成処理
   const handleSubscribe = async () => {
     if (!paymentMethodId) {
@@ -210,11 +229,13 @@ export default function SubscriptionSettings() {
           paymentMethodId: paymentMethodId,
         }),
       });
+
       const data = await response.json();
       if (!response.ok) {
         const errorCode = data.code || '';
         const declineCode = data.decline_code || '';
         let errorMessage = data.error || 'プランの作成に失敗しました';
+
         if (errorCode === 'card_declined') {
           if (declineCode === 'insufficient_funds') {
             errorMessage = 'カードの残高が不足しています。別のカードでお試しください。';
@@ -228,6 +249,7 @@ export default function SubscriptionSettings() {
         }
         throw new Error(errorMessage);
       }
+
       toast.success('プランが正常に作成されました');
       setTimeout(() => {
         window.location.reload();
@@ -239,6 +261,7 @@ export default function SubscriptionSettings() {
       setProcessing(false);
     }
   };
+
   // 🔥 新規追加: 法人→個人への移行不可警告モーダル
   if (showIndividualWarning) {
     return (
@@ -287,13 +310,13 @@ export default function SubscriptionSettings() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => setShowIndividualWarning(false)}
-                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                className="flex-1 h-[48px] px-4 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-base sm:text-sm flex items-center justify-center"
               >
                 閉じる
               </button>
               <button
                 onClick={() => window.open('/auth/signup', '_blank')}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="flex-1 h-[48px] px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base sm:text-sm flex items-center justify-center"
               >
                 新しいアカウントで個人プラン登録
               </button>
@@ -310,6 +333,7 @@ export default function SubscriptionSettings() {
       </div>
     );
   }
+
   // 既存の法人プラン切り替え警告モーダル...
   if (showCorporateWarning) {
     return (
@@ -361,19 +385,19 @@ export default function SubscriptionSettings() {
             <div className="flex flex-col sm:flex-row gap-3">
               <button
                 onClick={() => setShowCorporateWarning(false)}
-                className="flex-1 px-4 py-2 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors"
+                className="flex-1 h-[48px] px-4 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-base sm:text-sm flex items-center justify-center"
               >
                 キャンセル
               </button>
               <button
                 onClick={() => window.open('/auth/signup', '_blank')}
-                className="flex-1 px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors"
+                className="flex-1 h-[48px] px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base sm:text-sm flex items-center justify-center"
               >
                 新しいアカウントで法人プラン登録
               </button>
               <button
                 onClick={handleAcceptWarning}
-                className="flex-1 px-4 py-2 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+                className="flex-1 h-[48px] px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-base sm:text-sm flex items-center justify-center"
               >
                 個人データを削除して法人プランに切り替える
               </button>
@@ -389,6 +413,7 @@ export default function SubscriptionSettings() {
       </div>
     );
   }
+
   // 法人プラン申し込み完了後のリダイレクト中画面
   if (processing && showCorporatePlans) {
     return (
@@ -405,27 +430,28 @@ export default function SubscriptionSettings() {
       </div>
     );
   }
+
   return (
     <div id="subscription-plans" className="space-y-6">
       <div className="space-y-6">
-        {/* 🔥 修正: タブスタイルの切り替え */}
+        {/* 🔧 修正: タブスタイルの切り替え */}
         <div className="mb-6">
           <div className="bg-white rounded-lg border border-gray-200 overflow-hidden flex shadow-sm">
             <button
               data-plan-type="individual"
-              className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium transition-all duration-300 transform ${
+              className={`flex-1 h-[48px] px-4 flex items-center justify-center gap-2 text-base sm:text-sm font-medium transition-all duration-300 transform ${
                 !showCorporatePlans
                   ? 'bg-blue-600 text-white shadow-md scale-105 active'
                   : 'bg-white text-blue-600 hover:bg-blue-700 hover:text-white hover:shadow-md hover:scale-105'
               }`}
-              onClick={handleIndividualPlanClick} // 🔥 修正: 個人プランクリック処理を変更
+              onClick={handleIndividualPlanClick}
             >
               <HiUser className="h-5 w-5" />
               個人プラン
             </button>
             <button
               data-plan-type="corporate"
-              className={`flex-1 py-3 px-4 flex items-center justify-center gap-2 text-sm font-medium transition-all duration-300 transform ${
+              className={`flex-1 h-[48px] px-4 flex items-center justify-center gap-2 text-base sm:text-sm font-medium transition-all duration-300 transform ${
                 showCorporatePlans
                   ? 'bg-blue-900 text-white shadow-md scale-105 active'
                   : 'bg-white text-blue-900 hover:bg-blue-800 hover:text-white hover:shadow-md hover:scale-105'
@@ -437,6 +463,7 @@ export default function SubscriptionSettings() {
             </button>
           </div>
         </div>
+
         {/* 🔥 新規追加: 法人契約中ユーザー向けの情報表示 */}
         {isCorporateUser && !showCorporatePlans && (
           <div className="bg-blue-50 border-l-4 border-blue-500 p-4 mb-6">
@@ -451,6 +478,7 @@ export default function SubscriptionSettings() {
             </div>
           </div>
         )}
+
         {/* 個人プラン */}
         {!showCorporatePlans && !isCorporateUser && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -493,6 +521,7 @@ export default function SubscriptionSettings() {
                   )}
                 </div>
               </motion.div>
+
               {/* 年額プラン */}
               <motion.div
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
@@ -537,15 +566,17 @@ export default function SubscriptionSettings() {
                 </div>
               </motion.div>
             </div>
+
             {/* 支払い方法入力 */}
             <h3 className="font-semibold mb-3">お支払い方法</h3>
             <PaymentMethodForm onPaymentMethodChange={setPaymentMethodId} />
+
             {/* 登録/変更ボタン */}
             <div className="mt-6 flex justify-end">
               <button
                 onClick={handleSubscribe}
                 disabled={!paymentMethodId || processing}
-                className="px-8 py-2 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200"
+                className="h-[48px] px-8 bg-blue-600 text-white font-medium rounded-md hover:bg-blue-700 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-base sm:text-sm flex items-center justify-center"
               >
                 {processing ? (
                   <div className="flex items-center">
@@ -559,6 +590,7 @@ export default function SubscriptionSettings() {
             </div>
           </div>
         )}
+
         {/* 法人プラン */}
         {showCorporatePlans && (
           <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
@@ -589,7 +621,7 @@ export default function SubscriptionSettings() {
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="flex justify-between items-start">
-                  <div>
+                  <div className="w-full">
                     <div className="flex items-center">
                       <HiOutlineOfficeBuilding className="h-5 w-5 text-[#1E3A8A] mr-2" />
                       <h3 className="font-semibold">スタータープラン</h3>
@@ -610,7 +642,7 @@ export default function SubscriptionSettings() {
                             : 'bg-gray-100 text-gray-700'
                         }`}
                         onClick={(e) => {
-                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          e.stopPropagation();
                           setSelectedInterval('month');
                         }}
                       >
@@ -624,7 +656,7 @@ export default function SubscriptionSettings() {
                             : 'bg-gray-100 text-gray-700'
                         }`}
                         onClick={(e) => {
-                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          e.stopPropagation();
                           setSelectedInterval('year');
                         }}
                       >
@@ -649,7 +681,7 @@ export default function SubscriptionSettings() {
                       <button
                         onClick={handleCorporateSubscribe}
                         disabled={!paymentMethodId || processing || selectedPlan !== 'starter'}
-                        className="w-full bg-blue-900 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-800 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200"
+                        className="w-full h-[48px] bg-blue-900 text-white rounded-md font-medium hover:bg-blue-800 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-base sm:text-sm flex items-center justify-center"
                       >
                         {processing && selectedPlan === 'starter' ? (
                           <div className="flex items-center justify-center">
@@ -669,6 +701,7 @@ export default function SubscriptionSettings() {
                   )}
                 </div>
               </motion.div>
+
               {/* ビジネスプラン */}
               <motion.div
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
@@ -681,7 +714,7 @@ export default function SubscriptionSettings() {
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="flex justify-between items-start">
-                  <div>
+                  <div className="w-full">
                     <div className="flex items-center">
                       <HiOutlineOfficeBuilding className="h-5 w-5 text-[#1E3A8A] mr-2" />
                       <h3 className="font-semibold">ビジネスプラン</h3>
@@ -702,7 +735,7 @@ export default function SubscriptionSettings() {
                             : 'bg-gray-100 text-gray-700'
                         }`}
                         onClick={(e) => {
-                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          e.stopPropagation();
                           setSelectedInterval('month');
                         }}
                       >
@@ -716,7 +749,7 @@ export default function SubscriptionSettings() {
                             : 'bg-gray-100 text-gray-700'
                         }`}
                         onClick={(e) => {
-                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          e.stopPropagation();
                           setSelectedInterval('year');
                         }}
                       >
@@ -740,10 +773,10 @@ export default function SubscriptionSettings() {
                     <div className="mt-4">
                       <button
                         onClick={handleCorporateSubscribe}
-                        disabled={!paymentMethodId || processing || selectedPlan !== 'starter'}
-                        className="w-full bg-blue-900 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-800 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200"
+                        disabled={!paymentMethodId || processing || selectedPlan !== 'business'}
+                        className="w-full h-[48px] bg-blue-900 text-white rounded-md font-medium hover:bg-blue-800 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-base sm:text-sm flex items-center justify-center"
                       >
-                        {processing && selectedPlan === 'starter' ? (
+                        {processing && selectedPlan === 'business' ? (
                           <div className="flex items-center justify-center">
                             <Spinner size="sm" className="mr-2" />
                             処理中...
@@ -761,6 +794,7 @@ export default function SubscriptionSettings() {
                   )}
                 </div>
               </motion.div>
+
               {/* エンタープライズプラン */}
               <motion.div
                 className={`border rounded-lg p-4 cursor-pointer transition-all ${
@@ -773,7 +807,7 @@ export default function SubscriptionSettings() {
                 whileTap={{ scale: 0.98 }}
               >
                 <div className="flex justify-between items-start">
-                  <div>
+                  <div className="w-full">
                     <div className="flex items-center">
                       <HiOutlineOfficeBuilding className="h-5 w-5 text-[#1E3A8A] mr-2" />
                       <h3 className="font-semibold">エンタープライズプラン</h3>
@@ -794,7 +828,7 @@ export default function SubscriptionSettings() {
                             : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
                         }`}
                         onClick={(e) => {
-                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          e.stopPropagation();
                           setSelectedInterval('month');
                         }}
                       >
@@ -808,7 +842,7 @@ export default function SubscriptionSettings() {
                             : 'bg-gray-100 text-gray-700'
                         }`}
                         onClick={(e) => {
-                          e.stopPropagation(); // 親要素のクリックイベントを防止
+                          e.stopPropagation();
                           setSelectedInterval('year');
                         }}
                       >
@@ -832,10 +866,10 @@ export default function SubscriptionSettings() {
                     <div className="mt-4">
                       <button
                         onClick={handleCorporateSubscribe}
-                        disabled={!paymentMethodId || processing || selectedPlan !== 'starter'}
-                        className="w-full bg-blue-900 text-white py-2 px-4 rounded-md font-medium hover:bg-blue-800 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200"
+                        disabled={!paymentMethodId || processing || selectedPlan !== 'enterprise'}
+                        className="w-full h-[48px] bg-blue-900 text-white rounded-md font-medium hover:bg-blue-800 hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-base sm:text-sm flex items-center justify-center"
                       >
-                        {processing && selectedPlan === 'starter' ? (
+                        {processing && selectedPlan === 'enterprise' ? (
                           <div className="flex items-center justify-center">
                             <Spinner size="sm" className="mr-2" />
                             処理中...
@@ -854,6 +888,7 @@ export default function SubscriptionSettings() {
                 </div>
               </motion.div>
             </div>
+
             {/* 追加オプションの情報 */}
             <div className="bg-gray-50 border border-gray-200 rounded-lg p-4 mb-6">
               <h3 className="font-semibold text-gray-800 mb-2">追加オプション</h3>
@@ -884,6 +919,7 @@ export default function SubscriptionSettings() {
                 </li>
               </ul>
             </div>
+
             {/* 支払い方法入力 */}
             {!isCorporateUser && (
               <>
@@ -894,7 +930,7 @@ export default function SubscriptionSettings() {
                   <button
                     onClick={handleCorporateSubscribe}
                     disabled={!paymentMethodId || processing}
-                    className="px-8 py-2 bg-[#1E3A8A] text-white font-medium rounded-md hover:bg-[#122153] hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200"
+                    className="h-[48px] px-8 bg-[#1E3A8A] text-white font-medium rounded-md hover:bg-[#122153] hover:text-white disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-base sm:text-sm flex items-center justify-center"
                   >
                     {processing ? (
                       <div className="flex items-center">
@@ -908,6 +944,7 @@ export default function SubscriptionSettings() {
                 </div>
               </>
             )}
+
             {/* 法人契約中ユーザー向けメッセージ */}
             {isCorporateUser && (
               <div className="bg-green-50 border-l-4 border-green-500 p-4">

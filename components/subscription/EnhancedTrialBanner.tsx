@@ -1,12 +1,15 @@
-// components/subscription/EnhancedTrialBanner.tsx - 修正版（アイコン表示・青系カラー対応）
+// components/subscription/EnhancedTrialBanner.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import { HiArrowRight, HiSparkles, HiClock } from 'react-icons/hi';
+
 interface EnhancedTrialBannerProps {
   trialEndDate: string | null;
 }
+
 export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBannerProps) {
   const [daysRemaining, setDaysRemaining] = useState<number>(0);
+
   useEffect(() => {
     if (trialEndDate) {
       const end = new Date(trialEndDate);
@@ -16,6 +19,7 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
       setDaysRemaining(diffDays);
     }
   }, [trialEndDate]);
+
   // プラン選択のクリックハンドラー
   const handlePlanSelection = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -29,6 +33,7 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
         const headerHeight = 80;
         const offset = 30;
         const scrollPosition = absoluteElementTop - headerHeight - offset;
+
         window.scrollTo({
           top: scrollPosition,
           behavior: 'smooth',
@@ -39,8 +44,10 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
     // subscription ページに遷移
     window.location.href = '/dashboard/subscription#subscription-plans';
   };
+
   // 残り日数が0以下またはトライアル期間でない場合は表示しない
   if (!trialEndDate || daysRemaining <= 0) return null;
+
   return (
     <div className="relative mb-10 sm:mb-12 overflow-hidden rounded-xl shadow-xl">
       {/* 🔧 修正：青系グラデーション背景に変更 */}
@@ -75,7 +82,7 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
           <div className="flex items-center justify-center sm:justify-end">
             <button
               onClick={handlePlanSelection}
-              className="bg-white text-blue-600 px-4 sm:px-6 py-2 sm:py-3 rounded-lg font-semibold hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2 text-sm sm:text-base"
+              className="h-[48px] bg-white text-blue-600 px-4 sm:px-6 rounded-lg font-semibold hover:bg-blue-50 hover:text-blue-700 transition-all duration-300 transform hover:scale-105 shadow-lg flex items-center space-x-2 text-base sm:text-sm"
             >
               <span>プランを選択</span>
               <HiArrowRight className="h-4 w-4" />
