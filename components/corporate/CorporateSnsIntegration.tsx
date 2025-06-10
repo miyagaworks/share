@@ -201,11 +201,7 @@ export function CorporateSnsIntegration({
                     {status === 'set' ? (
                       // 設定済みの場合は編集リンク
                       <Link href={navigateToSnsSettings(link.platform)}>
-                        <Button
-                          variant="corporate"
-                          size="sm"
-                          style={{ backgroundColor: corporatePrimary }}
-                        >
+                        <Button variant="corporate" style={{ backgroundColor: corporatePrimary }}>
                           設定を変更
                         </Button>
                       </Link>
@@ -213,7 +209,6 @@ export function CorporateSnsIntegration({
                       // 未設定の場合は直接追加ボタン
                       <Button
                         variant="corporate"
-                        size="sm"
                         style={{ backgroundColor: corporatePrimary }}
                         onClick={() => handleAddSns(link)}
                       >

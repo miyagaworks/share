@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import { Button } from '@/components/ui/Button';
 import { HiLink } from 'react-icons/hi';
 import { Spinner } from '@/components/ui/Spinner';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
@@ -158,12 +159,9 @@ export default function CorporateMemberLinksPage() {
         ) : error ? (
           <div className="rounded-lg border border-red-200 bg-red-50 p-6">
             <p className="text-red-700">{error}</p>
-            <button
-              onClick={() => window.location.reload()}
-              className="mt-4 px-4 py-2 bg-corporate-primary text-white rounded-md"
-            >
+            <Button variant="corporate" onClick={() => window.location.reload()} className="mt-4">
               再読み込み
-            </button>
+            </Button>
           </div>
         ) : (
           <>

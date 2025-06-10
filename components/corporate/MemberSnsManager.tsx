@@ -586,7 +586,7 @@ export function MemberSnsManager({
         <p className="text-sm text-gray-600 mb-6">
           プロフィールに表示するSNSアカウントを管理します。
         </p>
-   
+
         {/* SNS追加フォーム */}
         <AnimatePresence>
           {isAddingSns && (
@@ -642,7 +642,7 @@ export function MemberSnsManager({
                     </div>
                   )}
                 </div>
-   
+
                 <AnimatePresence>
                   {selectedPlatform && (
                     <motion.div
@@ -666,15 +666,14 @@ export function MemberSnsManager({
                           <div className="flex items-center gap-2">
                             <Button
                               variant="ghost"
-                              size="sm"
                               onClick={() => setShowHelp(!showHelp)}
-                              className="h-7 px-2 text-xs"
+                              className="px-2"
                             >
                               {showHelp ? 'ヘルプを隠す' : 'ヘルプ表示'}
                             </Button>
                           </div>
                         </div>
-   
+
                         <div className="relative">
                           {selectedPlatform === 'line' ? (
                             <Input
@@ -705,7 +704,7 @@ export function MemberSnsManager({
                               disabled={isProcessing}
                             />
                           )}
-   
+
                           <AnimatePresence>
                             {showHelp && (
                               <motion.div
@@ -727,7 +726,7 @@ export function MemberSnsManager({
                           </AnimatePresence>
                         </div>
                       </div>
-   
+
                       <motion.div
                         initial={{ opacity: 0, y: -10 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -741,9 +740,9 @@ export function MemberSnsManager({
                             のアカウント情報を正しく取得するには
                             <Button
                               type="button"
-                              variant="default"
+                              variant="corporate"
                               onClick={() => setShowGuide(true)}
-                              className="mx-1 bg-blue-600 hover:bg-blue-700 text-white px-2 py-0.5 rounded text-xs inline-flex items-center h-6"
+                              className="mx-1 px-2"
                             >
                               詳しいガイド
                             </Button>
@@ -751,7 +750,7 @@ export function MemberSnsManager({
                           </p>
                         </div>
                       </motion.div>
-   
+
                       {/* URL表示 */}
                       <div>
                         <label className="text-sm font-medium leading-none block mb-2">URL</label>
@@ -774,7 +773,7 @@ export function MemberSnsManager({
                     </motion.div>
                   )}
                 </AnimatePresence>
-   
+
                 <div className="flex justify-end space-x-2 pt-2">
                   <Button variant="outline" onClick={resetSnsForm} disabled={isProcessing}>
                     キャンセル
@@ -791,7 +790,7 @@ export function MemberSnsManager({
             </motion.div>
           )}
         </AnimatePresence>
-   
+
         {/* SNSリンクリスト */}
         {snsItems.length > 0 ? (
           <DragDropContext onDragEnd={handleDragEnd}>
@@ -825,7 +824,7 @@ export function MemberSnsManager({
                                     link.platform}
                                 </h3>
                               </div>
-   
+
                               {selectedPlatform === 'line' ? (
                                 <Input
                                   value={lineInputValue}
@@ -867,7 +866,7 @@ export function MemberSnsManager({
                                   />
                                 </>
                               )}
-   
+
                               <div className="flex justify-end space-x-2">
                                 <Button
                                   variant="outline"
@@ -919,21 +918,17 @@ export function MemberSnsManager({
                               <div className="flex space-x-2 shrink-0">
                                 <Button
                                   variant="ghost"
-                                  size="sm"
                                   onClick={() => startEditingSns(link)}
                                   disabled={isProcessing}
-                                  className="w-8 h-8 p-0"
                                 >
                                   <HiPencil className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="destructive"
-                                  size="sm"
                                   onClick={() => handleDeleteSns(link.id, link.platform)}
                                   disabled={
                                     isProcessing || corporatePlatforms.includes(link.platform)
                                   }
-                                  className="w-8 h-8 p-0"
                                 >
                                   <HiTrash className="h-4 w-4" />
                                 </Button>
@@ -955,7 +950,7 @@ export function MemberSnsManager({
           </div>
         )}
       </div>
-   
+
       {/* カスタムリンク管理セクション */}
       <div className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm">
         <div className="flex items-center justify-between mb-4">
@@ -975,7 +970,7 @@ export function MemberSnsManager({
         <p className="text-sm text-gray-600 mb-6">
           SNS以外のカスタムリンクを管理します（ブログ、ポートフォリオなど）。
         </p>
-   
+
         {/* カスタムリンク追加フォーム */}
         <AnimatePresence>
           {isAddingCustom && (
@@ -1025,7 +1020,7 @@ export function MemberSnsManager({
             </motion.div>
           )}
         </AnimatePresence>
-   
+
         {/* カスタムリンクリスト */}
         <div className="space-y-4">
           {customItems.length === 0 ? (
@@ -1051,20 +1046,28 @@ export function MemberSnsManager({
                               // 編集モード
                               <div className="space-y-3">
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">表示名</label>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    表示名
+                                  </label>
                                   <Input
                                     placeholder="ブログ、ポートフォリオなど"
                                     value={customForm.name}
-                                    onChange={(e) => setCustomForm({ ...customForm, name: e.target.value })}
+                                    onChange={(e) =>
+                                      setCustomForm({ ...customForm, name: e.target.value })
+                                    }
                                     disabled={isProcessing}
                                   />
                                 </div>
                                 <div>
-                                  <label className="block text-sm font-medium text-gray-700 mb-1">URL</label>
+                                  <label className="block text-sm font-medium text-gray-700 mb-1">
+                                    URL
+                                  </label>
                                   <Input
                                     placeholder="https://..."
                                     value={customForm.url}
-                                    onChange={(e) => setCustomForm({ ...customForm, url: e.target.value })}
+                                    onChange={(e) =>
+                                      setCustomForm({ ...customForm, url: e.target.value })
+                                    }
                                     disabled={isProcessing}
                                   />
                                 </div>
@@ -1091,7 +1094,10 @@ export function MemberSnsManager({
                             ) : (
                               // 表示モード
                               <div className="flex items-start">
-                                <div className="cursor-move mr-3 mt-2" {...dragProvided.dragHandleProps}>
+                                <div
+                                  className="cursor-move mr-3 mt-2"
+                                  {...dragProvided.dragHandleProps}
+                                >
                                   <HiDotsVertical className="w-5 h-5 text-gray-400" />
                                 </div>
                                 <div className="w-10 h-10 rounded-md flex items-center justify-center mr-4 flex-shrink-0 bg-blue-50">
@@ -1111,22 +1117,19 @@ export function MemberSnsManager({
                                   <div className="flex items-center mt-3 space-x-2">
                                     <Button
                                       variant="outline"
-                                      size="sm"
                                       onClick={() => startEditingCustom(link)}
                                       disabled={isProcessing}
                                     >
                                       <HiPencil className="mr-1 h-3 w-3" />
-                                      編集
+                                      編 集
                                     </Button>
                                     <Button
-                                      variant="outline"
-                                      size="sm"
-                                      className="text-red-600 border-red-300 hover:bg-red-600 hover:text-white"
+                                      variant="destructive"
                                       onClick={() => handleDeleteCustom(link.id)}
                                       disabled={isProcessing}
                                     >
                                       <HiTrash className="mr-1 h-3 w-3" />
-                                      削除
+                                      削 除
                                     </Button>
                                   </div>
                                 </div>
@@ -1144,7 +1147,7 @@ export function MemberSnsManager({
           )}
         </div>
       </div>
-   
+
       {/* SNSガイドモーダル */}
       {showGuide && selectedPlatform && (
         <SnsGuideModalWithDescription
@@ -1154,5 +1157,5 @@ export function MemberSnsManager({
         />
       )}
     </div>
-   );
+  );
 }
