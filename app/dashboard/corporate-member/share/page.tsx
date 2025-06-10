@@ -215,279 +215,272 @@ export default function CorporateMemberSharePage() {
 
   return (
     <CorporateMemberGuard>
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <div className="space-y-6">
-          <div className="flex items-center mb-6">
-            <HiShare className="h-8 w-8 text-gray-700 mr-3" />
-            <div>
-              <h1 className="text-3xl font-bold tracking-tight">共有設定</h1>
-              <p className="text-muted-foreground">プロフィールの公開設定とQRコード生成</p>
-            </div>
+      <div className="space-y-6">
+        <div className="flex items-center mb-6">
+          <HiShare className="h-8 w-8 text-gray-700 mr-3" />
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight">共有設定</h1>
+            <p className="text-muted-foreground">プロフィールの公開設定とQRコード生成</p>
           </div>
-
-          {isLoading ? (
-            <div className="flex flex-col items-center justify-center min-h-[400px]">
-              <Spinner size="lg" />
-              <p className="mt-4 text-sm text-gray-500">共有設定を読み込んでいます...</p>
-            </div>
-          ) : error ? (
-            <div className="rounded-lg border border-red-200 bg-red-50 p-6">
-              <p className="text-red-700">{error}</p>
-              <button
-                onClick={() => window.location.reload()}
-                className="mt-4 px-4 py-2 bg-[#1E3A8A] hover:bg-[#122153] text-white rounded-md transition-colors h-[48px] text-base sm:text-sm"
-              >
-                再読み込み
-              </button>
-            </div>
-          ) : (
-            <>
-              {/* レスポンシブグリッドを修正 - iPhone SEでも正常に表示 */}
-              <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
-                {/* 左: 共有設定フォーム */}
-                <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-4 sm:p-6 shadow-sm">
-                  <h2 className="text-lg font-semibold mb-4 flex items-center">
-                    <HiLink className="mr-2 h-5 w-5 text-gray-600" />
-                    共有設定
-                  </h2>
-                  <p className="text-sm text-gray-500 mb-6">
-                    プロフィールの公開範囲とURLを設定します。
-                  </p>
-                  {shareSettings && tenantData && (
-                    <MemberShareSettings
-                      initialValues={shareSettings}
-                      baseUrl={getBaseUrl()}
-                      primaryColor={tenantData.primaryColor || '#1E3A8A'}
-                      isLoading={isLoading}
-                      onSave={handleSaveShareSettings}
-                    />
-                  )}
-
-                  {/* URLコピーボタンを追加 - 保存ボタンの下部 */}
-                  {hasProfile && shareSettings?.slug && (
-                    <div className="mt-8 border-t border-gray-200 pt-6">
-                      <p className="text-sm text-gray-500 mb-4">
-                        以下のURLであなたのプロフィールを共有できます
-                      </p>
-                      <div className="bg-gray-50 p-3 rounded-md mb-4 break-all">
-                        <p className="font-mono text-sm">{getProfileUrl()}</p>
-                      </div>
-                      <Button
-                        variant="corporate"
-                        onClick={copyUrlToClipboard}
-                        className="w-full flex items-center justify-center gap-2 h-[48px] text-base sm:text-sm"
-                      >
-                        <HiLink className="h-4 w-4" />
-                        URLをコピー
-                      </Button>
-                    </div>
-                  )}
-                </div>
-
-                {/* 右: QRコードジェネレーター */}
-                <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-4 sm:p-6 shadow-sm">
-                  <h2 className="text-lg font-semibold mb-4 flex items-center">
-                    <HiQrcode className="mr-2 h-5 w-5 text-gray-600" />
-                    公開QRコード生成
-                  </h2>
-                  <p className="text-sm text-gray-500 mb-6">
-                    プロフィールのQRコードを生成して共有できます。
-                  </p>
-
-                  {hasProfile && shareSettings?.slug ? (
-                    <>
-                      {/* QRコードカスタムURL設定フォーム（1つのみ） */}
-                      <div className="mb-6">
-                        <label className="block text-sm font-medium text-gray-700 mb-2">
-                          QRコードページのURL
-                        </label>
-                        <div className="flex flex-col sm:flex-row">
-                          <span className="inline-flex items-center px-3 py-2 h-[48px] rounded-t-md sm:rounded-l-md sm:rounded-tr-none border border-b-0 sm:border-b sm:border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm text-center sm:text-left">
-                            {getBaseUrl()}/qr/
-                          </span>
-                          <input
-                            type="text"
-                            value={qrCodeSlug}
-                            onChange={handleQrCodeSlugChange}
-                            className="flex-1 text-sm p-2 h-[48px] border border-gray-300 rounded-b-md sm:rounded-r-md sm:rounded-bl-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
-                            placeholder="your-custom-url"
-                            minLength={3}
-                            maxLength={20}
-                          />
-                        </div>
-                        {isCheckingQrSlug ? (
-                          <p className="text-xs text-gray-500 mt-1">チェック中...</p>
-                        ) : qrCodeSlug.length >= 3 ? (
-                          isQrSlugAvailable ? (
-                            <p className="text-xs text-green-600 mt-1">✓ このURLは利用可能です</p>
-                          ) : (
-                            <p className="text-xs text-red-600 mt-1">
-                              ✗ このURLは既に他のユーザーに使用されています
-                            </p>
-                          )
-                        ) : (
-                          <p className="text-xs text-gray-500 mt-1">3文字以上入力してください</p>
-                        )}
-                      </div>
-
-                      {/* QRコードデザイナーボタン */}
-                      <div className="mb-6">
-                        <Link
-                          href={`/dashboard/corporate-member/share/qrcode?slug=${shareSettings?.slug || ''}`}
-                          className="inline-flex items-center justify-center w-full bg-[#1E3A8A] hover:bg-[#122153] hover:shadow-lg text-white px-4 py-3 h-[48px] rounded-md transition-all duration-200 transform hover:scale-105 qr-designer-button text-base sm:text-sm"
-                          aria-label="QRコードデザイナーを開く"
-                        >
-                          <HiQrcode className="mr-2 h-5 w-5 text-white" />
-                          <span className="text-white">QRコードデザイナーを使用する</span>
-                          <HiExternalLink className="ml-2 h-4 w-4 text-white" />
-                        </Link>
-                      </div>
-
-                      {/* QRコードページ管理セクション */}
-                      {selectedQrCode ? (
-                        <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
-                          <h3 className="text-sm font-medium text-green-800 mb-2">
-                            QRコードページが作成されています
-                          </h3>
-                          <p className="text-sm text-green-600 mb-3">
-                            作成日: {new Date(selectedQrCode.createdAt).toLocaleDateString('ja-JP')}
-                          </p>
-                          <div className="bg-white p-3 rounded-md mb-3 break-all border border-green-200">
-                            <p className="font-mono text-sm">{getQrCodePageUrl()}</p>
-                          </div>
-                          <div className="flex flex-col sm:flex-row gap-2">
-                            <Button
-                              onClick={copyQrCodePageUrl}
-                              variant="corporate"
-                              size="sm"
-                              className="flex-1 flex items-center justify-center gap-2 h-[48px] text-base sm:text-sm"
-                            >
-                              <HiClipboardCopy className="h-4 w-4" />
-                              コピー
-                            </Button>
-                            <Button
-                              onClick={openQrCodePage}
-                              variant="corporate"
-                              size="sm"
-                              className="flex-1 flex items-center justify-center gap-2 h-[48px] text-base sm:text-sm"
-                            >
-                              <HiExternalLink className="h-4 w-4" />
-                              開く
-                            </Button>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-                          <h3 className="text-sm font-medium text-yellow-800 mb-2">
-                            QRコードページを作成してください
-                          </h3>
-                          <p className="text-sm text-yellow-600 text-justify">
-                            上記の「QRコードデザイナーを使用する」ボタンからQRコードページを作成すると、ここでQRコードページのURLを管理できます。
-                          </p>
-                        </div>
-                      )}
-
-                      {/* 区切り線 */}
-                      <div className="border-t border-gray-200 my-6"></div>
-
-                      {/* QRコードのみダウンロードのタイトル */}
-                      <h2 className="text-lg font-semibold mb-4 flex items-center">
-                        <HiQrcode className="mr-2 h-5 w-5 text-gray-600" />
-                        QRコードのみダウンロード
-                      </h2>
-
-                      {/* QrCodeGenerator - URLスラグ入力部分を非表示 */}
-                      <QrCodeGenerator
-                        profileUrl={getProfileUrl()}
-                        primaryColor={tenantData?.primaryColor || '#1E3A8A'}
-                        textColor={tenantData?.textColor || '#FFFFFF'}
-                        qrCodeSlug={qrCodeSlug}
-                        onQrCodeSlugChange={(slug) => {
-                          setQrCodeSlug(slug);
-                          checkQrSlugAvailability(slug);
-                        }}
-                        hideSlugInput={true}
-                        hideGenerateButton={true}
-                      />
-                    </>
-                  ) : (
-                    <div className="bg-yellow-50 border border-yellow-100 rounded-md p-6 text-center">
-                      <p className="text-yellow-700 mb-4 text-justify">
-                        プロフィールが作成されていないか、URLが設定されていません。
-                        まず、「共有設定」セクションでURLを設定してください。
-                      </p>
-                      <Button
-                        variant="corporate"
-                        className="h-[48px] text-base sm:text-sm"
-                        onClick={() => {
-                          const element = document.querySelector('[name="slug"]');
-                          if (element instanceof HTMLElement) {
-                            element.focus();
-                          }
-                        }}
-                      >
-                        URLを設定する
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {/* 共有のヒント */}
-              <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-4 sm:p-6 shadow-sm">
-                <h2 className="text-lg font-semibold mb-4 flex items-center text-[#1E3A8A]">
-                  <HiLightBulb className="mr-2 h-5 w-5 text-[#1E3A8A]" />
-                  共有のヒント
-                </h2>
-                <p className="text-sm text-gray-600 mb-4">
-                  効果的なプロフィール共有のためのヒント:
-                </p>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="border rounded-md p-4" style={{ borderColor: '#1E3A8A30' }}>
-                    <h3 className="font-medium mb-2 flex items-center">
-                      <HiLink className="mr-2 h-4 w-4 text-[#1E3A8A]" />
-                      <span className="text-[#1E3A8A]">カスタムURLの活用</span>
-                    </h3>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• 覚えやすく、シンプルなURLを設定する</li>
-                      <li>• 名前やニックネームを使用すると識別しやすい</li>
-                      <li>• ビジネスカードやメール署名に追加する</li>
-                    </ul>
-                  </div>
-                  <div className="border rounded-md p-4" style={{ borderColor: '#1E3A8A30' }}>
-                    <h3 className="font-medium mb-2 flex items-center">
-                      <HiQrcode className="mr-2 h-4 w-4 text-[#1E3A8A]" />
-                      <span className="text-[#1E3A8A]">QRコードの活用方法</span>
-                    </h3>
-                    <ul className="text-sm text-gray-600 space-y-1">
-                      <li>• 名刺やパンフレットに印刷する</li>
-                      <li>• プレゼン資料の最後のスライドに表示する</li>
-                      <li>• イベントや展示会のブースに掲示する</li>
-                    </ul>
-                  </div>
-                </div>
-                <div
-                  className="mt-6 rounded-md p-4"
-                  style={{
-                    backgroundColor: '#1E3A8A10',
-                    borderColor: '#1E3A8A30',
-                    borderWidth: '1px',
-                  }}
-                >
-                  <p className="text-sm flex items-start text-justify text-[#1E3A8A]">
-                    <HiInformationCircle className="h-5 w-5 flex-shrink-0 mr-2 mt-0.5 text-[#1E3A8A]" />
-                    <span className="text-justify">
-                      <strong>プロのヒント:</strong>{' '}
-                      法人メンバーとしてのアイデンティティを示すため、
-                      プロフィールには企業のロゴと企業カラーが自動的に適用されます。これにより、
-                      企業のブランドイメージを維持しながら、個人の専門性をアピールできます。
-                    </span>
-                  </p>
-                </div>
-              </div>
-            </>
-          )}
         </div>
+
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center min-h-[400px]">
+            <Spinner size="lg" />
+            <p className="mt-4 text-sm text-gray-500">共有設定を読み込んでいます...</p>
+          </div>
+        ) : error ? (
+          <div className="rounded-lg border border-red-200 bg-red-50 p-6">
+            <p className="text-red-700">{error}</p>
+            <button
+              onClick={() => window.location.reload()}
+              className="mt-4 px-4 py-2 bg-[#1E3A8A] hover:bg-[#122153] text-white rounded-md transition-colors h-[48px] text-base sm:text-sm"
+            >
+              再読み込み
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* レスポンシブグリッドを修正 - iPhone SEでも正常に表示 */}
+            <div className="space-y-6 lg:grid lg:grid-cols-2 lg:gap-6 lg:space-y-0">
+              {/* 左: 共有設定フォーム */}
+              <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-4 sm:p-6 shadow-sm">
+                <h2 className="text-lg font-semibold mb-4 flex items-center">
+                  <HiLink className="mr-2 h-5 w-5 text-gray-600" />
+                  共有設定
+                </h2>
+                <p className="text-sm text-gray-500 mb-6">
+                  プロフィールの公開範囲とURLを設定します。
+                </p>
+                {shareSettings && tenantData && (
+                  <MemberShareSettings
+                    initialValues={shareSettings}
+                    baseUrl={getBaseUrl()}
+                    primaryColor={tenantData.primaryColor || '#1E3A8A'}
+                    isLoading={isLoading}
+                    onSave={handleSaveShareSettings}
+                  />
+                )}
+
+                {/* URLコピーボタンを追加 - 保存ボタンの下部 */}
+                {hasProfile && shareSettings?.slug && (
+                  <div className="mt-8 border-t border-gray-200 pt-6">
+                    <p className="text-sm text-gray-500 mb-4">
+                      以下のURLであなたのプロフィールを共有できます
+                    </p>
+                    <div className="bg-gray-50 p-3 rounded-md mb-4 break-all">
+                      <p className="font-mono text-sm">{getProfileUrl()}</p>
+                    </div>
+                    <Button
+                      variant="corporate"
+                      onClick={copyUrlToClipboard}
+                      className="w-full flex items-center justify-center gap-2 h-[48px] text-base sm:text-sm"
+                    >
+                      <HiLink className="h-4 w-4" />
+                      URLをコピー
+                    </Button>
+                  </div>
+                )}
+              </div>
+
+              {/* 右: QRコードジェネレーター */}
+              <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-4 sm:p-6 shadow-sm">
+                <h2 className="text-lg font-semibold mb-4 flex items-center">
+                  <HiQrcode className="mr-2 h-5 w-5 text-gray-600" />
+                  公開QRコード生成
+                </h2>
+                <p className="text-sm text-gray-500 mb-6">
+                  プロフィールのQRコードを生成して共有できます。
+                </p>
+
+                {hasProfile && shareSettings?.slug ? (
+                  <>
+                    {/* QRコードカスタムURL設定フォーム（1つのみ） */}
+                    <div className="mb-6">
+                      <label className="block text-sm font-medium text-gray-700 mb-2">
+                        QRコードページのURL
+                      </label>
+                      <div className="flex flex-col sm:flex-row">
+                        <span className="inline-flex items-center px-3 py-2 h-[48px] rounded-t-md sm:rounded-l-md sm:rounded-tr-none border border-b-0 sm:border-b sm:border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm text-center sm:text-left">
+                          {getBaseUrl()}/qr/
+                        </span>
+                        <input
+                          type="text"
+                          value={qrCodeSlug}
+                          onChange={handleQrCodeSlugChange}
+                          className="flex-1 text-sm p-2 h-[48px] border border-gray-300 rounded-b-md sm:rounded-r-md sm:rounded-bl-none focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+                          placeholder="your-custom-url"
+                          minLength={3}
+                          maxLength={20}
+                        />
+                      </div>
+                      {isCheckingQrSlug ? (
+                        <p className="text-xs text-gray-500 mt-1">チェック中...</p>
+                      ) : qrCodeSlug.length >= 3 ? (
+                        isQrSlugAvailable ? (
+                          <p className="text-xs text-green-600 mt-1">✓ このURLは利用可能です</p>
+                        ) : (
+                          <p className="text-xs text-red-600 mt-1">
+                            ✗ このURLは既に他のユーザーに使用されています
+                          </p>
+                        )
+                      ) : (
+                        <p className="text-xs text-gray-500 mt-1">3文字以上入力してください</p>
+                      )}
+                    </div>
+
+                    {/* QRコードデザイナーボタン */}
+                    <div className="mb-6">
+                      <Link
+                        href={`/dashboard/corporate-member/share/qrcode?slug=${shareSettings?.slug || ''}`}
+                        className="inline-flex items-center justify-center w-full bg-[#1E3A8A] hover:bg-[#122153] hover:shadow-lg text-white px-4 py-3 rounded-md transition-all duration-200 transform hover:scale-105 qr-designer-button text-base sm:text-sm text-justify"
+                        aria-label="QRコードデザイナーを開く"
+                      >
+                        <HiQrcode className="mr-2 h-5 w-5 text-white" />
+                        <span className="text-white">QRコードデザイナーを使用する</span>
+                        <HiExternalLink className="ml-2 h-4 w-4 text-white" />
+                      </Link>
+                    </div>
+
+                    {/* QRコードページ管理セクション */}
+                    {selectedQrCode ? (
+                      <div className="mb-6 p-4 bg-green-50 border border-green-200 rounded-md">
+                        <h3 className="text-sm font-medium text-green-800 mb-2">
+                          QRコードページが作成されています
+                        </h3>
+                        <p className="text-sm text-green-600 mb-3">
+                          作成日: {new Date(selectedQrCode.createdAt).toLocaleDateString('ja-JP')}
+                        </p>
+                        <div className="bg-white p-3 rounded-md mb-3 break-all border border-green-200">
+                          <p className="font-mono text-sm">{getQrCodePageUrl()}</p>
+                        </div>
+                        <div className="flex flex-col sm:flex-row gap-2">
+                          <Button
+                            onClick={copyQrCodePageUrl}
+                            variant="corporate"
+                            className="flex-1 flex items-center justify-center gap-2 h-[48px] text-base sm:text-sm"
+                          >
+                            <HiClipboardCopy className="h-4 w-4" />
+                            コピー
+                          </Button>
+                          <Button
+                            onClick={openQrCodePage}
+                            variant="corporate"
+                            className="flex-1 flex items-center justify-center gap-2 h-[48px] text-base sm:text-sm"
+                          >
+                            <HiExternalLink className="h-4 w-4" />
+                            開く
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="mb-6 p-4 bg-yellow-50 border border-yellow-200 rounded-md">
+                        <h3 className="text-sm font-medium text-yellow-800 mb-2">
+                          QRコードページを作成してください
+                        </h3>
+                        <p className="text-sm text-yellow-600 text-justify">
+                          上記の「QRコードデザイナーを使用する」ボタンからQRコードページを作成すると、ここでQRコードページのURLを管理できます。
+                        </p>
+                      </div>
+                    )}
+
+                    {/* 区切り線 */}
+                    <div className="border-t border-gray-200 my-6"></div>
+
+                    {/* QRコードのみダウンロードのタイトル */}
+                    <h2 className="text-lg font-semibold mb-4 flex items-center">
+                      <HiQrcode className="mr-2 h-5 w-5 text-gray-600" />
+                      QRコードのみダウンロード
+                    </h2>
+
+                    {/* QrCodeGenerator - URLスラグ入力部分を非表示 */}
+                    <QrCodeGenerator
+                      profileUrl={getProfileUrl()}
+                      primaryColor={tenantData?.primaryColor || '#1E3A8A'}
+                      textColor={tenantData?.textColor || '#FFFFFF'}
+                      qrCodeSlug={qrCodeSlug}
+                      onQrCodeSlugChange={(slug) => {
+                        setQrCodeSlug(slug);
+                        checkQrSlugAvailability(slug);
+                      }}
+                      hideSlugInput={true}
+                      hideGenerateButton={true}
+                    />
+                  </>
+                ) : (
+                  <div className="bg-yellow-50 border border-yellow-100 rounded-md p-6 text-center">
+                    <p className="text-yellow-700 mb-4 text-justify">
+                      プロフィールが作成されていないか、URLが設定されていません。
+                      まず、「共有設定」セクションでURLを設定してください。
+                    </p>
+                    <Button
+                      variant="corporate"
+                      className="h-[48px] text-base sm:text-sm"
+                      onClick={() => {
+                        const element = document.querySelector('[name="slug"]');
+                        if (element instanceof HTMLElement) {
+                          element.focus();
+                        }
+                      }}
+                    >
+                      URLを設定する
+                    </Button>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* 共有のヒント */}
+            <div className="rounded-lg border border-[#1E3A8A]/40 bg-white p-4 sm:p-6 shadow-sm">
+              <h2 className="text-lg font-semibold mb-4 flex items-center text-[#1E3A8A]">
+                <HiLightBulb className="mr-2 h-5 w-5 text-[#1E3A8A]" />
+                共有のヒント
+              </h2>
+              <p className="text-sm text-gray-600 mb-4">効果的なプロフィール共有のためのヒント:</p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="border rounded-md p-4" style={{ borderColor: '#1E3A8A30' }}>
+                  <h3 className="font-medium mb-2 flex items-center">
+                    <HiLink className="mr-2 h-4 w-4 text-[#1E3A8A]" />
+                    <span className="text-[#1E3A8A]">カスタムURLの活用</span>
+                  </h3>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• 覚えやすく、シンプルなURLを設定する</li>
+                    <li>• 名前やニックネームを使用すると識別しやすい</li>
+                    <li>• ビジネスカードやメール署名に追加する</li>
+                  </ul>
+                </div>
+                <div className="border rounded-md p-4" style={{ borderColor: '#1E3A8A30' }}>
+                  <h3 className="font-medium mb-2 flex items-center">
+                    <HiQrcode className="mr-2 h-4 w-4 text-[#1E3A8A]" />
+                    <span className="text-[#1E3A8A]">QRコードの活用方法</span>
+                  </h3>
+                  <ul className="text-sm text-gray-600 space-y-1">
+                    <li>• 名刺やパンフレットに印刷する</li>
+                    <li>• プレゼン資料の最後のスライドに表示する</li>
+                    <li>• イベントや展示会のブースに掲示する</li>
+                  </ul>
+                </div>
+              </div>
+              <div
+                className="mt-6 rounded-md p-4"
+                style={{
+                  backgroundColor: '#1E3A8A10',
+                  borderColor: '#1E3A8A30',
+                  borderWidth: '1px',
+                }}
+              >
+                <p className="text-sm flex items-start text-justify text-[#1E3A8A]">
+                  <HiInformationCircle className="h-5 w-5 flex-shrink-0 mr-2 mt-0.5 text-[#1E3A8A]" />
+                  <span className="text-justify">
+                    <strong>プロのヒント:</strong> 法人メンバーとしてのアイデンティティを示すため、
+                    プロフィールには企業のロゴと企業カラーが自動的に適用されます。これにより、
+                    企業のブランドイメージを維持しながら、個人の専門性をアピールできます。
+                  </span>
+                </p>
+              </div>
+            </div>
+          </>
+        )}
       </div>
     </CorporateMemberGuard>
   );
