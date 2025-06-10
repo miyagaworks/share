@@ -574,10 +574,13 @@ export function MemberSnsManager({
             </p>
           </div>
           <Button
-            variant="corporate"
             onClick={() => setIsAddingSns(true)}
             disabled={isAddingSns || availablePlatforms.length === 0 || isProcessing}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto text-white hover:opacity-90"
+            style={{
+              backgroundColor: primaryColor,
+              borderColor: primaryColor,
+            }}
           >
             <HiPlus className="mr-1 h-4 w-4" />
             追加
@@ -735,9 +738,12 @@ export function MemberSnsManager({
                             のアカウント情報を正しく取得するには
                             <Button
                               type="button"
-                              variant="corporate"
                               onClick={() => setShowGuide(true)}
-                              className="mx-1 px-2 text-xs"
+                              className="mx-1 px-2 text-xs text-white hover:opacity-90"
+                              style={{
+                                backgroundColor: primaryColor,
+                                borderColor: primaryColor,
+                              }}
                             >
                               詳しいガイド
                             </Button>
@@ -779,10 +785,13 @@ export function MemberSnsManager({
                     キャンセル
                   </Button>
                   <Button
-                    variant="corporate"
                     onClick={handleAddSns}
                     disabled={!selectedPlatform || !urlValid || isProcessing}
-                    className="w-full sm:w-auto order-1 sm:order-2"
+                    className="w-full sm:w-auto order-1 sm:order-2 text-white hover:opacity-90"
+                    style={{
+                      backgroundColor: primaryColor,
+                      borderColor: primaryColor,
+                    }}
                   >
                     {isProcessing ? '追加中...' : '追加'}
                   </Button>
@@ -881,10 +890,13 @@ export function MemberSnsManager({
                                   キャンセル
                                 </Button>
                                 <Button
-                                  variant="corporate"
                                   onClick={() => handleUpdateSns(link.id)}
                                   disabled={isProcessing}
-                                  className="w-full sm:w-auto order-1 sm:order-2"
+                                  className="w-full sm:w-auto order-1 sm:order-2 text-white hover:opacity-90"
+                                  style={{
+                                    backgroundColor: primaryColor,
+                                    borderColor: primaryColor,
+                                  }}
                                 >
                                   更新
                                 </Button>
@@ -978,10 +990,13 @@ export function MemberSnsManager({
             </p>
           </div>
           <Button
-            variant="corporate"
             onClick={() => setIsAddingCustom(true)}
             disabled={isAddingCustom || isProcessing}
-            className="w-full sm:w-auto"
+            className="w-full sm:w-auto text-white hover:opacity-90"
+            style={{
+              backgroundColor: primaryColor,
+              borderColor: primaryColor,
+            }}
           >
             <HiPlus className="mr-1 h-4 w-4" />
             追加
@@ -1031,10 +1046,13 @@ export function MemberSnsManager({
                     キャンセル
                   </Button>
                   <Button
-                    variant="corporate"
                     onClick={handleAddCustom}
                     disabled={isProcessing}
-                    className="w-full sm:w-auto order-1 sm:order-2"
+                    className="w-full sm:w-auto order-1 sm:order-2 text-white hover:opacity-90"
+                    style={{
+                      backgroundColor: primaryColor,
+                      borderColor: primaryColor,
+                    }}
                   >
                     追加
                   </Button>
@@ -1107,10 +1125,13 @@ export function MemberSnsManager({
                                     キャンセル
                                   </Button>
                                   <Button
-                                    variant="corporate"
                                     onClick={() => handleUpdateCustom(link.id)}
                                     disabled={isProcessing}
-                                    className="w-full sm:w-auto order-1 sm:order-2"
+                                    className="w-full sm:w-auto order-1 sm:order-2 text-white hover:opacity-90"
+                                    style={{
+                                      backgroundColor: primaryColor,
+                                      borderColor: primaryColor,
+                                    }}
                                   >
                                     更新
                                   </Button>
