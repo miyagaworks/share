@@ -242,7 +242,7 @@ export default function CorporateMemberPage() {
           </div>
           {isAdmin && (
             <Link href="/dashboard/corporate">
-              <Button variant="corporateOutline" className="w-full" hoverScale="subtle">
+              <Button variant="corporateOutline" className="w-full">
                 <HiUserGroup className="mr-2 h-4 w-4" />
                 法人管理ダッシュボードへ
               </Button>
@@ -299,13 +299,11 @@ export default function CorporateMemberPage() {
               </div>
             </div>
             <Link href="/dashboard/corporate-member/profile">
-              <Button
-                variant="corporate"
-                onClick={() => router.push('/dashboard/corporate-member/profile')}
-              >
-                <HiUser className="mr-2 h-4 w-4" />
-                編集
-              </Button>
+              <Link href="/dashboard/corporate-member/profile">
+                <Button variant="corporate">
+                  <HiUser className="mr-2 h-4 w-4" />編 集
+                </Button>
+              </Link>
             </Link>
           </div>
         </motion.div>
@@ -334,13 +332,11 @@ export default function CorporateMemberPage() {
               <span className="ml-3 text-gray-600">/ 12 SNS設定済み</span>
             </div>
             <Link href="/dashboard/corporate-member/links">
-              <Button
-                variant="corporate"
-                onClick={() => router.push('/dashboard/corporate-member/links')}
-              >
-                <HiLink className="mr-2 h-4 w-4" />
-                管理
-              </Button>
+              <Link href="/dashboard/corporate-member/links">
+                <Button variant="corporate">
+                  <HiLink className="mr-2 h-4 w-4" />管 理
+                </Button>
+              </Link>
             </Link>
           </div>
         </motion.div>
@@ -366,10 +362,7 @@ export default function CorporateMemberPage() {
                 </div>
                 <div className="flex flex-wrap gap-3">
                   <Link href={profileUrl} target="_blank">
-                    <Button
-                      variant="corporate"
-                      className="w-full hover:bg-[#122153] transition-colors duration-200"
-                    >
+                    <Button variant="corporate" className="w-full">
                       <svg
                         className="mr-2 h-4 w-4"
                         fill="none"
@@ -393,7 +386,7 @@ export default function CorporateMemberPage() {
                     </Button>
                   </Link>
                   <Link href="/dashboard/corporate-member/share">
-                    <Button variant="corporateOutline" hoverScale="subtle">
+                    <Button variant="corporateOutline">
                       <HiShare className="mr-2 h-4 w-4" />
                       共有設定
                     </Button>
@@ -457,13 +450,12 @@ export default function CorporateMemberPage() {
               </div>
               <div className="flex flex-col space-y-2">
                 <Link href={`/qr/${userData.profile?.slug}`} target="_blank">
-                  <Button variant="corporate" className="w-full" hoverScale="subtle">
-                    <HiEye className="mr-2 h-4 w-4" />
-                    表示
+                  <Button variant="corporate" className="w-full">
+                    <HiEye className="mr-2 h-4 w-4" />表 示
                   </Button>
                 </Link>
                 <Link href="/qrcode">
-                  <Button variant="corporateOutline" className="w-full" hoverScale="subtle">
+                  <Button variant="corporateOutline" className="w-full">
                     <HiColorSwatch className="mr-2 h-4 w-4" />
                     デザイン変更
                   </Button>
@@ -474,7 +466,6 @@ export default function CorporateMemberPage() {
                     router.push('/qrcode?showSaveInstructions=true');
                   }}
                   className="w-full"
-                  hoverScale="subtle"
                 >
                   <HiDeviceMobile className="mr-2 h-4 w-4" />
                   スマホに保存する方法
@@ -513,33 +504,19 @@ export default function CorporateMemberPage() {
         <div className="p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
             <Link href="/dashboard/corporate-member/design">
-              <Button
-                variant="corporate"
-                onClick={() => router.push('/dashboard/corporate-member/design')}
-                className="w-full"
-              >
+              <Button variant="corporate" className="w-full">
                 <HiColorSwatch className="mr-2 h-4 w-4" />
                 デザインをカスタマイズする
               </Button>
             </Link>
             <Link href="/dashboard/corporate-member/links">
-              <Button
-                variant="corporateOutline"
-                onClick={() => router.push('/dashboard/corporate-member/links')}
-                className="w-full"
-                hoverScale="subtle"
-              >
+              <Button variant="corporateOutline" className="w-full">
                 <HiLink className="mr-2 h-4 w-4" />
                 SNSを追加する
               </Button>
             </Link>
             <Link href="/dashboard/corporate-member/share">
-              <Button
-                variant="corporateOutline"
-                onClick={() => router.push('/dashboard/corporate-member/share')}
-                className="w-full sm:col-span-2 lg:col-span-1"
-                hoverScale="subtle"
-              >
+              <Button variant="corporateOutline" className="w-full sm:col-span-2 lg:col-span-1">
                 <HiQrcode className="mr-2 h-4 w-4" />
                 QRコードを生成する
               </Button>
