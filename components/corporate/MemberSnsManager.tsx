@@ -1,4 +1,4 @@
-// components/corporate/MemberSnsManager.tsx (並び替え修正版)
+// components/corporate/MemberSnsManager.tsx
 import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd';
 import type {
@@ -763,10 +763,11 @@ export function MemberSnsManager({
                             value={snsForm.url}
                             placeholder="https://"
                             disabled={true}
-                            className={`
-                              w-full min-w-0 pr-8 bg-gray-50 
-                              ${urlValid ? 'border-green-500' : ''}
-                            `}
+                            className={
+                              urlValid
+                                ? 'w-full min-w-0 pr-8 border-green-500 bg-gray-50'
+                                : 'w-full min-w-0 pr-8 bg-gray-50'
+                            }
                           />
                           {urlValid && (
                             <div className="absolute right-2 top-1/2 transform -translate-y-1/2 text-green-500">
@@ -910,24 +911,26 @@ export function MemberSnsManager({
                                   color="original"
                                 />
                                 <div className="flex-1 min-w-0">
-                                  <p className="font-medium text-sm sm:text-base truncate">
+                                  <p className="font-medium text-sm sm:text-base">
                                     {SNS_METADATA[link.platform as SnsPlatform]?.name ||
                                       link.platform}
                                   </p>
-                                  <a
-                                    href={link.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-xs sm:text-sm text-blue-600 hover:underline break-all block pr-2"
-                                  >
-                                    <span className="inline-block max-w-full overflow-hidden text-ellipsis">
-                                      {link.url}
-                                    </span>
-                                    <HiExternalLink className="inline ml-1 h-3 w-3 flex-shrink-0" />
-                                  </a>
+                                  <div className="max-w-full overflow-hidden">
+                                    <a
+                                      href={link.url}
+                                      target="_blank"
+                                      rel="noopener noreferrer"
+                                      className="text-xs sm:text-sm text-blue-600 hover:underline block break-all"
+                                    >
+                                      <span className="inline-block max-w-[calc(100%-20px)] truncate align-top">
+                                        {link.url}
+                                      </span>
+                                      <HiExternalLink className="inline ml-1 h-3 w-3 flex-shrink-0" />
+                                    </a>
+                                  </div>
                                 </div>
                               </div>
-                              <div className="flex flex-col sm:flex-row gap-1 sm:gap-2 shrink-0 mt-2 sm:mt-0">
+                              <div className="flex flex-col xs:flex-row gap-1 xs:gap-2 shrink-0 mt-2 sm:mt-0 min-w-[80px]">
                                 <Button
                                   variant="ghost"
                                   onClick={() => startEditingSns(link)}
@@ -1050,7 +1053,7 @@ export function MemberSnsManager({
                           <div
                             ref={dragProvided.innerRef}
                             {...dragProvided.draggableProps}
-                            className="border rounded-md p-4"
+                            className="border rounded-md"
                             style={{
                               ...dragProvided.draggableProps.style,
                               borderColor: `${primaryColor}20`,
@@ -1058,7 +1061,7 @@ export function MemberSnsManager({
                           >
                             {editingCustomId === link.id ? (
                               // 編集モード
-                              <div className="space-y-3">
+                              <div className="p-4 space-y-3">
                                 <div>
                                   <label className="block text-sm font-medium text-gray-700 mb-1">
                                     表示名
@@ -1108,44 +1111,50 @@ export function MemberSnsManager({
                                 </div>
                               </div>
                             ) : (
-                              // 表示モード
-                              <div className="flex items-start">
-                                <div
-                                  className="cursor-move mr-3 mt-2"
-                                  {...dragProvided.dragHandleProps}
-                                >
-                                  <HiDotsVertical className="w-5 h-5 text-gray-400" />
-                                </div>
-                                <div className="w-10 h-10 rounded-md flex items-center justify-center mr-4 flex-shrink-0 bg-blue-50">
-                                  <HiLink className="h-5 w-5" style={{ color: primaryColor }} />
-                                </div>
-                                <div className="flex-1">
-                                  <h3 className="font-medium">{link.name}</h3>
-                                  <a
-                                    href={link.url}
-                                    target="_blank"
-                                    rel="noopener noreferrer"
-                                    className="text-sm text-blue-600 hover:underline break-all flex items-center"
-                                  >
-                                    {link.url}
-                                    <HiExternalLink className="ml-1 h-3 w-3" />
-                                  </a>
-                                  <div className="flex items-center mt-3 space-x-2">
-                                    <Button
-                                      variant="ghost"
-                                      onClick={() => startEditingCustom(link)}
-                                      disabled={isProcessing}
-                                    >
-                                      <HiPencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      onClick={() => handleDeleteCustom(link.id)}
-                                      disabled={isProcessing}
-                                    >
-                                      <HiTrash className="h-4 w-4" />
-                                    </Button>
+                              // 表示モード（SNSリンクと同じ構造）
+                              <div className="flex items-center justify-between p-3">
+                                <div className="flex items-center gap-3 flex-1">
+                                  <div className="cursor-move" {...dragProvided.dragHandleProps}>
+                                    <HiDotsVertical className="w-5 h-5 text-gray-400" />
                                   </div>
+                                  <div
+                                    className="w-10 h-10 rounded-md flex items-center justify-center flex-shrink-0"
+                                    style={{ backgroundColor: `${primaryColor}15` }}
+                                  >
+                                    <HiLink className="h-5 w-5" style={{ color: primaryColor }} />
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="font-medium text-sm sm:text-base">{link.name}</p>
+                                    <div className="max-w-full overflow-hidden">
+                                      <a
+                                        href={link.url}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-xs sm:text-sm text-blue-600 hover:underline block break-all"
+                                      >
+                                        <span className="inline-block max-w-[calc(100%-20px)] truncate align-top">
+                                          {link.url}
+                                        </span>
+                                        <HiExternalLink className="inline ml-1 h-3 w-3 flex-shrink-0" />
+                                      </a>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="flex flex-col xs:flex-row gap-1 xs:gap-2 shrink-0 mt-2 sm:mt-0 min-w-[80px]">
+                                  <Button
+                                    variant="ghost"
+                                    onClick={() => startEditingCustom(link)}
+                                    disabled={isProcessing}
+                                  >
+                                    <HiPencil className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    variant="destructive"
+                                    onClick={() => handleDeleteCustom(link.id)}
+                                    disabled={isProcessing}
+                                  >
+                                    <HiTrash className="h-4 w-4" />
+                                  </Button>
                                 </div>
                               </div>
                             )}

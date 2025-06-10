@@ -1,4 +1,4 @@
-// components/ui/QuickIntroButton.tsx
+// QuickIntroButton.tsx
 'use client';
 import Link from 'next/link';
 import { Button } from '@/components/ui/Button';
@@ -27,8 +27,34 @@ export function QuickIntroButton() {
             w-full h-auto min-h-[48px] py-3 px-4 
             group relative flex items-center justify-center 
             text-base sm:text-sm leading-tight whitespace-normal
-            ${!isCorporateMember ? 'bg-blue-600 hover:bg-blue-700' : ''}
           `}
+          style={
+            isCorporateMember
+              ? {
+                  backgroundColor: '#1E3A8A',
+                  borderColor: '#1E3A8A',
+                  color: 'white',
+                }
+              : {
+                  backgroundColor: '#3B82F6',
+                  borderColor: '#3B82F6',
+                  color: 'white',
+                }
+          }
+          onMouseEnter={(e) => {
+            if (isCorporateMember) {
+              e.currentTarget.style.backgroundColor = '#1e40af';
+            } else {
+              e.currentTarget.style.backgroundColor = '#2563eb';
+            }
+          }}
+          onMouseLeave={(e) => {
+            if (isCorporateMember) {
+              e.currentTarget.style.backgroundColor = '#1E3A8A';
+            } else {
+              e.currentTarget.style.backgroundColor = '#3B82F6';
+            }
+          }}
         >
           <HiSparkles className="mr-2 h-5 w-5 text-yellow-300 animate-pulse flex-shrink-0" />
           <span className="text-white font-medium text-center">自己紹介文を作成する</span>
