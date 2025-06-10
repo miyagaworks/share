@@ -1,4 +1,4 @@
-// components/subscription/SubscriptionSettings.tsx
+// components/subscription/SubscriptionSettings.tsx (法人契約中ユーザー対応版 - ボタンスタイル修正)
 'use client';
 import { useState, useEffect } from 'react';
 import { Spinner } from '@/components/ui/Spinner';
@@ -307,18 +307,20 @@ export default function SubscriptionSettings() {
               </div>
             </div>
             {/* 選択肢 */}
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => setShowIndividualWarning(false)}
-                className="flex-1 h-[48px] px-4 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-base sm:text-sm flex items-center justify-center"
-              >
-                閉じる
-              </button>
+            <div className="flex flex-col gap-3">
               <button
                 onClick={() => window.open('/auth/signup', '_blank')}
-                className="flex-1 h-[48px] px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base sm:text-sm flex items-center justify-center"
+                className="w-full h-[48px] px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base sm:text-sm flex items-center justify-center text-center leading-tight"
               >
-                新しいアカウントで個人プラン登録
+                新しいアカウントで
+                <br className="sm:hidden" />
+                個人プラン登録
+              </button>
+              <button
+                onClick={() => setShowIndividualWarning(false)}
+                className="w-full h-[48px] px-4 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-base sm:text-sm flex items-center justify-center"
+              >
+                閉じる
               </button>
             </div>
             {/* 注意書き */}
@@ -382,24 +384,28 @@ export default function SubscriptionSettings() {
                 </div>
               </div>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3">
-              <button
-                onClick={() => setShowCorporateWarning(false)}
-                className="flex-1 h-[48px] px-4 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-base sm:text-sm flex items-center justify-center"
-              >
-                キャンセル
-              </button>
+            <div className="flex flex-col gap-3">
               <button
                 onClick={() => window.open('/auth/signup', '_blank')}
-                className="flex-1 h-[48px] px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base sm:text-sm flex items-center justify-center"
+                className="w-full h-[48px] px-4 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base sm:text-sm flex items-center justify-center text-center leading-tight"
               >
-                新しいアカウントで法人プラン登録
+                新しいアカウントで
+                <br className="sm:hidden" />
+                法人プラン登録
               </button>
               <button
                 onClick={handleAcceptWarning}
-                className="flex-1 h-[48px] px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-base sm:text-sm flex items-center justify-center"
+                className="w-full h-[48px] px-4 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors text-base sm:text-sm flex items-center justify-center text-center leading-tight"
               >
-                個人データを削除して法人プランに切り替える
+                個人データを削除して
+                <br className="sm:hidden" />
+                法人プランに切り替える
+              </button>
+              <button
+                onClick={() => setShowCorporateWarning(false)}
+                className="w-full h-[48px] px-4 bg-gray-100 text-gray-700 rounded-md hover:bg-gray-200 transition-colors text-base sm:text-sm flex items-center justify-center"
+              >
+                キャンセル
               </button>
             </div>
             <div className="mt-4 p-3 bg-gray-50 rounded-md">
