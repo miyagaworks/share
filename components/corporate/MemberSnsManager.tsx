@@ -892,14 +892,14 @@ export function MemberSnsManager({
                           ) : (
                             // 表示モード - モバイル最適化
                             <div className="p-3">
-                              <div className="flex items-start gap-3">
+                              <div className="flex items-center gap-3">
                                 <div
-                                  className="cursor-move flex-shrink-0 mt-1"
+                                  className="cursor-move flex-shrink-0"
                                   {...dragProvided.dragHandleProps}
                                 >
                                   <HiDotsVertical className="w-5 h-5 text-gray-400" />
                                 </div>
-                                <div className="flex-shrink-0 mt-1">
+                                <div className="flex-shrink-0">
                                   <ImprovedSnsIcon
                                     platform={link.platform as SnsPlatform}
                                     size={24}
@@ -1118,9 +1118,9 @@ export function MemberSnsManager({
                             ) : (
                               // 表示モード - モバイル最適化
                               <div className="p-3">
-                                <div className="flex items-start gap-3">
+                                <div className="flex items-center gap-3">
                                   <div
-                                    className="cursor-move flex-shrink-0 mt-1"
+                                    className="cursor-move flex-shrink-0"
                                     {...dragProvided.dragHandleProps}
                                   >
                                     <HiDotsVertical className="w-5 h-5 text-gray-400" />
