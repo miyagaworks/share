@@ -899,20 +899,26 @@ export function MemberSnsManager({
                               </div>
                             </div>
                           ) : (
-                            // 表示モード
+                            // 表示モード - レスポンシブ対応
                             <div className="flex items-center justify-between p-3">
-                              <div className="flex items-center gap-3 flex-1">
-                                <div className="cursor-move" {...dragProvided.dragHandleProps}>
+                              <div className="flex items-center gap-3 flex-1 min-w-0">
+                                <div
+                                  className="cursor-move flex-shrink-0"
+                                  {...dragProvided.dragHandleProps}
+                                >
                                   <HiDotsVertical className="w-5 h-5 text-gray-400" />
                                 </div>
-                                <ImprovedSnsIcon
-                                  platform={link.platform as SnsPlatform}
-                                  size={24}
-                                  color="original"
-                                />
+                                <div className="flex-shrink-0">
+                                  <ImprovedSnsIcon
+                                    platform={link.platform as SnsPlatform}
+                                    size={24}
+                                    color="original"
+                                  />
+                                </div>
                                 <div className="flex-1 min-w-0">
                                   <p className="font-medium text-sm sm:text-base">
-                                    {SNS_METADATA[link.platform as SnsPlatform]?.name || link.platform}
+                                    {SNS_METADATA[link.platform as SnsPlatform]?.name ||
+                                      link.platform}
                                   </p>
                                   <div className="max-w-full overflow-hidden">
                                     <a
@@ -929,18 +935,22 @@ export function MemberSnsManager({
                                   </div>
                                 </div>
                               </div>
-                              <div className="flex flex-col xs:flex-row gap-1 xs:gap-2 shrink-0 mt-2 sm:mt-0 min-w-[80px]">
+                              <div className="flex flex-col xs:flex-row gap-1 xs:gap-2 flex-shrink-0 ml-2">
                                 <Button
                                   variant="ghost"
                                   onClick={() => startEditingSns(link)}
                                   disabled={isProcessing}
+                                  className="h-8 w-8 p-0"
                                 >
                                   <HiPencil className="h-4 w-4" />
                                 </Button>
                                 <Button
                                   variant="destructive"
                                   onClick={() => handleDeleteSns(link.id, link.platform)}
-                                  disabled={isProcessing || corporatePlatforms.includes(link.platform)}
+                                  disabled={
+                                    isProcessing || corporatePlatforms.includes(link.platform)
+                                  }
+                                  className="h-8 w-8 p-0"
                                 >
                                   <HiTrash className="h-4 w-4" />
                                 </Button>
@@ -1108,10 +1118,13 @@ export function MemberSnsManager({
                                 </div>
                               </div>
                             ) : (
-                              // 表示モード（SNSリンクと同じ構造）
+                              // 表示モード - 完全レスポンシブ対応
                               <div className="flex items-center justify-between p-3">
-                                <div className="flex items-center gap-3 flex-1">
-                                  <div className="cursor-move" {...dragProvided.dragHandleProps}>
+                                <div className="flex items-center gap-3 flex-1 min-w-0">
+                                  <div
+                                    className="cursor-move flex-shrink-0"
+                                    {...dragProvided.dragHandleProps}
+                                  >
                                     <HiDotsVertical className="w-5 h-5 text-gray-400" />
                                   </div>
                                   <div
@@ -1137,11 +1150,12 @@ export function MemberSnsManager({
                                     </div>
                                   </div>
                                 </div>
-                                <div className="flex flex-col xs:flex-row gap-1 xs:gap-2 shrink-0 mt-2 sm:mt-0 min-w-[80px]">
+                                <div className="flex flex-col xs:flex-row gap-1 xs:gap-2 flex-shrink-0 ml-2">
                                   <Button
                                     variant="ghost"
                                     onClick={() => startEditingCustom(link)}
                                     disabled={isProcessing}
+                                    className="h-8 w-8 p-0"
                                   >
                                     <HiPencil className="h-4 w-4" />
                                   </Button>
@@ -1149,6 +1163,7 @@ export function MemberSnsManager({
                                     variant="destructive"
                                     onClick={() => handleDeleteCustom(link.id)}
                                     disabled={isProcessing}
+                                    className="h-8 w-8 p-0"
                                   >
                                     <HiTrash className="h-4 w-4" />
                                   </Button>
