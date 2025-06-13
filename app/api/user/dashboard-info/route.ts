@@ -122,6 +122,11 @@ function generateNavigationEnhanced(
         href: '/dashboard/admin/subscriptions',
         icon: 'HiCreditCard',
       },
+      {
+        title: '解約申請管理',
+        href: '/dashboard/admin/cancel-requests',
+        icon: 'HiExclamationCircle',
+      },
       { title: '永久利用権管理', href: '/dashboard/admin/permissions', icon: 'HiKey' },
       { title: 'お知らせ管理', href: '/dashboard/admin/notifications', icon: 'HiBell' },
       { title: 'メール配信管理', href: '/dashboard/admin/email', icon: 'HiOutlineMail' },

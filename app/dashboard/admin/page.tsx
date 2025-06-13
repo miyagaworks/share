@@ -153,6 +153,12 @@ export default function AdminDashboardPage() {
           onClick={() => router.push('/dashboard/admin/subscriptions')}
         />
         <AdminMenuCard
+          title="解約申請管理"
+          icon={<HiExclamationCircle className="h-6 w-6 text-red-600" />}
+          description="ユーザーからの解約申請を確認・処理"
+          onClick={() => router.push('/dashboard/admin/cancel-requests')}
+        />
+        <AdminMenuCard
           title="永久利用権管理"
           icon={<HiKey className="h-6 w-6 text-blue-600" />}
           description="永久利用権の付与と管理"
@@ -169,12 +175,6 @@ export default function AdminDashboardPage() {
           icon={<HiOutlineMail className="h-6 w-6 text-blue-600" />}
           description="ユーザーグループへのメール配信"
           onClick={() => router.push('/dashboard/admin/email')}
-        />
-        <AdminMenuCard
-          title="解約申請管理"
-          icon={<HiExclamationCircle className="h-6 w-6 text-red-600" />}
-          description="ユーザーからの解約申請を確認・処理"
-          onClick={() => router.push('/dashboard/admin/cancel-requests')}
         />
       </div>
 
