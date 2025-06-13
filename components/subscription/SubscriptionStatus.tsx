@@ -6,6 +6,7 @@ import { Spinner } from '@/components/ui/Spinner';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import { addDays } from 'date-fns';
+import CancelRequestForm from './CancelRequestForm';
 import {
   HiCheck,
   HiRefresh,
@@ -28,6 +29,7 @@ interface SubscriptionData {
   status: string;
   plan: string;
   currentPeriodEnd: string;
+  currentPeriodStart: string; // 追加
   cancelAtPeriodEnd: boolean;
   trialEnd?: string | null;
   isPermanentUser?: boolean;
@@ -68,6 +70,7 @@ export default function SubscriptionStatus({
   const [cancelling, setCancelling] = useState(false);
   const [previousPlan, setPreviousPlan] = useState<string | null>(null);
   const [previousInterval, setPreviousInterval] = useState<string | null>(null);
+  const [showCancelForm, setShowCancelForm] = useState(false);
 
   // 永久利用権関連の状態
   const [permanentPlanType, setPermanentPlanType] = useState<PermanentPlanType | null>(null);
@@ -432,46 +435,33 @@ export default function SubscriptionStatus({
     }
     if (!subscription) return;
 
-    if (
-      !window.confirm(
-        'このプランをキャンセルしてもよろしいですか？\n\n現在の期間が終了するまではご利用いただけます。',
-      )
-    ) {
-      return;
-    }
-
-    try {
-      setCancelling(true);
-      const response = await fetch('/api/subscription/cancel', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          reason: 'User requested cancellation',
-        }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'ご利用プランのキャンセルに失敗しました');
-      }
-
-      const data = await response.json();
-      // 結果を反映
-      setSubscription(data.subscription);
-      toast.success('ご利用のプランをキャンセルしました');
-
-      // 法人アクセス権も更新
-      await refreshCorporateAccess();
-      // 拡張された再読み込み処理を実行
-      enhancedReload();
-    } catch (error) {
-      toast.error(
-        error instanceof Error ? error.message : 'ご利用プランのキャンセルに失敗しました',
-      );
-    } finally {
-      setCancelling(false);
-    }
+    // 解約フォームを表示
+    setShowCancelForm(true);
   };
+
+  // 解約申請成功後の処理
+  const handleCancelRequestSuccess = () => {
+    // サブスクリプション情報を再取得
+    fetchSubscription();
+    // 拡張された再読み込み処理を実行
+    enhancedReload();
+  };
+
+  // JSXの最後（return文の直前）に追加
+  {
+    showCancelForm && subscription && (
+      <CancelRequestForm
+        subscription={{
+          plan: subscription.plan,
+          interval: subscription.interval,
+          currentPeriodStart: subscription.currentPeriodStart,
+          currentPeriodEnd: subscription.currentPeriodEnd,
+        }}
+        onClose={() => setShowCancelForm(false)}
+        onSuccess={handleCancelRequestSuccess}
+      />
+    );
+  }
 
   // 永久利用権ユーザーかどうかを確認
   const isPermanentUser = () => {

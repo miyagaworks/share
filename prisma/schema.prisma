@@ -72,6 +72,9 @@ model User {
 
   // 問い合わせ関連
   contacts Contact[]
+
+  // 解約申請
+  cancelRequests    CancelRequest[]
   
   // 管理者メール関連
   sentEmails AdminEmailLog[] @relation("SentByAdmin")
@@ -157,6 +160,7 @@ model Subscription {
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   corporateTenant    CorporateTenant?
+  cancelRequests     CancelRequest[]
 }
 
 // 請求履歴モデル
@@ -387,4 +391,36 @@ model EmailVerificationToken {
   
   // ユーザーとの関係
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+// 解約申請モデル
+model CancelRequest {
+  id              String   @id @default(cuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  subscriptionId  String
+  subscription    Subscription @relation(fields: [subscriptionId], references: [id])
+  
+  // 申請情報
+  requestedCancelDate DateTime
+  reason             String? @db.Text
+  currentPlan        String
+  currentInterval    String
+  
+  // 返金計算
+  paidAmount         Int // 支払い済み金額（円）
+  refundAmount       Int // 返金予定金額（円）
+  usedMonths         Int // 利用済み月数
+  
+  // ステータス管理
+  status            String   @default("pending") // "pending", "approved", "rejected", "processed"
+  adminNotes        String?  @db.Text
+  processedBy       String?
+  processedAt       DateTime?
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  @@index([userId])
+  @@index([status])
 }

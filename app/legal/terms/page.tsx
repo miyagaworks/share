@@ -98,8 +98,36 @@ export default function TermsPage() {
             当社は、料金を変更する権利を有します。料金を変更する場合、当社は事前に本サービス上で告知するものとし、告知後、ユーザーが本サービスを継続して利用した場合には、変更後の料金に同意したものとみなします。
           </p>
         </section>
+
         <section>
-          <h2 className="text-xl font-semibold mb-3">7. 無料トライアル</h2>
+          <h2 className="text-xl font-semibold mb-3">7. 解約および返金</h2>
+          <p className="text-justify">
+            ユーザーは、本サービスの解約を希望する場合、本サービス内の解約申請フォームから解約申請を行うものとします。解約申請は当社による承認をもって有効となり、承認後に解約処理が実行されます。
+          </p>
+          <p className="mt-2 text-justify">
+            月額プランの解約につきましては、返金は行いません。解約処理完了まで、当該契約期間の満了日まで引き続きサービスをご利用いただけます。
+          </p>
+          <p className="mt-2 text-justify">
+            年額プランの解約につきましては、以下の計算方法により返金いたします：
+          </p>
+          <ul className="list-disc pl-5 mt-2 space-y-1 text-justify">
+            <li>利用開始日から解約申請日までの利用月数を算出いたします</li>
+            <li>
+              利用月数に月額料金相当額（個人プラン500円、法人スタータープラン3,000円、法人ビジネスプラン6,000円、法人エンタープライズプラン9,000円）を乗じた金額を利用料金とします
+            </li>
+            <li>年額で支払われた金額から利用料金を差し引いた金額を返金いたします</li>
+            <li>ただし、利用料金が年額料金を上回る場合は、返金は行いません</li>
+          </ul>
+          <p className="mt-2 text-justify">
+            解約の承認および返金の処理には、申請受付後5営業日から10営業日程度のお時間をいただきます。返金は、お客様のクレジットカードへの返金によって行います。
+          </p>
+          <p className="mt-2 text-justify">
+            解約処理が完了した場合、お客様のアカウントおよびすべてのデータは削除され、復元することはできません。解約前に必要なデータのバックアップを取得してください。
+          </p>
+        </section>
+
+        <section>
+          <h2 className="text-xl font-semibold mb-3">8. 無料トライアル</h2>
           <p className="text-justify">
             当社は、ユーザーに対して7日間の無料トライアル期間を提供します。無料トライアル期間中は、本サービスの全ての機能を無料で利用することができます。
           </p>
@@ -110,8 +138,9 @@ export default function TermsPage() {
             猶予期間内に支払い手続きが行われなかった場合、当社はユーザー情報をサーバーから削除する権利を有します。一度削除されたユーザー情報は復元できませんのでご注意ください。
           </p>
         </section>
+
         <section>
-          <h2 className="text-xl font-semibold mb-3">8. 禁止事項</h2>
+          <h2 className="text-xl font-semibold mb-3">9. 禁止事項</h2>
           <p className="text-justify">
             ユーザーは、本サービスの利用にあたり、以下の行為をしてはなりません。
           </p>
@@ -138,7 +167,7 @@ export default function TermsPage() {
           </ul>
         </section>
         <section>
-          <h2 className="text-xl font-semibold mb-3">9. 本サービスの提供の停止等</h2>
+          <h2 className="text-xl font-semibold mb-3">10. 本サービスの提供の停止等</h2>
           <p className="text-justify">
             当社は、以下のいずれかの事由があると判断した場合、ユーザーに事前に通知することなく本サービスの全部または一部の提供を停止または中断することができるものとします。
           </p>
@@ -155,7 +184,7 @@ export default function TermsPage() {
           </p>
         </section>
         <section>
-          <h2 className="text-xl font-semibold mb-3">10. 著作権</h2>
+          <h2 className="text-xl font-semibold mb-3">11. 著作権</h2>
           <p className="text-justify">
             ユーザーは、自ら著作権等の必要な知的財産権を有するか、または必要な権利者の許諾を得た文章、画像や映像等の情報に関してのみ、本サービスを利用し、投稿または編集することができるものとします。
           </p>
@@ -167,13 +196,13 @@ export default function TermsPage() {
           </p>
         </section>
         <section>
-          <h2 className="text-xl font-semibold mb-3">11. 個人情報の取り扱い</h2>
+          <h2 className="text-xl font-semibold mb-3">12. 個人情報の取り扱い</h2>
           <p className="text-justify">
             本サービスの利用によって取得する個人情報については、当社の「プライバシーポリシー」に従い適切に取り扱うものとします。
           </p>
         </section>
         <section>
-          <h2 className="text-xl font-semibold mb-3">12. 保証の否認および免責事項</h2>
+          <h2 className="text-xl font-semibold mb-3">13. 保証の否認および免責事項</h2>
           <p className="text-justify">
             当社は、本サービスに事実上または法律上の瑕疵（安全性、信頼性、正確性、完全性、有効性、特定の目的への適合性、セキュリティなどに関する欠陥、エラーやバグ、権利侵害などを含みます）がないことを明示的にも黙示的にも保証しておりません。
           </p>
@@ -182,31 +211,31 @@ export default function TermsPage() {
           </p>
         </section>
         <section>
-          <h2 className="text-xl font-semibold mb-3">13. サービス内容の変更等</h2>
+          <h2 className="text-xl font-semibold mb-3">14. サービス内容の変更等</h2>
           <p className="text-justify">
             当社は、ユーザーに通知することなく、本サービスの内容を変更しまたは本サービスの提供を中止することができるものとし、これによってユーザーに生じた損害について一切の責任を負いません。
           </p>
         </section>
         <section>
-          <h2 className="text-xl font-semibold mb-3">14. 利用規約の変更</h2>
+          <h2 className="text-xl font-semibold mb-3">15. 利用規約の変更</h2>
           <p className="text-justify">
             当社は、必要と判断した場合には、ユーザーに通知することなくいつでも本規約を変更することができるものとします。なお、本規約の変更後、本サービスの利用を継続した場合には、ユーザーは変更後の規約に同意したものとみなされます。
           </p>
         </section>
         <section>
-          <h2 className="text-xl font-semibold mb-3">15. 通知または連絡</h2>
+          <h2 className="text-xl font-semibold mb-3">16. 通知または連絡</h2>
           <p className="text-justify">
             ユーザーと当社との間の通知または連絡は、当社の定める方法によって行うものとします。当社は、ユーザーから、当社が別途定める方式に従った変更届け出がない限り、現在登録されている連絡先が有効なものとみなして当該連絡先へ通知または連絡を行い、これらは、発信時にユーザーへ到達したものとみなされます。
           </p>
         </section>
         <section>
-          <h2 className="text-xl font-semibold mb-3">16. 権利義務の譲渡の禁止</h2>
+          <h2 className="text-xl font-semibold mb-3">17. 権利義務の譲渡の禁止</h2>
           <p className="text-justify">
             ユーザーは、当社の書面による事前の承諾なく、利用契約上の地位または本規約に基づく権利もしくは義務を第三者に譲渡し、または担保に供することはできません。
           </p>
         </section>
         <section>
-          <h2 className="text-xl font-semibold mb-3">17. 準拠法・裁判管轄</h2>
+          <h2 className="text-xl font-semibold mb-3">18. 準拠法・裁判管轄</h2>
           <p className="text-justify">本規約の解釈にあたっては、日本法を準拠法とします。</p>
           <p className="mt-2 text-justify">
             本サービスに関して紛争が生じた場合には、当社の本店所在地を管轄する裁判所を専属的合意管轄とします。
@@ -214,7 +243,7 @@ export default function TermsPage() {
         </section>
         <div className="mt-8 text-right">
           <p>制定日: 2025年3月1日</p>
-          <p>最終更新日: 2025年5月12日</p>
+          <p>最終更新日: 2025年6月13日</p>
           <p className="mt-4">ビイアルファ株式会社</p>
         </div>
       </div>
