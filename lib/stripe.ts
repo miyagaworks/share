@@ -1,31 +1,145 @@
 // lib/stripe.ts
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import Stripe from 'stripe';
+
 // このファイルはサーバーサイドでのみ使用
 if (!process.env.STRIPE_SECRET_KEY) {
   logger.warn('Missing STRIPE_SECRET_KEY environment variable');
 }
-// サーバーサイドのみで使用するエクスポート
+
+// サーバーサイドのみで使用するStripeインスタンス
+// APIバージョンを省略してStripeに最適なバージョンを自動選択させる
 export const stripe = process.env.STRIPE_SECRET_KEY
   ? new Stripe(process.env.STRIPE_SECRET_KEY, {
-      // リテラル型としてAPIバージョンを指定
-      apiVersion: '2025-02-24.acacia',
+      // APIバージョンは省略 - SDKが最適なバージョンを選択
       appInfo: {
         name: 'Share',
         version: '0.1.0',
       },
     })
   : null;
+
 // Stripe利用可能かどうかをチェックするヘルパー関数
 export function isStripeAvailable(): boolean {
-  return !!process.env.STRIPE_SECRET_KEY;
+  return !!process.env.STRIPE_SECRET_KEY && !!stripe;
 }
-// プラン定義 - クライアントサイドとサーバーサイドの両方で使用可能
+
+// Stripeインスタンスを安全に取得するヘルパー関数
+export function getStripeInstance(): Stripe {
+  if (!stripe) {
+    throw new Error(
+      'Stripe is not initialized. Please check STRIPE_SECRET_KEY environment variable.',
+    );
+  }
+  return stripe;
+}
+
+// 決済リンク情報の型定義
+interface PaymentLinkInfo {
+  url: string;
+  priceId: string;
+  planId: string;
+  interval: string;
+  amount: number;
+  isCorporate: boolean;
+  maxUsers?: number;
+}
+
+// Stripe決済リンクの価格IDマッピング
+export const STRIPE_PAYMENT_LINKS: Record<string, PaymentLinkInfo> = {
+  // 個人プラン
+  MONTHLY: {
+    url: 'https://buy.stripe.com/7sY9AUfxOdGogw4cQbcs800',
+    priceId: process.env.STRIPE_MONTHLY_PRICE_ID || 'price_monthly_default',
+    planId: 'monthly',
+    interval: 'month',
+    amount: 500,
+    isCorporate: false,
+  },
+  YEARLY: {
+    url: 'https://buy.stripe.com/bJe5kE1GYcCkenW6rNcs801',
+    priceId: process.env.STRIPE_YEARLY_PRICE_ID || 'price_yearly_default',
+    planId: 'yearly',
+    interval: 'year',
+    amount: 5000,
+    isCorporate: false,
+  },
+  // 法人プラン - Vercelの設定に合わせて修正
+  STARTER_MONTHLY: {
+    url: 'https://buy.stripe.com/dRm14oaducCk93C5nJcs802',
+    priceId: process.env.STRIPE_STARTER_PRICE_ID || 'price_starter_monthly_default',
+    planId: 'starter',
+    interval: 'month',
+    amount: 3000,
+    isCorporate: true,
+    maxUsers: 10,
+  },
+  STARTER_YEARLY: {
+    url: 'https://buy.stripe.com/eVqeVeclC7i00x67vRcs803',
+    priceId: process.env.STRIPE_STARTER_YEARLY_PRICE_ID || 'price_starter_yearly_default',
+    planId: 'starter',
+    interval: 'year',
+    amount: 30000,
+    isCorporate: true,
+    maxUsers: 10,
+  },
+  BUSINESS_MONTHLY: {
+    url: 'https://buy.stripe.com/6oUdRa4Ta1XG2Feg2ncs804',
+    priceId: process.env.STRIPE_BUSINESS_PRICE_ID || 'price_business_monthly_default',
+    planId: 'business',
+    interval: 'month',
+    amount: 6000,
+    isCorporate: true,
+    maxUsers: 30,
+  },
+  BUSINESS_YEARLY: {
+    url: 'https://buy.stripe.com/5kQbJ24TacCk5Rq3fBcs805',
+    priceId: process.env.STRIPE_BUSINESS_YEARLY_PRICE_ID || 'price_business_yearly_default',
+    planId: 'business',
+    interval: 'year',
+    amount: 60000,
+    isCorporate: true,
+    maxUsers: 30,
+  },
+  ENTERPRISE_MONTHLY: {
+    url: 'https://buy.stripe.com/bJe14o4TaeKs4Nm17tcs806',
+    priceId: process.env.STRIPE_ENTERPRISE_PRICE_ID || 'price_enterprise_monthly_default',
+    planId: 'enterprise',
+    interval: 'month',
+    amount: 9000,
+    isCorporate: true,
+    maxUsers: 50,
+  },
+  ENTERPRISE_YEARLY: {
+    url: 'https://buy.stripe.com/4gMcN699q9q8a7G9DZcs807',
+    priceId: process.env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID || 'price_enterprise_yearly_default',
+    planId: 'enterprise',
+    interval: 'year',
+    amount: 90000,
+    isCorporate: true,
+    maxUsers: 50,
+  },
+};
+
+// 価格IDからプラン情報を取得する関数
+export function getPlanInfoByPriceId(priceId: string): PaymentLinkInfo | undefined {
+  return Object.values(STRIPE_PAYMENT_LINKS).find((plan) => plan.priceId === priceId);
+}
+
+// プランIDと間隔から決済リンクを取得する関数
+export function getPaymentLinkByPlan(
+  planId: string,
+  interval: string,
+): PaymentLinkInfo | undefined {
+  const key = `${planId.toUpperCase()}_${interval.toUpperCase()}`;
+  return STRIPE_PAYMENT_LINKS[key as keyof typeof STRIPE_PAYMENT_LINKS];
+}
+
+// 既存のプラン定義（後方互換性のため）
 export const PLANS = {
-  // 個人プラン（既存）
   MONTHLY: {
     name: '月額プラン',
-    price: 500, // 円
+    price: 500,
     interval: 'month',
     priceId: process.env.STRIPE_MONTHLY_PRICE_ID || '',
     displayName: '個人プラン(1ヶ月で自動更新)',
@@ -34,17 +148,16 @@ export const PLANS = {
   },
   YEARLY: {
     name: '年額プラン',
-    price: 5000, // 円
+    price: 5000,
     interval: 'year',
     priceId: process.env.STRIPE_YEARLY_PRICE_ID || '',
     displayName: '個人プラン(1年で自動更新)',
     planId: 'yearly',
     maxUsers: 1,
   },
-  // 法人プラン（新規または修正）
   STARTER: {
     name: '法人スタータープラン',
-    price: 3000, // 円
+    price: 3000,
     interval: 'month',
     priceId: process.env.STRIPE_STARTER_PRICE_ID || '',
     displayName: '法人スタータープラン(10名まで・月額)',
@@ -53,7 +166,7 @@ export const PLANS = {
   },
   STARTER_YEARLY: {
     name: '法人スタータープラン(年間)',
-    price: 30000, // 円
+    price: 30000,
     interval: 'year',
     priceId: process.env.STRIPE_STARTER_YEARLY_PRICE_ID || '',
     displayName: '法人スタータープラン(10名まで・年額)',
@@ -62,7 +175,7 @@ export const PLANS = {
   },
   BUSINESS: {
     name: '法人ビジネスプラン',
-    price: 6000, // 円
+    price: 6000,
     interval: 'month',
     priceId: process.env.STRIPE_BUSINESS_PRICE_ID || '',
     displayName: '法人ビジネスプラン(30名まで・月額)',
@@ -71,7 +184,7 @@ export const PLANS = {
   },
   BUSINESS_YEARLY: {
     name: '法人ビジネスプラン(年間)',
-    price: 60000, // 円
+    price: 60000,
     interval: 'year',
     priceId: process.env.STRIPE_BUSINESS_YEARLY_PRICE_ID || '',
     displayName: '法人ビジネスプラン(30名まで・年額)',
@@ -80,7 +193,7 @@ export const PLANS = {
   },
   ENTERPRISE: {
     name: '法人エンタープライズプラン',
-    price: 9000, // 円
+    price: 9000,
     interval: 'month',
     priceId: process.env.STRIPE_ENTERPRISE_PRICE_ID || '',
     displayName: '法人エンタープライズプラン(50名まで・月額)',
@@ -89,7 +202,7 @@ export const PLANS = {
   },
   ENTERPRISE_YEARLY: {
     name: '法人エンタープライズプラン(年間)',
-    price: 90000, // 円
+    price: 90000,
     interval: 'year',
     priceId: process.env.STRIPE_ENTERPRISE_YEARLY_PRICE_ID || '',
     displayName: '法人エンタープライズプラン(50名まで・年額)',
@@ -97,16 +210,14 @@ export const PLANS = {
     maxUsers: 50,
   },
 };
-// planIdからプラン名を直接取得する関数
+
+// プラン名取得関数
 export function getPlanNameFromId(planId: string, interval?: string): string {
-  // 個人プラン
   if (planId === 'monthly') {
     return '個人プラン(1ヶ月で自動更新)';
   } else if (planId === 'yearly') {
     return '個人プラン(1年で自動更新)';
-  }
-  // 法人プラン
-  else if (planId === 'starter') {
+  } else if (planId === 'starter') {
     return interval === 'year'
       ? '法人スタータープラン(10名まで・年額)'
       : '法人スタータープラン(10名まで・月額)';
@@ -118,37 +229,30 @@ export function getPlanNameFromId(planId: string, interval?: string): string {
     return interval === 'year'
       ? '法人エンタープライズプラン(50名まで・年額)'
       : '法人エンタープライズプラン(50名まで・月額)';
-  }
-  // 古いプランID（互換性のため）
-  else if (planId === 'business_legacy') {
+  } else if (planId === 'business_legacy') {
     return '法人スタータープラン(10名まで)';
   } else if (planId === 'business-plus' || planId === 'business_plus') {
     return '法人ビジネスプラン(30名まで)';
-  }
-  // 特殊プラン
-  else if (planId === 'permanent') {
+  } else if (planId === 'permanent') {
     return '永久利用可能';
   } else if (planId === 'trial') {
     return '無料トライアル中';
   }
-  // プランを特定できない場合
   return '不明なプラン';
 }
-// ご利用プランステータスの表示名を取得するヘルパー関数
+
+// サブスクリプションステータス表示名取得関数
 export function getSubscriptionStatusText(
   status: string,
   plan?: string,
   interval?: string,
 ): string {
-  // ステータスが「トライアル中」の場合
   if (status === 'trialing') {
     return '無料トライアル中';
   }
-  // ステータスが「アクティブ」の場合はプラン名を表示
   if (status === 'active' && plan) {
     return getPlanNameFromId(plan, interval);
   }
-  // その他のステータス
   switch (status) {
     case 'active':
       return 'アクティブ';
@@ -161,19 +265,20 @@ export function getSubscriptionStatusText(
     case 'incomplete_expired':
       return '期限切れ';
     case 'permanent':
-      return '永久利用可能'; // 追加: 永久利用権ユーザー
+      return '永久利用可能';
     default:
       return '不明なステータス';
   }
 }
-// プランIDから名前を取得するヘルパー関数
+
+// プランIDから名前を取得するヘルパー関数（後方互換性）
 export function getPlanNameById(planId: string): string {
-  // PLANSオブジェクトからpriceIdに一致するプランを探す
   const plan = Object.values(PLANS).find((p) => p.priceId === planId);
   if (plan) {
     return plan.name;
   }
   return '不明なプラン';
 }
+
 // 既存の関数名を残すためのエイリアス
 export const getPlanName = getPlanNameById;
