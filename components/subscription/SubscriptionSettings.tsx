@@ -1,4 +1,4 @@
-// components/subscription/SubscriptionSettings.tsx (Stripe決済リンク対応版)
+// components/subscription/SubscriptionSettings.tsx
 'use client';
 import { useState, useEffect } from 'react';
 import { toast } from 'react-hot-toast';
@@ -361,7 +361,7 @@ export default function SubscriptionSettings() {
                       <button
                         onClick={() => handleIndividualSubscribe('monthly')}
                         disabled={selectedPlan !== 'monthly'}
-                        className="w-full h-[48px] bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-base sm:text-sm flex items-center justify-center"
+                        className="w-full h-[52px] px-4 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-sm flex items-center justify-center text-center leading-tight"
                       >
                         月額プランに申し込む
                       </button>
@@ -410,7 +410,7 @@ export default function SubscriptionSettings() {
                       <button
                         onClick={() => handleIndividualSubscribe('yearly')}
                         disabled={selectedPlan !== 'yearly'}
-                        className="w-full h-[48px] bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-base sm:text-sm flex items-center justify-center"
+                        className="w-full h-[52px] px-4 bg-blue-600 text-white rounded-md font-medium hover:bg-blue-700 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-sm flex items-center justify-center text-center leading-tight"
                       >
                         年額プランに申し込む
                       </button>
@@ -518,7 +518,7 @@ export default function SubscriptionSettings() {
                       <button
                         onClick={() => handleCorporateSubscribe('starter', selectedInterval)}
                         disabled={selectedPlan !== 'starter'}
-                        className="w-full h-[48px] bg-blue-900 text-white rounded-md font-medium hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-base sm:text-sm flex items-center justify-center"
+                        className="w-full h-[52px] px-3 bg-blue-900 text-white rounded-md font-medium hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-sm flex items-center justify-center text-center leading-tight"
                       >
                         スタータープランに申し込む
                       </button>
@@ -606,7 +606,7 @@ export default function SubscriptionSettings() {
                       <button
                         onClick={() => handleCorporateSubscribe('business', selectedInterval)}
                         disabled={selectedPlan !== 'business'}
-                        className="w-full h-[48px] bg-blue-900 text-white rounded-md font-medium hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-base sm:text-sm flex items-center justify-center"
+                        className="w-full h-[52px] px-3 bg-blue-900 text-white rounded-md font-medium hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-sm flex items-center justify-center text-center leading-tight"
                       >
                         ビジネスプランに申し込む
                       </button>
@@ -694,7 +694,7 @@ export default function SubscriptionSettings() {
                       <button
                         onClick={() => handleCorporateSubscribe('enterprise', selectedInterval)}
                         disabled={selectedPlan !== 'enterprise'}
-                        className="w-full h-[48px] bg-blue-900 text-white rounded-md font-medium hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-base sm:text-sm flex items-center justify-center"
+                        className="w-full h-[52px] px-2 bg-blue-900 text-white rounded-md font-medium hover:bg-blue-800 disabled:bg-gray-300 disabled:cursor-not-allowed transition-all duration-200 text-sm flex items-center justify-center text-center leading-tight"
                       >
                         エンタープライズプランに申し込む
                       </button>
