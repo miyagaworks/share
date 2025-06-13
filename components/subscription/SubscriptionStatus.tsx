@@ -713,136 +713,150 @@ export default function SubscriptionStatus({
 
   // アクティブなご利用プラン
   return (
-    <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-      >
-        <div className="flex items-start">
-          <div className="flex-shrink-0 mr-3">
-            {subscription?.isPermanentUser ? (
-              <div className="bg-blue-100 p-2 rounded-full">
-                <HiCheck className="h-5 w-5 text-blue-600" />
-              </div>
-            ) : subscription?.status === 'active' &&
-              (subscription.plan.includes('business') || subscription.plan === 'business_plus') ? (
-              // 法人プランの場合は青色
-              <div className="bg-blue-100 p-2 rounded-full">
-                <HiCheck className="h-5 w-5 text-blue-600" />
-              </div>
-            ) : subscription?.status === 'active' ? (
-              // 個人プランの場合は緑色
-              <div className="bg-green-100 p-2 rounded-full">
-                <HiCheck className="h-5 w-5 text-green-600" />
-              </div>
-            ) : subscription?.status === 'trialing' ? (
-              <div className="bg-blue-100 p-2 rounded-full">
-                <HiClock className="h-5 w-5 text-blue-600" />
-              </div>
-            ) : (
-              <div className="bg-red-100 p-2 rounded-full">
-                <HiXCircle className="h-5 w-5 text-red-600" />
-              </div>
-            )}
-          </div>
-          <div className="flex-1">
-            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
-              <h3 className="text-lg font-medium leading-relaxed flex-1">現在のプラン</h3>
-              <span
-                className={`text-sm sm:text-base font-medium px-3 py-2 rounded-lg text-justify leading-tight break-words max-w-[220px] sm:max-w-none inline-block ${statusDisplay.className}`}
-                style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
-              >
-                {statusDisplay.text}
-              </span>
-            </div>
-            {/* 🔧 スマホでのパディング問題を修正 - mt-4 を mt-6 に変更し、space-y を増加 */}
-            <div className="mt-6 space-y-4">
-              {/* 永久利用権ユーザーでない場合のみ次回更新日を表示 */}
-              {!isPermanentUser() && (
-                <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                  <span className="text-sm text-gray-500">次回更新日</span>
-                  <span className="text-sm font-medium">
-                    {subscription?.currentPeriodEnd
-                      ? formatDate(subscription.currentPeriodEnd)
-                      : '-'}
-                  </span>
+    <>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <motion.div
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.3 }}
+        >
+          <div className="flex items-start">
+            <div className="flex-shrink-0 mr-3">
+              {subscription?.isPermanentUser ? (
+                <div className="bg-blue-100 p-2 rounded-full">
+                  <HiCheck className="h-5 w-5 text-blue-600" />
                 </div>
-              )}
-
-              {subscription?.status === 'trialing' && !isPermanentUser() && (
-                <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mt-4">
-                  <p className="text-sm text-blue-800 text-justify">
-                    無料トライアル期間中です。
-                    <strong>
-                      {formatDate(subscription.trialEnd || subscription.currentPeriodEnd)}
-                    </strong>
-                    まで
-                    {subscription.plan === 'monthly'
-                      ? '月額'
-                      : subscription.plan === 'yearly'
-                        ? '年額'
-                        : ''}
-                    プランをお試しいただけます。
-                  </p>
+              ) : subscription?.status === 'active' &&
+                (subscription.plan.includes('business') ||
+                  subscription.plan === 'business_plus') ? (
+                // 法人プランの場合は青色
+                <div className="bg-blue-100 p-2 rounded-full">
+                  <HiCheck className="h-5 w-5 text-blue-600" />
                 </div>
-              )}
-
-              {subscription?.cancelAtPeriodEnd && !isPermanentUser() && (
-                <div className="bg-amber-50 border border-amber-100 rounded-md p-4 mt-4">
-                  <p className="text-sm text-amber-800 mb-3">
-                    このプランは
-                    <strong>{formatDate(subscription.currentPeriodEnd)}</strong>
-                    にキャンセルされる予定です。それまではすべての機能をご利用いただけます。
-                  </p>
-                  <button
-                    className="h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
-                    onClick={handleReactivate}
-                    disabled={reactivating}
-                  >
-                    {reactivating ? (
-                      <>
-                        <Spinner size="sm" className="mr-2" />
-                        処理中...
-                      </>
-                    ) : (
-                      <>
-                        <HiRefresh className="mr-2 h-4 w-4" />
-                        プランを継続する
-                      </>
-                    )}
-                  </button>
+              ) : subscription?.status === 'active' ? (
+                // 個人プランの場合は緑色
+                <div className="bg-green-100 p-2 rounded-full">
+                  <HiCheck className="h-5 w-5 text-green-600" />
+                </div>
+              ) : subscription?.status === 'trialing' ? (
+                <div className="bg-blue-100 p-2 rounded-full">
+                  <HiClock className="h-5 w-5 text-blue-600" />
+                </div>
+              ) : (
+                <div className="bg-red-100 p-2 rounded-full">
+                  <HiXCircle className="h-5 w-5 text-red-600" />
                 </div>
               )}
             </div>
+            <div className="flex-1">
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3 mb-4">
+                <h3 className="text-lg font-medium leading-relaxed flex-1">現在のプラン</h3>
+                <span
+                  className={`text-sm sm:text-base font-medium px-3 py-2 rounded-lg text-justify leading-tight break-words max-w-[220px] sm:max-w-none inline-block ${statusDisplay.className}`}
+                  style={{ wordBreak: 'break-word', overflowWrap: 'break-word' }}
+                >
+                  {statusDisplay.text}
+                </span>
+              </div>
+              <div className="mt-6 space-y-4">
+                {!isPermanentUser() && (
+                  <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                    <span className="text-sm text-gray-500">次回更新日</span>
+                    <span className="text-sm font-medium">
+                      {subscription?.currentPeriodEnd
+                        ? formatDate(subscription.currentPeriodEnd)
+                        : '-'}
+                    </span>
+                  </div>
+                )}
 
-            {/* 🔧 解約ボタンのマージンを増加 */}
-            {!isPermanentUser() &&
-              !subscription?.cancelAtPeriodEnd &&
-              (subscription?.status === 'active' || subscription?.status === 'trialing') && (
-                <div className="mt-8 pt-4 border-t border-gray-100">
-                  <button
-                    className="h-[48px] px-4 border border-gray-300 bg-white text-gray-400 rounded-md hover:text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-base sm:text-sm flex items-center justify-center"
-                    onClick={handleCancel}
-                    disabled={cancelling}
-                  >
-                    {cancelling ? (
-                      <>
-                        <Spinner size="sm" className="mr-2" />
-                        処理中...
-                      </>
-                    ) : (
-                      <>
-                        <HiXCircle className="mr-2 h-4 w-4" />
-                        このプランを解約
-                      </>
-                    )}
-                  </button>
-                </div>
-              )}
+                {subscription?.status === 'trialing' && !isPermanentUser() && (
+                  <div className="bg-blue-50 border border-blue-100 rounded-md p-4 mt-4">
+                    <p className="text-sm text-blue-800 text-justify">
+                      無料トライアル期間中です。
+                      <strong>
+                        {formatDate(subscription.trialEnd || subscription.currentPeriodEnd)}
+                      </strong>
+                      まで
+                      {subscription.plan === 'monthly'
+                        ? '月額'
+                        : subscription.plan === 'yearly'
+                          ? '年額'
+                          : ''}
+                      プランをお試しいただけます。
+                    </p>
+                  </div>
+                )}
+
+                {subscription?.cancelAtPeriodEnd && !isPermanentUser() && (
+                  <div className="bg-amber-50 border border-amber-100 rounded-md p-4 mt-4">
+                    <p className="text-sm text-amber-800 mb-3">
+                      このプランは
+                      <strong>{formatDate(subscription.currentPeriodEnd)}</strong>
+                      にキャンセルされる予定です。それまではすべての機能をご利用いただけます。
+                    </p>
+                    <button
+                      className="h-[48px] px-4 border border-gray-300 bg-white text-gray-700 rounded-md hover:bg-gray-50 transition-colors text-base sm:text-sm flex items-center justify-center"
+                      onClick={handleReactivate}
+                      disabled={reactivating}
+                    >
+                      {reactivating ? (
+                        <>
+                          <Spinner size="sm" className="mr-2" />
+                          処理中...
+                        </>
+                      ) : (
+                        <>
+                          <HiRefresh className="mr-2 h-4 w-4" />
+                          プランを継続する
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+              </div>
+
+              {!isPermanentUser() &&
+                !subscription?.cancelAtPeriodEnd &&
+                (subscription?.status === 'active' || subscription?.status === 'trialing') && (
+                  <div className="mt-8 pt-4 border-t border-gray-100">
+                    <button
+                      className="h-[48px] px-4 border border-gray-300 bg-white text-gray-400 rounded-md hover:text-red-600 hover:bg-red-50 hover:border-red-300 transition-colors text-base sm:text-sm flex items-center justify-center"
+                      onClick={handleCancel}
+                      disabled={cancelling}
+                    >
+                      {cancelling ? (
+                        <>
+                          <Spinner size="sm" className="mr-2" />
+                          処理中...
+                        </>
+                      ) : (
+                        <>
+                          <HiXCircle className="mr-2 h-4 w-4" />
+                          このプランを解約
+                        </>
+                      )}
+                    </button>
+                  </div>
+                )}
+            </div>
           </div>
-        </div>
-      </motion.div>
-    </div>
+        </motion.div>
+      </div>
+
+      {/* 🔥 解約申請フォームモーダル - 正しい位置に配置 */}
+      {showCancelForm && subscription && (
+        <CancelRequestForm
+          subscription={{
+            plan: subscription.plan,
+            interval: subscription.interval || 'month',
+            currentPeriodStart: subscription.currentPeriodStart,
+            currentPeriodEnd: subscription.currentPeriodEnd,
+          }}
+          onClose={() => setShowCancelForm(false)}
+          onSuccess={handleCancelRequestSuccess}
+        />
+      )}
+    </>
   );
 }
