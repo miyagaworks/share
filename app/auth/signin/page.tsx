@@ -1,4 +1,4 @@
-// app/auth/signin/page.tsx (reCAPTCHA追加版)
+// app/auth/signin/page.tsx (reCAPTCHA修正版)
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -256,6 +256,7 @@ export default function SigninPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
+  const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
 
   // Google認証を開始する関数
   const handleGoogleSignIn = async () => {
@@ -344,18 +345,25 @@ export default function SigninPage() {
       emailRegex.test(emailValue) &&
       passwordValue.length >= 8 &&
       !Object.keys(errors).length &&
-      !!recaptchaToken;
+      !!recaptchaToken &&
+      recaptchaLoaded;
 
     setIsFormValid(formIsValid);
-  }, [watchEmail, watchPassword, errors, isValid, recaptchaToken]);
+  }, [watchEmail, watchPassword, errors, isValid, recaptchaToken, recaptchaLoaded]);
 
   // reCAPTCHA確認時の処理
   const handleRecaptchaChange = (token: string | null) => {
+    console.log('🔒 reCAPTCHA Token changed:', token ? 'Token received' : 'Token cleared');
     setRecaptchaToken(token);
+    setRecaptchaLoaded(true);
+
     if (!token) {
       setError('reCAPTCHAの認証に失敗しました。再度お試しください。');
     } else {
-      setError(null);
+      // トークンが正常に取得できた場合はエラーをクリア
+      if (error && error.includes('reCAPTCHA')) {
+        setError(null);
+      }
     }
   };
 
@@ -383,6 +391,9 @@ export default function SigninPage() {
 
       if (result?.error) {
         setError('メールアドレス、パスワード、またはreCAPTCHA認証が正しくありません');
+        // エラー後にreCAPTCHAをリセット
+        setRecaptchaToken(null);
+        setRecaptchaLoaded(false);
       } else if (result?.ok) {
         const session = await getSession();
         console.log('🔍 Session after credentials signin:', session);
@@ -398,6 +409,9 @@ export default function SigninPage() {
     } catch (error) {
       console.error('💥 Credentials signin exception:', error);
       setError('ログイン処理中にエラーが発生しました。');
+      // エラー後にreCAPTCHAをリセット
+      setRecaptchaToken(null);
+      setRecaptchaLoaded(false);
     } finally {
       setIsPending(false);
     }
@@ -573,12 +587,18 @@ export default function SigninPage() {
             <div className="mt-6">
               <RecaptchaWrapper
                 onVerify={handleRecaptchaChange}
-                onExpired={() => setRecaptchaToken(null)}
+                onExpired={() => {
+                  setRecaptchaToken(null);
+                  setRecaptchaLoaded(false);
+                }}
               />
-              {!recaptchaToken && (
+              {!recaptchaToken && recaptchaLoaded && (
                 <p className="text-xs text-amber-600 mt-1">
                   ログインするにはreCAPTCHAを完了してください
                 </p>
+              )}
+              {!recaptchaLoaded && (
+                <p className="text-xs text-gray-500 mt-1">reCAPTCHAを読み込み中...</p>
               )}
             </div>
 

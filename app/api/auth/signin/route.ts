@@ -1,4 +1,4 @@
-// app/api/auth/signin/route.ts
+// app/api/auth/signin/route.ts (reCAPTCHA Enterprise対応版)
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -6,31 +6,58 @@ import bcrypt from 'bcryptjs';
 import { LoginSchema } from '@/schemas/auth';
 import { logger } from '@/lib/utils/logger';
 
-// reCAPTCHA検証関数
-async function verifyRecaptcha(token: string): Promise<boolean> {
+// reCAPTCHA Enterprise検証関数
+async function verifyRecaptchaEnterprise(token: string): Promise<boolean> {
   try {
-    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+    const apiKey = process.env.RECAPTCHA_SECRET_KEY;
+    const projectId = process.env.GOOGLE_CLOUD_PROJECT_ID;
+    const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
-    if (!secretKey) {
-      logger.error('RECAPTCHA_SECRET_KEY が設定されていません');
+    if (!apiKey || !projectId || !siteKey) {
+      logger.error('reCAPTCHA Enterprise設定が不完全です:', {
+        hasApiKey: !!apiKey,
+        hasProjectId: !!projectId,
+        hasSiteKey: !!siteKey,
+      });
       return false;
     }
 
-    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+    const url = `https://recaptchaenterprise.googleapis.com/v1/projects/${projectId}/assessments?key=${apiKey}`;
+
+    const response = await fetch(url, {
       method: 'POST',
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
+        'Content-Type': 'application/json',
       },
-      body: `secret=${secretKey}&response=${token}`,
+      body: JSON.stringify({
+        event: {
+          token: token,
+          siteKey: siteKey,
+          expectedAction: 'login',
+        },
+      }),
     });
 
-    const data = await response.json();
-    logger.info('reCAPTCHA検証結果:', { success: data.success, score: data.score });
+    if (!response.ok) {
+      logger.error('reCAPTCHA Enterprise API呼び出し失敗:', response.status, response.statusText);
+      return false;
+    }
 
-    // v3の場合はスコアもチェック、v2の場合はsuccessのみ
-    return data.success && (data.score === undefined || data.score > 0.5);
+    const data = await response.json();
+    logger.info('reCAPTCHA Enterprise検証結果:', {
+      score: data.riskAnalysis?.score,
+      valid: data.tokenProperties?.valid,
+      action: data.tokenProperties?.action,
+    });
+
+    // スコアと有効性をチェック（0.5以上を人間と判定）
+    const isValid = data.tokenProperties?.valid === true;
+    const score = data.riskAnalysis?.score || 0;
+    const correctAction = data.tokenProperties?.action === 'login';
+
+    return isValid && score >= 0.5 && correctAction;
   } catch (error) {
-    logger.error('reCAPTCHA検証エラー:', error);
+    logger.error('reCAPTCHA Enterprise検証エラー:', error);
     return false;
   }
 }
@@ -46,8 +73,8 @@ export async function POST(req: Request) {
       return NextResponse.json({ error: 'reCAPTCHA認証が必要です。' }, { status: 400 });
     }
 
-    // reCAPTCHA検証実行
-    const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
+    // reCAPTCHA Enterprise検証実行
+    const isValidRecaptcha = await verifyRecaptchaEnterprise(recaptchaToken);
     if (!isValidRecaptcha) {
       return NextResponse.json(
         { error: 'reCAPTCHA認証に失敗しました。再度お試しください。' },
