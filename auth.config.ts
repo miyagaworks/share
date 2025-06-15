@@ -1,4 +1,4 @@
-// auth.config.ts (reCAPTCHA v3版)
+// auth.config.ts (ヘッダーサイズ対策版)
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
@@ -32,10 +32,8 @@ async function verifyRecaptchaV3(
       success: data.success,
       score: data.score,
       action: data.action,
-      hostname: data.hostname,
     });
 
-    // v3の場合は success、score、actionをチェック
     return data.success && data.score >= 0.5 && data.action === expectedAction;
   } catch (error) {
     console.error('reCAPTCHA検証エラー:', error);
@@ -48,7 +46,8 @@ export default {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-      allowDangerousEmailAccountLinking: true,
+      // 🔧 重要：アカウントリンクを無効化してアカウント重複を防ぐ
+      allowDangerousEmailAccountLinking: false,
       authorization: {
         params: {
           scope: 'openid email profile',
@@ -94,6 +93,7 @@ export default {
           const { email, password } = validatedFields.data;
           const normalizedEmail = email.toLowerCase();
 
+          // 🔧 パスワード認証用のユーザーのみを検索
           const user = await prisma.user.findUnique({
             where: { email: normalizedEmail },
             select: {
@@ -102,11 +102,27 @@ export default {
               email: true,
               password: true,
               emailVerified: true,
+              accounts: {
+                select: {
+                  provider: true,
+                },
+              },
             },
           });
 
           if (!user || !user.password) {
             console.log('❌ ユーザーが見つからないかパスワードが設定されていません');
+            return null;
+          }
+
+          // 🔧 Googleでのみ登録されたユーザーの場合はエラー
+          const hasGoogleAccount = user.accounts.some((account) => account.provider === 'google');
+          const hasCredentialsAccount = user.accounts.some(
+            (account) => account.provider === 'credentials',
+          );
+
+          if (hasGoogleAccount && !hasCredentialsAccount) {
+            console.log('❌ Googleで登録されたユーザーです');
             return null;
           }
 
@@ -134,5 +150,5 @@ export default {
     signOut: '/auth/signin',
     error: '/auth/error',
   },
-  debug: process.env.NODE_ENV === 'development',
+  debug: false,
 } satisfies NextAuthConfig;

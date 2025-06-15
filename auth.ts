@@ -71,27 +71,55 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               emailVerified: true,
               subscriptionStatus: true,
               corporateRole: true,
+              accounts: {
+                select: {
+                  provider: true,
+                  providerAccountId: true,
+                },
+              },
             },
           });
 
           if (existingUser) {
             console.log('✅ Existing user found:', existingUser.id);
-            user.id = existingUser.id;
-            user.name = existingUser.name || user.name;
-            user.email = existingUser.email;
-            return true;
+
+            // 🔧 既存のGoogleアカウント連携をチェック
+            const hasGoogleAccount = existingUser.accounts.some((acc) => acc.provider === 'google');
+            const hasCredentialsAccount = existingUser.accounts.some(
+              (acc) => acc.provider === 'credentials',
+            );
+
+            // 🔧 メール/パスワードで登録されたユーザーがGoogleでログインしようとした場合
+            if (hasCredentialsAccount && !hasGoogleAccount) {
+              console.log('❌ メール/パスワードユーザーがGoogleログインを試行');
+              // リダイレクトURLにエラーパラメータを追加
+              throw new Error(
+                'このメールアドレスはメール/パスワードで登録されています。メール/パスワードでログインしてください。',
+              );
+            }
+
+            // 🔧 正常なGoogleアカウントの場合のみ続行
+            if (hasGoogleAccount) {
+              user.id = existingUser.id;
+              user.name = existingUser.name || user.name;
+              user.email = existingUser.email;
+              return true;
+            }
           }
 
+          // 🔧 管理者アカウントの特別処理
           if (email === 'admin@sns-share.com') {
             console.log('👑 Admin user detected');
             return true;
           }
 
+          // 🔧 開発環境での特別処理
           if (process.env.NODE_ENV === 'development' && process.env.ALLOW_ALL_USERS === 'true') {
             console.log('🌍 All users allowed (development mode)');
             return true;
           }
 
+          // 🔧 新規Googleユーザーの作成
           console.log('🆕 Creating new user for Google login');
           try {
             const newUser = await prisma.user.create({
@@ -104,7 +132,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               },
             });
 
-            console.log('✅ New user created:', newUser.id);
+            console.log('✅ New Google user created:', newUser.id);
             user.id = newUser.id;
             user.name = newUser.name;
             user.email = newUser.email;
@@ -113,6 +141,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             console.error('❌ Failed to create new user:', createError);
             return false;
           }
+        }
+
+        // 🔧 Credentials認証の場合はそのまま通す
+        if (account?.provider === 'credentials') {
+          console.log('✅ Credentials authentication successful');
+          return true;
         }
 
         return true;

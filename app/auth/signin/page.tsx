@@ -283,15 +283,44 @@ export default function SigninPage() {
 
       console.log('🚀 Google signin started');
 
+      // 🔧 redirect: false に変更してエラーハンドリングを可能にする
       const result = await signIn('google', {
-        redirect: true,
+        redirect: false,
         callbackUrl: '/dashboard',
       });
 
       console.log('Google signin result:', result);
+
+      // 🔧 エラーハンドリングを追加
+      if (result?.error) {
+        console.error('Google signin error:', result.error);
+
+        // 特定のエラーメッセージに応じて適切な案内を表示
+        if (
+          result.error.includes('メール/パスワードで登録') ||
+          result.error.includes('CredentialsSignin')
+        ) {
+          setError(
+            'このメールアドレスはメール/パスワードで登録されています。上記のフォームからメールアドレスとパスワードでログインしてください。',
+          );
+        } else {
+          setError('Googleログインでエラーが発生しました。再度お試しください。');
+        }
+        setIsPending(false);
+        return;
+      }
+
+      // 🔧 成功時の処理
+      if (result?.ok && result?.url) {
+        console.log('✅ Google signin successful, redirecting...');
+        window.location.href = result.url;
+      } else if (result?.ok) {
+        // URLが返されない場合はダッシュボードにリダイレクト
+        window.location.href = '/dashboard';
+      }
     } catch (error) {
-      console.error('Google signin error:', error);
-      setError('Googleログインでエラーが発生しました');
+      console.error('Google signin exception:', error);
+      setError('Googleログインでエラーが発生しました。再度お試しください。');
       setIsPending(false);
     }
   };
