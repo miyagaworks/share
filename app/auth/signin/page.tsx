@@ -1,4 +1,4 @@
-// app/auth/signin/page.tsx (修正版)
+// app/auth/signin/page.tsx (reCAPTCHA追加版)
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -10,6 +10,7 @@ import { LoginSchema } from '@/schemas/auth';
 import { signIn, getSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import RecaptchaWrapper from '@/components/RecaptchaWrapper';
 
 // SessionTimeoutMessageの内部実装
 function SessionTimeoutMessageInner() {
@@ -254,14 +255,17 @@ export default function SigninPage() {
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
 
-  // 🔥 修正: Cookie削除を削除（NextAuth.jsに任せる）
-  // 強制的なCookie削除は認証に干渉するため削除
-
-  // 🔥 修正: Google認証を正しいNextAuth.js方式で実装
+  // Google認証を開始する関数
   const handleGoogleSignIn = async () => {
     if (!termsAccepted) {
       setError('Googleでログインする場合も利用規約に同意していただく必要があります');
+      return;
+    }
+
+    if (!recaptchaToken) {
+      setError('Googleでログインする場合もreCAPTCHAを完了してください');
       return;
     }
 
@@ -271,10 +275,9 @@ export default function SigninPage() {
 
       console.log('🚀 Google signin started');
 
-      // 🔥 修正: NextAuth.jsの正式なsignIn関数を使用
       const result = await signIn('google', {
         callbackUrl: '/dashboard',
-        redirect: false, // 手動制御
+        redirect: false,
       });
 
       console.log('🔍 Google signin result:', result);
@@ -285,13 +288,11 @@ export default function SigninPage() {
       } else if (result?.ok) {
         console.log('✅ Google signin successful, checking session...');
 
-        // セッション確認
         const session = await getSession();
         console.log('🔍 Session after Google signin:', session);
 
         if (session?.user) {
           console.log('✅ Session confirmed, redirecting to dashboard');
-          // 手動でダッシュボードにリダイレクト
           window.location.href = '/dashboard';
         } else {
           console.warn('⚠️ No session found after successful signin');
@@ -342,13 +343,28 @@ export default function SigninPage() {
       emailValue.length > 0 &&
       emailRegex.test(emailValue) &&
       passwordValue.length >= 8 &&
-      !Object.keys(errors).length;
+      !Object.keys(errors).length &&
+      !!recaptchaToken;
 
     setIsFormValid(formIsValid);
-  }, [watchEmail, watchPassword, errors, isValid]);
+  }, [watchEmail, watchPassword, errors, isValid, recaptchaToken]);
 
-  // 🔥 修正: credentials signIn も修正
+  // reCAPTCHA確認時の処理
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token);
+    if (!token) {
+      setError('reCAPTCHAの認証に失敗しました。再度お試しください。');
+    } else {
+      setError(null);
+    }
+  };
+
   const onSubmit = async (data: { email: string; password: string }) => {
+    if (!recaptchaToken) {
+      setError('reCAPTCHAを完了してください');
+      return;
+    }
+
     try {
       setError(null);
       setIsPending(true);
@@ -358,6 +374,7 @@ export default function SigninPage() {
       const result = await signIn('credentials', {
         email: data.email.toLowerCase(),
         password: data.password,
+        recaptchaToken: recaptchaToken, // reCAPTCHAトークンを追加
         redirect: false,
         callbackUrl: '/dashboard',
       });
@@ -365,9 +382,8 @@ export default function SigninPage() {
       console.log('🔍 Credentials signin result:', result);
 
       if (result?.error) {
-        setError('メールアドレスまたはパスワードが正しくありません');
+        setError('メールアドレス、パスワード、またはreCAPTCHA認証が正しくありません');
       } else if (result?.ok) {
-        // セッション確認
         const session = await getSession();
         console.log('🔍 Session after credentials signin:', session);
 
@@ -472,7 +488,7 @@ export default function SigninPage() {
                   {...register('email')}
                   error={errors.email?.message}
                   disabled={isPending}
-                  className={`bg-white shadow-sm transition-colors ${isPasswordFilled && isPasswordValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
+                  className={`bg-white shadow-sm transition-colors ${isEmailFilled && isEmailValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
                   autoComplete="email"
                 />
                 {isEmailFilled && !isEmailValid && !errors.email?.message && (
@@ -500,7 +516,7 @@ export default function SigninPage() {
                     onClick={togglePasswordVisibility}
                     tabIndex={-1}
                     style={{
-                      top: 'calc(50% + 3px)', // ラベル分を考慮してinputフィールドの中央
+                      top: 'calc(50% + 3px)',
                       transform: 'translateY(-50%)',
                     }}
                   >
@@ -551,6 +567,19 @@ export default function SigninPage() {
                   </Link>
                 </div>
               </div>
+            </div>
+
+            {/* reCAPTCHA */}
+            <div className="mt-6">
+              <RecaptchaWrapper
+                onVerify={handleRecaptchaChange}
+                onExpired={() => setRecaptchaToken(null)}
+              />
+              {!recaptchaToken && (
+                <p className="text-xs text-amber-600 mt-1">
+                  ログインするにはreCAPTCHAを完了してください
+                </p>
+              )}
             </div>
 
             <div>
@@ -648,11 +677,13 @@ export default function SigninPage() {
             <div className="mt-4">
               <Button
                 className={`w-full bg-white text-gray-700 border border-gray-300 flex items-center justify-center transform hover:-translate-y-0.5 transition min-h-[48px] md:min-h-0 ${
-                  termsAccepted ? 'hover:bg-gray-50 shadow-sm' : 'opacity-50 cursor-not-allowed'
+                  termsAccepted && recaptchaToken
+                    ? 'hover:bg-gray-50 shadow-sm'
+                    : 'opacity-50 cursor-not-allowed'
                 }`}
                 variant="outline"
                 onClick={handleGoogleSignIn}
-                disabled={isPending || !termsAccepted}
+                disabled={isPending || !termsAccepted || !recaptchaToken}
               >
                 <Image
                   src="/google-logo.svg"
@@ -664,7 +695,7 @@ export default function SigninPage() {
                 Googleでログイン
               </Button>
               <p className="text-xs text-gray-500 mt-2 text-center">
-                Googleでログインする場合も利用規約に同意する必要があります
+                Googleでログインする場合も利用規約への同意とreCAPTCHAの完了が必要です
               </p>
             </div>
           </div>

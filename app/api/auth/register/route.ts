@@ -9,11 +9,56 @@ import { sendEmail } from '@/lib/email';
 import { getEmailVerificationTemplate } from '@/lib/email/templates/email-verification';
 import { logger } from '@/lib/utils/logger';
 
+// reCAPTCHA検証関数
+async function verifyRecaptcha(token: string): Promise<boolean> {
+  try {
+    const secretKey = process.env.RECAPTCHA_SECRET_KEY;
+
+    if (!secretKey) {
+      logger.error('RECAPTCHA_SECRET_KEY が設定されていません');
+      return false;
+    }
+
+    const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: `secret=${secretKey}&response=${token}`,
+    });
+
+    const data = await response.json();
+    logger.info('reCAPTCHA検証結果:', { success: data.success, score: data.score });
+
+    // v3の場合はスコアもチェック、v2の場合はsuccessのみ
+    return data.success && (data.score === undefined || data.score > 0.5);
+  } catch (error) {
+    logger.error('reCAPTCHA検証エラー:', error);
+    return false;
+  }
+}
+
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
 
-    const validatedFields = RegisterSchema.safeParse(body);
+    // reCAPTCHAトークンの検証
+    const { recaptchaToken, ...otherData } = body;
+
+    if (!recaptchaToken) {
+      return NextResponse.json({ message: 'reCAPTCHA認証が必要です。' }, { status: 400 });
+    }
+
+    // reCAPTCHA検証実行
+    const isValidRecaptcha = await verifyRecaptcha(recaptchaToken);
+    if (!isValidRecaptcha) {
+      return NextResponse.json(
+        { message: 'reCAPTCHA認証に失敗しました。再度お試しください。' },
+        { status: 400 },
+      );
+    }
+
+    const validatedFields = RegisterSchema.safeParse(otherData);
     if (!validatedFields.success) {
       return NextResponse.json({ message: '入力内容に問題があります。' }, { status: 400 });
     }

@@ -1,4 +1,4 @@
-// app/auth/signup/page.tsx (メール保存追加版)
+// app/auth/signup/page.tsx (reCAPTCHA追加版)
 'use client';
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
@@ -10,6 +10,7 @@ import { RegisterSchema } from '@/schemas/auth';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { signIn } from 'next-auth/react';
+import RecaptchaWrapper from '@/components/RecaptchaWrapper';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -27,12 +28,18 @@ export default function SignupPage() {
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
 
   // Google認証を開始する関数
   const handleGoogleSignIn = () => {
     // 利用規約の同意確認
     if (!termsAccepted) {
       setError('Googleで登録する場合も利用規約に同意していただく必要があります');
+      return;
+    }
+    // reCAPTCHA確認
+    if (!recaptchaToken) {
+      setError('Googleで登録する場合もreCAPTCHAを完了してください');
       return;
     }
     // 同意している場合のみGoogleログインを実行
@@ -54,7 +61,7 @@ export default function SignupPage() {
       email: '',
       password: '',
     },
-    mode: 'onChange', // リアルタイムバリデーション
+    mode: 'onChange',
   });
 
   const watchLastName = watch('lastName');
@@ -66,7 +73,6 @@ export default function SignupPage() {
 
   // 入力フィールドの状態を監視
   useEffect(() => {
-    // 空白を除去した後の各フィールドの値が空でないかを確認
     const lastNameValue = watchLastName?.trim() || '';
     const firstNameValue = watchFirstName?.trim() || '';
     const lastNameKanaValue = watchLastNameKana?.trim() || '';
@@ -81,14 +87,10 @@ export default function SignupPage() {
     setIsEmailFilled(emailValue.length > 0);
     setIsPasswordFilled(passwordValue.length > 0);
 
-    // メールアドレスの簡易バリデーション
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     setIsEmailValid(emailRegex.test(emailValue));
-
-    // パスワードの長さチェック
     setIsPasswordValid(passwordValue.length >= 8);
 
-    // すべての条件が満たされていればフォームは有効
     const formIsValid =
       lastNameValue.length > 0 &&
       firstNameValue.length > 0 &&
@@ -98,7 +100,8 @@ export default function SignupPage() {
       emailRegex.test(emailValue) &&
       passwordValue.length >= 8 &&
       !Object.keys(errors).length &&
-      termsAccepted;
+      termsAccepted &&
+      !!recaptchaToken;
 
     setIsFormValid(formIsValid);
   }, [
@@ -111,7 +114,18 @@ export default function SignupPage() {
     errors,
     isValid,
     termsAccepted,
+    recaptchaToken,
   ]);
+
+  // reCAPTCHA確認時の処理
+  const handleRecaptchaChange = (token: string | null) => {
+    setRecaptchaToken(token);
+    if (!token) {
+      setError('reCAPTCHAの認証に失敗しました。再度お試しください。');
+    } else {
+      setError(null);
+    }
+  };
 
   // パスワードの表示/非表示を切り替える関数
   const togglePasswordVisibility = () => {
@@ -132,6 +146,12 @@ export default function SignupPage() {
       return;
     }
 
+    // reCAPTCHA確認
+    if (!recaptchaToken) {
+      setError('reCAPTCHAを完了してください');
+      return;
+    }
+
     try {
       setError(null);
       setSuccess(null);
@@ -144,12 +164,11 @@ export default function SignupPage() {
         firstNameKana: data.firstNameKana,
         email: data.email,
         password: data.password,
+        recaptchaToken, // reCAPTCHAトークンを追加
       };
 
-      // 🔥 修正: メールアドレスをローカルストレージに保存
       localStorage.setItem('pendingVerificationEmail', data.email);
 
-      // サインアップ処理
       const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: {
@@ -163,20 +182,16 @@ export default function SignupPage() {
         throw new Error(result.message || 'アカウント登録に失敗しました');
       }
 
-      // アカウント登録成功
-      // メール認証が必要な場合
       if (result.requiresEmailVerification) {
         setSuccess(
           'アカウントが作成されました。認証メールを送信しました。メール認証画面に移動します...',
         );
 
-        // 🔥 メールアドレスをURLパラメータで渡す
         setTimeout(() => {
           const encodedEmail = encodeURIComponent(data.email);
           router.push(`/auth/email-verification?email=${encodedEmail}`);
         }, 3000);
       } else {
-        // 従来の自動ログイン処理
         setSuccess('アカウントが正常に作成されました。自動的にログインしています...');
         const signInResult = await signIn('credentials', {
           email: data.email,
@@ -411,7 +426,7 @@ export default function SignupPage() {
                     onClick={togglePasswordVisibility}
                     tabIndex={-1}
                     style={{
-                      top: 'calc(50% + 3px)', // ラベル分を考慮してinputフィールドの中央
+                      top: 'calc(50% + 3px)',
                       transform: 'translateY(-50%)',
                     }}
                   >
@@ -451,6 +466,19 @@ export default function SignupPage() {
                 {isPasswordFilled && !isPasswordValid && !errors.password?.message && (
                   <p className="text-xs text-amber-600 mt-1">
                     パスワードは8文字以上である必要があります
+                  </p>
+                )}
+              </div>
+
+              {/* reCAPTCHA */}
+              <div className="mt-6">
+                <RecaptchaWrapper
+                  onVerify={handleRecaptchaChange}
+                  onExpired={() => setRecaptchaToken(null)}
+                />
+                {!recaptchaToken && (
+                  <p className="text-xs text-amber-600 mt-1">
+                    登録を続けるにはreCAPTCHAを完了してください
                   </p>
                 )}
               </div>
@@ -556,11 +584,13 @@ export default function SignupPage() {
             <div className="mt-6">
               <Button
                 className={`w-full bg-white text-gray-700 border border-gray-300 flex items-center justify-center transform hover:-translate-y-0.5 transition min-h-[48px] md:min-h-0 ${
-                  termsAccepted ? 'hover:bg-gray-50 shadow-sm' : 'opacity-50 cursor-not-allowed'
+                  termsAccepted && recaptchaToken
+                    ? 'hover:bg-gray-50 shadow-sm'
+                    : 'opacity-50 cursor-not-allowed'
                 }`}
                 variant="outline"
                 onClick={handleGoogleSignIn}
-                disabled={isPending || !termsAccepted}
+                disabled={isPending || !termsAccepted || !recaptchaToken}
               >
                 <Image
                   src="/google-logo.svg"
@@ -572,7 +602,7 @@ export default function SignupPage() {
                 Googleで登録
               </Button>
               <p className="text-xs text-gray-500 mt-2 text-center">
-                Googleで登録する場合も利用規約に同意する必要があります
+                Googleで登録する場合も利用規約への同意とreCAPTCHAの完了が必要です
               </p>
             </div>
           </div>
