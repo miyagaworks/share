@@ -11,6 +11,7 @@ import { signIn, getSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import RecaptchaWrapper from '@/components/RecaptchaWrapper';
+import SigninDebug from '@/components/debug/SigninDebug';
 
 // SessionTimeoutMessageの内部実装
 function SessionTimeoutMessageInner() {
@@ -752,6 +753,8 @@ export default function SigninPage() {
           </div>
         </div>
       </div>
+      {/* デバッグコンポーネント */}
+      <SigninDebug />
     </div>
   );
 }
