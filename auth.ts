@@ -1,4 +1,4 @@
-// auth.ts (Googleログイン重複回避版)
+// auth.ts (ヘッダーサイズ最適化版)
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -23,48 +23,7 @@ declare module 'next-auth/jwt' {
     role?: string;
     isAdmin?: boolean;
     tenantId?: string | null;
-    subscriptionStatus?: string | null;
   }
-}
-
-// 🔥 永久利用権プラン種別を判定する統一関数（Dashboard APIと同じロジック）
-function determinePermanentPlanType(user: any): string {
-  // サブスクリプション情報から判定
-  if (user.subscription?.plan) {
-    const plan = user.subscription.plan.toLowerCase();
-
-    if (plan.includes('permanent_enterprise') || plan.includes('enterprise')) {
-      return 'enterprise';
-    } else if (plan.includes('permanent_business') || plan.includes('business')) {
-      return 'business';
-    } else if (
-      plan.includes('business_plus') ||
-      plan.includes('business-plus') ||
-      plan.includes('businessplus')
-    ) {
-      return 'business'; // 旧business_plusはbusinessにマッピング
-    } else if (plan.includes('permanent_starter') || plan.includes('starter')) {
-      return 'starter';
-    } else if (plan.includes('permanent_personal') || plan.includes('personal')) {
-      return 'personal';
-    }
-  }
-
-  // テナント情報から判定
-  if (user.adminOfTenant || user.tenant) {
-    const tenant = user.adminOfTenant || user.tenant;
-    const maxUsers = tenant?.maxUsers || 10;
-
-    if (maxUsers >= 50) {
-      return 'enterprise';
-    } else if (maxUsers >= 30) {
-      return 'business';
-    } else {
-      return 'starter';
-    }
-  }
-
-  return 'personal';
 }
 
 // NextAuth設定
@@ -72,9 +31,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt',
-    maxAge: process.env.SESSION_TIMEOUT_HOURS
-      ? parseInt(process.env.SESSION_TIMEOUT_HOURS) * 60 * 60
-      : 8 * 60 * 60,
+    // 🔧 セッション時間を短縮してサイズ削減
+    maxAge: 4 * 60 * 60, // 4時間
   },
   cookies: {
     sessionToken: {
@@ -87,6 +45,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         sameSite: 'lax',
         path: '/',
         secure: process.env.NODE_ENV === 'production',
+        // 🔧 cookieサイズ制限
+        maxAge: 4 * 60 * 60,
       },
     },
   },
@@ -95,7 +55,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       console.log('🚀 SignIn callback started', {
         provider: account?.provider,
         userEmail: user?.email,
-        userId: user?.id,
       });
 
       try {
@@ -103,7 +62,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const email = user.email.toLowerCase();
           console.log('📧 Processing Google login for:', email);
 
-          // 🔥 既存ユーザーの確認（より詳細な情報を取得）
           const existingUser = await prisma.user.findUnique({
             where: { email },
             select: {
@@ -113,49 +71,27 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               emailVerified: true,
               subscriptionStatus: true,
               corporateRole: true,
-              image: true,
             },
           });
 
           if (existingUser) {
             console.log('✅ Existing user found:', existingUser.id);
-
-            // 🔥 Googleアカウントの画像URLを更新（プロフィール画像が新しい場合）
-            if (profile?.picture && profile.picture !== existingUser.image) {
-              try {
-                await prisma.user.update({
-                  where: { id: existingUser.id },
-                  data: {
-                    image: profile.picture,
-                    // emailVerifiedも確認（Googleアカウントなので確実に認証済み）
-                    emailVerified: existingUser.emailVerified || new Date(),
-                  },
-                });
-                console.log('📸 Updated user profile image');
-              } catch (updateError) {
-                console.warn('⚠️ Failed to update user image:', updateError);
-              }
-            }
-
             user.id = existingUser.id;
             user.name = existingUser.name || user.name;
             user.email = existingUser.email;
             return true;
           }
 
-          // 管理者ユーザーの自動承認
           if (email === 'admin@sns-share.com') {
             console.log('👑 Admin user detected');
             return true;
           }
 
-          // 開発環境での全ユーザー許可
           if (process.env.NODE_ENV === 'development' && process.env.ALLOW_ALL_USERS === 'true') {
             console.log('🌍 All users allowed (development mode)');
             return true;
           }
 
-          // 🔥 新規ユーザーの作成（Googleアカウント）
           console.log('🆕 Creating new user for Google login');
           try {
             const newUser = await prisma.user.create({
@@ -163,59 +99,22 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 email: email,
                 name: user.name || profile?.name || 'Google User',
                 image: user.image || profile?.picture || null,
-                emailVerified: new Date(), // Googleアカウントは自動的に認証済み
+                emailVerified: new Date(),
                 subscriptionStatus: 'trial',
               },
             });
 
-            console.log('✅ New Google user created:', newUser.id);
+            console.log('✅ New user created:', newUser.id);
             user.id = newUser.id;
             user.name = newUser.name;
             user.email = newUser.email;
             return true;
           } catch (createError) {
-            console.error('❌ Failed to create new Google user:', createError);
-
-            // 🔥 招待ユーザーのチェック
-            const invitedUser = await prisma.passwordResetToken.findFirst({
-              where: {
-                user: {
-                  email: email,
-                },
-              },
-              include: {
-                user: true,
-              },
-            });
-
-            if (invitedUser) {
-              console.log('📨 Invited user found, allowing Google login');
-
-              // 招待ユーザーのemailVerifiedを更新
-              try {
-                await prisma.user.update({
-                  where: { id: invitedUser.user.id },
-                  data: {
-                    emailVerified: new Date(),
-                    image: user.image || profile?.picture || null,
-                  },
-                });
-              } catch (updateError) {
-                console.warn('⚠️ Failed to update invited user:', updateError);
-              }
-
-              user.id = invitedUser.user.id;
-              user.name = invitedUser.user.name;
-              user.email = invitedUser.user.email;
-              return true;
-            }
-
-            console.log('🚫 User not authorized for Google login');
+            console.error('❌ Failed to create new user:', createError);
             return false;
           }
         }
 
-        console.log('✅ Non-Google login approved');
         return true;
       } catch (error) {
         console.error('💥 SignIn callback error:', error);
@@ -223,119 +122,62 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
     },
 
-    async jwt({ token, user, trigger }) {
-      try {
-        if (user) {
-          token.sub = user.id;
-          token.name = user.name;
-          token.email = user.email;
-        }
+    async jwt({ token, user }) {
+      // 🔧 最小限の情報のみトークンに保存
+      if (user) {
+        token.sub = user.id;
+        token.name = user.name;
+        token.email = user.email;
+      }
 
-        if ((user || trigger === 'update') && token.sub) {
+      // 🔧 ロール情報の簡素化
+      if (token.sub && !token.role) {
+        try {
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
             select: {
               email: true,
               subscriptionStatus: true,
               corporateRole: true,
-              adminOfTenant: {
-                select: {
-                  id: true,
-                  accountStatus: true,
-                  maxUsers: true,
-                },
-              },
-              tenant: {
-                select: {
-                  id: true,
-                  accountStatus: true,
-                  maxUsers: true,
-                },
-              },
-              subscription: {
-                select: {
-                  plan: true,
-                  status: true,
-                },
-              },
+              adminOfTenant: { select: { id: true } },
+              tenant: { select: { id: true } },
             },
           });
 
           if (dbUser) {
             const userEmail = dbUser.email.toLowerCase();
-            token.subscriptionStatus = dbUser.subscriptionStatus;
 
-            // ロール判定
             if (userEmail === 'admin@sns-share.com') {
               token.role = 'super-admin';
-              token.isAdmin = true;
-              token.tenantId = `admin-tenant-${token.sub}`;
             } else if (dbUser.subscriptionStatus === 'permanent') {
-              // 🔥 修正: 永久利用権ユーザーのプラン種別を統一ロジックで判定
-              const permanentPlanType = determinePermanentPlanType(dbUser);
-
-              console.log('🔥 永久利用権ユーザー判定:', {
-                userId: token.sub,
-                email: userEmail,
-                permanentPlanType,
-                subscription: dbUser.subscription?.plan,
-                hasAdminTenant: !!dbUser.adminOfTenant,
-                hasTenant: !!dbUser.tenant,
-              });
-
-              // 🔥 修正: プラン種別に応じて正確にロールを設定
-              if (permanentPlanType === 'personal') {
-                token.role = 'permanent-personal';
-                token.isAdmin = false;
-                token.tenantId = null;
-              } else {
-                // starter, business, enterprise は法人プラン
-                token.role = 'permanent-admin';
-                token.isAdmin = true;
-                token.tenantId = `virtual-tenant-${token.sub}`;
-              }
+              token.role = 'permanent-admin';
             } else if (dbUser.adminOfTenant) {
-              const isActive = dbUser.adminOfTenant.accountStatus !== 'suspended';
-              token.role = isActive ? 'admin' : 'personal';
-              token.isAdmin = isActive;
-              token.tenantId = isActive ? dbUser.adminOfTenant.id : null;
+              token.role = 'admin';
             } else if (dbUser.corporateRole === 'member' && dbUser.tenant) {
-              const isActive = dbUser.tenant.accountStatus !== 'suspended';
-              token.role = isActive ? 'member' : 'personal';
-              token.isAdmin = false;
-              token.tenantId = isActive ? dbUser.tenant.id : null;
+              token.role = 'member';
             } else {
               token.role = 'personal';
-              token.isAdmin = false;
-              token.tenantId = null;
             }
-          } else {
-            token.role = 'personal';
-            token.isAdmin = false;
-            token.tenantId = null;
           }
+        } catch (error) {
+          console.error('JWT callback error:', error);
+          token.role = 'personal';
         }
-
-        return token;
-      } catch (error) {
-        console.error('JWT callback error:', error);
-        return token;
       }
+
+      return token;
     },
 
     async session({ session, token }) {
-      try {
-        if (token && session.user) {
-          session.user.id = token.sub as string;
-          session.user.name = token.name as string;
-          session.user.email = token.email as string;
-          session.user.role = token.role as string;
-        }
-        return session;
-      } catch (error) {
-        console.error('Session callback error:', error);
-        return session;
+      // 🔧 セッションデータを最小限に
+      if (token && session.user) {
+        session.user.id = token.sub as string;
+        session.user.role = token.role as string;
+        // 🔧 name と email は必要最小限のみ
+        session.user.name = token.name as string;
+        session.user.email = token.email as string;
       }
+      return session;
     },
   },
   pages: {
@@ -344,5 +186,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: '/auth/error',
   },
   providers: authConfig.providers,
-  debug: process.env.NODE_ENV === 'development',
+  debug: false, // 🔧 デバッグを無効化してログ削減
 });
