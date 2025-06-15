@@ -1,4 +1,4 @@
-// auth.ts (永久利用権判定統一修正版)
+// auth.ts (Googleログイン重複回避版)
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -103,6 +103,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const email = user.email.toLowerCase();
           console.log('📧 Processing Google login for:', email);
 
+          // 🔥 既存ユーザーの確認（より詳細な情報を取得）
           const existingUser = await prisma.user.findUnique({
             where: { email },
             select: {
@@ -112,27 +113,49 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               emailVerified: true,
               subscriptionStatus: true,
               corporateRole: true,
+              image: true,
             },
           });
 
           if (existingUser) {
             console.log('✅ Existing user found:', existingUser.id);
+
+            // 🔥 Googleアカウントの画像URLを更新（プロフィール画像が新しい場合）
+            if (profile?.picture && profile.picture !== existingUser.image) {
+              try {
+                await prisma.user.update({
+                  where: { id: existingUser.id },
+                  data: {
+                    image: profile.picture,
+                    // emailVerifiedも確認（Googleアカウントなので確実に認証済み）
+                    emailVerified: existingUser.emailVerified || new Date(),
+                  },
+                });
+                console.log('📸 Updated user profile image');
+              } catch (updateError) {
+                console.warn('⚠️ Failed to update user image:', updateError);
+              }
+            }
+
             user.id = existingUser.id;
             user.name = existingUser.name || user.name;
             user.email = existingUser.email;
             return true;
           }
 
+          // 管理者ユーザーの自動承認
           if (email === 'admin@sns-share.com') {
             console.log('👑 Admin user detected');
             return true;
           }
 
+          // 開発環境での全ユーザー許可
           if (process.env.NODE_ENV === 'development' && process.env.ALLOW_ALL_USERS === 'true') {
             console.log('🌍 All users allowed (development mode)');
             return true;
           }
 
+          // 🔥 新規ユーザーの作成（Googleアカウント）
           console.log('🆕 Creating new user for Google login');
           try {
             const newUser = await prisma.user.create({
@@ -140,19 +163,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 email: email,
                 name: user.name || profile?.name || 'Google User',
                 image: user.image || profile?.picture || null,
-                emailVerified: new Date(),
+                emailVerified: new Date(), // Googleアカウントは自動的に認証済み
                 subscriptionStatus: 'trial',
               },
             });
 
-            console.log('✅ New user created:', newUser.id);
+            console.log('✅ New Google user created:', newUser.id);
             user.id = newUser.id;
             user.name = newUser.name;
             user.email = newUser.email;
             return true;
           } catch (createError) {
-            console.error('❌ Failed to create new user:', createError);
+            console.error('❌ Failed to create new Google user:', createError);
 
+            // 🔥 招待ユーザーのチェック
             const invitedUser = await prisma.passwordResetToken.findFirst({
               where: {
                 user: {
@@ -165,14 +189,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             });
 
             if (invitedUser) {
-              console.log('📨 Invited user found');
+              console.log('📨 Invited user found, allowing Google login');
+
+              // 招待ユーザーのemailVerifiedを更新
+              try {
+                await prisma.user.update({
+                  where: { id: invitedUser.user.id },
+                  data: {
+                    emailVerified: new Date(),
+                    image: user.image || profile?.picture || null,
+                  },
+                });
+              } catch (updateError) {
+                console.warn('⚠️ Failed to update invited user:', updateError);
+              }
+
               user.id = invitedUser.user.id;
               user.name = invitedUser.user.name;
               user.email = invitedUser.user.email;
               return true;
             }
 
-            console.log('🚫 User not authorized');
+            console.log('🚫 User not authorized for Google login');
             return false;
           }
         }
@@ -204,14 +242,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 select: {
                   id: true,
                   accountStatus: true,
-                  maxUsers: true, // 🔥 追加
+                  maxUsers: true,
                 },
               },
               tenant: {
                 select: {
                   id: true,
                   accountStatus: true,
-                  maxUsers: true, // 🔥 追加
+                  maxUsers: true,
                 },
               },
               subscription: {
