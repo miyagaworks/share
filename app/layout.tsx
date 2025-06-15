@@ -1,4 +1,4 @@
-// app/layout.tsx (ピンチアウト拡大防止強化版)
+// app/layout.tsx (reCAPTCHA v3対応版)
 import type { Metadata, Viewport } from 'next';
 import { Inter, Roboto_Mono } from 'next/font/google';
 import { ToastProvider } from '@/components/providers/ToastProvider';
@@ -60,6 +60,14 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+
+        {/* 🔒 reCAPTCHA v3スクリプト */}
+        <script
+          src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
+          async
+          defer
+        />
+
         {/* 🚀 JavaScript による拡大防止 */}
         <script
           dangerouslySetInnerHTML={{
