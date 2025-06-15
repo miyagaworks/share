@@ -267,15 +267,19 @@ export default function SigninPage() {
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
 
-  // Google認証を開始する関数
+  // Google認証を開始する関数（修正版）
   const handleGoogleSignIn = async () => {
+    console.log('🔥 Google sign in button clicked');
+    console.log('Terms accepted:', termsAccepted);
+    console.log('reCAPTCHA token:', recaptchaToken ? 'Present' : 'Missing');
+
     if (!termsAccepted) {
-      setError('Googleでログインする場合も利用規約に同意していただく必要があります');
+      setError('利用規約に同意してください');
       return;
     }
 
     if (!recaptchaToken) {
-      setError('Googleでログインする場合もreCAPTCHAを完了してください');
+      setError('reCAPTCHAを完了してください');
       return;
     }
 
@@ -283,39 +287,18 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      console.log('🚀 Google signin started');
+      console.log('🚀 Starting Google signin...');
 
+      // シンプルなGoogle認証
       const result = await signIn('google', {
+        redirect: true, // 直接リダイレクトに変更
         callbackUrl: '/dashboard',
-        redirect: false,
       });
 
-      console.log('🔍 Google signin result:', result);
-
-      if (result?.error) {
-        console.error('❌ Google signin error:', result.error);
-        setError('Googleログインでエラーが発生しました。再度お試しください。');
-      } else if (result?.ok) {
-        console.log('✅ Google signin successful, checking session...');
-
-        const session = await getSession();
-        console.log('🔍 Session after Google signin:', session);
-
-        if (session?.user) {
-          console.log('✅ Session confirmed, redirecting to dashboard');
-          window.location.href = '/dashboard';
-        } else {
-          console.warn('⚠️ No session found after successful signin');
-          setError('ログイン後のセッション確認に失敗しました。再度お試しください。');
-        }
-      } else if (result?.url) {
-        console.log('🔄 Redirecting to:', result.url);
-        window.location.href = result.url;
-      }
+      console.log('Google signin result:', result);
     } catch (error) {
-      console.error('💥 Google signin exception:', error);
-      setError('Googleログイン処理中にエラーが発生しました。');
-    } finally {
+      console.error('Google signin error:', error);
+      setError('Googleログインでエラーが発生しました');
       setIsPending(false);
     }
   };

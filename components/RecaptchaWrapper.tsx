@@ -1,6 +1,6 @@
-// components/RecaptchaWrapper.tsx - 完璧なv3対応版
+// components/RecaptchaWrapper.tsx - シンプル版（エラーなし）
 'use client';
-import { useRef, useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 
 interface RecaptchaWrapperProps {
   onVerify: (token: string | null) => void;
@@ -15,136 +15,68 @@ export default function RecaptchaWrapper({
 }: RecaptchaWrapperProps) {
   const [isLoaded, setIsLoaded] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [isReady, setIsReady] = useState(false);
-  const executeTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-  const checkIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const [hasExecuted, setHasExecuted] = useState(false);
 
-  // 環境変数の確認
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
-  // reCAPTCHA実行関数をuseCallbackで定義
-  const executeRecaptcha = useCallback(async () => {
-    if (!window.grecaptcha || !siteKey || !isReady) {
-      console.log('❌ reCAPTCHA not ready yet');
-      return;
-    }
-
-    try {
-      console.log('🚀 Executing reCAPTCHA v3 with action:', action);
-      const token = await window.grecaptcha.execute(siteKey, { action });
-      console.log('✅ reCAPTCHA v3 token received successfully');
-      onVerify(token);
-
-      // v3では2分でトークンが期限切れになるため、1分45秒後に再実行
-      if (executeTimeoutRef.current) {
-        clearTimeout(executeTimeoutRef.current);
-      }
-
-      executeTimeoutRef.current = setTimeout(() => {
-        executeRecaptcha();
-      }, 105000); // 1分45秒後
-    } catch (error) {
-      console.error('❌ reCAPTCHA execution error:', error);
-      setError('reCAPTCHA実行エラーが発生しました');
-      onVerify(null);
-    }
-  }, [siteKey, action, onVerify, isReady]);
-
-  // リフレッシュ関数
-  const handleRefresh = useCallback(() => {
-    setError(null);
-    if (isReady) {
-      executeRecaptcha();
-    }
-  }, [executeRecaptcha, isReady]);
-
-  // reCAPTCHA初期化
   useEffect(() => {
-    console.log('🔑 reCAPTCHA Site Key:', siteKey ? `${siteKey.substring(0, 10)}...` : 'undefined');
-
     if (!siteKey) {
       setError('reCAPTCHA Site Keyが設定されていません');
       return;
     }
 
-    // grecaptchaの読み込み確認
-    const checkGrecaptcha = () => {
-      if (window.grecaptcha && window.grecaptcha.ready) {
-        console.log('📜 grecaptcha script found, initializing...');
+    if (hasExecuted) {
+      return;
+    }
 
-        window.grecaptcha.ready(() => {
-          console.log('✅ reCAPTCHA v3 ready');
-          setIsLoaded(true);
-          setIsReady(true);
-          setError(null);
-
-          // 初回実行
-          executeRecaptcha();
-        });
-
-        // インターバルをクリア
-        if (checkIntervalRef.current) {
-          clearInterval(checkIntervalRef.current);
-          checkIntervalRef.current = null;
-        }
-      }
-    };
-
-    // 初回チェック
-    checkGrecaptcha();
-
-    // 定期的にチェック（最大30秒間）
-    let attempts = 0;
-    const maxAttempts = 60; // 30秒間（500ms × 60回）
-
-    checkIntervalRef.current = setInterval(() => {
-      attempts++;
-
-      if (attempts >= maxAttempts) {
-        console.error('❌ reCAPTCHA script loading timeout');
-        setError('reCAPTCHA読み込みがタイムアウトしました');
-        if (checkIntervalRef.current) {
-          clearInterval(checkIntervalRef.current);
-          checkIntervalRef.current = null;
-        }
+    const executeRecaptcha = async () => {
+      if (!window.grecaptcha || hasExecuted) {
         return;
       }
 
-      checkGrecaptcha();
-    }, 500);
-
-    // クリーンアップ
-    return () => {
-      if (executeTimeoutRef.current) {
-        clearTimeout(executeTimeoutRef.current);
-        executeTimeoutRef.current = null;
-      }
-      if (checkIntervalRef.current) {
-        clearInterval(checkIntervalRef.current);
-        checkIntervalRef.current = null;
+      try {
+        setHasExecuted(true);
+        console.log('🚀 Executing reCAPTCHA v3...');
+        const token = await window.grecaptcha.execute(siteKey, { action });
+        console.log('✅ reCAPTCHA v3 token received');
+        onVerify(token);
+      } catch (err) {
+        console.error('❌ reCAPTCHA execution error:', err);
+        setError('reCAPTCHA実行エラーが発生しました');
+        onVerify(null);
       }
     };
-  }, [siteKey, executeRecaptcha]);
 
-  // エラー時のUIレンダリング
+    const checkAndExecute = () => {
+      if (window.grecaptcha && window.grecaptcha.ready) {
+        window.grecaptcha.ready(() => {
+          setIsLoaded(true);
+          setError(null);
+          executeRecaptcha();
+        });
+      } else {
+        // 3秒後に再試行（1回のみ）
+        setTimeout(() => {
+          if (window.grecaptcha && window.grecaptcha.ready && !hasExecuted) {
+            window.grecaptcha.ready(() => {
+              setIsLoaded(true);
+              setError(null);
+              executeRecaptcha();
+            });
+          } else if (!hasExecuted) {
+            setError('reCAPTCHAの読み込みに失敗しました');
+          }
+        }, 3000);
+      }
+    };
+
+    checkAndExecute();
+  }, [siteKey, action, onVerify, hasExecuted]);
+
   if (!siteKey) {
     return (
       <div className="p-4 bg-red-50 border border-red-200 rounded-md">
-        <div className="flex items-center">
-          <svg className="h-5 w-5 text-red-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-            <path
-              fillRule="evenodd"
-              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
-              clipRule="evenodd"
-            />
-          </svg>
-          <div>
-            <p className="text-red-600 text-sm font-medium">reCAPTCHA設定エラー</p>
-            <p className="text-red-500 text-xs mt-1">
-              環境変数 NEXT_PUBLIC_RECAPTCHA_SITE_KEY が設定されていません
-            </p>
-          </div>
-        </div>
+        <p className="text-red-600 text-sm">reCAPTCHA設定エラー: サイトキーが見つかりません</p>
       </div>
     );
   }
@@ -152,60 +84,19 @@ export default function RecaptchaWrapper({
   if (error) {
     return (
       <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center">
-            <svg className="h-5 w-5 text-yellow-400 mr-2" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <div>
-              <p className="text-yellow-600 text-sm font-medium">reCAPTCHAエラー</p>
-              <p className="text-yellow-600 text-xs mt-1">{error}</p>
-            </div>
-          </div>
-          <button
-            onClick={handleRefresh}
-            className="text-yellow-700 hover:text-yellow-800 text-sm underline focus:outline-none"
-          >
-            再試行
-          </button>
-        </div>
+        <p className="text-yellow-600 text-sm">{error}</p>
       </div>
     );
   }
 
-  if (!isLoaded || !isReady) {
+  if (!isLoaded || !hasExecuted) {
     return (
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-        <div className="flex items-center">
-          <svg className="animate-spin h-5 w-5 text-blue-500 mr-2" fill="none" viewBox="0 0 24 24">
-            <circle
-              className="opacity-25"
-              cx="12"
-              cy="12"
-              r="10"
-              stroke="currentColor"
-              strokeWidth="4"
-            ></circle>
-            <path
-              className="opacity-75"
-              fill="currentColor"
-              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-            ></path>
-          </svg>
-          <div>
-            <p className="text-blue-600 text-sm font-medium">reCAPTCHA v3 読み込み中</p>
-            <p className="text-blue-500 text-xs mt-1">セキュリティ認証を準備しています...</p>
-          </div>
-        </div>
+        <p className="text-blue-600 text-sm">reCAPTCHA v3 読み込み中...</p>
       </div>
     );
   }
 
-  // 成功時のUIレンダリング
   return (
     <div className="space-y-2">
       <div className="flex items-center space-x-2 text-sm text-green-600 bg-green-50 p-3 rounded-md border border-green-200">
