@@ -1,4 +1,4 @@
-// auth.config.ts (従来のreCAPTCHA版)
+// auth.config.ts (reCAPTCHA v3版)
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
@@ -6,8 +6,11 @@ import { LoginSchema } from '@/schemas/auth';
 import bcrypt from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
 
-// 従来のreCAPTCHA検証関数
-async function verifyRecaptcha(token: string): Promise<boolean> {
+// reCAPTCHA v3検証関数
+async function verifyRecaptchaV3(
+  token: string,
+  expectedAction: string = 'submit',
+): Promise<boolean> {
   try {
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
 
@@ -25,10 +28,15 @@ async function verifyRecaptcha(token: string): Promise<boolean> {
     });
 
     const data = await response.json();
-    console.log('reCAPTCHA検証結果:', { success: data.success, score: data.score });
+    console.log('reCAPTCHA v3検証結果:', {
+      success: data.success,
+      score: data.score,
+      action: data.action,
+      hostname: data.hostname,
+    });
 
-    // v3の場合はスコアもチェック、v2の場合はsuccessのみ
-    return data.success && (data.score === undefined || data.score > 0.5);
+    // v3の場合は success、score、actionをチェック
+    return data.success && data.score >= 0.5 && data.action === expectedAction;
   } catch (error) {
     console.error('reCAPTCHA検証エラー:', error);
     return false;
@@ -63,10 +71,13 @@ export default {
         }
 
         try {
-          // reCAPTCHA検証
-          const isValidRecaptcha = await verifyRecaptcha(credentials.recaptchaToken as string);
+          // reCAPTCHA v3検証
+          const isValidRecaptcha = await verifyRecaptchaV3(
+            credentials.recaptchaToken as string,
+            'login',
+          );
           if (!isValidRecaptcha) {
-            console.log('❌ reCAPTCHA検証に失敗しました');
+            console.log('❌ reCAPTCHA v3検証に失敗しました');
             return null;
           }
 
