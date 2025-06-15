@@ -1,7 +1,7 @@
-// components/RecaptchaWrapper.tsx
+// components/RecaptchaWrapper.tsx - シンプル版
 'use client';
 import ReCAPTCHA from 'react-google-recaptcha';
-import { useRef, useEffect, useState } from 'react';
+import { useRef } from 'react';
 
 interface RecaptchaWrapperProps {
   onVerify: (token: string | null) => void;
@@ -10,26 +10,11 @@ interface RecaptchaWrapperProps {
 
 export default function RecaptchaWrapper({ onVerify, onExpired }: RecaptchaWrapperProps) {
   const recaptchaRef = useRef<ReCAPTCHA>(null);
-  const [isLoaded, setIsLoaded] = useState(false);
 
-  // 環境変数の確認とデバッグ
+  // 環境変数の確認
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
-  useEffect(() => {
-    // reCAPTCHAライブラリの読み込み確認
-    const checkRecaptchaLoaded = () => {
-      if (typeof window !== 'undefined' && (window as any).grecaptcha) {
-        setIsLoaded(true);
-      } else {
-        setTimeout(checkRecaptchaLoaded, 100);
-      }
-    };
-
-    checkRecaptchaLoaded();
-  }, []);
-
-  console.log('🔑 reCAPTCHA Site Key:', siteKey);
-  console.log('📚 reCAPTCHA Loaded:', isLoaded);
+  console.log('🔑 reCAPTCHA Site Key:', siteKey ? `${siteKey.substring(0, 10)}...` : 'undefined');
 
   if (!siteKey) {
     console.error('❌ NEXT_PUBLIC_RECAPTCHA_SITE_KEY が設定されていません');
@@ -69,7 +54,6 @@ export default function RecaptchaWrapper({ onVerify, onExpired }: RecaptchaWrapp
         theme="light"
         size="normal"
       />
-      {!isLoaded && <p className="text-xs text-gray-500 mt-1">reCAPTCHAを読み込み中...</p>}
     </div>
   );
 }
