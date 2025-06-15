@@ -6,7 +6,6 @@ import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import Image from 'next/image';
 import { HiUser, HiLink, HiColorSwatch, HiShare, HiQrcode } from 'react-icons/hi';
-import SessionDebug from '@/components/debug/SessionDebug';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -370,8 +369,6 @@ export default function DashboardPage() {
           </div>
         </div>
       </div>
-      {/* 一時的なデバッグコンポーネント */}
-      <SessionDebug />
     </div>
   );
 }
