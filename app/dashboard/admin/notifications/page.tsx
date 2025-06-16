@@ -478,7 +478,7 @@ export default function AdminNotificationsPage() {
     return null; // リダイレクト処理中は表示なし
   }
   return (
-    <div className="max-w-[80vw] mx-auto">
+    <div className="max-w-[90vw] mx-auto">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
         <div className="flex items-center mb-6">
           <HiBell className="h-6 w-6 text-blue-600 mr-3" />
