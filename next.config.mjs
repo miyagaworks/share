@@ -1,4 +1,4 @@
-// next.config.mjs (ESLint一時無効化版)
+// next.config.mjs (Webhook 307エラー修正版)
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   trailingSlash: false,
@@ -18,7 +18,6 @@ const nextConfig = {
     ignoreBuildErrors: false,
   },
   eslint: {
-    // 🔥 修正: ビルド時のESLintを無効化
     ignoreDuringBuilds: true,
   },
 
@@ -264,6 +263,15 @@ const nextConfig = {
 
   async redirects() {
     return [];
+  },
+
+  async rewrites() {
+    return [
+      {
+        source: '/api/webhook/stripe',
+        destination: '/api/webhook/stripe/',
+      },
+    ];
   },
 
   serverRuntimeConfig: {

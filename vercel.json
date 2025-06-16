@@ -8,5 +8,11 @@
       "path": "/api/cron/cleanup-idempotency",
       "schedule": "0 3 * * *"
     }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/webhook/stripe",
+      "destination": "/api/webhook/stripe/"
+    }
   ]
 }
