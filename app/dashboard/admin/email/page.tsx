@@ -305,7 +305,7 @@ export default function AdminEmailPage() {
     return null; // リダイレクト処理中は表示なし
   }
   return (
-    <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="max-w-[90vw] mx-auto px-4 sm:px-6 lg:px-8">
       {/* メール送信フォーム */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 sm:p-8 mb-8">
         <div className="flex items-center justify-between mb-8">
