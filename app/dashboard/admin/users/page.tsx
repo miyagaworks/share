@@ -246,7 +246,7 @@ export default function AdminUsersPage() {
     return '未設定';
   };
   return (
-    <div className="max-w-7xl mx-auto">
+    <div className="max-w-[90vw] mx-auto px-4">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
         <div className="flex items-center mb-4">
           <HiUsers className="h-6 w-6 text-blue-600 mr-3" />
@@ -404,29 +404,29 @@ export default function AdminUsersPage() {
           </div>
         )}
         {/* ユーザーテーブル */}
-        <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
+        <div className="overflow-x-auto -mx-6 px-6">
+          <table className="w-full bg-white table-auto">
             <thead className="bg-gray-50">
               <tr>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                   ユーザー
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                   フリガナ
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                   メールアドレス
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                   登録日
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                   更新日
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                   プラン状態
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider w-[120px]">
                   利用期限
                 </th>
                 <th className="py-3 px-4 text-center text-xs font-medium text-gray-500 uppercase tracking-wider">
