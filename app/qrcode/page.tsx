@@ -1,14 +1,14 @@
-// app/qrcode/page.tsx
+// app/qrcode/page.tsx - 修正版
 'use client';
 import { useEffect, useState, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
+import Image from 'next/image'; // 追加
 import { Spinner } from '@/components/ui/Spinner';
 import { QrCodeGenerator } from '@/components/qrcode/QrCodeGenerator';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
-import Image from 'next/image';
 
 export default function QrCodePage() {
   const { data: session, status } = useSession();
@@ -26,11 +26,15 @@ export default function QrCodePage() {
   const [nameEn, setNameEn] = useState<string | null>(null);
   const [profileImage, setProfileImage] = useState<string | null>(null);
   const [headerText, setHeaderText] = useState<string | null>(null);
+
   // PWAインストールプロンプト用の状態
   const [showInstallPrompt, setShowInstallPrompt] = useState(false);
+
+  // デバイス判定用の状態を追加
   const [isIOS, setIsIOS] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
 
+  // デバイス判定のuseEffectを追加
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
@@ -63,6 +67,7 @@ export default function QrCodePage() {
       checkAccess();
     }
   }, [session]);
+
   // 法人データの取得
   const fetchCorporateData = useCallback(async () => {
     if (!isCorporateMember) return;
@@ -95,6 +100,7 @@ export default function QrCodePage() {
       // 法人データ取得エラーは無視（非重要）
     }
   }, [isCorporateMember]);
+
   // 一般プロフィールの確認
   const checkProfileExists = useCallback(async () => {
     try {
@@ -154,6 +160,7 @@ export default function QrCodePage() {
     }
     // 修正: corporateDataを依存配列から削除し、setCorporateDataを追加
   }, [router, isCorporateMember, setCorporateData]);
+
   // 適切な戻り先URLを取得
   const getBackToShareUrl = () => {
     // 法人メンバーの場合は法人メンバー共有設定ページへ
@@ -163,6 +170,7 @@ export default function QrCodePage() {
     // 通常ユーザーの場合は個人共有設定ページへ
     return '/dashboard/share';
   };
+
   // 初期データ読み込み
   useEffect(() => {
     if (status === 'loading') return;
@@ -203,6 +211,7 @@ export default function QrCodePage() {
       });
     }
   }, [session, status, router, isCorporateMember, fetchCorporateData, checkProfileExists]);
+
   // ユーザー固有のQRコードパスを記憶
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -245,6 +254,7 @@ export default function QrCodePage() {
       }
     }
   }, []);
+
   // ホーム画面追加の効果をより強調
   const handleInstallClick = () => {
     setShowInstallPrompt(false);
@@ -255,17 +265,18 @@ export default function QrCodePage() {
       icon: '📱',
     });
   };
+
   // iOSホーム画面追加プロンプト表示の useEffect (追加)
   useEffect(() => {
     if (typeof window === 'undefined') return;
     // iOSデバイス判定
-    const isIOS =
+    const isIOSDevice =
       /iPad|iPhone|iPod/.test(navigator.userAgent) &&
       !(window as unknown as { MSStream: unknown }).MSStream === undefined;
     // 既にスタンドアロンモードで実行されているかチェック
     const isStandalone = window.matchMedia('(display-mode: standalone)').matches;
     // インストールバナーを表示するかの判定
-    if (isIOS && !isStandalone && !localStorage.getItem('installPromptShown')) {
+    if (isIOSDevice && !isStandalone && !localStorage.getItem('installPromptShown')) {
       // 数秒後に表示
       const timer = setTimeout(() => {
         setShowInstallPrompt(true);
@@ -273,6 +284,7 @@ export default function QrCodePage() {
       return () => clearTimeout(timer);
     }
   }, []);
+
   if (isLoading) {
     return (
       <div className="flex justify-center items-center min-h-screen">
@@ -280,6 +292,7 @@ export default function QrCodePage() {
       </div>
     );
   }
+
   return (
     <div className={`container mx-auto py-8 px-4 ${isCorporateMember ? 'corporate-theme' : ''}`}>
       <div className="mb-6">
@@ -294,7 +307,8 @@ export default function QrCodePage() {
           共有設定に戻る
         </Link>
       </div>
-      {/* PWA インストールプロンプト */}
+
+      {/* PWA インストールプロンプト - 修正版 */}
       {showInstallPrompt && (
         <div className="mb-6 bg-gradient-to-r from-blue-50 to-indigo-50 border border-blue-200 rounded-lg p-5 shadow-sm">
           <h3 className="font-bold text-blue-800 mb-2 flex items-center">
@@ -316,11 +330,11 @@ export default function QrCodePage() {
                   </li>
                   <li className="flex items-center">
                     <Image
-                      src="/images/icons/home_iphone.svg"
+                      src="/images/icons/share_iphone.svg"
                       alt="共有ボタン"
-                      width={20}
-                      height={20}
-                      className="mr-2"
+                      width={24}
+                      height={24}
+                      className="mr-2 flex-shrink-0"
                     />
                     <span>共有ボタン（□に↑のアイコン）をタップ</span>
                   </li>
@@ -328,9 +342,9 @@ export default function QrCodePage() {
                     <Image
                       src="/images/icons/addition_iphone.svg"
                       alt="ホーム画面に追加"
-                      width={20}
-                      height={20}
-                      className="mr-2"
+                      width={24}
+                      height={24}
+                      className="mr-2 flex-shrink-0"
                     />
                     <span>
                       <strong>「ホーム画面に追加」</strong>を選択
@@ -355,9 +369,9 @@ export default function QrCodePage() {
                     <Image
                       src="/images/icons/menu_android.svg"
                       alt="メニューボタン"
-                      width={20}
-                      height={20}
-                      className="mr-2"
+                      width={24}
+                      height={24}
+                      className="mr-2 flex-shrink-0"
                     />
                     <span>メニューボタン（⋮）をタップ</span>
                   </li>
@@ -365,9 +379,9 @@ export default function QrCodePage() {
                     <Image
                       src="/images/icons/home_android.svg"
                       alt="ホーム画面に追加"
-                      width={20}
-                      height={20}
-                      className="mr-2"
+                      width={24}
+                      height={24}
+                      className="mr-2 flex-shrink-0"
                     />
                     <span>
                       <strong>「ホーム画面に追加」</strong>を選択
@@ -402,6 +416,7 @@ export default function QrCodePage() {
           </div>
         </div>
       )}
+
       <QrCodeGenerator
         corporateBranding={
           isCorporateMember
