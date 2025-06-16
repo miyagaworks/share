@@ -18,8 +18,9 @@ function ErrorContent() {
       errorDetails = 'システム管理者にお問い合わせください。';
       break;
     case 'AccessDenied':
-      errorMessage = 'アクセスが拒否されました。';
-      errorDetails = 'このアカウントでのアクセス権限がありません。';
+      errorMessage = 'このメールアドレスはメール/パスワードで登録されています。';
+      errorDetails =
+        'Googleでログインするのではなく、メールアドレスとパスワードを入力してログインしてください。正しいログイン方法：①ログインページに戻る ②メールアドレスとパスワードを入力 ③「ログイン」ボタンをクリック';
       break;
     case 'Verification':
       errorMessage = '認証リンクの検証エラーが発生しました。';
@@ -38,8 +39,10 @@ function ErrorContent() {
       errorDetails = 'このメールアドレスはすでに別の方法で登録されている可能性があります。';
       break;
     case 'OAuthAccountNotLinked':
+      // 🔧 修正：このケースも同様に改善
       errorMessage = 'このメールアドレスは別の認証方法で登録されています。';
-      errorDetails = '以前と同じログイン方法を使用してください。';
+      errorDetails =
+        'メール/パスワードで登録されたアカウントです。Googleログインではなく、メールアドレスとパスワードを入力してログインしてください。';
       break;
     case 'EmailCreateAccount':
       errorMessage = 'アカウント作成中にエラーが発生しました。';

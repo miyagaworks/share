@@ -58,53 +58,55 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       });
 
       try {
+        // 🔧 Google認証の場合の厳格なチェック
         if (account?.provider === 'google' && user?.email) {
           const email = user.email.toLowerCase();
           console.log('📧 Processing Google login for:', email);
 
+          // 🚨 重要：既存ユーザーの徹底チェック
           const existingUser = await prisma.user.findUnique({
             where: { email },
             select: {
               id: true,
               name: true,
               email: true,
+              password: true, // パスワードの有無をチェック
               emailVerified: true,
-              subscriptionStatus: true,
-              corporateRole: true,
               accounts: {
                 select: {
                   provider: true,
-                  providerAccountId: true,
                 },
               },
             },
           });
 
           if (existingUser) {
-            console.log('✅ Existing user found:', existingUser.id);
+            console.log('👤 既存ユーザー発見:', {
+              id: existingUser.id,
+              hasPassword: !!existingUser.password,
+              accountProviders: existingUser.accounts.map((a) => a.provider),
+            });
 
-            // 🔧 既存のGoogleアカウント連携をチェック
+            // 🚨 メール/パスワードで登録されたユーザーは絶対にGoogleログインを拒否
+            if (existingUser.password) {
+              console.log('❌ パスワード登録ユーザーのGoogleログイン試行を拒否');
+              // エラーを投げてログインを阻止
+              return false;
+            }
+
+            // 🚨 Googleアカウントが既に存在する場合のみ許可
             const hasGoogleAccount = existingUser.accounts.some((acc) => acc.provider === 'google');
-            const hasCredentialsAccount = existingUser.accounts.some(
-              (acc) => acc.provider === 'credentials',
-            );
-
-            // 🔧 メール/パスワードで登録されたユーザーがGoogleでログインしようとした場合
-            if (hasCredentialsAccount && !hasGoogleAccount) {
-              console.log('❌ メール/パスワードユーザーがGoogleログインを試行');
-              // リダイレクトURLにエラーパラメータを追加
-              throw new Error(
-                'このメールアドレスはメール/パスワードで登録されています。メール/パスワードでログインしてください。',
-              );
+            if (!hasGoogleAccount) {
+              console.log('❌ Googleアカウント連携なし、ログイン拒否');
+              return false;
             }
 
-            // 🔧 正常なGoogleアカウントの場合のみ続行
-            if (hasGoogleAccount) {
-              user.id = existingUser.id;
-              user.name = existingUser.name || user.name;
-              user.email = existingUser.email;
-              return true;
-            }
+            // ✅ 正常なGoogleユーザー
+            console.log('✅ 正常なGoogleユーザーのログイン');
+            user.id = existingUser.id;
+            user.name = existingUser.name || user.name;
+            user.email = existingUser.email;
+            return true;
           }
 
           // 🔧 管理者アカウントの特別処理
@@ -113,14 +115,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
           }
 
-          // 🔧 開発環境での特別処理
-          if (process.env.NODE_ENV === 'development' && process.env.ALLOW_ALL_USERS === 'true') {
-            console.log('🌍 All users allowed (development mode)');
-            return true;
-          }
-
-          // 🔧 新規Googleユーザーの作成
-          console.log('🆕 Creating new user for Google login');
+          // 🔧 新規Googleユーザーの作成（パスワードなし）
+          console.log('🆕 Creating new Google user (no password)');
           try {
             const newUser = await prisma.user.create({
               data: {
@@ -129,6 +125,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 image: user.image || profile?.picture || null,
                 emailVerified: new Date(),
                 subscriptionStatus: 'trial',
+                // 🚨 重要：パスワードはnullのまま（Googleユーザーとして識別）
+                password: null,
               },
             });
 
@@ -149,6 +147,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return true;
         }
 
+        console.log('✅ Other provider authentication successful');
         return true;
       } catch (error) {
         console.error('💥 SignIn callback error:', error);

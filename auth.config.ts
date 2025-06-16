@@ -1,4 +1,4 @@
-// auth.config.ts (ヘッダーサイズ対策版)
+// auth.config.ts (緊急修正版)
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
@@ -46,12 +46,12 @@ export default {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-      // 🔧 重要：アカウントリンクを無効化してアカウント重複を防ぐ
+      // 🚨 最重要：この設定を必ずfalseにする
       allowDangerousEmailAccountLinking: false,
       authorization: {
         params: {
           scope: 'openid email profile',
-          prompt: 'consent',
+          prompt: 'select_account', // ユーザーにアカウント選択を強制
           access_type: 'offline',
           response_type: 'code',
         },
@@ -70,7 +70,6 @@ export default {
         }
 
         try {
-          // reCAPTCHA v3検証
           const isValidRecaptcha = await verifyRecaptchaV3(
             credentials.recaptchaToken as string,
             'login',
@@ -93,7 +92,6 @@ export default {
           const { email, password } = validatedFields.data;
           const normalizedEmail = email.toLowerCase();
 
-          // 🔧 パスワード認証用のユーザーのみを検索
           const user = await prisma.user.findUnique({
             where: { email: normalizedEmail },
             select: {
@@ -102,27 +100,11 @@ export default {
               email: true,
               password: true,
               emailVerified: true,
-              accounts: {
-                select: {
-                  provider: true,
-                },
-              },
             },
           });
 
           if (!user || !user.password) {
             console.log('❌ ユーザーが見つからないかパスワードが設定されていません');
-            return null;
-          }
-
-          // 🔧 Googleでのみ登録されたユーザーの場合はエラー
-          const hasGoogleAccount = user.accounts.some((account) => account.provider === 'google');
-          const hasCredentialsAccount = user.accounts.some(
-            (account) => account.provider === 'credentials',
-          );
-
-          if (hasGoogleAccount && !hasCredentialsAccount) {
-            console.log('❌ Googleで登録されたユーザーです');
             return null;
           }
 
