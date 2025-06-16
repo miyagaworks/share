@@ -1,6 +1,7 @@
 // next.config.mjs (ESLint一時無効化版)
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  trailingSlash: false,
   reactStrictMode: true,
 
   experimental: {
