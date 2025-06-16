@@ -569,20 +569,20 @@ export function QrCodeGenerator({
                       <Image
                         src="/images/icons/share_iphone.svg"
                         alt="共有ボタン"
-                        width={20}
-                        height={20}
+                        width={18}
+                        height={18}
                         className="flex-shrink-0"
                       />
                     </span>
-                    <span>共有ボタン（□に↑のアイコン）をタップ</span>
+                    <span>共有ボタンをタップ</span>
                   </li>
                   <li className="flex items-start">
                     <span className="mr-3 mt-1">
                       <Image
                         src="/images/icons/addition_iphone.svg"
                         alt="ホーム画面に追加"
-                        width={20}
-                        height={20}
+                        width={18}
+                        height={18}
                         className="flex-shrink-0"
                       />
                     </span>
@@ -613,20 +613,20 @@ export function QrCodeGenerator({
                       <Image
                         src="/images/icons/menu_android.svg"
                         alt="メニューボタン"
-                        width={20}
-                        height={20}
+                        width={16}
+                        height={16}
                         className="flex-shrink-0"
                       />
                     </span>
-                    <span>メニューボタン（⋮）をタップ</span>
+                    <span>メニューボタンをタップ</span>
                   </li>
                   <li className="flex items-start">
                     <span className="mr-3 mt-1">
                       <Image
                         src="/images/icons/home_android.svg"
                         alt="ホーム画面に追加"
-                        width={20}
-                        height={20}
+                        width={18}
+                        height={18}
                         className="flex-shrink-0"
                       />
                     </span>
