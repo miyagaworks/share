@@ -140,7 +140,7 @@ export default function AdminCancelRequestsPage() {
   }
 
   return (
-    <div className="max-w-[90vw] mx-auto">
+    <div className="max-w-[90vw] mx-auto px-4">
       <div className="bg-gradient-to-r from-red-600 to-pink-700 rounded-lg p-6 mb-6 text-white">
         <div className="flex items-center">
           <HiExclamationCircle className="h-8 w-8 mr-3" />
