@@ -78,12 +78,20 @@ export function QrCodeGenerator({
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
-    // デバイス判定
-    const userAgent = navigator.userAgent;
+    // デバイス判定を修正
+    const userAgent = navigator.userAgent.toLowerCase();
+    console.log('User Agent:', userAgent); // デバッグ用
+
+    // より正確なiOS判定
     const isIOSDevice =
-      /iPad|iPhone|iPod/.test(userAgent) &&
-      !(window as unknown as { MSStream: unknown }).MSStream === undefined;
-    const isAndroidDevice = /Android/.test(userAgent);
+      /iphone|ipad|ipod/.test(userAgent) ||
+      (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
+
+    // より正確なAndroid判定
+    const isAndroidDevice = /android/.test(userAgent);
+
+    console.log('iOS detected:', isIOSDevice); // デバッグ用
+    console.log('Android detected:', isAndroidDevice); // デバッグ用
 
     setIsIOS(isIOSDevice);
     setIsAndroid(isAndroidDevice);
@@ -548,99 +556,89 @@ export function QrCodeGenerator({
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
           <div className="bg-white rounded-lg max-w-md w-full p-6 shadow-xl max-h-[80vh] overflow-y-auto">
             <h3 className="text-xl font-bold mb-4">スマホのホーム画面に追加する方法</h3>
-            <div className="space-y-4 mb-6">
-              {isIOS && (
-                <div>
-                  <h4 className="font-medium text-lg mb-2 text-blue-800">iPhoneの場合:</h4>
-                  <ol className="list-decimal pl-5 space-y-3 text-sm">
-                    <li>Safariでこのページを開きます</li>
-                    <li className="flex items-start">
-                      <span className="mr-3 mt-1">
-                        <Image
-                          src="/images/icons/share_iphone.svg"
-                          alt="共有ボタン"
-                          width={20}
-                          height={20}
-                          className="flex-shrink-0"
-                        />
-                      </span>
-                      <span>共有ボタン（□に↑のアイコン）をタップ</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-3 mt-1">
-                        <Image
-                          src="/images/icons/addition_iphone.svg"
-                          alt="ホーム画面に追加"
-                          width={20}
-                          height={20}
-                          className="flex-shrink-0"
-                        />
-                      </span>
-                      <span>
-                        <strong>「ホーム画面に追加」</strong>を選択
-                      </span>
-                    </li>
-                    <li>
-                      名前は変更せず、そのまま<strong>「追加」</strong>をタップ
-                    </li>
-                    <li>
-                      <strong className="text-red-500">
-                        重要: 追加後は必ずホーム画面から開いてください
-                      </strong>
-                    </li>
-                  </ol>
-                  <p className="mt-2 text-xs text-red-500">
-                    ※ブラウザからではなく、必ずホーム画面のアイコンから開くことで正しいQRコードページが表示されます
-                  </p>
-                </div>
-              )}
+            <div className="space-y-6 mb-6">
+              {/* iPhoneの場合を常に表示 */}
+              <div>
+                <h4 className="font-medium text-lg mb-3 text-blue-800 flex items-center">
+                  📱 iPhoneの場合:
+                </h4>
+                <ol className="list-decimal pl-5 space-y-3 text-sm">
+                  <li>Safariでこのページを開きます</li>
+                  <li className="flex items-start">
+                    <span className="mr-3 mt-1">
+                      <Image
+                        src="/images/icons/share_iphone.svg"
+                        alt="共有ボタン"
+                        width={20}
+                        height={20}
+                        className="flex-shrink-0"
+                      />
+                    </span>
+                    <span>共有ボタン（□に↑のアイコン）をタップ</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 mt-1">
+                      <Image
+                        src="/images/icons/addition_iphone.svg"
+                        alt="ホーム画面に追加"
+                        width={20}
+                        height={20}
+                        className="flex-shrink-0"
+                      />
+                    </span>
+                    <span>
+                      <strong>「ホーム画面に追加」</strong>を選択
+                    </span>
+                  </li>
+                  <li>
+                    名前は変更せず、そのまま<strong>「追加」</strong>をタップ
+                  </li>
+                  <li>
+                    <strong className="text-red-500">
+                      重要: 追加後は必ずホーム画面から開いてください
+                    </strong>
+                  </li>
+                </ol>
+              </div>
 
-              {isAndroid && (
-                <div>
-                  <h4 className="font-medium text-lg mb-2 text-blue-800">Androidの場合:</h4>
-                  <ol className="list-decimal pl-5 space-y-3 text-sm">
-                    <li>作成したQRコードページをChromeで開きます</li>
-                    <li className="flex items-start">
-                      <span className="mr-3 mt-1">
-                        <Image
-                          src="/images/icons/menu_android.svg"
-                          alt="メニューボタン"
-                          width={20}
-                          height={20}
-                          className="flex-shrink-0"
-                        />
-                      </span>
-                      <span>メニューボタン（⋮）をタップ</span>
-                    </li>
-                    <li className="flex items-start">
-                      <span className="mr-3 mt-1">
-                        <Image
-                          src="/images/icons/home_android.svg"
-                          alt="ホーム画面に追加"
-                          width={20}
-                          height={20}
-                          className="flex-shrink-0"
-                        />
-                      </span>
-                      <span>
-                        <strong>「ホーム画面に追加」</strong>を選択
-                      </span>
-                    </li>
-                    <li>
-                      <strong>「追加」</strong>をタップ
-                    </li>
-                  </ol>
-                </div>
-              )}
-
-              {!isIOS && !isAndroid && (
-                <div>
-                  <h4 className="font-medium text-lg mb-2">デスクトップ・その他のデバイス:</h4>
-                  <p className="text-sm text-gray-600">
-                    ブラウザのメニューから「ホーム画面に追加」または「アプリとしてインストール」を選択してください。
-                  </p>
-                </div>
-              )}
+              {/* Androidの場合を常に表示 */}
+              <div>
+                <h4 className="font-medium text-lg mb-3 text-green-800 flex items-center">
+                  🤖 Androidの場合:
+                </h4>
+                <ol className="list-decimal pl-5 space-y-3 text-sm">
+                  <li>作成したQRコードページをChromeで開きます</li>
+                  <li className="flex items-start">
+                    <span className="mr-3 mt-1">
+                      <Image
+                        src="/images/icons/menu_android.svg"
+                        alt="メニューボタン"
+                        width={20}
+                        height={20}
+                        className="flex-shrink-0"
+                      />
+                    </span>
+                    <span>メニューボタン（⋮）をタップ</span>
+                  </li>
+                  <li className="flex items-start">
+                    <span className="mr-3 mt-1">
+                      <Image
+                        src="/images/icons/home_android.svg"
+                        alt="ホーム画面に追加"
+                        width={20}
+                        height={20}
+                        className="flex-shrink-0"
+                      />
+                    </span>
+                    <span>
+                      <strong>「ホーム画面に追加」</strong>を選択
+                    </span>
+                  </li>
+                  <li>
+                    <strong>「追加」</strong>をタップ
+                  </li>
+                </ol>
+              </div>
 
               <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
                 <p className="text-sm text-blue-700 italic">
@@ -648,6 +646,16 @@ export function QrCodeGenerator({
                   スマホを取り出してアイコンをタップし、「反転」ボタンを押せば相手にスムーズにQRコードを見せられます。
                 </p>
               </div>
+
+              {/* デバッグ情報（開発時のみ表示） */}
+              {process.env.NODE_ENV === 'development' && (
+                <div className="mt-4 p-2 bg-gray-100 rounded text-xs">
+                  <p>デバッグ情報:</p>
+                  <p>iOS: {isIOS ? 'Yes' : 'No'}</p>
+                  <p>Android: {isAndroid ? 'Yes' : 'No'}</p>
+                  <p>User Agent: {typeof window !== 'undefined' ? navigator.userAgent : 'N/A'}</p>
+                </div>
+              )}
             </div>
             <div className="flex justify-end">
               <Button
