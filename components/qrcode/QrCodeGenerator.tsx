@@ -641,7 +641,7 @@ export function QrCodeGenerator({
               </div>
 
               <div className="mt-4 p-3 bg-blue-50 rounded-md border border-blue-200">
-                <p className="text-sm text-blue-700">
+                <p className="text-sm text-blue-700 text-justify">
                   💡 ホーム画面に追加すると、ワンタップでQRコードページを表示できます。
                   スマホを取り出してアイコンをタップし、「反転」ボタンを押せば相手にスムーズにQRコードを見せられます。
                 </p>
