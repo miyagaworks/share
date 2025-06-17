@@ -560,22 +560,32 @@ export function QrCodeGenerator({
               {/* iPhoneの場合 */}
               <div>
                 <h4 className="font-medium text-lg mb-3 text-blue-800 flex items-center">
-                  📱 iPhoneの場合:
+                  iPhoneの場合:
                 </h4>
                 <ol className="list-decimal pl-5 space-y-3 text-sm">
                   <li>Safariでこのページを開きます</li>
                   <li className="flex items-center">
-                    {' '}
-                    {/* items-start → items-center に変更 */}
-                    <span className="mr-3 text-lg leading-none">📤</span>{' '}
-                    {/* leading-none を追加 */}
+                    <span className="mr-3 flex items-center">
+                      <Image
+                        src="/images/icons/share_iphone.svg"
+                        alt="共有ボタン"
+                        width={18}
+                        height={18}
+                        className="flex-shrink-0"
+                      />
+                    </span>
                     <span>共有ボタンをタップ</span>
                   </li>
                   <li className="flex items-center">
-                    {' '}
-                    {/* items-start → items-center に変更 */}
-                    <span className="mr-3 text-lg leading-none">➕</span>{' '}
-                    {/* leading-none を追加 */}
+                    <span className="mr-3 flex items-center">
+                      <Image
+                        src="/images/icons/addition_iphone.svg"
+                        alt="ホーム画面に追加"
+                        width={18}
+                        height={18}
+                        className="flex-shrink-0"
+                      />
+                    </span>
                     <span>
                       <strong>「ホーム画面に追加」</strong>を選択
                     </span>
@@ -594,21 +604,32 @@ export function QrCodeGenerator({
               {/* Androidの場合 */}
               <div>
                 <h4 className="font-medium text-lg mb-3 text-green-800 flex items-center">
-                  🤖 Androidの場合:
+                  Androidの場合:
                 </h4>
                 <ol className="list-decimal pl-5 space-y-3 text-sm">
                   <li>作成したQRコードページをChromeで開きます</li>
                   <li className="flex items-center">
-                    {' '}
-                    {/* items-start → items-center に変更 */}
-                    <span className="mr-3 text-lg leading-none">⋮</span> {/* leading-none を追加 */}
-                    <span>メニューボタン（⋮）をタップ</span>
+                    <span className="mr-3 flex items-center">
+                      <Image
+                        src="/images/icons/menu_android.svg"
+                        alt="メニューボタン"
+                        width={16}
+                        height={16}
+                        className="flex-shrink-0"
+                      />
+                    </span>
+                    <span>メニューボタンをタップ</span>
                   </li>
                   <li className="flex items-center">
-                    {' '}
-                    {/* items-start → items-center に変更 */}
-                    <span className="mr-3 text-lg leading-none">🏠</span>{' '}
-                    {/* leading-none を追加 */}
+                    <span className="mr-3 flex items-center">
+                      <Image
+                        src="/images/icons/home_android.svg"
+                        alt="ホーム画面に追加"
+                        width={18}
+                        height={18}
+                        className="flex-shrink-0"
+                      />
+                    </span>
                     <span>
                       <strong>「ホーム画面に追加」</strong>を選択
                     </span>
