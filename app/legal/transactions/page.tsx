@@ -37,7 +37,7 @@ export default function TransactionsPage() {
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">電話番号</th>
                 <td className="py-4 px-4">
-                  082-208-3976
+                  082-209-0181
                   <br />
                   （平日10:00〜18:00 土日祝日休業）
                 </td>

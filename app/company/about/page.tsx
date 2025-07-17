@@ -87,7 +87,7 @@ export default function CompanyAboutPage() {
                 <td className="py-4 px-4">
                   メール: info@sns-share.com
                   <br />
-                  電話: 082-208-3976（平日10:00〜18:00）
+                  電話: 082-209-0181（平日10:00〜18:00）
                 </td>
               </tr>
             </tbody>

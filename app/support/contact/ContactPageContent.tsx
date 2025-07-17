@@ -312,7 +312,7 @@ export default function ContactPageContent() {
             </div>
             <div>
               <h3 className="font-medium">お電話でのお問い合わせ</h3>
-              <p className="mt-1 text-justify">082-208-3976（平日10:00〜18:00 土日祝日休業）</p>
+              <p className="mt-1 text-justify">082-209-0181（平日10:00〜18:00 土日祝日休業）</p>
             </div>
             <div>
               <h3 className="font-medium">郵送でのお問い合わせ</h3>
