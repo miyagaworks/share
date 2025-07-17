@@ -206,10 +206,10 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
                     <tr>
                       <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
                         <p style="color: #9ca3af; margin: 0 0 5px; font-size: 12px;">
-                          〒730-0046 広島県広島市中区昭和町6-11
+                          〒731-0137 広島県広島市安佐南区山本2-3-35
                         </p>
                         <p style="color: #9ca3af; margin: 0 0 15px; font-size: 12px;">
-                          運営: ビイアルファ株式会社
+                          運営: 株式会社Senrigan
                         </p>
                       </td>
                     </tr>
@@ -266,8 +266,8 @@ ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/dashboard/admi
 ${siteName} システム通知
 本メールは自動送信されています。返信されても対応できませんのでご了承ください。
 
-〒730-0046 広島県広島市中区昭和町6-11
-運営: ビイアルファ株式会社
+〒731-0137 広島県広島市安佐南区山本2-3-35
+運営: 株式会社Senrigan
 すべてのSNS、ワンタップでShare`;
 
   return { subject, html, text };

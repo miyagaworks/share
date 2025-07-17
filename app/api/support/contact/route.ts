@@ -97,7 +97,7 @@ export async function POST(req: Request) {
   </div>
   <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 550px; color: #333; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
     <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">Share サポートチーム</div>
-    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">ビイアルファ株式会社 Share運営事務局</div>
+    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">株式会社Senrigan Share運営事務局</div>
     <div style="border-top: 2px solid #3B82F6; margin: 12px 0; width: 100px;"></div>
     <div style="font-size: 13px; margin: 4px 0;">
       メール: <a href="mailto:support@sns-share.com" style="color: #3B82F6; text-decoration: none;">support@sns-share.com</a><br>
@@ -108,8 +108,8 @@ export async function POST(req: Request) {
       すべてのSNS、ワンタップでShare
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
-      〒730-0046 広島県広島市中区昭和町6-11<br>
-      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">ビイアルファ株式会社</a>
+      〒731-0137 広島県広島市安佐南区山本2-3-35<br>
+      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
     </div>
     <div style="margin-top: 10px;">
       <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 
@@ -149,7 +149,7 @@ export async function POST(req: Request) {
   </p>
   <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 550px; color: #333; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
     <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">Share サポートチーム</div>
-    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">ビイアルファ株式会社 Share運営事務局</div>
+    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">株式会社Senrigan Share運営事務局</div>
     <div style="border-top: 2px solid #3B82F6; margin: 12px 0; width: 100px;"></div>
     <div style="font-size: 13px; margin: 4px 0;">
       メール: <a href="mailto:support@sns-share.com" style="color: #3B82F6; text-decoration: none;">support@sns-share.com</a><br>
@@ -160,8 +160,8 @@ export async function POST(req: Request) {
       すべてのSNS、ワンタップでShare
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
-      〒730-0046 広島県広島市中区昭和町6-11<br>
-      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">ビイアルファ株式会社</a>
+      〒731-0137 広島県広島市安佐南区山本2-3-35<br>
+      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
     </div>
     <div style="margin-top: 10px;">
       <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 
@@ -257,7 +257,7 @@ export async function POST(req: Request) {
   </div>
   <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 550px; color: #333; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
     <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">Share サポートチーム</div>
-    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">ビイアルファ株式会社 Share運営事務局</div>
+    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">株式会社Senrigan Share運営事務局</div>
     <div style="border-top: 2px solid #3B82F6; margin: 12px 0; width: 100px;"></div>
     <div style="font-size: 13px; margin: 4px 0;">
       メール: <a href="mailto:support@sns-share.com" style="color: #3B82F6; text-decoration: none;">support@sns-share.com</a><br>
@@ -268,8 +268,8 @@ export async function POST(req: Request) {
       すべてのSNS、ワンタップでShare
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
-      〒730-0046 広島県広島市中区昭和町6-11<br>
-      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">ビイアルファ株式会社</a>
+      〒731-0137 広島県広島市安佐南区山本2-3-35<br>
+      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
     </div>
     <div style="margin-top: 10px;">
       <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 
@@ -305,7 +305,7 @@ export async function POST(req: Request) {
   </p>
   <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 550px; color: #333; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
     <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">Share サポートチーム</div>
-    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">ビイアルファ株式会社 Share運営事務局</div>
+    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">株式会社Senrigan Share運営事務局</div>
     <div style="border-top: 2px solid #3B82F6; margin: 12px 0; width: 100px;"></div>
     <div style="font-size: 13px; margin: 4px 0;">
       メール: <a href="mailto:support@sns-share.com" style="color: #3B82F6; text-decoration: none;">support@sns-share.com</a><br>
@@ -316,8 +316,8 @@ export async function POST(req: Request) {
       すべてのSNS、ワンタップでShare
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
-      〒730-0046 広島県広島市中区昭和町6-11<br>
-      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">ビイアルファ株式会社</a>
+      〒731-0137 広島県広島市安佐南区山本2-3-35<br>
+      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
     </div>
     <div style="margin-top: 10px;">
       <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 

@@ -172,10 +172,10 @@ export function getCancelRequestEmailTemplate(params: CancelRequestEmailParams) 
                     <tr>
                       <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
                         <p style="color: #9ca3af; margin: 0 0 5px; font-size: 12px;">
-                          〒730-0046 広島県広島市中区昭和町6-11
+                          〒731-0137 広島県広島市安佐南区山本2-3-35
                         </p>
                         <p style="color: #9ca3af; margin: 0 0 15px; font-size: 12px;">
-                          運営: ビイアルファ株式会社
+                          運営: 株式会社Senrigan
                         </p>
                       </td>
                     </tr>
@@ -225,8 +225,8 @@ ${refundAmount > 0 ? '※ご返金がある場合、処理完了まで5-10営業
 Share サポートチーム
 ✉️ メール: support@sns-share.com
 
-〒730-0046 広島県広島市中区昭和町6-11
-運営: ビイアルファ株式会社`;
+〒731-0137 広島県広島市安佐南区山本2-3-35
+運営: 株式会社Senrigan`;
 
   return {
     subject: '【Share】解約申請を受け付けました',

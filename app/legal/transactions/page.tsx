@@ -20,7 +20,7 @@ export default function TransactionsPage() {
             <tbody>
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50 w-1/3">販売事業者</th>
-                <td className="py-4 px-4">ビイアルファ株式会社</td>
+                <td className="py-4 px-4">株式会社Senrigan</td>
               </tr>
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">代表者名</th>
@@ -29,9 +29,9 @@ export default function TransactionsPage() {
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">所在地</th>
                 <td className="py-4 px-4">
-                  〒730-0046
+                  〒731-0137
                   <br />
-                  広島県広島市中区昭和町6-11
+                  広島県広島市安佐南区山本2-3-35
                 </td>
               </tr>
               <tr className="border-b">

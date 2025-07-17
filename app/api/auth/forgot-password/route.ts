@@ -82,8 +82,8 @@ export async function POST(request: Request) {
               お問い合わせ: <a href="mailto:support@sns-share.com">support@sns-share.com</a></p>
               <div style="margin-top: 10px; font-size: 11px; color: #999;">
                 <p>すべてのSNS、ワンタップでShare</p>
-                <p>〒730-0046 広島県広島市中区昭和町6-11<br>
-                運営: ビイアルファ株式会社</p>
+                <p>〒731-0137 広島県広島市安佐南区山本2-3-35<br>
+                運営: 株式会社Senrigan</p>
                 <p>
                   <a href="https://app.sns-share.com/legal/privacy" style="color: #4A89DC; text-decoration: none;">プライバシーポリシー</a> | 
                   <a href="https://app.sns-share.com/legal/terms" style="color: #4A89DC; text-decoration: none;">利用規約</a>

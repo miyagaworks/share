@@ -120,10 +120,10 @@ export function getAdminNotificationEmailTemplate(params: AdminNotificationEmail
                     <tr>
                       <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
                         <p style="color: #9ca3af; margin: 0 0 5px; font-size: 12px;">
-                          〒730-0046 広島県広島市中区昭和町6-11
+                          〒731-0137 広島県広島市安佐南区山本2-3-35
                         </p>
                         <p style="color: #9ca3af; margin: 0 0 15px; font-size: 12px;">
-                          運営: ビイアルファ株式会社
+                          運営: 株式会社Senrigan
                         </p>
                         <div style="margin-top: 15px;">
                           <a href="https://app.sns-share.com/legal/privacy" 
@@ -169,8 +169,8 @@ ${siteName} サポートチーム
 🏢 運営会社情報
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-〒730-0046 広島県広島市中区昭和町6-11
-運営: ビイアルファ株式会社
+〒731-0137 広島県広島市安佐南区山本2-3-35
+運営: 株式会社Senrigan
 すべてのSNS、ワンタップでShare
 
 📋 プライバシーポリシー: https://app.sns-share.com/legal/privacy

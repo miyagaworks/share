@@ -4,16 +4,16 @@ import { Metadata } from 'next';
 import React from 'react';
 import Link from 'next/link';
 export const metadata: Metadata = {
-  title: 'ビイアルファ株式会社 | Share',
-  description: 'Shareを運営するビイアルファ株式会社についての情報です。',
+  title: '株式会社Senrigan | Share',
+  description: 'Shareを運営する株式会社Senriganについての情報です。',
 };
 export default function CompanyAboutPage() {
   return (
     <PageLayout
-      title="ビイアルファ株式会社"
+      title="株式会社Senrigan"
       breadcrumbs={[
         { name: 'ホーム', href: '/' },
-        { name: 'ビイアルファ株式会社', href: '/company/about' },
+        { name: '株式会社Senrigan', href: '/company/about' },
       ]}
     >
       <div className="space-y-8 text-justify">
@@ -30,7 +30,7 @@ export default function CompanyAboutPage() {
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    ビイアルファ株式会社
+                    株式会社Senrigan
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-4 w-4 ml-1"
@@ -59,9 +59,9 @@ export default function CompanyAboutPage() {
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">所在地</th>
                 <td className="py-4 px-4">
-                  〒730-0046
+                  〒731-0137
                   <br />
-                  広島県広島市中区昭和町6-11
+                  広島県広島市安佐南区山本2-3-35
                 </td>
               </tr>
               <tr className="border-b">

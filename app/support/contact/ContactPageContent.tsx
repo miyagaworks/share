@@ -317,11 +317,11 @@ export default function ContactPageContent() {
             <div>
               <h3 className="font-medium">郵送でのお問い合わせ</h3>
               <p className="mt-1 text-justify">
-                〒730-0046
+                〒731-0137
                 <br />
-                広島県広島市中区昭和町6-11
+                広島県広島市安佐南区山本2-3-35
                 <br />
-                ビイアルファ株式会社 Share運営事務局宛
+                株式会社Senrigan Share運営事務局宛
               </p>
             </div>
           </div>

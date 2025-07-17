@@ -55,7 +55,7 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link href="/company/about" className="text-gray-600 hover:text-blue-600">
-                  ビイアルファ株式会社
+                  株式会社Senrigan
                 </Link>
               </li>
               <li>

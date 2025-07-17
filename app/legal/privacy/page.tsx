@@ -18,7 +18,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold mb-3">1. はじめに</h2>
           <p className="text-justify">
-            ビイアルファ株式会社（以下「当社」）は、提供するサービス「Share」（以下「本サービス」）における個人情報の取り扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」）を定めます。
+            株式会社Senrigan（以下「当社」）は、提供するサービス「Share」（以下「本サービス」）における個人情報の取り扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」）を定めます。
           </p>
         </section>
         <section>
@@ -84,7 +84,7 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold mb-3">9. お問い合わせ</h2>
           <p className="text-justify">本ポリシーに関するお問い合わせは、下記の連絡先までお願いいたします。</p>
           <p className="mt-2">
-            ビイアルファ株式会社
+            株式会社Senrigan
             <br />
             メールアドレス: privacy@sns-share.com
           </p>
