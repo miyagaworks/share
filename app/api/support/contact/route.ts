@@ -109,7 +109,7 @@ export async function POST(req: Request) {
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
       〒731-0137 広島県広島市安佐南区山本2-3-35<br>
-      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
+      運営: <a href="https://senrigan.systems" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
     </div>
     <div style="margin-top: 10px;">
       <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 
@@ -161,7 +161,7 @@ export async function POST(req: Request) {
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
       〒731-0137 広島県広島市安佐南区山本2-3-35<br>
-      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
+      運営: <a href="https://senrigan.systems" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
     </div>
     <div style="margin-top: 10px;">
       <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 
@@ -269,7 +269,7 @@ export async function POST(req: Request) {
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
       〒731-0137 広島県広島市安佐南区山本2-3-35<br>
-      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
+      運営: <a href="https://senrigan.systems" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
     </div>
     <div style="margin-top: 10px;">
       <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 
@@ -317,7 +317,7 @@ export async function POST(req: Request) {
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
       〒731-0137 広島県広島市安佐南区山本2-3-35<br>
-      運営: <a href="https://bialpha.com" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
+      運営: <a href="https://senrigan.systems" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
     </div>
     <div style="margin-top: 10px;">
       <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 

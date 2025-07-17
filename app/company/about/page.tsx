@@ -25,7 +25,7 @@ export default function CompanyAboutPage() {
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50 w-1/3">社名</th>
                 <td className="py-4 px-4">
                   <Link
-                    href="https://bialpha.com"
+                    href="https://senrigan.systems"
                     className="text-blue-600 hover:text-blue-800 inline-flex items-center"
                     target="_blank"
                     rel="noopener noreferrer"
