@@ -81,6 +81,14 @@ model User {
   
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+
+  // 財務関連リレーション
+  financialRecordsCreated    FinancialRecord[] @relation("FinancialRecordCreator")
+  financialRecordsApproved   FinancialRecord[] @relation("FinancialRecordApprover")
+  settlementsFinalized       MonthlySettlement[] @relation("SettlementFinalizer")
+  adjustmentsProposed        RevenueShareAdjustment[] @relation("AdjustmentProposer")
+  adjustmentsApproved        RevenueShareAdjustment[] @relation("AdjustmentApprover")
+  financialAccessLogs        FinancialAccessLog[] @relation("FinancialAccessUser")
 }
 
 model Profile {
@@ -423,4 +431,114 @@ model CancelRequest {
   
   @@index([userId])
   @@index([status])
+}
+
+// 財務記録テーブル
+model FinancialRecord {
+  id          String   @id @default(cuid())
+  type        String   // 'revenue' | 'expense'
+  amount      Int      // 金額（円）
+  description String   // 説明
+  category    String?  // カテゴリ（任意）
+  date        DateTime // 発生日
+  
+  // 経費関連
+  needsApproval Boolean @default(false) // 承認が必要か（5,000円以上）
+  approvalStatus String @default("pending") // 'pending' | 'approved' | 'rejected'
+  approvedBy     String? // 承認者ID
+  approvedAt     DateTime? // 承認日時
+  
+  // 記録者情報
+  createdBy   String   // 入力者ID
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // リレーション
+  creator     User     @relation("FinancialRecordCreator", fields: [createdBy], references: [id])
+  approver    User?    @relation("FinancialRecordApprover", fields: [approvedBy], references: [id])
+  
+  @@index([type, date])
+  @@index([createdBy])
+  @@index([approvalStatus])
+}
+
+// 月次精算テーブル
+model MonthlySettlement {
+  id            String   @id @default(cuid())
+  year          Int      // 年
+  month         Int      // 月
+  totalRevenue  Int      // 総売上
+  totalExpenses Int      // 総経費
+  profit        Int      // 利益
+  
+  // 受託者配分
+  contractorShare     Int // 受託者配分総額（利益の30%）
+  yoshitsuneShare     Int // 小河原義経の配分
+  yoshitsunePercent   Float @default(15.0) // 小河原義経の配分率
+  kenseiShare         Int // 福島健世の配分
+  kenseiPercent       Float @default(15.0) // 福島健世の配分率
+  
+  // ステータス
+  status        String   @default("draft") // 'draft' | 'finalized' | 'paid'
+  finalizedBy   String?  // 確定者ID
+  finalizedAt   DateTime? // 確定日時
+  paidAt        DateTime? // 支払完了日時
+  
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // リレーション
+  finalizer     User?    @relation("SettlementFinalizer", fields: [finalizedBy], references: [id])
+  
+  @@unique([year, month])
+  @@index([year, month])
+}
+
+// 報酬調整記録テーブル
+model RevenueShareAdjustment {
+  id              String   @id @default(cuid())
+  year            Int      // 対象年
+  month           Int      // 対象月
+  adjustmentType  String   // 'self_reduction' | 'admin_proposal' | 'peer_proposal'
+  targetPerson    String   // 'yoshitsune' | 'kensei'
+  
+  // 調整内容
+  originalPercent Float    // 元の配分率
+  adjustedPercent Float    // 調整後の配分率
+  reason          String   // 調整理由
+  
+  // 申請・承認
+  proposedBy      String   // 提案者ID
+  approvedBy      String?  // 承認者ID
+  status          String   @default("pending") // 'pending' | 'approved' | 'rejected'
+  
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // リレーション
+  proposer        User     @relation("AdjustmentProposer", fields: [proposedBy], references: [id])
+  approver        User?    @relation("AdjustmentApprover", fields: [approvedBy], references: [id])
+  
+  @@index([year, month])
+  @@index([targetPerson])
+}
+
+// 財務アクセスログテーブル
+model FinancialAccessLog {
+  id          String   @id @default(cuid())
+  userId      String   // アクセス者ID
+  action      String   // 'view' | 'create' | 'update' | 'approve' | 'export'
+  entityType  String   // 'financial_record' | 'settlement' | 'adjustment'
+  entityId    String?  // 対象エンティティID
+  details     Json?    // 詳細情報
+  ipAddress   String?  // IPアドレス
+  userAgent   String?  // ユーザーエージェント
+  
+  createdAt   DateTime @default(now())
+  
+  // リレーション
+  user        User     @relation("FinancialAccessUser", fields: [userId], references: [id])
+  
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
 }
