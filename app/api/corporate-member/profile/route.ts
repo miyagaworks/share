@@ -1,10 +1,11 @@
 // app/api/corporate-member/profile/route.ts
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { checkPermanentAccess, getVirtualTenantData } from '@/lib/corporateAccess';
+
 export async function GET() {
   try {
     // 永久利用権ユーザーかどうかをチェック
@@ -18,12 +19,14 @@ export async function GET() {
           { status: 500 },
         );
       }
+
       // セッションからユーザー情報を取得
       const session = await auth();
       if (!session?.user?.id) {
         return NextResponse.json({ error: '認証されていません' }, { status: 401 });
       }
-      // ユーザー基本情報を取得
+
+      // ユーザー基本情報を取得（会社/組織情報も含める）
       const userData = await prisma.user.findUnique({
         where: { id: session.user.id },
         select: {
@@ -41,11 +44,17 @@ export async function GET() {
           position: true,
           image: true,
           profile: true,
+          // 会社/組織情報を追加
+          company: true,
+          companyUrl: true,
+          companyLabel: true,
         },
       });
+
       if (!userData) {
         return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
       }
+
       // 仮想テナントデータをレスポンスとして返す
       return NextResponse.json({
         user: {
@@ -64,12 +73,14 @@ export async function GET() {
         },
       });
     }
+
     // 通常のユーザーの場合（永久利用権でない場合）
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-    // ユーザー情報を取得（テナント情報も含める）
+
+    // ユーザー情報を取得（テナント情報と会社/組織情報も含める）
     const userData = await prisma.user.findUnique({
       where: { id: session.user.id },
       include: {
@@ -103,11 +114,14 @@ export async function GET() {
         },
       },
     });
+
     if (!userData) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
+
     // テナント情報（管理者または一般メンバーのいずれか）
     const tenantData = userData.adminOfTenant || userData.tenant;
+
     return NextResponse.json({
       user: {
         id: userData.id,
@@ -126,6 +140,10 @@ export async function GET() {
         department: userData.department,
         corporateRole: userData.corporateRole,
         profile: userData.profile,
+        // 会社/組織情報を追加
+        company: userData.company,
+        companyUrl: userData.companyUrl,
+        companyLabel: userData.companyLabel,
       },
       tenant: tenantData,
     });

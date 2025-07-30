@@ -18,6 +18,10 @@ share/
 │   │   ├── admin
 │   │   │   ├── access
 │   │   │   │   └── route.ts
+│   │   │   ├── cancel-requests
+│   │   │   │   ├── [id]
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
 │   │   │   ├── email
 │   │   │   │   ├── history
 │   │   │   │   │   ├── [id]
@@ -40,8 +44,12 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── subscriptions
 │   │   │   │   └── route.ts
+│   │   │   ├── system-info
+│   │   │   │   └── route.ts
 │   │   │   └── users
 │   │   │       ├── delete
+│   │   │       │   └── route.ts
+│   │   │       ├── export
 │   │   │       │   └── route.ts
 │   │   │       ├── route.ts
 │   │   │       └── search
@@ -68,7 +76,11 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── reset-password
 │   │   │   │   └── route.ts
+│   │   │   ├── send-verification-email
+│   │   │   │   └── route.ts
 │   │   │   ├── session
+│   │   │   │   └── route.ts
+│   │   │   ├── set-password
 │   │   │   │   └── route.ts
 │   │   │   ├── signin
 │   │   │   │   └── route.ts
@@ -190,6 +202,8 @@ share/
 │   │   ├── subscription
 │   │   │   ├── cancel
 │   │   │   │   └── route.ts
+│   │   │   ├── cancel-request
+│   │   │   │   └── route.ts
 │   │   │   ├── create
 │   │   │   │   └── route.ts
 │   │   │   ├── reactivate
@@ -219,16 +233,15 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── delete
 │   │   │   │   └── route.ts
-│   │   │   ├── permanent-plan-type
-│   │   │   │   └── route.ts
-│   │   │   └── send-verification-email
+│   │   │   └── permanent-plan-type
 │   │   │       └── route.ts
 │   │   ├── vcard
 │   │   │   └── [userId]
 │   │   │       └── route.ts
 │   │   └── webhook
-│   │       └── stripe
-│   │           └── route.ts
+│   │       ├── stripe
+│   │       │   └── route.ts
+│   │       └── stripe.ts
 │   ├── auth
 │   │   ├── change-password
 │   │   │   └── page.tsx
@@ -241,6 +254,8 @@ share/
 │   │   ├── invite
 │   │   │   └── page.tsx
 │   │   ├── reset-password
+│   │   │   └── page.tsx
+│   │   ├── set-password
 │   │   │   └── page.tsx
 │   │   ├── signin
 │   │   │   └── page.tsx
@@ -256,6 +271,8 @@ share/
 │   │   │   └── delete
 │   │   │       └── page.tsx
 │   │   ├── admin
+│   │   │   ├── cancel-requests
+│   │   │   │   └── page.tsx
 │   │   │   ├── email
 │   │   │   │   └── page.tsx
 │   │   │   ├── notifications
@@ -269,6 +286,8 @@ share/
 │   │   │   ├── subscriptions
 │   │   │   │   └── page.tsx
 │   │   │   └── users
+│   │   │       ├── export
+│   │   │       │   └── page.tsx
 │   │   │       └── page.tsx
 │   │   ├── client-script.js
 │   │   ├── corporate
@@ -423,6 +442,8 @@ share/
 │   │   └── SubscriptionOverview.tsx
 │   ├── debug
 │   │   ├── NetworkDiagnostic.tsx
+│   │   ├── SessionDebug.tsx
+│   │   ├── SigninDebug.tsx
 │   │   └── SigninDebugOverlay.tsx
 │   ├── forms
 │   │   ├── CustomLinkForm.tsx
@@ -439,6 +460,7 @@ share/
 │   │   ├── DashboardLayout.tsx
 │   │   ├── Footer.tsx
 │   │   ├── Header.tsx
+│   │   ├── MobileFooter.tsx
 │   │   ├── MobileMenuButton.tsx
 │   │   ├── NotificationBell.tsx
 │   │   ├── PageLayout.tsx
@@ -453,6 +475,7 @@ share/
 │   ├── qrcode
 │   │   ├── QrCodeGenerator.tsx
 │   │   └── QrCodePreview.tsx
+│   ├── RecaptchaWrapper.tsx
 │   ├── shared
 │   │   ├── AuthDebugger.tsx
 │   │   ├── Breadcrumb.tsx
@@ -464,6 +487,7 @@ share/
 │   │   ├── LoadingSpinner.tsx
 │   │   └── SnsGuideModalWithDescription.tsx
 │   ├── subscription
+│   │   ├── CancelRequestForm.tsx
 │   │   ├── CorporateSubscriptionRedirect.tsx
 │   │   ├── EnhancedTrialBanner.tsx
 │   │   ├── PaymentMethodForm.tsx
@@ -527,6 +551,7 @@ share/
 │   ├── email
 │   │   └── templates
 │   │       ├── admin-notification.ts
+│   │       ├── cancel-request.ts
 │   │       ├── email-verification.ts
 │   │       ├── grace-period-expired.ts
 │   │       ├── invite-email.ts
@@ -654,8 +679,13 @@ share/
 │   │   │   ├── youtube-step3.png
 │   │   │   └── youtube-step4.png
 │   │   ├── icons
+│   │   │   ├── addition_iphone.svg
+│   │   │   ├── home_android.svg
+│   │   │   ├── home_iphone.svg
+│   │   │   ├── menu_android.svg
 │   │   │   ├── ogp_line.png
-│   │   │   └── ogp.png
+│   │   │   ├── ogp.png
+│   │   │   └── share_iphone.svg
 │   │   └── usecase
 │   │       ├── business-scene.png
 │   │       ├── business-scene.webp
@@ -698,6 +728,7 @@ share/
 ├── scripts
 │   ├── check-user-relations.ts
 │   ├── clean-corporate-sns-username.ts
+│   ├── cleanup-duplicate-google-account.ts
 │   ├── compare-schema.js
 │   ├── create-missing-subscriptions.ts
 │   ├── delete-user.ts
@@ -730,9 +761,11 @@ share/
 │   ├── next-auth.d.ts
 │   ├── prisma-extensions.ts
 │   ├── profiles.ts
+│   ├── recaptcha.d.ts
 │   ├── sns-guide.ts
 │   ├── sns.ts
 │   ├── tinycolor2.d.ts
 │   └── user.ts
 └── vercel.json
+
 

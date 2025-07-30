@@ -1,7 +1,7 @@
 // app/api/corporate-member/profile/update/route.ts
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
@@ -11,7 +11,8 @@ import {
   getVirtualTenantData,
 } from '@/lib/corporateAccess';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
-// バリデーションスキーマ - 姓名を個別に管理するフィールドを追加
+
+// バリデーションスキーマ - 会社/組織情報フィールドを追加
 const ProfileUpdateSchema = z.object({
   // 姓名関連フィールド
   name: z.string().optional(),
@@ -21,11 +22,16 @@ const ProfileUpdateSchema = z.object({
   nameKana: z.string().optional().nullable(),
   lastNameKana: z.string().optional().nullable(),
   firstNameKana: z.string().optional().nullable(),
-  // その他のフィールド
+  // 基本情報フィールド
   bio: z.string().max(300, '自己紹介は300文字以内で入力してください').optional().nullable(),
   image: z.string().optional().nullable(),
   phone: z.string().optional().nullable(),
   position: z.string().max(50, '役職は50文字以内で入力してください').optional().nullable(),
+  // 会社/組織情報フィールドを追加
+  company: z.string().optional().nullable(),
+  companyUrl: z.string().optional().nullable(),
+  companyLabel: z.string().optional().nullable(),
+  // デザイン関連フィールド
   headerText: z
     .string()
     .max(50, 'ヘッダーテキストは50文字以内で入力してください')
@@ -33,25 +39,30 @@ const ProfileUpdateSchema = z.object({
     .nullable(),
   textColor: z.string().optional().nullable(),
 });
+
 export async function POST(req: NextRequest) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
+
     // リクエストボディの取得
     const body = await req.json();
+
     // データの検証
     const validationResult = ProfileUpdateSchema.safeParse(body);
     if (!validationResult.success) {
       const errors = validationResult.error.flatten();
       return NextResponse.json({ error: '入力データが無効です', details: errors }, { status: 400 });
     }
+
     // 永久利用権ユーザーかどうかをチェック
     const isPermanent = checkPermanentAccess();
     if (isPermanent) {
       logger.debug('永久利用権ユーザーのプロフィール更新:', session.user.id);
       const data = validationResult.data;
+
       // 通常のデータベース更新処理
       // ユーザー情報を更新
       const updateData: Record<string, unknown> = {
@@ -62,7 +73,12 @@ export async function POST(req: NextRequest) {
         image: data.image,
         headerText: data.headerText,
         textColor: data.textColor,
+        // 会社/組織情報を追加
+        company: data.company,
+        companyUrl: data.companyUrl,
+        companyLabel: data.companyLabel,
       };
+
       // 姓名フィールドの処理
       if (data.lastName || data.firstName) {
         updateData.lastName = data.lastName;
@@ -75,6 +91,7 @@ export async function POST(req: NextRequest) {
       } else if (data.name) {
         updateData.name = data.name;
       }
+
       // フリガナフィールドの処理
       if (data.lastNameKana || data.firstNameKana) {
         updateData.lastNameKana = data.lastNameKana;
@@ -87,15 +104,18 @@ export async function POST(req: NextRequest) {
       } else if (data.nameKana) {
         updateData.nameKana = data.nameKana;
       }
+
       // ユーザー情報を更新
       const updatedUser = await prisma.user.update({
         where: { id: session.user.id },
         data: updateData,
       });
+
       // プロフィールが存在しない場合は作成
       let profile = await prisma.profile.findUnique({
         where: { userId: session.user.id },
       });
+
       if (!profile) {
         // スラッグを生成
         const slug = `${session.user.id.substring(0, 8)}`;
@@ -107,6 +127,7 @@ export async function POST(req: NextRequest) {
           },
         });
       }
+
       // 仮想テナントデータの更新処理
       const virtualData = getVirtualTenantData();
       if (virtualData) {
@@ -122,15 +143,17 @@ export async function POST(req: NextRequest) {
             }
             return user;
           });
+
           return {
             ...data,
             users: updatedUsers,
           };
         });
       }
+
       // センシティブ情報を除外
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       const { password, ...safeUser } = updatedUser;
+
       return NextResponse.json({
         success: true,
         user: safeUser,
@@ -138,6 +161,7 @@ export async function POST(req: NextRequest) {
         isPermanentUser: true,
       });
     }
+
     // 通常ユーザーの場合（永久利用権でない場合）の処理
     // ユーザー情報とテナント情報を取得
     const user = await prisma.user.findUnique({
@@ -147,15 +171,19 @@ export async function POST(req: NextRequest) {
         adminOfTenant: true,
       },
     });
+
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
+
     // ユーザーが法人テナントに所属しているか確認
     const tenantInfo = user.tenant || user.adminOfTenant;
     if (!tenantInfo) {
       return NextResponse.json({ error: '法人テナントに所属していません' }, { status: 403 });
     }
+
     const data = validationResult.data;
+
     // 更新データを準備
     const updateData: Record<string, unknown> = {
       nameEn: data.nameEn,
@@ -165,7 +193,12 @@ export async function POST(req: NextRequest) {
       image: data.image,
       headerText: data.headerText,
       textColor: data.textColor,
+      // 会社/組織情報を追加
+      company: data.company,
+      companyUrl: data.companyUrl,
+      companyLabel: data.companyLabel,
     };
+
     // 姓名フィールドの処理
     if (data.lastName || data.firstName) {
       updateData.lastName = data.lastName;
@@ -178,6 +211,7 @@ export async function POST(req: NextRequest) {
     } else if (data.name) {
       updateData.name = data.name;
     }
+
     // フリガナフィールドの処理
     if (data.lastNameKana || data.firstNameKana) {
       updateData.lastNameKana = data.lastNameKana;
@@ -190,15 +224,18 @@ export async function POST(req: NextRequest) {
     } else if (data.nameKana) {
       updateData.nameKana = data.nameKana;
     }
+
     // ユーザー情報を更新
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: updateData,
     });
+
     // プロフィールが存在しない場合は作成
     let profile = await prisma.profile.findUnique({
       where: { userId: session.user.id },
     });
+
     if (!profile) {
       // スラッグを生成
       const slug = `${session.user.id.substring(0, 8)}`;
@@ -210,6 +247,7 @@ export async function POST(req: NextRequest) {
         },
       });
     }
+
     // アクティビティログを記録（テナントIDが存在する場合のみ）
     if (tenantInfo.id) {
       try {
@@ -229,9 +267,10 @@ export async function POST(req: NextRequest) {
         // ログエラーは処理を続行
       }
     }
+
     // センシティブ情報を除外
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { password, ...safeUser } = updatedUser;
+
     return NextResponse.json({
       success: true,
       user: safeUser,
