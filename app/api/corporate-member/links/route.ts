@@ -1,9 +1,9 @@
-// app/api/corporate-member/links/route.ts (修正版 - 型エラー完全解決)
+// app/api/corporate-member/links/route.ts (接続問題修正版)
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma, safeQuery, ensurePrismaConnection } from '@/lib/prisma';
 import type { CorporateSnsLink, SnsLink, CustomLink } from '@prisma/client';
 
 // 型定義を明示的に定義
@@ -23,43 +23,69 @@ export async function GET() {
 
     logger.debug('法人メンバーリンク API: 開始', { userId: session.user.id });
 
-    try {
-      // 🔧 修正: ユーザー情報取得を段階的に実行
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          id: true,
-          subscriptionStatus: true,
+    // 🔧 修正: Prisma接続確認を追加
+    const isConnected = await ensurePrismaConnection();
+    if (!isConnected) {
+      logger.error('法人メンバーリンク API: Prisma接続に失敗しました');
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'データベース接続エラー',
+          corporateSnsLinks: [] as CorporateSnsLinkSelect[],
+          personalSnsLinks: [] as PersonalSnsLinkSelect[],
+          customLinks: [] as CustomLinkSelect[],
+          corporateColors: {
+            primaryColor: '#3B82F6',
+            secondaryColor: '#1E40AF',
+          },
+          tenant: null,
+          details: 'Prismaエンジンに接続できませんでした',
         },
+        { status: 503 },
+      );
+    }
+
+    try {
+      // 🔧 修正: safeQueryを使用してユーザー情報取得
+      const user = await safeQuery(async () => {
+        return await prisma.user.findUnique({
+          where: { id: session.user.id },
+          select: {
+            id: true,
+            subscriptionStatus: true,
+          },
+        });
       });
 
       if (!user) {
         return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
       }
 
-      // 🔧 修正: テナント情報を個別に取得
+      // 🔧 修正: safeQueryを使用してテナント情報を個別に取得
       let tenantInfo = null;
       try {
-        const userWithTenant = await prisma.user.findUnique({
-          where: { id: session.user.id },
-          select: {
-            tenant: {
-              select: {
-                id: true,
-                name: true,
-                primaryColor: true,
-                secondaryColor: true,
+        const userWithTenant = await safeQuery(async () => {
+          return await prisma.user.findUnique({
+            where: { id: session.user.id },
+            select: {
+              tenant: {
+                select: {
+                  id: true,
+                  name: true,
+                  primaryColor: true,
+                  secondaryColor: true,
+                },
+              },
+              adminOfTenant: {
+                select: {
+                  id: true,
+                  name: true,
+                  primaryColor: true,
+                  secondaryColor: true,
+                },
               },
             },
-            adminOfTenant: {
-              select: {
-                id: true,
-                name: true,
-                primaryColor: true,
-                secondaryColor: true,
-              },
-            },
-          },
+          });
         });
 
         tenantInfo = userWithTenant?.adminOfTenant || userWithTenant?.tenant;
@@ -72,63 +98,69 @@ export async function GET() {
         return NextResponse.json({ error: 'テナント情報が見つかりません' }, { status: 404 });
       }
 
-      // 🔧 修正: 法人SNSリンクを個別に取得（型alias使用）
+      // 🔧 修正: safeQueryを使用して法人SNSリンクを個別に取得
       let corporateSnsLinks: CorporateSnsLinkSelect[] = [];
       try {
-        corporateSnsLinks = await prisma.corporateSnsLink.findMany({
-          where: { tenantId: tenantInfo.id },
-          select: {
-            id: true,
-            platform: true,
-            username: true,
-            url: true,
-            displayOrder: true,
-            isRequired: true,
-          },
-          orderBy: {
-            displayOrder: 'asc',
-          },
+        corporateSnsLinks = await safeQuery(async () => {
+          return await prisma.corporateSnsLink.findMany({
+            where: { tenantId: tenantInfo.id },
+            select: {
+              id: true,
+              platform: true,
+              username: true,
+              url: true,
+              displayOrder: true,
+              isRequired: true,
+            },
+            orderBy: {
+              displayOrder: 'asc',
+            },
+          });
         });
       } catch (corpSnsError) {
         logger.error('法人メンバーリンク API: 法人SNS取得エラー:', corpSnsError);
         // エラーが発生しても空配列で続行
       }
 
-      // 🔧 修正: 個人SNSリンクを個別に取得（型alias使用）
+      // 🔧 修正: safeQueryを使用して個人SNSリンクを個別に取得
       let personalSnsLinks: PersonalSnsLinkSelect[] = [];
       try {
-        personalSnsLinks = await prisma.snsLink.findMany({
-          where: { userId: session.user.id },
-          select: {
-            id: true,
-            platform: true,
-            username: true,
-            url: true,
-            displayOrder: true,
-          },
-          orderBy: {
-            displayOrder: 'asc',
-          },
+        personalSnsLinks = await safeQuery(async () => {
+          return await prisma.snsLink.findMany({
+            where: { userId: session.user.id },
+            select: {
+              id: true,
+              platform: true,
+              username: true,
+              url: true,
+              displayOrder: true,
+            },
+            orderBy: {
+              displayOrder: 'asc',
+            },
+          });
         });
       } catch (personalSnsError) {
         logger.error('法人メンバーリンク API: 個人SNS取得エラー:', personalSnsError);
         // エラーが発生しても空配列で続行
       }
 
-      // 🔧 修正: カスタムリンクを個別に取得
+      // 🔧 修正: safeQueryを使用してカスタムリンクを個別に取得
       let customLinks: CustomLinkSelect[] = [];
       try {
-        customLinks = await prisma.customLink.findMany({
-          where: { userId: session.user.id },
-          select: {
-            id: true,
-            name: true,
-            url: true,
-            displayOrder: true,
-          },
-          orderBy: {
-            displayOrder: 'asc',
-          },
+        customLinks = await safeQuery(async () => {
+          return await prisma.customLink.findMany({
+            where: { userId: session.user.id },
+            select: {
+              id: true,
+              name: true,
+              url: true,
+              displayOrder: true,
+            },
+            orderBy: {
+              displayOrder: 'asc',
+            },
+          });
         });
       } catch (customError) {
         logger.error('法人メンバーリンク API: カスタムリンク取得エラー:', customError);

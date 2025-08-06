@@ -1,8 +1,8 @@
-// app/api/corporate/access/route.ts (永久利用権個人プラン修正版)
+// app/api/corporate/access/route.ts (データベース接続エラー修正版)
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
-import { prisma, disconnectPrisma } from '@/lib/prisma';
+import { prisma, safeQuery } from '@/lib/prisma'; // 🔧 修正: disconnectPrismaを削除、safeQueryを追加
 import { logger } from '@/lib/utils/logger';
 
 // 🔥 永久利用権プラン種別を判定する関数（他のAPIと統一）
@@ -63,38 +63,40 @@ export async function GET(request: Request) {
     const userId = session.user.id;
 
     try {
-      // ユーザー情報を取得
-      const user = await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          email: true,
-          subscriptionStatus: true,
-          corporateRole: true,
-          tenantId: true,
-          adminOfTenant: {
-            select: {
-              id: true,
-              name: true,
-              accountStatus: true,
-              maxUsers: true, // 🔥 追加
+      // 🔧 修正: safeQueryを使用してユーザー情報を取得
+      const user = await safeQuery(async () => {
+        return await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            email: true,
+            subscriptionStatus: true,
+            corporateRole: true,
+            tenantId: true,
+            adminOfTenant: {
+              select: {
+                id: true,
+                name: true,
+                accountStatus: true,
+                maxUsers: true,
+              },
+            },
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                accountStatus: true,
+                maxUsers: true,
+              },
+            },
+            subscription: {
+              select: {
+                plan: true,
+                status: true,
+              },
             },
           },
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              accountStatus: true,
-              maxUsers: true, // 🔥 追加
-            },
-          },
-          subscription: {
-            select: {
-              plan: true,
-              status: true,
-            },
-          },
-        },
+        });
       });
 
       if (!user) {
@@ -258,12 +260,17 @@ export async function GET(request: Request) {
       });
     } catch (dbError) {
       logger.error('データベースエラー:', dbError);
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError);
+
       return NextResponse.json(
         {
           hasCorporateAccess: false,
           hasAccess: false,
           error: 'Database operation failed',
-          details: dbError instanceof Error ? dbError.message : String(dbError),
+          details:
+            process.env.NODE_ENV === 'development'
+              ? errorMessage
+              : 'データベース接続に失敗しました',
           code: 'DB_ERROR',
         },
         { status: 500 },
@@ -271,20 +278,18 @@ export async function GET(request: Request) {
     }
   } catch (error) {
     logger.error('corporate/access エラー:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
     return NextResponse.json(
       {
         hasCorporateAccess: false,
         hasAccess: false,
         error: 'Internal server error',
-        details: error instanceof Error ? error.message : String(error),
+        details:
+          process.env.NODE_ENV === 'development' ? errorMessage : 'サーバーエラーが発生しました',
       },
       { status: 500 },
     );
-  } finally {
-    try {
-      await disconnectPrisma();
-    } catch (cleanupError) {
-      logger.error('クリーンアップエラー:', cleanupError);
-    }
   }
+  // 🔧 修正: finallyブロックでdisconnectPrisma()を削除（safeQueryが内部で管理するため）
 }

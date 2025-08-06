@@ -1,4 +1,4 @@
-// next.config.mjs (Webhook 307エラー修正版)
+// next.config.mjs (reCAPTCHA CSP修正版)
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   trailingSlash: false,
@@ -232,10 +232,7 @@ const nextConfig = {
       {
         source: '/(.*)',
         headers: [
-          {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
+          // 🔧 修正: reCAPTCHA用にX-Frame-Optionsを調整
           {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
@@ -255,6 +252,23 @@ const nextConfig = {
           {
             key: 'Permissions-Policy',
             value: 'camera=(), microphone=(), geolocation=()',
+          },
+          // 🔧 修正: reCAPTCHA対応のCSP設定を追加
+          {
+            key: 'Content-Security-Policy',
+            value: [
+              "default-src 'self'",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com",
+              "style-src 'self' 'unsafe-inline' https://www.gstatic.com",
+              "font-src 'self' https://fonts.gstatic.com data:",
+              "img-src 'self' data: https: blob:",
+              "connect-src 'self' https://www.google.com https://www.gstatic.com https://www.recaptcha.net",
+              "frame-src 'self' https://www.google.com https://www.gstatic.com https://recaptcha.google.com https://www.recaptcha.net",
+              "object-src 'none'",
+              "base-uri 'self'",
+              "form-action 'self'",
+              "frame-ancestors 'self'",
+            ].join('; '),
           },
         ],
       },

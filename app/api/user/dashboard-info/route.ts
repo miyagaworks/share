@@ -1,9 +1,9 @@
-// app/api/user/dashboard-info/route.ts (財務管理者機能統合版)
+// app/api/user/dashboard-info/route.ts (接続エラー修正版)
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
-import { prisma, safeQuery } from '@/lib/prisma';
+import { prisma, safeQuery } from '@/lib/prisma'; // 🔧 修正: ensurePrismaConnectionを削除
 
 // 🔧 設定: 財務管理者ドメイン（売却時に変更するだけ）
 const FINANCIAL_ADMIN_DOMAIN = '@sns-share.com';
@@ -117,7 +117,7 @@ interface Navigation {
   menuItems: MenuItem[];
 }
 
-// ナビゲーション生成機能（統合版）
+// ナビゲーション生成機能（統合版）- 一切変更なし
 function generateNavigationEnhanced(
   permissions: Permissions,
   currentPath?: string | null,
@@ -630,110 +630,129 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id;
     logger.debug('🔍 ユーザーID:', userId, '| パス:', currentPath);
 
-    // 🆕 財務管理者情報も含めてユーザーデータを取得
-    const userData = await safeQuery(async () => {
-      return await prisma.user.findUnique({
-        where: { id: userId },
-        select: {
-          id: true,
-          name: true,
-          email: true,
-          image: true,
-          subscriptionStatus: true,
-          corporateRole: true,
-          trialEndsAt: true,
-          // 🆕 財務管理者情報を追加
-          financialAdminRecord: {
-            select: {
-              isActive: true,
+    try {
+      // 🔧 修正: ensurePrismaConnection()を削除し、直接safeQueryでユーザーデータを取得
+      const userData = await safeQuery(async () => {
+        return await prisma.user.findUnique({
+          where: { id: userId },
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            image: true,
+            subscriptionStatus: true,
+            corporateRole: true,
+            trialEndsAt: true,
+            // 🆕 財務管理者情報を追加
+            financialAdminRecord: {
+              select: {
+                isActive: true,
+              },
+            },
+            adminOfTenant: {
+              select: {
+                id: true,
+                name: true,
+                logoUrl: true,
+                primaryColor: true,
+                secondaryColor: true,
+                accountStatus: true,
+                maxUsers: true,
+              },
+            },
+            tenant: {
+              select: {
+                id: true,
+                name: true,
+                logoUrl: true,
+                primaryColor: true,
+                secondaryColor: true,
+                accountStatus: true,
+                maxUsers: true,
+              },
+            },
+            subscription: {
+              select: {
+                plan: true,
+                status: true,
+                interval: true,
+              },
             },
           },
-          adminOfTenant: {
-            select: {
-              id: true,
-              name: true,
-              logoUrl: true,
-              primaryColor: true,
-              secondaryColor: true,
-              accountStatus: true,
-              maxUsers: true,
-            },
-          },
-          tenant: {
-            select: {
-              id: true,
-              name: true,
-              logoUrl: true,
-              primaryColor: true,
-              secondaryColor: true,
-              accountStatus: true,
-              maxUsers: true,
-            },
-          },
-          subscription: {
-            select: {
-              plan: true,
-              status: true,
-              interval: true,
-            },
-          },
-        },
+        });
       });
-    });
 
-    if (!userData) {
-      logger.debug('❌ ユーザー見つからず');
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      if (!userData) {
+        logger.debug('❌ ユーザー見つからず');
+        return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      }
+
+      // 🆕 財務管理者フラグを設定し、interval を適切に変換
+      const userDataWithFlags: UserData = {
+        ...userData,
+        isFinancialAdmin: !!userData.financialAdminRecord?.isActive,
+        subscription: userData.subscription
+          ? {
+              ...userData.subscription,
+              interval: userData.subscription.interval || null,
+            }
+          : null,
+      };
+
+      const permissions = calculatePermissionsFixed(userDataWithFlags);
+      const navigation = generateNavigationEnhanced(permissions, currentPath);
+
+      const tenant = userData.adminOfTenant || userData.tenant;
+      const response = {
+        user: {
+          id: userData.id,
+          name: userData.name,
+          email: userData.email,
+          image: userData.image,
+          subscriptionStatus: userData.subscriptionStatus,
+        },
+        permissions,
+        navigation,
+        tenant: tenant
+          ? {
+              id: tenant.id,
+              name: tenant.name,
+              logoUrl: tenant.logoUrl,
+              primaryColor: tenant.primaryColor,
+              secondaryColor: tenant.secondaryColor,
+              accountStatus: tenant.accountStatus,
+              maxUsers: tenant.maxUsers,
+            }
+          : null,
+        processingTime: Date.now() - startTime,
+      };
+
+      logger.debug('✅ Dashboard API完了 - 処理時間:', Date.now() - startTime, 'ms');
+      return NextResponse.json(response);
+    } catch (dbError) {
+      logger.error('❌ Dashboard API データベースエラー:', dbError);
+      const errorMessage = dbError instanceof Error ? dbError.message : String(dbError);
+
+      return NextResponse.json(
+        {
+          error: 'Database connection failed',
+          details:
+            process.env.NODE_ENV === 'development'
+              ? errorMessage
+              : 'データベース接続エラーが発生しました',
+        },
+        { status: 503 },
+      );
     }
-
-    // 🆕 財務管理者フラグを設定し、interval を適切に変換
-    const userDataWithFlags: UserData = {
-      ...userData,
-      isFinancialAdmin: !!userData.financialAdminRecord?.isActive,
-      subscription: userData.subscription
-        ? {
-            ...userData.subscription,
-            interval: userData.subscription.interval || null,
-          }
-        : null,
-    };
-
-    const permissions = calculatePermissionsFixed(userDataWithFlags);
-    const navigation = generateNavigationEnhanced(permissions, currentPath);
-
-    const tenant = userData.adminOfTenant || userData.tenant;
-    const response = {
-      user: {
-        id: userData.id,
-        name: userData.name,
-        email: userData.email,
-        image: userData.image,
-        subscriptionStatus: userData.subscriptionStatus,
-      },
-      permissions,
-      navigation,
-      tenant: tenant
-        ? {
-            id: tenant.id,
-            name: tenant.name,
-            logoUrl: tenant.logoUrl,
-            primaryColor: tenant.primaryColor,
-            secondaryColor: tenant.secondaryColor,
-            accountStatus: tenant.accountStatus,
-            maxUsers: tenant.maxUsers,
-          }
-        : null,
-      processingTime: Date.now() - startTime,
-    };
-
-    logger.debug('✅ Dashboard API完了 - 処理時間:', Date.now() - startTime, 'ms');
-    return NextResponse.json(response);
   } catch (error: any) {
-    logger.error('❌ Dashboard API エラー:', error);
+    logger.error('❌ Dashboard API 全体エラー:', error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+
     return NextResponse.json(
       {
         error: 'Internal server error',
-        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+        details:
+          process.env.NODE_ENV === 'development' ? errorMessage : 'サーバーエラーが発生しました',
       },
       { status: 500 },
     );
