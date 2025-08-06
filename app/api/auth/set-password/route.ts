@@ -4,6 +4,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import bcrypt from 'bcryptjs';
 import { z } from 'zod';
+import { logger } from '@/lib/utils/logger';
 
 const SetPasswordSchema = z.object({
   password: z.string().min(8, 'パスワードは8文字以上である必要があります'),
@@ -45,14 +46,14 @@ export async function POST(req: Request) {
       },
     });
 
-    console.log('✅ Password set for user:', user.email);
+    logger.info('Password set for user:', user.email);
 
     return NextResponse.json({
       success: true,
       message: 'パスワードが正常に設定されました',
     });
   } catch (error) {
-    console.error('❌ Set password error:', error);
+    logger.error('Set password error:', error);
 
     if (error instanceof z.ZodError) {
       return NextResponse.json({ error: error.errors[0].message }, { status: 400 });

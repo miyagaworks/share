@@ -1,4 +1,4 @@
-// app/api/webhook/stripe/route.ts (財務管理機能統合版)
+// app/api/webhook/stripe/route.ts (財務管理機能統合版) - console.log修正版
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
@@ -12,18 +12,18 @@ export async function POST(req: NextRequest) {
   const startTime = Date.now();
 
   try {
-    console.log('🚀 Stripe Webhook received at:', new Date().toISOString());
+    logger.info('Stripe Webhook received at:', new Date().toISOString());
 
     const body = await req.text();
     const signature = req.headers.get('stripe-signature') as string;
 
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
-      console.error('❌ STRIPE_WEBHOOK_SECRET not defined');
+      logger.error('STRIPE_WEBHOOK_SECRET not defined');
       return new Response('Webhook secret not defined', { status: 200 }); // 200で返してリトライを停止
     }
 
     if (!signature) {
-      console.error('❌ No Stripe signature');
+      logger.error('No Stripe signature');
       return new Response('No signature', { status: 200 }); // 200で返してリトライを停止
     }
 
@@ -34,20 +34,20 @@ export async function POST(req: NextRequest) {
       }
 
       event = stripe.webhooks.constructEvent(body, signature, process.env.STRIPE_WEBHOOK_SECRET);
-      console.log('✅ Signature verified for event:', event.type);
+      logger.info('Signature verified for event:', event.type);
     } catch (error) {
-      console.error('❌ Signature verification failed:', error);
+      logger.error('Signature verification failed:', error);
       return new Response('Invalid signature', { status: 400 });
     }
 
     // 🚀 重要：即座に200レスポンスを返す
     const responseTime = Date.now() - startTime;
-    console.log(`⚡ Quick response sent in ${responseTime}ms for event: ${event.type}`);
+    logger.info(`Quick response sent in ${responseTime}ms for event: ${event.type}`);
 
     // 🔄 非同期でバックグラウンド処理を実行（レスポンス後）
     setImmediate(() => {
       processWebhookEventAsync(event).catch((error) => {
-        console.error('💥 Background webhook processing failed:', error);
+        logger.error('Background webhook processing failed:', error);
         logger.error('Background webhook processing error:', error);
       });
     });
@@ -65,7 +65,7 @@ export async function POST(req: NextRequest) {
     );
   } catch (error) {
     const responseTime = Date.now() - startTime;
-    console.error('💥 Webhook fatal error:', error);
+    logger.error('Webhook fatal error:', error);
 
     // エラーでも200を返してリトライループを防ぐ
     return new Response(`Error handled: ${responseTime}ms`, { status: 200 });
@@ -77,7 +77,7 @@ async function processWebhookEventAsync(event: Stripe.Event) {
   const processingStart = Date.now();
 
   try {
-    console.log(`🔄 Background processing started for: ${event.type}`);
+    logger.info(`Background processing started for: ${event.type}`);
 
     switch (event.type) {
       case 'customer.subscription.created':
@@ -106,15 +106,15 @@ async function processWebhookEventAsync(event: Stripe.Event) {
         await handleChargeDispute(event.data.object as Stripe.Dispute);
         break;
       default:
-        console.log(`ℹ️ Unhandled event type: ${event.type}`);
+        logger.info(`Unhandled event type: ${event.type}`);
     }
 
     const processingTime = Date.now() - processingStart;
-    console.log(`✅ Background processing completed for ${event.type} in ${processingTime}ms`);
+    logger.info(`Background processing completed for ${event.type} in ${processingTime}ms`);
   } catch (error) {
     const processingTime = Date.now() - processingStart;
-    console.error(
-      `💥 Background processing failed for ${event.type} after ${processingTime}ms:`,
+    logger.error(
+      `Background processing failed for ${event.type} after ${processingTime}ms:`,
       error,
     );
 
@@ -127,9 +127,7 @@ async function processWebhookEventAsync(event: Stripe.Event) {
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   try {
     const customerId = subscription.customer as string;
-    console.log(
-      `🆕 Processing subscription created: ${subscription.id} for customer: ${customerId}`,
-    );
+    logger.info(`Processing subscription created: ${subscription.id} for customer: ${customerId}`);
 
     // カスタマーIDからユーザーを検索
     const user = await prisma.user.findFirst({
@@ -137,7 +135,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     });
 
     if (!user) {
-      console.error(`❌ User not found for customer: ${customerId}`);
+      logger.error(`User not found for customer: ${customerId}`);
       return;
     }
 
@@ -145,11 +143,11 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
     const planInfo = getPlanInfoByPriceId(priceId);
 
     if (!planInfo) {
-      console.error(`❌ Plan info not found for price: ${priceId}`);
+      logger.error(`Plan info not found for price: ${priceId}`);
       return;
     }
 
-    console.log(`📋 Plan info: ${planInfo.planId}, corporate: ${planInfo.isCorporate}`);
+    logger.info(`Plan info: ${planInfo.planId}, corporate: ${planInfo.isCorporate}`);
 
     // サブスクリプション情報をデータベースに保存/更新
     const subscriptionData = {
@@ -191,21 +189,21 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
       return upsertedSubscription;
     });
 
-    console.log(`✅ Subscription data saved for user: ${user.id}`);
+    logger.info(`Subscription data saved for user: ${user.id}`);
 
     // 🏢 法人プランの場合は別途処理（エラーがあっても継続）
     if (planInfo.isCorporate) {
       try {
         await handleCorporateTenantCreation(user.id, result.id, planInfo);
       } catch (corporateError) {
-        console.error('⚠️ Corporate tenant creation failed:', corporateError);
+        logger.warn('Corporate tenant creation failed:', corporateError);
         // 法人テナント作成失敗してもサブスクリプション自体は有効
       }
     }
 
-    console.log(`✅ Subscription creation completed for: ${subscription.id}`);
+    logger.info(`Subscription creation completed for: ${subscription.id}`);
   } catch (error) {
-    console.error('💥 Subscription creation failed:', error);
+    logger.error('Subscription creation failed:', error);
     throw error; // エラーをログに記録するため再スロー
   }
 }
@@ -216,7 +214,7 @@ async function handleCorporateTenantCreation(
   subscriptionId: string,
   planInfo: any,
 ) {
-  console.log('🏢 Creating corporate tenant...');
+  logger.info('Creating corporate tenant...');
 
   // 既存テナントチェック
   const existingTenant = await prisma.corporateTenant.findUnique({
@@ -224,7 +222,7 @@ async function handleCorporateTenantCreation(
   });
 
   if (existingTenant) {
-    console.log(`📝 Updating existing corporate tenant: ${existingTenant.id}`);
+    logger.info(`Updating existing corporate tenant: ${existingTenant.id}`);
     await prisma.corporateTenant.update({
       where: { id: existingTenant.id },
       data: {
@@ -233,7 +231,7 @@ async function handleCorporateTenantCreation(
       },
     });
   } else {
-    console.log('🆕 Creating new corporate tenant');
+    logger.info('Creating new corporate tenant');
     const user = await prisma.user.findUnique({ where: { id: userId } });
 
     const newTenant = await prisma.corporateTenant.create({
@@ -247,14 +245,14 @@ async function handleCorporateTenantCreation(
         secondaryColor: 'var(--color-corporate-secondary)',
       },
     });
-    console.log(`✅ Corporate tenant created: ${newTenant.id}`);
+    logger.info(`Corporate tenant created: ${newTenant.id}`);
   }
 }
 
 // 🔄 サブスクリプション更新ハンドラー
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   try {
-    console.log(`🔄 Processing subscription updated: ${subscription.id}`);
+    logger.info(`Processing subscription updated: ${subscription.id}`);
 
     const customerId = subscription.customer as string;
     const user = await prisma.user.findFirst({
@@ -262,7 +260,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     });
 
     if (!user) {
-      console.error(`❌ User not found for customer: ${customerId}`);
+      logger.error(`User not found for customer: ${customerId}`);
       return;
     }
 
@@ -270,7 +268,7 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
     const planInfo = getPlanInfoByPriceId(priceId);
 
     if (!planInfo) {
-      console.error(`❌ Plan info not found for price: ${priceId}`);
+      logger.error(`Plan info not found for price: ${priceId}`);
       return;
     }
 
@@ -292,16 +290,16 @@ async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
       data: subscriptionData,
     });
 
-    console.log(`✅ Subscription updated for user: ${user.id}`);
+    logger.info(`Subscription updated for user: ${user.id}`);
   } catch (error) {
-    console.error('💥 Subscription update failed:', error);
+    logger.error('Subscription update failed:', error);
   }
 }
 
 // 🗑️ サブスクリプション削除ハンドラー
 async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   try {
-    console.log(`🗑️ Processing subscription deleted: ${subscription.id}`);
+    logger.info(`Processing subscription deleted: ${subscription.id}`);
 
     const customerId = subscription.customer as string;
     const user = await prisma.user.findFirst({
@@ -309,7 +307,7 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     });
 
     if (!user) {
-      console.error(`❌ User not found for customer: ${customerId}`);
+      logger.error(`User not found for customer: ${customerId}`);
       return;
     }
 
@@ -333,16 +331,16 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
       });
     });
 
-    console.log(`✅ Subscription deletion processed for user: ${user.id}`);
+    logger.info(`Subscription deletion processed for user: ${user.id}`);
   } catch (error) {
-    console.error('💥 Subscription deletion failed:', error);
+    logger.error('Subscription deletion failed:', error);
   }
 }
 
 // 💰 支払い成功ハンドラー（財務管理機能統合版）
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   try {
-    console.log(`💰 Processing payment succeeded with financial integration: ${invoice.id}`);
+    logger.info(`Processing payment succeeded with financial integration: ${invoice.id}`);
 
     if (invoice.subscription) {
       const customerId = invoice.customer as string;
@@ -362,23 +360,23 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
           try {
             await recordFinancialDataFromInvoice(invoice, user);
           } catch (financialError) {
-            console.error('⚠️ Financial data recording failed:', financialError);
+            logger.warn('Financial data recording failed:', financialError);
             // 財務データ記録失敗してもサブスクリプション処理は継続
           }
         }
 
-        console.log(`✅ Payment success processed for user: ${user.id}`);
+        logger.info(`Payment success processed for user: ${user.id}`);
       }
     }
   } catch (error) {
-    console.error('💥 Payment success handling failed:', error);
+    logger.error('Payment success handling failed:', error);
   }
 }
 
 // ❌ 支払い失敗ハンドラー
 async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
   try {
-    console.log(`❌ Processing payment failed: ${invoice.id}`);
+    logger.info(`Processing payment failed: ${invoice.id}`);
 
     if (invoice.subscription) {
       const customerId = invoice.customer as string;
@@ -391,18 +389,18 @@ async function handleInvoicePaymentFailed(invoice: Stripe.Invoice) {
           where: { id: user.id },
           data: { subscriptionStatus: 'past_due' },
         });
-        console.log(`⚠️ Payment failure processed for user: ${user.id}`);
+        logger.warn(`Payment failure processed for user: ${user.id}`);
       }
     }
   } catch (error) {
-    console.error('💥 Payment failure handling failed:', error);
+    logger.error('Payment failure handling failed:', error);
   }
 }
 
 // 🛒 チェックアウト完了ハンドラー
 async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
   try {
-    console.log(`🛒 Processing checkout completed: ${session.id}`);
+    logger.info(`Processing checkout completed: ${session.id}`);
 
     if (session.subscription && session.customer) {
       const customerId = session.customer as string;
@@ -415,18 +413,18 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
           where: { id: user.id },
           data: { subscriptionStatus: 'active' },
         });
-        console.log(`✅ Checkout completion processed for user: ${user.id}`);
+        logger.info(`Checkout completion processed for user: ${user.id}`);
       }
     }
   } catch (error) {
-    console.error('💥 Checkout completion failed:', error);
+    logger.error('Checkout completion failed:', error);
   }
 }
 
 // 🆕 PaymentIntent成功ハンドラー（財務管理用）
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   try {
-    console.log(`💳 Processing PaymentIntent succeeded: ${paymentIntent.id}`);
+    logger.info(`Processing PaymentIntent succeeded: ${paymentIntent.id}`);
 
     // 既存トランザクションチェック
     const existingTransaction = await prisma.stripeTransaction.findUnique({
@@ -434,7 +432,7 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     });
 
     if (existingTransaction) {
-      console.log(`⚠️ Transaction already exists: ${paymentIntent.id}`);
+      logger.info(`Transaction already exists: ${paymentIntent.id}`);
       return;
     }
 
@@ -444,23 +442,23 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
     });
 
     if (!user) {
-      console.log(`⚠️ User not found for PaymentIntent: ${paymentIntent.id}`);
+      logger.info(`User not found for PaymentIntent: ${paymentIntent.id}`);
       return;
     }
 
     // 財務データ記録
     await recordFinancialDataFromPaymentIntent(paymentIntent, user);
 
-    console.log(`✅ PaymentIntent financial data recorded: ${paymentIntent.id}`);
+    logger.info(`PaymentIntent financial data recorded: ${paymentIntent.id}`);
   } catch (error) {
-    console.error('💥 PaymentIntent processing failed:', error);
+    logger.error('PaymentIntent processing failed:', error);
   }
 }
 
 // 🆕 チャージバック処理ハンドラー
 async function handleChargeDispute(dispute: Stripe.Dispute) {
   try {
-    console.log(`⚖️ Processing charge dispute: ${dispute.id}`);
+    logger.info(`Processing charge dispute: ${dispute.id}`);
 
     // 関連する取引を検索して更新
     const transaction = await prisma.stripeTransaction.findUnique({
@@ -476,17 +474,17 @@ async function handleChargeDispute(dispute: Stripe.Dispute) {
         },
       });
 
-      console.log(`✅ Dispute recorded for transaction: ${transaction.id}`);
+      logger.info(`Dispute recorded for transaction: ${transaction.id}`);
     }
   } catch (error) {
-    console.error('💥 Dispute processing failed:', error);
+    logger.error('Dispute processing failed:', error);
   }
 }
 
 // 💰 請求書から財務データを記録
 async function recordFinancialDataFromInvoice(invoice: Stripe.Invoice, user: any) {
   try {
-    console.log('💰 Recording financial data from invoice:', invoice.id);
+    logger.info('Recording financial data from invoice:', invoice.id);
 
     // PaymentIntentを取得
     const stripeClient = getStripeInstance();
@@ -498,7 +496,7 @@ async function recordFinancialDataFromInvoice(invoice: Stripe.Invoice, user: any
       await recordFinancialDataFromPaymentIntent(paymentIntent, user);
     }
   } catch (error) {
-    console.error('❌ Failed to record financial data from invoice:', error);
+    logger.error('Failed to record financial data from invoice:', error);
     throw error; // 再スローしてエラーを上位で処理
   }
 }
@@ -509,7 +507,7 @@ async function recordFinancialDataFromPaymentIntent(
   user: any,
 ) {
   try {
-    console.log('💳 Recording financial data from PaymentIntent:', paymentIntent.id);
+    logger.info('Recording financial data from PaymentIntent:', paymentIntent.id);
 
     // Charge情報取得（手数料計算用）
     const stripeClient = getStripeInstance();
@@ -520,7 +518,7 @@ async function recordFinancialDataFromPaymentIntent(
 
     const charge = charges.data[0];
     if (!charge?.balance_transaction) {
-      console.log('⚠️ No balance transaction found, skipping financial record');
+      logger.info('No balance transaction found, skipping financial record');
       return;
     }
 
@@ -584,7 +582,7 @@ async function recordFinancialDataFromPaymentIntent(
         },
       });
 
-      console.log('✅ Financial data recorded:', {
+      logger.info('Financial data recorded:', {
         transactionId: stripeTransaction.id,
         amount: amount,
         fees: feeAmount,
@@ -592,7 +590,7 @@ async function recordFinancialDataFromPaymentIntent(
       });
     });
   } catch (error) {
-    console.error('❌ Failed to record financial data from PaymentIntent:', error);
+    logger.error('Failed to record financial data from PaymentIntent:', error);
     throw error;
   }
 }

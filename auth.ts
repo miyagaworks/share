@@ -1,4 +1,4 @@
-// auth.ts (JWT設定修正版)
+// auth.ts (本番用・console.log削除版)
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
@@ -55,22 +55,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   },
   callbacks: {
     async signIn({ user, account, profile }) {
-      console.log('🚀 SignIn callback started', {
-        provider: account?.provider,
-        userEmail: user?.email,
-      });
+      // 🔧 本番用: デバッグログを条件付きに変更
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 SignIn callback started', {
+          provider: account?.provider,
+          userEmail: user?.email,
+        });
+      }
 
       try {
         // 🔧 Credentials認証の場合は常に許可
         if (account?.provider === 'credentials') {
-          console.log('✅ Credentials authentication successful for:', user?.email);
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ Credentials authentication successful for:', user?.email);
+          }
           return true;
         }
 
         // 🔧 Google認証の場合の処理（既存のロジック維持）
         if (account?.provider === 'google' && user?.email) {
           const email = user.email.toLowerCase();
-          console.log('📧 Processing Google login for:', email);
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log('📧 Processing Google login for:', email);
+          }
 
           const existingUser = await prisma.user.findUnique({
             where: { email },
@@ -89,14 +97,20 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
 
           if (existingUser) {
-            console.log('👤 既存ユーザー発見:', {
-              id: existingUser.id,
-              hasPassword: !!existingUser.password,
-              accountProviders: existingUser.accounts.map((a: { provider: string }) => a.provider),
-            });
+            if (process.env.NODE_ENV === 'development') {
+              console.log('👤 既存ユーザー発見:', {
+                id: existingUser.id,
+                hasPassword: !!existingUser.password,
+                accountProviders: existingUser.accounts.map(
+                  (a: { provider: string }) => a.provider,
+                ),
+              });
+            }
 
             if (existingUser.password) {
-              console.log('❌ パスワード登録ユーザーのGoogleログイン試行を拒否');
+              if (process.env.NODE_ENV === 'development') {
+                console.log('❌ パスワード登録ユーザーのGoogleログイン試行を拒否');
+              }
               return false;
             }
 
@@ -104,11 +118,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               (acc: { provider: string }) => acc.provider === 'google',
             );
             if (!hasGoogleAccount) {
-              console.log('❌ Googleアカウント連携なし、ログイン拒否');
+              if (process.env.NODE_ENV === 'development') {
+                console.log('❌ Googleアカウント連携なし、ログイン拒否');
+              }
               return false;
             }
 
-            console.log('✅ 正常なGoogleユーザーのログイン');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ 正常なGoogleユーザーのログイン');
+            }
             user.id = existingUser.id;
             user.name = existingUser.name || user.name;
             user.email = existingUser.email;
@@ -116,11 +134,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           if (email === 'admin@sns-share.com') {
-            console.log('👑 Admin user detected');
+            if (process.env.NODE_ENV === 'development') {
+              console.log('👑 Admin user detected');
+            }
             return true;
           }
 
-          console.log('🆕 Creating new Google user (no password)');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🆕 Creating new Google user (no password)');
+          }
+
           try {
             const newUser = await prisma.user.create({
               data: {
@@ -133,43 +156,54 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               },
             });
 
-            console.log('✅ New Google user created:', newUser.id);
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ New Google user created:', newUser.id);
+            }
             user.id = newUser.id;
             user.name = newUser.name;
             user.email = newUser.email;
             return true;
           } catch (createError) {
+            // 🔧 エラーログは本番でも残す
             console.error('❌ Failed to create new user:', createError);
             return false;
           }
         }
 
-        console.log('✅ Other provider authentication successful');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Other provider authentication successful');
+        }
         return true;
       } catch (error) {
+        // 🔧 エラーログは本番でも残す
         console.error('💥 SignIn callback error:', error);
         return false;
       }
     },
 
     async jwt({ token, user, account }) {
-      console.log('🔑 JWT callback', {
-        hasUser: !!user,
-        hasToken: !!token,
-        provider: account?.provider,
-        tokenSub: token?.sub,
-        userEmail: user?.email || token?.email,
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔑 JWT callback', {
+          hasUser: !!user,
+          hasToken: !!token,
+          provider: account?.provider,
+          tokenSub: token?.sub,
+          userEmail: user?.email || token?.email,
+        });
+      }
 
       // 🔧 ログイン時にユーザー情報をトークンに保存
       if (user) {
         token.sub = user.id;
         token.name = user.name;
         token.email = user.email;
-        console.log('✅ JWT: User info saved to token', {
-          sub: token.sub,
-          email: token.email,
-        });
+
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ JWT: User info saved to token', {
+            sub: token.sub,
+            email: token.email,
+          });
+        }
       }
 
       // 🔧 ロール情報の取得（初回またはロールがない場合）
@@ -204,13 +238,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               token.role = 'personal';
             }
 
-            console.log('✅ JWT: Role assigned', {
-              email: userEmail,
-              role: token.role,
-              isFinancialAdmin: dbUser.isFinancialAdmin,
-            });
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ JWT: Role assigned', {
+                email: userEmail,
+                role: token.role,
+                isFinancialAdmin: dbUser.isFinancialAdmin,
+              });
+            }
           }
         } catch (error) {
+          // 🔧 エラーログは本番でも残す
           console.error('❌ JWT callback error:', error);
           token.role = 'personal';
         }
@@ -220,12 +257,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async session({ session, token }) {
-      console.log('📋 Session callback', {
-        hasToken: !!token,
-        tokenSub: token?.sub,
-        tokenEmail: token?.email,
-        tokenRole: token?.role,
-      });
+      if (process.env.NODE_ENV === 'development') {
+        console.log('📋 Session callback', {
+          hasToken: !!token,
+          tokenSub: token?.sub,
+          tokenEmail: token?.email,
+          tokenRole: token?.role,
+        });
+      }
 
       // 🔧 セッションにトークン情報を設定
       if (token && session.user) {
@@ -234,11 +273,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.name = token.name as string;
         session.user.email = token.email as string;
 
-        console.log('✅ Session: User info set', {
-          id: session.user.id,
-          email: session.user.email,
-          role: session.user.role,
-        });
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Session: User info set', {
+            id: session.user.id,
+            email: session.user.email,
+            role: session.user.role,
+          });
+        }
       }
 
       return session;
@@ -250,5 +291,5 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     error: '/auth/error',
   },
   providers: authConfig.providers,
-  debug: process.env.NODE_ENV === 'development', // 🔧 開発環境ではデバッグ有効
+  debug: false, // 🔧 本番では false
 });

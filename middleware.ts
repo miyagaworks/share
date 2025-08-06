@@ -1,4 +1,4 @@
-// middleware.ts (財務管理者リダイレクト追加版)
+// middleware.ts (財務管理者リダイレクト追加版) - console.log修正版
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
@@ -25,16 +25,21 @@ export async function middleware(request: NextRequest) {
         raw: false,
       });
 
-      console.log('🔒 Middleware: Token check', {
-        pathname,
-        hasToken: !!token,
-        tokenEmail: token?.email,
-        tokenRole: token?.role, // 🆕 ロール情報も表示
-      });
+      // 開発環境でのみログ出力
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔒 Middleware: Token check', {
+          pathname,
+          hasToken: !!token,
+          tokenEmail: token?.email,
+          tokenRole: token?.role, // 🆕 ロール情報も表示
+        });
+      }
 
       // 未認証ユーザーはログインページへリダイレクト
       if (!token) {
-        console.log('❌ Middleware: No token, redirecting to signin');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('❌ Middleware: No token, redirecting to signin');
+        }
         const response = NextResponse.redirect(new URL('/auth/signin', request.url));
         response.headers.delete('x-middleware-cache');
         response.headers.delete('x-middleware-prefetch');
@@ -48,14 +53,18 @@ export async function middleware(request: NextRequest) {
       // スーパー管理者の処理
       if (userEmail === 'admin@sns-share.com' || userRole === 'super-admin') {
         if (pathname === '/dashboard' && !pathname.startsWith('/dashboard/admin')) {
-          console.log('🔄 Middleware: Redirecting super admin to /dashboard/admin');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔄 Middleware: Redirecting super admin to /dashboard/admin');
+          }
           return NextResponse.redirect(new URL('/dashboard/admin', request.url));
         }
       }
       // 🆕 財務管理者の処理
       else if (userRole === 'financial-admin') {
         if (pathname === '/dashboard' && !pathname.startsWith('/dashboard/admin')) {
-          console.log('🔄 Middleware: Redirecting financial admin to /dashboard/admin');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔄 Middleware: Redirecting financial admin to /dashboard/admin');
+          }
           return NextResponse.redirect(new URL('/dashboard/admin', request.url));
         }
         // 財務管理者の場合、財務関連ページのみアクセス許可
@@ -69,9 +78,11 @@ export async function middleware(request: NextRequest) {
           const isAllowed = allowedPaths.some((path) => pathname.startsWith(path));
 
           if (!isAllowed) {
-            console.log(
-              '🔒 Middleware: Financial admin access denied, redirecting to allowed page',
-            );
+            if (process.env.NODE_ENV === 'development') {
+              console.log(
+                '🔒 Middleware: Financial admin access denied, redirecting to allowed page',
+              );
+            }
             return NextResponse.redirect(new URL('/dashboard/admin', request.url));
           }
         }
@@ -82,7 +93,9 @@ export async function middleware(request: NextRequest) {
             !pathname.startsWith('/dashboard/admin') &&
             pathname !== '/dashboard')
         ) {
-          console.log('🔒 Middleware: Financial admin accessing restricted area, redirecting');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔒 Middleware: Financial admin accessing restricted area, redirecting');
+          }
           return NextResponse.redirect(new URL('/dashboard/admin', request.url));
         }
       }
@@ -122,11 +135,14 @@ export async function middleware(request: NextRequest) {
         }
       }
 
-      console.log('✅ Middleware: Access allowed', {
-        pathname,
-        userRole,
-        userEmail,
-      });
+      // 開発環境でのみログ出力
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ Middleware: Access allowed', {
+          pathname,
+          userRole,
+          userEmail,
+        });
+      }
       return NextResponse.next();
     } catch (error) {
       console.error('💥 Middleware error:', error);

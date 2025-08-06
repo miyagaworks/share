@@ -1,4 +1,4 @@
-// components/RecaptchaWrapper.tsx - シンプル版（エラーなし）
+// components/RecaptchaWrapper.tsx - シンプル版（エラーなし） - console.log修正版
 'use client';
 import { useEffect, useState } from 'react';
 
@@ -36,9 +36,13 @@ export default function RecaptchaWrapper({
 
       try {
         setHasExecuted(true);
-        console.log('🚀 Executing reCAPTCHA v3...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🚀 Executing reCAPTCHA v3...');
+        }
         const token = await window.grecaptcha.execute(siteKey, { action });
-        console.log('✅ reCAPTCHA v3 token received');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ reCAPTCHA v3 token received');
+        }
         onVerify(token);
       } catch (err) {
         console.error('❌ reCAPTCHA execution error:', err);

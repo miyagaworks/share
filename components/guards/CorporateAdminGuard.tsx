@@ -1,4 +1,4 @@
-// components/guards/CorporateAdminGuard.tsx (新規作成)
+// components/guards/CorporateAdminGuard.tsx
 'use client';
 import { ReactNode, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -34,23 +34,26 @@ export function CorporateAdminGuard({
       }
 
       try {
-        // 🚀 JWT トークンから基本的な権限をチェック
+        // JWT トークンから基本的な権限をチェック
         const userRole = session.user?.role;
         const isAdmin = session.user?.isAdmin;
 
         // 管理者権限がない場合は即座にリダイレクト
         if (!isAdmin && !['admin', 'super-admin', 'permanent-admin'].includes(userRole || '')) {
-          console.log('法人管理者権限なし: フォールバックページにリダイレクト', {
-            userRole,
-            isAdmin,
-            fallbackPath,
-          });
+          // 開発環境でのみデバッグログ出力
+          if (process.env.NODE_ENV === 'development') {
+            console.log('法人管理者権限なし: フォールバックページにリダイレクト', {
+              userRole,
+              isAdmin,
+              fallbackPath,
+            });
+          }
           setError('法人管理者権限がありません');
           setTimeout(() => router.push(fallbackPath), 1500);
           return;
         }
 
-        // 🚀 API で詳細な権限をダブルチェック
+        // API で詳細な権限をダブルチェック
         const response = await fetch('/api/corporate/access', {
           cache: 'no-cache',
           headers: {
@@ -63,10 +66,13 @@ export function CorporateAdminGuard({
 
           if (data.isAdmin && data.hasCorporateAccess) {
             setHasAccess(true);
-            console.log('法人管理者権限確認: アクセス許可', {
-              userRole,
-              tenantId: data.tenantId,
-            });
+            // 開発環境でのみデバッグログ出力
+            if (process.env.NODE_ENV === 'development') {
+              console.log('法人管理者権限確認: アクセス許可', {
+                userRole,
+                tenantId: data.tenantId,
+              });
+            }
           } else {
             setError('法人管理者権限が確認できませんでした');
             setTimeout(() => router.push(fallbackPath), 1500);
@@ -76,7 +82,10 @@ export function CorporateAdminGuard({
           setTimeout(() => router.push(fallbackPath), 1500);
         }
       } catch (error) {
-        console.error('法人管理者権限確認エラー:', error);
+        // 開発環境でのみエラーログ出力
+        if (process.env.NODE_ENV === 'development') {
+          console.error('法人管理者権限確認エラー:', error);
+        }
         setError('権限確認中にエラーが発生しました');
         setTimeout(() => router.push(fallbackPath), 1500);
       } finally {

@@ -1,12 +1,25 @@
 {
-  "crons": [
+  "version": 2,
+  "build": {
+    "env": {
+      "NODE_ENV": "production"
+    }
+  },
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    }
+  },
+  "regions": ["hnd1"],
+  "headers": [
     {
-      "path": "/api/cron/trial-notification",
-      "schedule": "0 1 * * *"
-    },
-    {
-      "path": "/api/cron/cleanup-idempotency",
-      "schedule": "0 3 * * *"
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-store, no-cache, must-revalidate"
+        }
+      ]
     }
   ],
   "rewrites": [

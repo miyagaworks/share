@@ -1,7 +1,8 @@
-// app/api/admin/stripe/webhook-logs/route.ts
+// app/api/admin/stripe/webhook-logs/route.ts - console.log修正版
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/utils/logger';
 
 // Webhookログ取得API（GET）
 export async function GET(request: NextRequest) {
@@ -120,7 +121,7 @@ export async function GET(request: NextRequest) {
       },
     });
   } catch (error: any) {
-    console.error('💥 Webhookログ取得エラー:', error);
+    logger.error('Webhookログ取得エラー:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to fetch webhook logs' },
       { status: 500 },
@@ -182,7 +183,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
   } catch (error: any) {
-    console.error('💥 Webhookログ操作エラー:', error);
+    logger.error('Webhookログ操作エラー:', error);
     return NextResponse.json(
       { error: error.message || 'Failed to process webhook log action' },
       { status: 500 },

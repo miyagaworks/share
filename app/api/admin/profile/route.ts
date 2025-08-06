@@ -1,4 +1,4 @@
-// app/api/admin/profile/route.ts
+// app/api/admin/profile/route.ts - console.log修正版
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
@@ -146,7 +146,7 @@ export async function POST(request: NextRequest) {
     const validatedFields = AdminProfileSchema.safeParse(body);
     if (!validatedFields.success) {
       const errorDetails = validatedFields.error.format();
-      console.error('バリデーションエラー:', errorDetails);
+      logger.error('バリデーションエラー:', errorDetails);
 
       // 主要なエラーメッセージを返す
       const errors = validatedFields.error.errors;

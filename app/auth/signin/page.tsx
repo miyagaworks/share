@@ -1,4 +1,4 @@
-// app/auth/signin/page.tsx (メール/パスワードメイン版)
+// app/auth/signin/page.tsx (メール/パスワードメイン版) - console.log修正版
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -281,7 +281,9 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      console.log('🚀 Google signin started');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 Google signin started');
+      }
 
       // 🔧 redirect: false に変更してエラーハンドリングを可能にする
       const result = await signIn('google', {
@@ -289,7 +291,9 @@ export default function SigninPage() {
         callbackUrl: '/dashboard',
       });
 
-      console.log('Google signin result:', result);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Google signin result:', result);
+      }
 
       // 🔧 エラーハンドリングを追加
       if (result?.error) {
@@ -312,7 +316,9 @@ export default function SigninPage() {
 
       // 🔧 成功時の処理
       if (result?.ok && result?.url) {
-        console.log('✅ Google signin successful, redirecting...');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('✅ Google signin successful, redirecting...');
+        }
         window.location.href = result.url;
       } else if (result?.ok) {
         // URLが返されない場合はダッシュボードにリダイレクト
@@ -368,7 +374,9 @@ export default function SigninPage() {
 
   // reCAPTCHA確認時の処理
   const handleRecaptchaChange = (token: string | null) => {
-    console.log('🔒 reCAPTCHA Token changed:', token ? 'Token received' : 'Token cleared');
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔒 reCAPTCHA Token changed:', token ? 'Token received' : 'Token cleared');
+    }
     setRecaptchaToken(token);
     setRecaptchaLoaded(true);
 
@@ -397,7 +405,9 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      console.log('🚀 Credentials signin started');
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 Credentials signin started');
+      }
 
       const result = await signIn('credentials', {
         email: data.email.toLowerCase(),
@@ -407,7 +417,9 @@ export default function SigninPage() {
         callbackUrl: '/dashboard',
       });
 
-      console.log('🔍 Credentials signin result:', result);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔍 Credentials signin result:', result);
+      }
 
       if (result?.error) {
         // 具体的なエラーメッセージを表示
@@ -423,13 +435,19 @@ export default function SigninPage() {
         setRecaptchaLoaded(false);
       } else if (result?.ok) {
         const session = await getSession();
-        console.log('🔍 Session after credentials signin:', session);
+        if (process.env.NODE_ENV === 'development') {
+          console.log('🔍 Session after credentials signin:', session);
+        }
 
         if (session?.user) {
-          console.log('✅ Session confirmed, redirecting to dashboard');
+          if (process.env.NODE_ENV === 'development') {
+            console.log('✅ Session confirmed, redirecting to dashboard');
+          }
           window.location.href = '/dashboard';
         } else {
-          console.warn('⚠️ No session found after successful signin');
+          if (process.env.NODE_ENV === 'development') {
+            console.warn('⚠️ No session found after successful signin');
+          }
           setError('ログイン後のセッション確認に失敗しました。再度お試しください。');
         }
       }

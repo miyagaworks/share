@@ -4,7 +4,7 @@ import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { FaMobile, FaLink, FaCopy } from 'react-icons/fa';
-import { HiColorSwatch, HiEye } from 'react-icons/hi'; // HiArrowLeftを削除
+import { HiColorSwatch, HiEye } from 'react-icons/hi';
 import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker';
 import { QrCodePreview } from './QrCodePreview';
 import { motion } from 'framer-motion';
@@ -27,25 +27,24 @@ interface UserProfile {
 interface QrCodeGeneratorProps {
   corporateBranding?: CorporateBranding;
   userProfile: UserProfile;
-  hideBackButton?: boolean; // インターフェースとしては残す（他コンポーネントが使用）
+  hideBackButton?: boolean;
   hideSlugInput?: boolean;
-  customBackUrl?: string; // インターフェースとしては残す（他コンポーネントが使用）
+  customBackUrl?: string;
   initialQrCodeSlug?: string;
   hideTitleHeader?: boolean;
 }
+
 // ユーザー設定を保存するためのローカルストレージキー（ベストプラクティス：定数化）
 const USER_PRIMARY_COLOR_KEY = 'userPrimaryColor';
 const USER_TEXT_COLOR_KEY = 'userTextColor';
+
 export function QrCodeGenerator({
   corporateBranding,
   userProfile,
-  // hideBackButton = false,
   hideSlugInput = false,
-  // customBackUrl,
   initialQrCodeSlug,
   hideTitleHeader = false,
 }: QrCodeGeneratorProps) {
-  // const isCorporateMember = !!corporateBranding;
   // 初期値の設定
   const initialPrimaryColor = corporateBranding?.primaryColor || '#3B82F6';
   const initialTextColor = corporateBranding?.textColor || '#FFFFFF';
@@ -53,11 +52,13 @@ export function QrCodeGenerator({
     corporateBranding?.headerText ||
     userProfile.headerText ||
     'シンプルにつながる、スマートにシェア。';
+
   // 状態管理 - 関連する状態をグループ化（ベストプラクティス）
   const [primaryColor, setPrimaryColor] = useState(initialPrimaryColor);
   const [textColor, setTextColor] = useState(initialTextColor);
   const [headerText, setHeaderText] = useState(initialHeaderText);
   const [useCorporateBranding, setUseCorporateBranding] = useState(!!corporateBranding);
+
   // QRコード関連の状態
   const [customUrlSlug, setCustomUrlSlug] = useState('');
   const [isSlugAvailable, setIsSlugAvailable] = useState(false);
@@ -65,22 +66,30 @@ export function QrCodeGenerator({
   const [generatedUrl, setGeneratedUrl] = useState('');
   const [isExistingQrCode, setIsExistingQrCode] = useState(false);
   const [existingQrCodeId, setExistingQrCodeId] = useState<string | null>(null);
+
   // UI関連の状態
   const [showSaveInstructions, setShowSaveInstructions] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [userId, setUserId] = useState<string | null>(null);
+
   // 参照
   const previewRef = useRef<HTMLDivElement>(null);
+
   // デバイス判定用の状態を追加
   const [isIOS, setIsIOS] = useState(false);
   const [isAndroid, setIsAndroid] = useState(false);
+
   // デバイス判定のuseEffectを追加
   useEffect(() => {
     if (typeof window === 'undefined') return;
 
     // デバイス判定を修正
     const userAgent = navigator.userAgent.toLowerCase();
-    console.log('User Agent:', userAgent); // デバッグ用
+
+    // 開発環境でのみデバッグログ出力
+    if (process.env.NODE_ENV === 'development') {
+      console.log('User Agent:', userAgent);
+    }
 
     // より正確なiOS判定
     const isIOSDevice =
@@ -90,8 +99,11 @@ export function QrCodeGenerator({
     // より正確なAndroid判定
     const isAndroidDevice = /android/.test(userAgent);
 
-    console.log('iOS detected:', isIOSDevice); // デバッグ用
-    console.log('Android detected:', isAndroidDevice); // デバッグ用
+    // 開発環境でのみデバッグログ出力
+    if (process.env.NODE_ENV === 'development') {
+      console.log('iOS detected:', isIOSDevice);
+      console.log('Android detected:', isAndroidDevice);
+    }
 
     setIsIOS(isIOSDevice);
     setIsAndroid(isAndroidDevice);
@@ -107,6 +119,7 @@ export function QrCodeGenerator({
       }
     }
   }, [initialQrCodeSlug, customUrlSlug]);
+
   // 初期データの読み込み（useEffectの依存配列を適切に設定）
   useEffect(() => {
     const loadQrCodeData = async () => {
@@ -165,6 +178,7 @@ export function QrCodeGenerator({
     };
     loadQrCodeData();
   }, [corporateBranding, initialQrCodeSlug]);
+
   // カスタムURLスラグの利用可能性をチェック（APIリクエストをラップした関数）
   const checkSlugAvailability = async (slug: string) => {
     if (!slug || slug.length < 3) {
@@ -202,6 +216,7 @@ export function QrCodeGenerator({
       setIsCheckingSlug(false);
     }
   };
+
   // スラグ入力の変更を処理（イベントハンドラ関数）
   const handleSlugChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const newSlug = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
@@ -215,6 +230,7 @@ export function QrCodeGenerator({
       setExistingQrCodeId(null);
     }
   };
+
   // 法人ブランディングの切り替え（ロジックを関数として分離）
   const toggleCorporateBranding = () => {
     if (corporateBranding) {
@@ -239,6 +255,7 @@ export function QrCodeGenerator({
       }
     }
   };
+
   // QRコードページを生成または更新（APIリクエストをラップした関数）
   const generateQrCodePage = async () => {
     if (!customUrlSlug || customUrlSlug.length < 3) {
@@ -297,6 +314,7 @@ export function QrCodeGenerator({
       setIsSaving(false);
     }
   };
+
   // URLをコピーする関数（単一責任の原則）
   const copyGeneratedUrl = () => {
     if (generatedUrl) {
@@ -304,6 +322,7 @@ export function QrCodeGenerator({
       toast.success('URLをコピーしました');
     }
   };
+
   // 法人メンバー向けのUI調整（計算値を変数として抽出）
   const buttonStyle =
     useCorporateBranding && corporateBranding
@@ -316,9 +335,9 @@ export function QrCodeGenerator({
   const buttonVariant = corporateBranding && useCorporateBranding ? 'corporate' : undefined;
   const outlineButtonVariant =
     corporateBranding && useCorporateBranding ? 'corporateOutline' : 'outline';
+
   return (
     <div className="space-y-6">
-      {/* 戻るボタンを完全に削除 */}
       {/* ヘッダー部分 - hideTitleHeaderがtrueの場合は非表示 */}
       {!hideTitleHeader && (
         <div className="flex items-center mb-6">
@@ -331,6 +350,7 @@ export function QrCodeGenerator({
           </div>
         </div>
       )}
+
       {/* メインコンテンツ */}
       <div className="grid gap-6 lg:grid-cols-2">
         {/* 左側: 設定パネル */}
@@ -347,6 +367,7 @@ export function QrCodeGenerator({
           <p className="text-sm text-muted-foreground mb-6 text-justify">
             QRコードのデザインと色をカスタマイズできます
           </p>
+
           {/* 法人ブランディングの切り替え */}
           {corporateBranding && (
             <div className="mb-6">
@@ -390,6 +411,7 @@ export function QrCodeGenerator({
               )}
             </div>
           )}
+
           {/* カスタムURLスラグ入力 */}
           {!hideSlugInput && (
             <div className="mb-6">
@@ -428,6 +450,7 @@ export function QrCodeGenerator({
               </div>
             </div>
           )}
+
           {/* カラーピッカー - メインカラーとテキストカラー */}
           {(!corporateBranding || !useCorporateBranding) && (
             <div className="space-y-6">
@@ -447,6 +470,7 @@ export function QrCodeGenerator({
               </div>
             </div>
           )}
+
           {/* QRコードページ生成ボタン */}
           <div className="mt-6 space-y-3">
             <Button
@@ -468,6 +492,7 @@ export function QrCodeGenerator({
                 </>
               )}
             </Button>
+
             {/* URLコピーボタン */}
             <Button
               className="w-full flex items-center gap-2 justify-center"
@@ -478,6 +503,7 @@ export function QrCodeGenerator({
               <FaCopy className="h-4 w-4" />
               {generatedUrl ? 'URLをコピー' : 'QRコードページを先に作成してください'}
             </Button>
+
             {/* 生成されたURL情報 */}
             {generatedUrl && (
               <div className="mt-4 p-3 bg-gray-50 border border-gray-200 rounded-md">
@@ -510,6 +536,7 @@ export function QrCodeGenerator({
                 </div>
               </div>
             )}
+
             {/* スマホに保存する方法のボタン */}
             <Button
               type="button"
@@ -522,6 +549,7 @@ export function QrCodeGenerator({
             </Button>
           </div>
         </motion.div>
+
         {/* 右側: プレビューパネル */}
         <motion.div
           className="rounded-lg border border-gray-200 bg-white p-6 shadow-sm"
@@ -551,6 +579,7 @@ export function QrCodeGenerator({
           />
         </motion.div>
       </div>
+
       {/* モーダル部分 - アクセシビリティのためにポータルを使用するべき */}
       {showSaveInstructions && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">

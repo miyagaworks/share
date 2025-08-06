@@ -1,4 +1,4 @@
-// app/dashboard/page.tsx (完全修正版)
+// app/dashboard/page.tsx (完全修正版) - console.log修正版
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
@@ -31,7 +31,9 @@ export default function DashboardPage() {
 
   // ナビゲーション関数
   const handleNavigation = (path: string) => {
-    console.log('Navigation clicked:', path);
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Navigation clicked:', path);
+    }
     try {
       router.push(path);
     } catch (error) {

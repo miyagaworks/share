@@ -1,12 +1,10 @@
-// app/api/admin/company-expenses/route.ts (削除機能強化版)
+// app/api/admin/company-expenses/route.ts (本番メール対応版)
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { checkAdminPermission, isSuperAdmin } from '@/lib/utils/admin-access-server';
-import {
-  sendExpenseApprovalEmail,
-  sendExpenseApprovalResultEmail,
-} from '@/lib/utils/expense-email';
+// 🔧 修正: 本番メール送信機能を import
+import { sendExpenseApprovalEmail, sendExpenseApprovalResultEmail } from '@/lib/email/index';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
 
@@ -32,7 +30,7 @@ export async function GET(request: NextRequest) {
     const fromDate = searchParams.get('fromDate') || '';
     const toDate = searchParams.get('toDate') || '';
 
-    // 🔧 修正: 検索条件構築を明確化
+    // 検索条件構築を明確化
     const whereConditions: any = {
       recordType: {
         in: ['company_expense', 'contractor_expense'],
@@ -103,7 +101,7 @@ export async function GET(request: NextRequest) {
       _count: true,
     });
 
-    // 🔧 修正: レスポンス整形を詳細化
+    // レスポンス整形を詳細化
     const formattedExpenses = expenses.map((expense: any) => ({
       id: expense.id,
       title: expense.title,
@@ -121,7 +119,6 @@ export async function GET(request: NextRequest) {
       requiresApproval:
         expense.recordType === 'contractor_expense' && Number(expense.amount) >= 5000,
       userType: expense.recordType === 'company_expense' ? '委託者' : '受託者',
-      // 🆕 削除可能かどうかの判定（UI用）
       canDelete: true, // 実際の削除権限はAPI側でチェック
     }));
 
@@ -219,7 +216,7 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: '金額は0より大きい値を入力してください' }, { status: 400 });
     }
 
-    // 🔧 修正: 承認ロジックの明確化
+    // 承認ロジックの明確化
     const userIsSuperAdmin = await isSuperAdmin(session.user.id);
     const APPROVAL_THRESHOLD = 5000;
 
@@ -305,26 +302,37 @@ export async function POST(request: NextRequest) {
       return { companyExpense, financialRecord };
     });
 
-    // 承認が必要な場合はメール送信
+    // 🔥 承認が必要な場合は委託者にメール送信
     if (needsApproval && !userIsSuperAdmin) {
       try {
-        await sendExpenseApprovalEmail({
-          expenseId: expense.companyExpense.id,
-          title,
-          amount: parseFloat(amount),
-          category,
-          submitterName: user.name || 'ユーザー',
-          submitterEmail: user.email,
-          description,
-          expenseDate: new Date(expenseDate).toLocaleDateString('ja-JP'),
+        // 🔧 修正: スーパー管理者のメールアドレス取得
+        const superAdmin = await prisma.user.findFirst({
+          where: { email: 'admin@sns-share.com' },
+          select: { email: true, name: true },
         });
 
-        logger.info('経費承認メール送信成功:', {
-          expenseId: expense.companyExpense.id,
-          submitter: user.email,
-        });
+        if (superAdmin) {
+          await sendExpenseApprovalEmail({
+            expenseId: expense.companyExpense.id,
+            title,
+            amount: parseFloat(amount),
+            category,
+            submitterName: user.name || 'ユーザー',
+            submitterEmail: user.email,
+            description,
+            expenseDate: new Date(expenseDate).toLocaleDateString('ja-JP'),
+            approverEmail: superAdmin.email, // 🔧 修正: 委託者のメールアドレス
+          });
+
+          logger.info('経費承認メール送信成功:', {
+            expenseId: expense.companyExpense.id,
+            submitter: user.email,
+            approver: superAdmin.email,
+          });
+        }
       } catch (emailError) {
         logger.error('経費承認メール送信エラー:', emailError);
+        // メール送信エラーでも処理は続行
       }
     }
 
@@ -374,7 +382,7 @@ export async function POST(request: NextRequest) {
   }
 }
 
-// 🆕 経費承認・否認（スーパー管理者のみ）
+// 経費承認・否認（スーパー管理者のみ）
 export async function PATCH(request: NextRequest) {
   try {
     const session = await auth();
@@ -382,7 +390,7 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
-    // 🔒 スーパー管理者権限をチェック
+    // スーパー管理者権限をチェック
     const userIsSuperAdmin = await isSuperAdmin(session.user.id);
     if (!userIsSuperAdmin) {
       return NextResponse.json(
@@ -409,7 +417,7 @@ export async function PATCH(request: NextRequest) {
 
     const approvalStatus = action === 'approve' ? 'approved' : 'rejected';
 
-    // 🔧 修正: FinancialRecord.idを使って処理
+    // FinancialRecord.idを使って処理
     const updatedExpense = await prisma.$transaction(async (tx: any) => {
       // 1. FinancialRecordを取得して更新
       const financialRecord = await tx.financialRecord.findUnique({
@@ -433,7 +441,7 @@ export async function PATCH(request: NextRequest) {
         },
       });
 
-      // 3. 🔧 重要: 関連するCompanyExpenseを financialRecordId で検索・更新
+      // 3. 関連するCompanyExpenseを financialRecordId で検索・更新
       const companyExpense = await tx.companyExpense.findFirst({
         where: { financialRecordId: id }, // financialRecordIdで検索
       });
@@ -461,7 +469,7 @@ export async function PATCH(request: NextRequest) {
       };
     });
 
-    // 申請者にメール送信
+    // 🔥 申請者にメール送信
     if (updatedExpense.inputByUser?.email) {
       try {
         await sendExpenseApprovalResultEmail({
@@ -484,6 +492,7 @@ export async function PATCH(request: NextRequest) {
         });
       } catch (emailError) {
         logger.error('経費承認結果メール送信エラー:', emailError);
+        // メール送信エラーでも処理は続行
       }
     }
 
@@ -518,7 +527,7 @@ export async function PATCH(request: NextRequest) {
   }
 }
 
-// 🔧 修正: 経費削除（スーパー管理者のみ）
+// 経費削除（スーパー管理者のみ）
 export async function DELETE(request: NextRequest) {
   try {
     const session = await auth();
@@ -526,7 +535,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
-    // 🔒 スーパー管理者権限をチェック
+    // スーパー管理者権限をチェック
     const userIsSuperAdmin = await isSuperAdmin(session.user.id);
     if (!userIsSuperAdmin) {
       return NextResponse.json(
@@ -542,7 +551,7 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: '経費IDが必要です' }, { status: 400 });
     }
 
-    // 🔧 修正: FinancialRecordから削除対象を特定
+    // FinancialRecordから削除対象を特定
     const financialRecord = await prisma.financialRecord.findUnique({
       where: { id },
       select: {
@@ -557,9 +566,6 @@ export async function DELETE(request: NextRequest) {
     if (!financialRecord) {
       return NextResponse.json({ error: '削除対象の経費が見つかりません' }, { status: 404 });
     }
-
-    // 🔧 修正: 承認済み経費も削除可能に変更
-    // ただし、確認メッセージで注意喚起
 
     // 関連するCompanyExpenseを検索
     const companyExpense = await prisma.companyExpense.findFirst({
@@ -619,7 +625,7 @@ export async function DELETE(request: NextRequest) {
   }
 }
 
-// 🆕 経費更新（PUT メソッド）
+// 経費更新（PUT メソッド）
 export async function PUT(request: NextRequest) {
   try {
     const session = await auth();
@@ -679,7 +685,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: '金額は0より大きい値を入力してください' }, { status: 400 });
     }
 
-    // 🔒 編集対象の経費が存在するかチェック
+    // 編集対象の経費が存在するかチェック
     const existingExpense = await prisma.financialRecord.findUnique({
       where: { id },
       select: {
@@ -688,7 +694,7 @@ export async function PUT(request: NextRequest) {
         amount: true,
         approvalStatus: true,
         createdBy: true,
-        editHistory: true, // 🆕 この行を追加
+        editHistory: true,
       },
     });
 
@@ -696,18 +702,21 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: '編集対象の経費が見つかりません' }, { status: 404 });
     }
 
-    // 🔒 承認済みの経費は編集不可
+    // 承認済みの経費は編集不可
     if (existingExpense.approvalStatus === 'approved') {
       return NextResponse.json({ error: '承認済みの経費は編集できません' }, { status: 400 });
     }
 
-    // 🔧 権限チェック（自分が作成した経費のみ編集可能）
+    // 権限チェック（自分が作成した経費のみ編集可能）
     const userIsSuperAdmin = await isSuperAdmin(session.user.id);
     if (!userIsSuperAdmin && existingExpense.createdBy !== session.user.id) {
-      return NextResponse.json({ error: '他のユーザーが作成した経費は編集できません' }, { status: 403 });
+      return NextResponse.json(
+        { error: '他のユーザーが作成した経費は編集できません' },
+        { status: 403 },
+      );
     }
 
-    // 🔧 承認ロジックの再計算
+    // 承認ロジックの再計算
     const APPROVAL_THRESHOLD = 5000;
     let needsApproval = false;
     let finalApprovalStatus = 'approved';
@@ -742,7 +751,7 @@ export async function PUT(request: NextRequest) {
           needsApproval: needsApproval,
           approvalStatus: finalApprovalStatus,
           inputBy: session.user.id,
-          // 🆕 編集履歴を記録
+          // 編集履歴を記録
           editHistory: {
             ...((existingExpense.editHistory as any) || {}),
             [`edit_${new Date().toISOString()}`]: {

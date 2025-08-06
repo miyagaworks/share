@@ -13,7 +13,7 @@ enum LogLevelEnum {
 
 // 本番環境では'info'以上のログのみ表示
 const CURRENT_LOG_LEVEL =
-  process.env.NODE_ENV === 'production' ? LogLevelEnum.info : LogLevelEnum.debug;
+  process.env.NODE_ENV === 'production' ? LogLevelEnum.warn : LogLevelEnum.debug;
 
 /**
  * 統合ロガー

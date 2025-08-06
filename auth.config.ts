@@ -6,7 +6,8 @@ import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { LoginSchema } from '@/schemas/auth';
 import bcrypt from 'bcryptjs';
-import { prisma, ensurePrismaConnection } from '@/lib/prisma'; // 🆕 ensurePrismaConnection追加
+import { prisma, ensurePrismaConnection } from '@/lib/prisma';
+import { logger } from '@/lib/utils/logger';
 
 // reCAPTCHA v3検証関数
 async function verifyRecaptchaV3(
@@ -17,7 +18,7 @@ async function verifyRecaptchaV3(
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
 
     if (!secretKey) {
-      console.error('RECAPTCHA_SECRET_KEY が設定されていません');
+      logger.error('RECAPTCHA_SECRET_KEY が設定されていません');
       return false;
     }
 
@@ -30,15 +31,19 @@ async function verifyRecaptchaV3(
     });
 
     const data = await response.json();
-    console.log('reCAPTCHA v3検証結果:', {
-      success: data.success,
-      score: data.score,
-      action: data.action,
-    });
+
+    // 本番環境では詳細ログを削除、開発環境のみ表示
+    if (process.env.NODE_ENV === 'development') {
+      logger.info('reCAPTCHA v3検証結果:', {
+        success: data.success,
+        score: data.score,
+        action: data.action,
+      });
+    }
 
     return data.success && data.score >= 0.5 && data.action === expectedAction;
   } catch (error) {
-    console.error('reCAPTCHA検証エラー:', error);
+    logger.error('reCAPTCHA検証エラー:', error);
     return false;
   }
 }
@@ -66,15 +71,15 @@ export default {
       },
       async authorize(credentials) {
         if (!credentials?.email || !credentials?.password || !credentials?.recaptchaToken) {
-          console.log('❌ 必要な認証情報が不足しています');
+          logger.warn('認証に必要な情報が不足しています');
           return null;
         }
 
         try {
-          // 🆕 Prisma接続を確保
+          // Prisma接続を確保
           const isConnected = await ensurePrismaConnection();
           if (!isConnected) {
-            console.error('❌ Prisma接続に失敗しました');
+            logger.error('Prisma接続に失敗しました');
             return null;
           }
 
@@ -83,7 +88,7 @@ export default {
             'login',
           );
           if (!isValidRecaptcha) {
-            console.log('❌ reCAPTCHA v3検証に失敗しました');
+            logger.warn('reCAPTCHA v3検証に失敗しました');
             return null;
           }
 
@@ -93,14 +98,14 @@ export default {
           });
 
           if (!validatedFields.success) {
-            console.log('❌ バリデーションに失敗しました');
+            logger.warn('バリデーションに失敗しました');
             return null;
           }
 
           const { email, password } = validatedFields.data;
           const normalizedEmail = email.toLowerCase();
 
-          // 🔧 修正: Prisma接続確保後にクエリ実行
+          // Prisma接続確保後にクエリ実行
           const user = await prisma.user.findUnique({
             where: { email: normalizedEmail },
             select: {
@@ -113,24 +118,24 @@ export default {
           });
 
           if (!user || !user.password) {
-            console.log('❌ ユーザーが見つからないかパスワードが設定されていません');
+            logger.warn('ユーザーが見つからないかパスワードが設定されていません');
             return null;
           }
 
           const passwordsMatch = await bcrypt.compare(password, user.password);
           if (!passwordsMatch) {
-            console.log('❌ パスワードが一致しません');
+            logger.warn('パスワードが一致しません');
             return null;
           }
 
-          console.log('✅ 認証成功:', user.email);
+          logger.info('認証成功:', user.email);
           return {
             id: user.id,
             name: user.name || '',
             email: user.email,
           };
         } catch (error) {
-          console.error('❌ 認証エラー:', error);
+          logger.error('認証エラー:', error);
           return null;
         }
       },
@@ -141,5 +146,5 @@ export default {
     signOut: '/auth/signin',
     error: '/auth/error',
   },
-  debug: false,
+  debug: false, // 本番では常にfalse
 } satisfies NextAuthConfig;
