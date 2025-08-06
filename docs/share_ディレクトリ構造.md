@@ -51,6 +51,8 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── permissions
 │   │   │   │   └── route.ts
+│   │   │   ├── profile
+│   │   │   │   └── route.ts
 │   │   │   ├── profiles
 │   │   │   │   └── route.ts
 │   │   │   ├── revenue-adjustment
@@ -180,9 +182,6 @@ share/
 │   │   │       ├── cleanup-idempotency
 │   │   │       │   └── route.ts
 │   │   │       └── route.ts
-│   │   ├── debug
-│   │   │   └── db-status
-│   │   │       └── route.ts
 │   │   ├── debug-auth
 │   │   │   └── route.ts
 │   │   ├── jikogene
@@ -237,8 +236,6 @@ share/
 │   │   ├── system
 │   │   │   └── connection-status
 │   │   │       └── route.ts
-│   │   ├── test
-│   │   │   └── route.ts
 │   │   ├── test-db
 │   │   │   └── route.ts
 │   │   ├── test-email
@@ -253,7 +250,8 @@ share/
 │   │   │   ├── check-password
 │   │   │   │   └── route.ts
 │   │   │   ├── dashboard-info
-│   │   │   │   └── route.ts
+│   │   │   │   ├── route.ts
+│   │   │   │   └── route.ts.current
 │   │   │   ├── delete
 │   │   │   │   └── route.ts
 │   │   │   └── permanent-plan-type
@@ -311,6 +309,8 @@ share/
 │   │   │   ├── page.tsx
 │   │   │   ├── permissions
 │   │   │   │   ├── fix-permanent-button.tsx
+│   │   │   │   └── page.tsx
+│   │   │   ├── profile
 │   │   │   │   └── page.tsx
 │   │   │   ├── profiles
 │   │   │   │   └── page.tsx
@@ -385,11 +385,6 @@ share/
 │   │   │   └── page.tsx
 │   │   └── subscription
 │   │       └── page.tsx
-│   ├── debug
-│   │   ├── network
-│   │   │   └── page.tsx
-│   │   └── session
-│   │       └── route.ts
 │   ├── error.tsx
 │   ├── favicon.ico
 │   ├── globals.css
@@ -449,55 +444,6 @@ share/
 │           └── page.tsx
 ├── auth.config.ts
 ├── auth.ts
-├── backup_financial_features
-│   ├── admin
-│   │   ├── financial
-│   │   │   ├── dashboard
-│   │   │   │   └── page.tsx
-│   │   │   ├── expenses
-│   │   │   │   └── page.tsx
-│   │   │   ├── reports
-│   │   │   │   ├── export
-│   │   │   │   │   └── route.ts
-│   │   │   │   └── page.tsx
-│   │   │   ├── revenue
-│   │   │   │   └── page.tsx
-│   │   │   └── settlements
-│   │   │       └── page.tsx
-│   │   └── page.tsx
-│   ├── api
-│   │   ├── financial
-│   │   │   ├── dashboard
-│   │   │   │   └── route.ts
-│   │   │   ├── expenses
-│   │   │   │   └── route.ts
-│   │   │   ├── reports
-│   │   │   │   ├── export
-│   │   │   │   │   └── route.ts
-│   │   │   │   └── route.ts
-│   │   │   ├── revenue
-│   │   │   │   └── fetch
-│   │   │   │       └── route.ts
-│   │   │   └── settlements
-│   │   │       └── route.ts
-│   │   └── user
-│   │       └── dashboard-info
-│   │           └── route.ts
-│   ├── components
-│   │   └── layout
-│   │       └── DashboardHeader.tsx
-│   ├── dashboard
-│   │   └── layout.tsx
-│   ├── hooks
-│   │   └── useDashboardInfo.ts
-│   ├── lib
-│   │   ├── stripe-financial.ts
-│   │   └── utils
-│   │       └── admin-access-server.ts
-│   ├── prisma
-│   │   └── schema.prisma
-│   └── types
-│       └── database.ts
 ├── components
 │   ├── admin
 │   │   └── GrantPermanentAccess.tsx
@@ -603,7 +549,7 @@ share/
 │   ├── progress-tracking.md
 │   ├── project-overview.md
 │   ├── security-privacy-plan.md
-│   ├── share_ディレクトリ構造.md
+│   ├── share_ディレクトリ構造.md
 │   ├── share-next-development-plan.md
 │   ├── share-project-plan.md
 │   ├── share-roadmap.md
@@ -661,6 +607,7 @@ share/
 │   │   ├── activity-logger.ts
 │   │   ├── admin-access-server.ts
 │   │   ├── admin-access.ts
+│   │   ├── admin-permissions.ts
 │   │   ├── api.ts
 │   │   ├── corporate-access-server.ts
 │   │   ├── corporate-access.ts
@@ -730,7 +677,6 @@ share/
 │   └── schema.prisma
 ├── public
 │   ├── bereal.svg
-│   ├── favicon.ico
 │   ├── favicon.svg
 │   ├── file.svg
 │   ├── globe.svg
@@ -816,33 +762,7 @@ share/
 ├── schemas
 │   └── auth.ts
 ├── scripts
-│   ├── check-user-relations.ts
-│   ├── clean-corporate-sns-username.ts
-│   ├── cleanup-duplicate-google-account.ts
-│   ├── compare-schema.js
-│   ├── create-missing-subscriptions.ts
-│   ├── delete-user.ts
-│   ├── final-console-cleanup.sh
-│   ├── fix-client-console.sh
-│   ├── fix-corporate-access.ts
-│   ├── fix-incomplete-corporate-members.mjs
-│   ├── fix-incomplete-corporate-members.ts
-│   ├── fix-remaining-console.sh
-│   ├── fix-tenant-relations.ts
-│   ├── generate-prisma-migration.js
-│   ├── migrate-subscription-plans.ts
-│   ├── migrate-text-settings.ts
-│   ├── normalize-individual-plans.ts
-│   ├── remove-frontend-console.sh
-│   ├── replace-api-console.sh
-│   ├── replace-console-logs.sh
-│   ├── rollback-optimization.sh
-│   ├── set-trial-end-date.mjs
-│   ├── setup-guide-images.mjs
-│   ├── test-cron-fetch.mjs
-│   ├── test-email.js
-│   ├── test-optimization.sh
-│   └── update-permanent-users-plan.ts
+│   └── cleanup-debug-code.sh
 ├── share_db_backup.sql
 ├── tailwind.config.js
 ├── tsconfig.json

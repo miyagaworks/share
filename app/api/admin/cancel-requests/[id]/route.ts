@@ -7,14 +7,29 @@ import { logger } from '@/lib/utils/logger';
 import { sendEmail } from '@/lib/email';
 import { getAdminNotificationEmailTemplate } from '@/lib/email/templates/admin-notification';
 
-// 管理者権限チェック
+// 🔧 修正: 財務管理者を含む管理者権限チェック
 async function checkAdminAccess(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { email: true },
+    select: {
+      email: true,
+      financialAdminRecord: {
+        select: {
+          isActive: true,
+        },
+      },
+    },
   });
 
-  return user?.email === process.env.ADMIN_EMAIL || user?.email === 'admin@sns-share.com';
+  // スーパー管理者チェック
+  const isSuperAdmin =
+    user?.email === process.env.ADMIN_EMAIL || user?.email === 'admin@sns-share.com';
+
+  // 財務管理者チェック（@sns-share.comドメインかつ有効な財務管理者レコードを持つ）
+  const isFinancialAdmin =
+    user?.email?.includes('@sns-share.com') && user?.financialAdminRecord?.isActive === true;
+
+  return isSuperAdmin || isFinancialAdmin;
 }
 
 // 解約申請処理

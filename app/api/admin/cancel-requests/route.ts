@@ -4,17 +4,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
-
-// 管理者権限チェック
-async function checkAdminAccess(userId: string) {
-  // 簡単な管理者チェック（実際の実装に合わせて調整）
-  const user = await prisma.user.findUnique({
-    where: { id: userId },
-    select: { email: true },
-  });
-
-  return user?.email === process.env.ADMIN_EMAIL || user?.email === 'admin@sns-share.com';
-}
+import { checkAdminAccess } from '@/lib/utils/admin-access-api';
 
 // 解約申請一覧取得
 export async function GET() {
@@ -24,7 +14,7 @@ export async function GET() {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
-    // 管理者権限チェック
+    // 管理者権限チェック（スーパー管理者 + 財務管理者）
     const isAdmin = await checkAdminAccess(session.user.id);
     if (!isAdmin) {
       return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
