@@ -1,10 +1,12 @@
-// auth.config.ts (緊急修正版)
+// auth.config.ts
+// Prisma接続確保後に認証処理を行う修正版
+
 import type { NextAuthConfig } from 'next-auth';
 import Credentials from 'next-auth/providers/credentials';
 import Google from 'next-auth/providers/google';
 import { LoginSchema } from '@/schemas/auth';
 import bcrypt from 'bcryptjs';
-import { prisma } from '@/lib/prisma';
+import { prisma, ensurePrismaConnection } from '@/lib/prisma'; // 🆕 ensurePrismaConnection追加
 
 // reCAPTCHA v3検証関数
 async function verifyRecaptchaV3(
@@ -46,12 +48,11 @@ export default {
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID ?? '',
       clientSecret: process.env.GOOGLE_CLIENT_SECRET ?? '',
-      // 🚨 最重要：この設定を必ずfalseにする
       allowDangerousEmailAccountLinking: false,
       authorization: {
         params: {
           scope: 'openid email profile',
-          prompt: 'select_account', // ユーザーにアカウント選択を強制
+          prompt: 'select_account',
           access_type: 'offline',
           response_type: 'code',
         },
@@ -70,6 +71,13 @@ export default {
         }
 
         try {
+          // 🆕 Prisma接続を確保
+          const isConnected = await ensurePrismaConnection();
+          if (!isConnected) {
+            console.error('❌ Prisma接続に失敗しました');
+            return null;
+          }
+
           const isValidRecaptcha = await verifyRecaptchaV3(
             credentials.recaptchaToken as string,
             'login',
@@ -92,6 +100,7 @@ export default {
           const { email, password } = validatedFields.data;
           const normalizedEmail = email.toLowerCase();
 
+          // 🔧 修正: Prisma接続確保後にクエリ実行
           const user = await prisma.user.findUnique({
             where: { email: normalizedEmail },
             select: {

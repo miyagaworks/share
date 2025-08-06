@@ -1,47 +1,63 @@
-// app/api/corporate/tenant/route.ts (修正版)
+// app/api/corporate/tenant/route.ts (修正版 - エラー解決)
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { generateVirtualTenantData } from '@/lib/corporateAccess';
-// プランに応じたmaxUsersを取得する関数（修正版）
+
+// generateVirtualTenantData関数を直接定義（依存関係を削減）
+function generateVirtualTenantData(userId: string, userName: string | null) {
+  return {
+    id: `virtual-${userId}`,
+    name: `${userName || 'ユーザー'}の法人`,
+    settings: {
+      logoUrl: null,
+      primaryColor: '#3B82F6',
+      secondaryColor: '#1E40AF',
+    },
+    departments: [
+      { id: 'default', name: '全社' },
+      { id: 'sales', name: '営業部' },
+      { id: 'dev', name: '開発部' },
+    ],
+  };
+}
+
+// プランに応じたmaxUsersを取得する関数
 function getMaxUsersByPlan(plan: string | null | undefined): number {
   if (!plan) return 10;
   const planLower = plan.toLowerCase();
 
-  // エンタープライズプラン: 50ユーザー
   if (planLower.includes('enterprise')) {
     return 50;
   }
 
-  // ビジネスプラン: 30ユーザー
   if (planLower.includes('business') && !planLower.includes('starter')) {
     return 30;
   }
 
-  // スタータープラン: 10ユーザー
   if (planLower.includes('starter') || planLower === 'business_legacy') {
     return 10;
   }
 
-  return 10; // デフォルト
+  return 10;
 }
 
 export async function GET() {
   try {
-    logger.debug('[API] /api/corporate/tenant リクエスト受信');
+    logger.debug('テナントAPI: リクエスト受信');
 
     const session = await auth();
     if (!session || !session.user?.id) {
-      logger.debug('[API] 認証されていないアクセス');
+      logger.debug('テナントAPI: 認証されていないアクセス');
       return NextResponse.json({ error: 'Unauthorized', code: 'AUTH_REQUIRED' }, { status: 401 });
     }
 
     const userId = session.user.id;
-    logger.debug('[API] ユーザーID:', userId);
+    logger.debug('テナントAPI: ユーザーID:', userId);
 
     try {
+      // 🔧 修正: ユーザー情報取得を簡素化
       const user = await prisma.user.findUnique({
         where: { id: userId },
         select: {
@@ -58,51 +74,50 @@ export async function GET() {
       });
 
       if (!user) {
-        logger.debug('[API] ユーザーが見つかりません:', userId);
+        logger.debug('テナントAPI: ユーザーが見つかりません:', userId);
         return NextResponse.json({ error: 'User not found' }, { status: 404 });
       }
 
-      // 永久利用権ユーザーの場合、仮想テナントデータを生成して返す
+      // 永久利用権ユーザーの場合
       if (user.subscriptionStatus === 'permanent') {
-        logger.debug('[API] 永久利用権ユーザー用仮想テナントデータを生成:', userId);
+        logger.debug('テナントAPI: 永久利用権ユーザー用仮想テナントデータを生成:', userId);
 
-        // 🔥 実際のテナントがあるかチェック
-        const actualTenant = await prisma.corporateTenant.findFirst({
-          where: {
-            OR: [{ adminId: userId }, { users: { some: { id: userId } } }],
-          },
-          select: {
-            id: true,
-            name: true,
-            logoUrl: true,
-            logoWidth: true,
-            logoHeight: true,
-            primaryColor: true,
-            secondaryColor: true,
-            headerText: true,
-            textColor: true,
-            maxUsers: true,
-            accountStatus: true,
-            onboardingCompleted: true,
-            subscriptionId: true, // 🔥 追加
-            _count: {
-              select: {
-                users: true,
-                departments: true,
+        // 🔧 修正: 実際のテナント検索を簡素化
+        let actualTenant = null;
+        try {
+          actualTenant = await prisma.corporateTenant.findFirst({
+            where: {
+              OR: [{ adminId: userId }, { users: { some: { id: userId } } }],
+            },
+            select: {
+              id: true,
+              name: true,
+              logoUrl: true,
+              logoWidth: true,
+              logoHeight: true,
+              primaryColor: true,
+              secondaryColor: true,
+              headerText: true,
+              textColor: true,
+              maxUsers: true,
+              accountStatus: true,
+              onboardingCompleted: true,
+              subscriptionId: true,
+              _count: {
+                select: {
+                  users: true,
+                  departments: true,
+                },
               },
             },
-          },
-        });
+          });
+        } catch (tenantError) {
+          logger.error('テナントAPI: 実テナント検索エラー:', tenantError);
+          // エラーが発生しても仮想テナントで処理を続行
+        }
 
         if (actualTenant) {
-          // 🔥 実際のテナントがある場合はそれを返す
-          logger.debug('[API] 実際のテナントデータを使用:', actualTenant.id);
-
-          // プラン情報を追加
-          let subscriptionPlan = 'permanent';
-          if (user.subscription?.plan) {
-            subscriptionPlan = user.subscription.plan;
-          }
+          logger.debug('テナントAPI: 実際のテナントデータを使用:', actualTenant.id);
 
           const responseData = {
             tenant: {
@@ -117,12 +132,12 @@ export async function GET() {
               textColor: actualTenant.textColor,
               maxUsers: actualTenant.maxUsers,
               accountStatus: actualTenant.accountStatus,
-              onboardingCompleted: actualTenant.onboardingCompleted || true, // 🔥 永久利用権は強制的にtrue
+              onboardingCompleted: actualTenant.onboardingCompleted || true,
               userCount: actualTenant._count?.users ?? 1,
               departmentCount: actualTenant._count?.departments ?? 1,
               users: [{ id: userId, name: user.name, role: 'admin' }],
               departments: [{ id: 'default', name: '全社' }],
-              subscriptionPlan: subscriptionPlan,
+              subscriptionPlan: user.subscription?.plan || 'permanent',
             },
             isAdmin: true,
             userRole: 'admin',
@@ -130,7 +145,7 @@ export async function GET() {
 
           return NextResponse.json(responseData);
         } else {
-          // 🔥 実際のテナントがない場合は仮想テナントを生成
+          // 仮想テナントを生成
           const virtualTenant = generateVirtualTenantData(userId, user.name);
           const responseData = {
             tenant: {
@@ -143,9 +158,9 @@ export async function GET() {
               secondaryColor: virtualTenant.settings.secondaryColor,
               headerText: null,
               textColor: null,
-              maxUsers: 50, // 永久利用権は50ユーザー
+              maxUsers: 50,
               accountStatus: 'active',
-              onboardingCompleted: true, // 🔥 永久利用権は常にtrue
+              onboardingCompleted: true,
               userCount: 1,
               departmentCount: virtualTenant.departments.length,
               users: [{ id: userId, name: user.name, role: 'admin' }],
@@ -158,39 +173,48 @@ export async function GET() {
           return NextResponse.json(responseData);
         }
       }
-      // 管理者としてのテナントを検索（サブスクリプション情報も含む）
-      const adminTenant = await prisma.corporateTenant.findUnique({
-        where: { adminId: userId },
-        select: {
-          id: true,
-          name: true,
-          logoUrl: true,
-          logoWidth: true,
-          logoHeight: true,
-          primaryColor: true,
-          secondaryColor: true,
-          headerText: true,
-          textColor: true,
-          maxUsers: true,
-          accountStatus: true,
-          onboardingCompleted: true,
-          subscription: {
-            select: {
-              plan: true,
-              status: true,
+
+      // 🔧 修正: 管理者テナント検索を簡素化
+      let adminTenant = null;
+      try {
+        adminTenant = await prisma.corporateTenant.findUnique({
+          where: { adminId: userId },
+          select: {
+            id: true,
+            name: true,
+            logoUrl: true,
+            logoWidth: true,
+            logoHeight: true,
+            primaryColor: true,
+            secondaryColor: true,
+            headerText: true,
+            textColor: true,
+            maxUsers: true,
+            accountStatus: true,
+            onboardingCompleted: true,
+            subscription: {
+              select: {
+                plan: true,
+                status: true,
+              },
+            },
+            _count: {
+              select: {
+                users: true,
+                departments: true,
+              },
             },
           },
-          _count: {
-            select: {
-              users: true,
-              departments: true,
-            },
-          },
-        },
-      });
-      // 一般メンバーとしてのテナントを検索
-      const memberTenant = !adminTenant
-        ? await prisma.corporateTenant.findFirst({
+        });
+      } catch (adminError) {
+        logger.error('テナントAPI: 管理者テナント検索エラー:', adminError);
+      }
+
+      // 🔧 修正: メンバーテナント検索を簡素化
+      let memberTenant = null;
+      if (!adminTenant) {
+        try {
+          memberTenant = await prisma.corporateTenant.findFirst({
             where: {
               users: {
                 some: {
@@ -224,54 +248,53 @@ export async function GET() {
                 },
               },
             },
-          })
-        : null;
-      // テナント情報を取得（管理者または一般メンバー）
-      const tenant = adminTenant || memberTenant;
-      // テナントが見つからない場合
-      if (!tenant) {
-        logger.debug('[API] テナントが見つかりません:', userId);
-        return NextResponse.json({ error: 'No tenant associated with this user' }, { status: 404 });
+          });
+        } catch (memberError) {
+          logger.error('テナントAPI: メンバーテナント検索エラー:', memberError);
+        }
       }
-      // プランに基づいてmaxUsersを動的に計算
-      const correctMaxUsers = getMaxUsersByPlan(tenant.subscription?.plan ?? null);
-      logger.debug('[API] プラン解析:', {
-        originalPlan: tenant.subscription?.plan,
-        calculatedMaxUsers: correctMaxUsers,
-        currentMaxUsers: tenant.maxUsers,
-      });
-      // データベースのmaxUsersが間違っている場合は修正
-      if (tenant.maxUsers !== correctMaxUsers) {
-        logger.debug(
-          `[API] maxUsersを修正: ${tenant.maxUsers} → ${correctMaxUsers} (プラン: ${tenant.subscription?.plan})`,
+
+      const tenant = adminTenant || memberTenant;
+
+      if (!tenant) {
+        logger.debug('テナントAPI: テナントが見つかりません:', userId);
+        return NextResponse.json(
+          {
+            error: 'No tenant associated with this user',
+            code: 'NO_TENANT',
+          },
+          { status: 404 },
         );
+      }
+
+      // maxUsers修正処理
+      const correctMaxUsers = getMaxUsersByPlan(tenant.subscription?.plan ?? null);
+      if (tenant.maxUsers !== correctMaxUsers) {
+        logger.debug(`テナントAPI: maxUsersを修正: ${tenant.maxUsers} → ${correctMaxUsers}`);
         try {
           await prisma.corporateTenant.update({
             where: { id: tenant.id },
             data: { maxUsers: correctMaxUsers },
           });
-          // レスポンス用に修正された値を使用
           tenant.maxUsers = correctMaxUsers;
-          logger.debug('[API] maxUsers更新完了');
         } catch (updateError) {
-          logger.error('[API] maxUsers更新エラー:', updateError);
-          // エラーが発生しても処理を続行
+          logger.error('テナントAPI: maxUsers更新エラー:', updateError);
         }
       }
-      // 管理者権限の確認
+
       const isAdmin = !!adminTenant;
       const userRole = isAdmin ? 'admin' : 'member';
-      logger.debug('[API] テナント情報取得成功:', {
+
+      logger.debug('テナントAPI: テナント情報取得成功:', {
         tenantId: tenant.id,
         isAdmin,
         userRole,
         maxUsers: tenant.maxUsers,
-        plan: tenant.subscription?.plan,
-        onboardingCompleted: tenant.onboardingCompleted,
+        accountStatus: tenant.accountStatus,
       });
+
       // アカウント停止状態確認
       if (tenant.accountStatus === 'suspended') {
-        logger.debug('[API] テナントは停止状態です:', tenant.id);
         return NextResponse.json(
           {
             error: 'Account is suspended',
@@ -287,6 +310,7 @@ export async function GET() {
           { status: 403 },
         );
       }
+
       // レスポンスデータを作成
       const responseData = {
         tenant: {
@@ -299,47 +323,50 @@ export async function GET() {
           secondaryColor: tenant.secondaryColor,
           headerText: tenant.headerText,
           textColor: tenant.textColor,
-          maxUsers: tenant.maxUsers, // 修正された値を使用
+          maxUsers: tenant.maxUsers,
           accountStatus: tenant.accountStatus,
           onboardingCompleted: tenant.onboardingCompleted || false,
           userCount: tenant._count?.users ?? 0,
           departmentCount: tenant._count?.departments ?? 0,
           users: [],
           departments: [],
-          // デバッグ情報を追加
           subscriptionPlan: tenant.subscription?.plan,
         },
         isAdmin,
         userRole,
       };
+
       return NextResponse.json(responseData);
     } catch (dbError) {
-      logger.error('[API] データベースエラー:', dbError);
+      logger.error('テナントAPI: データベースエラー:', dbError);
       return NextResponse.json(
         {
           error: 'Database operation failed',
-          details: dbError instanceof Error ? dbError.message : String(dbError),
+          details:
+            process.env.NODE_ENV === 'development'
+              ? dbError instanceof Error
+                ? dbError.message
+                : String(dbError)
+              : undefined,
           code: 'DB_ERROR',
         },
         { status: 500 },
       );
     }
   } catch (error) {
-    const errorMessage = error instanceof Error ? error.message : String(error);
-    logger.error('[API] テナント情報取得エラー:', error);
+    logger.error('テナントAPI: 全体エラー:', error);
     return NextResponse.json(
       {
         error: 'Failed to fetch tenant information',
-        details: errorMessage,
+        details:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : undefined,
         code: 'API_ERROR',
       },
       { status: 500 },
     );
-  } finally {
-    try {
-      await prisma.$disconnect();
-    } catch (e) {
-      logger.error('[API] Prisma切断エラー:', e);
-    }
   }
 }

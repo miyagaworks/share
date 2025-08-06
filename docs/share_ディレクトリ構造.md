@@ -1,8 +1,10 @@
 # 重要事項！！
 ## ベストプラクティスな選択の上、なるべくシンプルなコード生成を行うようにして下さい。Claudeは複雑にする傾向が強いので常に意識しておいて下さい。
-## Editにアップロードしたファイルでは不十分な場合、ディレクトリ構造（全てのファイル）から必要なファイルをリクエストして下さい。
+## Editにアップロードした全てのファイルを把握してください。不十分な場合、ディレクトリ構造（全てのファイル）から必要なファイルをリクエストして下さい。
 ## ファイル共有が不十分で状況が分からないうちはコードは絶対に書かないでください。2回書くようになりますので、このことは絶対厳守です!!!
 ## 全ての状況を完璧に把握してから回答を出して下さい。コードをすぐに書き始めないで下さい。
+
+tree -I 'node_modules|.git|.next|dist|build'
 
 share/
 ├── actions
@@ -22,15 +24,24 @@ share/
 │   │   │   │   ├── [id]
 │   │   │   │   │   └── route.ts
 │   │   │   │   └── route.ts
+│   │   │   ├── company-expenses
+│   │   │   │   └── route.ts
 │   │   │   ├── email
 │   │   │   │   ├── history
 │   │   │   │   │   ├── [id]
 │   │   │   │   │   │   └── route.ts
 │   │   │   │   │   └── route.ts
 │   │   │   │   └── route.ts
+│   │   │   ├── financial
+│   │   │   │   └── dashboard
+│   │   │   │       └── route.ts
+│   │   │   ├── financial-admins
+│   │   │   │   └── route.ts
 │   │   │   ├── fix-permanent-users
 │   │   │   │   └── route.ts
 │   │   │   ├── grant-permanent
+│   │   │   │   └── route.ts
+│   │   │   ├── monthly-settlement
 │   │   │   │   └── route.ts
 │   │   │   ├── notifications
 │   │   │   │   ├── [id]
@@ -42,6 +53,17 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── profiles
 │   │   │   │   └── route.ts
+│   │   │   ├── revenue-adjustment
+│   │   │   │   └── route.ts
+│   │   │   ├── stripe
+│   │   │   │   ├── revenue
+│   │   │   │   │   ├── fetch
+│   │   │   │   │   │   └── route.ts
+│   │   │   │   │   └── route.ts
+│   │   │   │   ├── settings
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── webhook-logs
+│   │   │   │       └── route.ts
 │   │   │   ├── subscriptions
 │   │   │   │   └── route.ts
 │   │   │   ├── system-info
@@ -221,6 +243,7 @@ share/
 │   │   │   └── route.ts
 │   │   ├── test-email
 │   │   │   └── route.ts
+│   │   ├── test-financial
 │   │   ├── user
 │   │   │   ├── [userId]
 │   │   │   │   └── profile
@@ -273,7 +296,15 @@ share/
 │   │   ├── admin
 │   │   │   ├── cancel-requests
 │   │   │   │   └── page.tsx
+│   │   │   ├── company-expenses
+│   │   │   │   └── page.tsx
+│   │   │   ├── contractor-payments
+│   │   │   │   └── page.tsx
 │   │   │   ├── email
+│   │   │   │   └── page.tsx
+│   │   │   ├── financial
+│   │   │   │   └── page.tsx
+│   │   │   ├── financial-admins
 │   │   │   │   └── page.tsx
 │   │   │   ├── notifications
 │   │   │   │   └── page.tsx
@@ -283,6 +314,9 @@ share/
 │   │   │   │   └── page.tsx
 │   │   │   ├── profiles
 │   │   │   │   └── page.tsx
+│   │   │   ├── stripe
+│   │   │   │   └── revenue
+│   │   │   │       └── page.tsx
 │   │   │   ├── subscriptions
 │   │   │   │   └── page.tsx
 │   │   │   └── users
@@ -380,6 +414,7 @@ share/
 │   │   ├── page.tsx
 │   │   └── types.ts
 │   ├── layout.tsx
+│   ├── layout.tsx.backup
 │   ├── legal
 │   │   ├── privacy
 │   │   │   └── page.tsx
@@ -414,6 +449,55 @@ share/
 │           └── page.tsx
 ├── auth.config.ts
 ├── auth.ts
+├── backup_financial_features
+│   ├── admin
+│   │   ├── financial
+│   │   │   ├── dashboard
+│   │   │   │   └── page.tsx
+│   │   │   ├── expenses
+│   │   │   │   └── page.tsx
+│   │   │   ├── reports
+│   │   │   │   ├── export
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── page.tsx
+│   │   │   ├── revenue
+│   │   │   │   └── page.tsx
+│   │   │   └── settlements
+│   │   │       └── page.tsx
+│   │   └── page.tsx
+│   ├── api
+│   │   ├── financial
+│   │   │   ├── dashboard
+│   │   │   │   └── route.ts
+│   │   │   ├── expenses
+│   │   │   │   └── route.ts
+│   │   │   ├── reports
+│   │   │   │   ├── export
+│   │   │   │   │   └── route.ts
+│   │   │   │   └── route.ts
+│   │   │   ├── revenue
+│   │   │   │   └── fetch
+│   │   │   │       └── route.ts
+│   │   │   └── settlements
+│   │   │       └── route.ts
+│   │   └── user
+│   │       └── dashboard-info
+│   │           └── route.ts
+│   ├── components
+│   │   └── layout
+│   │       └── DashboardHeader.tsx
+│   ├── dashboard
+│   │   └── layout.tsx
+│   ├── hooks
+│   │   └── useDashboardInfo.ts
+│   ├── lib
+│   │   ├── stripe-financial.ts
+│   │   └── utils
+│   │       └── admin-access-server.ts
+│   ├── prisma
+│   │   └── schema.prisma
+│   └── types
+│       └── database.ts
 ├── components
 │   ├── admin
 │   │   └── GrantPermanentAccess.tsx
@@ -549,10 +633,13 @@ share/
 │   │   └── virtualTenant.ts
 │   ├── db-manager.ts
 │   ├── email
+│   │   ├── index.ts
 │   │   └── templates
 │   │       ├── admin-notification.ts
 │   │       ├── cancel-request.ts
 │   │       ├── email-verification.ts
+│   │       ├── expense-approval-result.ts
+│   │       ├── expense-approval.ts
 │   │       ├── grace-period-expired.ts
 │   │       ├── invite-email.ts
 │   │       └── trial-ending.ts
@@ -565,7 +652,9 @@ share/
 │   │   ├── prompt-builder.ts
 │   │   └── validator.ts
 │   ├── prisma.ts
+│   ├── profit-allocation.ts
 │   ├── react-query.ts
+│   ├── stripe-revenue.ts
 │   ├── stripe.ts
 │   ├── stripeClient.ts
 │   ├── utils
@@ -577,6 +666,7 @@ share/
 │   │   ├── corporate-access.ts
 │   │   ├── corporate-access.ts.backup
 │   │   ├── emailVerification.ts
+│   │   ├── expense-email.ts
 │   │   ├── idempotency.ts
 │   │   ├── logger.ts
 │   │   ├── notification-helpers.ts
@@ -758,6 +848,7 @@ share/
 ├── tsconfig.json
 ├── tsconfig.tsbuildinfo
 ├── types
+│   ├── financial-admin.ts
 │   ├── next-auth.d.ts
 │   ├── prisma-extensions.ts
 │   ├── profiles.ts
@@ -767,5 +858,3 @@ share/
 │   ├── tinycolor2.d.ts
 │   └── user.ts
 └── vercel.json
-
-

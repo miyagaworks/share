@@ -19,8 +19,16 @@ import {
   HiPlus,
 } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
+import { getPagePermissions, ReadOnlyBanner } from '@/lib/utils/admin-permissions';
 import FixPermanentUsersButton from './fix-permanent-button';
 import GrantPermanentAccess from '@/components/admin/GrantPermanentAccess';
+
+// AdminAccess型定義
+interface AdminAccess {
+  isSuperAdmin: boolean;
+  isFinancialAdmin: boolean;
+  adminLevel: 'super' | 'financial' | 'none';
+}
 
 // ユーザー情報の型定義
 interface UserData {
@@ -58,7 +66,7 @@ export default function AdminPermissionsPage() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminAccess, setAdminAccess] = useState<AdminAccess | null>(null);
   const [sortType, setSortType] = useState<SortType>('permanent_first');
   const [showGrantForm, setShowGrantForm] = useState(false);
   const [stats, setStats] = useState({
@@ -67,7 +75,7 @@ export default function AdminPermissionsPage() {
     permanentUsersCount: 0,
   });
 
-  // 管理者チェック
+  // 🔧 修正: 財務管理者も許可する権限チェック
   useEffect(() => {
     const checkAdminAccess = async () => {
       if (!session?.user?.id) {
@@ -78,8 +86,14 @@ export default function AdminPermissionsPage() {
       try {
         const response = await fetch('/api/admin/access');
         const data = await response.json();
-        if (data.isSuperAdmin) {
-          setIsAdmin(true);
+
+        // スーパー管理者または財務管理者の場合アクセス許可
+        if (data.adminLevel !== 'none') {
+          setAdminAccess({
+            isSuperAdmin: data.isSuperAdmin,
+            isFinancialAdmin: data.isFinancialAdmin,
+            adminLevel: data.adminLevel,
+          });
           fetchUsers();
         } else {
           router.push('/dashboard');
@@ -91,6 +105,11 @@ export default function AdminPermissionsPage() {
 
     checkAdminAccess();
   }, [session, router]);
+
+  // 🆕 権限設定の取得
+  const permissions = adminAccess
+    ? getPagePermissions(adminAccess.isSuperAdmin ? 'admin' : 'financial-admin', 'permissions')
+    : { canView: false, canEdit: false, canDelete: false, canCreate: false };
 
   // ユーザー一覧の取得
   const fetchUsers = async () => {
@@ -115,62 +134,32 @@ export default function AdminPermissionsPage() {
     }
   };
 
-  // 永久利用権の付与/解除
-  const togglePermanentAccess = async (userId: string, isPermanent: boolean) => {
-    try {
-      const response = await fetch('/api/admin/permissions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          userId,
-          isPermanent,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        toast.success(data.message);
-
-        // 解除時に追加の警告がある場合は表示
-        if (!isPermanent && data.warning) {
-          // react-hot-toastでは単純にメッセージを表示
-          setTimeout(() => {
-            toast(data.warning, {
-              duration: 6000,
-              icon: '⚠️',
-            });
-          }, 1000);
-        }
-
-        // 成功したら一覧を再取得
-        fetchUsers();
-      } else {
-        toast.error(data.error || '永久利用権の更新に失敗しました');
-      }
-    } catch {
-      toast.error('処理中にエラーが発生しました');
-    }
+  // 永久利用権付与の完了ハンドラ（将来的にコンポーネント側で呼び出される場合に備えて）
+  const handleGrantComplete = () => {
+    setShowGrantForm(false);
+    fetchUsers(); // 一覧を再取得
   };
 
-  // 並び替え関数
-  const handleSort = (type: SortType) => {
-    setSortType(type);
+  // fetchUsersを呼び出すための統合された関数（将来的にコンポーネント側で呼び出される場合に備えて）
+  const handleRefresh = () => {
+    fetchUsers();
   };
 
-  // 検索結果のフィルタリング
-  const filteredUsers = users.filter(
-    (user) =>
-      user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.nameKana?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()),
-  );
+  // 検索とフィルタリング
+  const filteredUsers = users.filter((user) => {
+    if (!searchTerm) return true;
 
-  // ユーザーの並び替え
-  const sortedUsers = [...filteredUsers].sort((a, b) => {
-    // 永久利用権所持ユーザーを優先
+    const searchLower = searchTerm.toLowerCase();
+    return (
+      (user.name && user.name.toLowerCase().includes(searchLower)) ||
+      (user.nameKana && user.nameKana.toLowerCase().includes(searchLower)) ||
+      user.email.toLowerCase().includes(searchLower)
+    );
+  });
+
+  // 並び替え処理
+  const sortedUsers = filteredUsers.sort((a, b) => {
+    // 永久利用権ユーザーを最初に表示
     if (sortType === 'permanent_first') {
       if (a.isPermanentUser && !b.isPermanentUser) return -1;
       if (!a.isPermanentUser && b.isPermanentUser) return 1;
@@ -279,12 +268,15 @@ export default function AdminPermissionsPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!adminAccess) {
     return null; // リダイレクト処理中は表示なし
   }
 
   return (
     <div className="max-w-[90vw] mx-auto px-4">
+      {/* 🆕 権限バナー表示 */}
+      <ReadOnlyBanner message={permissions.readOnlyMessage} />
+
       {/* ヘッダー */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-6">
@@ -292,10 +284,22 @@ export default function AdminPermissionsPage() {
             <HiKey className="h-6 w-6 text-blue-600 mr-3" />
             <h1 className="text-2xl font-bold">永久利用権管理</h1>
           </div>
-          <Button onClick={() => setShowGrantForm(!showGrantForm)} className="flex items-center">
-            <HiPlus className="mr-2 h-4 w-4" />
-            {showGrantForm ? '付与フォームを閉じる' : '永久利用権を付与'}
-          </Button>
+          <div className="flex items-center space-x-4">
+            {/* 🆕 権限バッジ表示 */}
+            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium">
+              {adminAccess.isSuperAdmin ? 'スーパー管理者' : '財務管理者'}
+            </div>
+            {/* 🆕 権限に応じてボタンを制御 */}
+            {permissions.canCreate && (
+              <Button
+                onClick={() => setShowGrantForm(!showGrantForm)}
+                className="flex items-center"
+              >
+                <HiPlus className="mr-2 h-4 w-4" />
+                {showGrantForm ? '付与フォームを閉じる' : '永久利用権を付与'}
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* 統計情報表示 */}
@@ -329,197 +333,100 @@ export default function AdminPermissionsPage() {
           </div>
         </div>
 
-        {/* 重要なお知らせ */}
-        <div className="bg-yellow-50 border-l-4 border-yellow-400 p-4 mb-6">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <HiExclamationCircle className="h-5 w-5 text-yellow-400" />
-            </div>
-            <div className="ml-3">
-              <p className="text-sm text-yellow-700">
-                <strong>重要:</strong> 永久利用権はトライアル期間中のユーザーのみに付与できます。
-                永久利用権を解除した場合、元のトライアル期間が過ぎている場合は7日間の猶予期間が設定されます。
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* 永久利用権付与フォーム */}
-      {showGrantForm && (
-        <div className="mb-6">
-          <GrantPermanentAccess />
-        </div>
-      )}
-
-      {/* ユーザー一覧 */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
-          <div className="relative w-full sm:w-64">
-            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-              <HiSearch className="h-5 w-5 text-gray-400" />
-            </div>
+        {/* 検索・並び替えコントロール */}
+        <div className="flex flex-col sm:flex-row gap-4 mb-6">
+          <div className="flex-1 relative">
+            <HiSearch className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
             <input
               type="text"
-              placeholder="ユーザー検索..."
-              className="pl-10 pr-3 py-2 border border-gray-300 rounded-md w-full focus:outline-none focus:ring-2 focus:ring-blue-500"
+              placeholder="名前、フリガナ、メールアドレスで検索..."
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="flex space-x-2">
-            {/* 修正ボタン */}
-            <FixPermanentUsersButton />
-
-            <div className="relative group">
-              <Button variant="outline" className="flex items-center">
-                <span className="mr-1">並び替え</span>
-                {sortType.includes('asc') ? (
-                  <HiSortAscending className="h-4 w-4" />
-                ) : (
-                  <HiSortDescending className="h-4 w-4" />
-                )}
-              </Button>
-              <div className="absolute right-0 mt-2 w-56 bg-white rounded-md shadow-lg z-10 border border-gray-200 hidden group-hover:block">
-                <div className="py-1">
-                  <button
-                    className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'permanent_first' ? 'bg-gray-100 font-medium' : ''}`}
-                    onClick={() => handleSort('permanent_first')}
-                  >
-                    永久利用権所持者優先
-                  </button>
-                  <button
-                    className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'trial_remaining_asc' ? 'bg-gray-100 font-medium' : ''}`}
-                    onClick={() => handleSort('trial_remaining_asc')}
-                  >
-                    トライアル残日数（少→多）
-                  </button>
-                  <button
-                    className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'trial_remaining_desc' ? 'bg-gray-100 font-medium' : ''}`}
-                    onClick={() => handleSort('trial_remaining_desc')}
-                  >
-                    トライアル残日数（多→少）
-                  </button>
-                  <button
-                    className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'created_desc' ? 'bg-gray-100 font-medium' : ''}`}
-                    onClick={() => handleSort('created_desc')}
-                  >
-                    登録日 (新→古)
-                  </button>
-                  <button
-                    className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'nameKana_asc' ? 'bg-gray-100 font-medium' : ''}`}
-                    onClick={() => handleSort('nameKana_asc')}
-                  >
-                    フリガナ (ア→ワ)
-                  </button>
-                  <button
-                    className={`block px-4 py-2 text-sm text-left w-full hover:bg-gray-100 ${sortType === 'email_asc' ? 'bg-gray-100 font-medium' : ''}`}
-                    onClick={() => handleSort('email_asc')}
-                  >
-                    メール (A→Z)
-                  </button>
-                </div>
-              </div>
-            </div>
-
-            <Button onClick={fetchUsers}>
-              <HiRefresh className="mr-2 h-4 w-4" />
-              更新
-            </Button>
-          </div>
+          <select
+            className="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            value={sortType}
+            onChange={(e) => setSortType(e.target.value as SortType)}
+          >
+            <option value="permanent_first">永久利用権ユーザー優先</option>
+            <option value="trial_remaining_asc">残り日数（少ない順）</option>
+            <option value="trial_remaining_desc">残り日数（多い順）</option>
+            <option value="nameKana_asc">フリガナ（昇順）</option>
+            <option value="nameKana_desc">フリガナ（降順）</option>
+            <option value="email_asc">メール（昇順）</option>
+            <option value="email_desc">メール（降順）</option>
+            <option value="created_asc">登録日（古い順）</option>
+            <option value="created_desc">登録日（新しい順）</option>
+          </select>
+          <Button onClick={fetchUsers} variant="outline" className="flex items-center">
+            <HiRefresh className="mr-2 h-4 w-4" />
+            更新
+          </Button>
         </div>
 
+        {/* 🆕 権限に応じて永久利用権付与フォームを表示 */}
+        {showGrantForm && permissions.canCreate && (
+          <div className="mb-6">
+            <GrantPermanentAccess />
+          </div>
+        )}
+
+        {/* 🆕 権限に応じて修正ボタンを表示 */}
+        {permissions.canEdit && (
+          <div className="mb-6">
+            <FixPermanentUsersButton />
+          </div>
+        )}
+      </div>
+
+      {/* ユーザー一覧テーブル */}
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="overflow-x-auto">
-          <table className="min-w-full bg-white">
+          <table className="w-full table-auto">
             <thead className="bg-gray-50">
               <tr>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ユーザー
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ユーザー情報
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  フリガナ
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   メールアドレス
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  トライアル状態
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  ステータス
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   トライアル期限
                 </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  永久利用権
-                </th>
-                <th className="py-3 px-4 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  操作
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  登録日
                 </th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="bg-white divide-y divide-gray-200">
               {sortedUsers.map((user) => (
-                <tr
-                  key={user.id}
-                  className={`hover:bg-gray-50 ${
-                    user.isPermanentUser
-                      ? 'bg-purple-50'
-                      : user.trialDaysRemaining <= 3 && user.trialDaysRemaining > 0
-                        ? 'bg-orange-50'
-                        : user.trialDaysRemaining <= 0
-                          ? 'bg-red-50'
-                          : ''
-                  }`}
-                >
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{user.name || '未設定'}</div>
-                  </td>
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{user.nameKana || '未設定'}</div>
-                  </td>
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">{user.email}</div>
-                  </td>
-                  <td className="py-4 px-4 whitespace-nowrap">{getTrialStatusDisplay(user)}</td>
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-500">
-                      {user.isPermanentUser ? '永久利用' : formatDate(user.trialEndsAt)}
+                <tr key={user.id} className="hover:bg-gray-50">
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm font-medium text-gray-900">
+                      {user.name || '名前未設定'}
                     </div>
+                    <div className="text-sm text-gray-500">{user.nameKana || 'フリガナ未設定'}</div>
                   </td>
-                  <td className="py-4 px-4 whitespace-nowrap">
-                    {user.isPermanentUser ? (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-purple-100 text-purple-800">
-                        永久利用権あり
-                      </span>
-                    ) : (
-                      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
-                        なし
-                      </span>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">{user.email}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap">{getTrialStatusDisplay(user)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <div className="text-sm text-gray-900">
+                      {user.isPermanentUser ? '永久利用権' : formatDate(user.trialEndsAt)}
+                    </div>
+                    {!user.isPermanentUser && user.trialDaysRemaining !== undefined && (
+                      <div className="text-xs text-gray-500">残り{user.trialDaysRemaining}日</div>
                     )}
                   </td>
-                  <td className="py-4 px-4 whitespace-nowrap text-sm font-medium">
-                    {user.isPermanentUser ? (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => togglePermanentAccess(user.id, false)}
-                        className="border-red-300 text-red-600 hover:bg-red-50"
-                      >
-                        <HiX className="mr-2 h-4 w-4" />
-                        永久利用権を解除
-                      </Button>
-                    ) : (
-                      <Button
-                        size="sm"
-                        onClick={() => setShowGrantForm(true)}
-                        disabled={user.trialDaysRemaining <= 0}
-                        className={
-                          user.trialDaysRemaining <= 0 ? 'opacity-50 cursor-not-allowed' : ''
-                        }
-                      >
-                        <HiCheck className="mr-2 h-4 w-4" />
-                        永久利用権を付与
-                      </Button>
-                    )}
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                    {formatDate(user.createdAt)}
                   </td>
                 </tr>
               ))}
@@ -528,10 +435,13 @@ export default function AdminPermissionsPage() {
         </div>
 
         {filteredUsers.length === 0 && (
-          <div className="text-center py-6">
-            <p className="text-gray-500">該当するユーザーが見つかりません</p>
-            <p className="text-sm text-gray-400 mt-1">
-              永久利用権管理ページには、トライアル期間中のユーザーと永久利用権ユーザーのみが表示されます。
+          <div className="text-center py-12">
+            <HiExclamationCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              {searchTerm ? '検索結果がありません' : 'ユーザーが見つかりません'}
+            </h3>
+            <p className="text-gray-500">
+              {searchTerm ? '検索条件を変更してお試しください' : 'まだユーザーが登録されていません'}
             </p>
           </div>
         )}

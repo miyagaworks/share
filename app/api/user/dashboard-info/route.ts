@@ -1,9 +1,13 @@
-// app/api/user/dashboard-info/route.ts (永久利用権プラン種別対応版)
+// app/api/user/dashboard-info/route.ts (財務管理者機能統合版)
 export const dynamic = 'force-dynamic';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
+import { prisma, safeQuery } from '@/lib/prisma';
+
+// 🔧 設定: 財務管理者ドメイン（売却時に変更するだけ）
+const FINANCIAL_ADMIN_DOMAIN = '@sns-share.com';
+const SUPER_ADMIN_EMAIL = 'admin@sns-share.com';
 
 // 永久利用権プラン種別を判定する関数
 function determinePermanentPlanType(user: any): string {
@@ -14,14 +18,13 @@ function determinePermanentPlanType(user: any): string {
     if (plan.includes('permanent_enterprise') || plan.includes('enterprise')) {
       return 'enterprise';
     } else if (plan.includes('permanent_business') || plan.includes('business')) {
-      // 🔥 business_plusの互換性を保ちつつbusinessにマッピング
       return 'business';
     } else if (
       plan.includes('business_plus') ||
       plan.includes('business-plus') ||
       plan.includes('businessplus')
     ) {
-      return 'business'; // 🔥 旧business_plusはbusinessにマッピング
+      return 'business';
     } else if (plan.includes('permanent_starter') || plan.includes('starter')) {
       return 'starter';
     } else if (plan.includes('permanent_personal') || plan.includes('personal')) {
@@ -37,14 +40,16 @@ function determinePermanentPlanType(user: any): string {
     if (maxUsers >= 50) {
       return 'enterprise';
     } else if (maxUsers >= 30) {
-      return 'business'; // 🔥 30名以上はbusiness
+      return 'business';
     } else {
-      return 'starter'; // 🔥 10名はstarter
+      return 'starter';
     }
   }
 
   return 'personal';
 }
+
+// 🔧 修正: interval フィールドの型を統一
 interface UserData {
   id: string;
   name: string | null;
@@ -53,6 +58,10 @@ interface UserData {
   subscriptionStatus: string | null;
   corporateRole: string | null;
   trialEndsAt: string | Date | null;
+  isFinancialAdmin: boolean;
+  financialAdminRecord?: {
+    isActive: boolean;
+  } | null;
   adminOfTenant?: {
     id: string;
     name: string;
@@ -74,7 +83,7 @@ interface UserData {
   subscription?: {
     plan: string | null;
     status: string;
-    interval?: string;
+    interval: string | null;
   } | null;
 }
 
@@ -83,17 +92,19 @@ interface MenuItem {
   href: string;
   icon: string;
   isDivider?: boolean;
+  readOnly?: boolean;
 }
 
 interface Permissions {
-  userType: 'admin' | 'corporate' | 'personal' | 'permanent' | 'invited-member';
+  userType: 'admin' | 'corporate' | 'personal' | 'permanent' | 'invited-member' | 'financial-admin';
   isAdmin: boolean;
   isSuperAdmin: boolean;
+  isFinancialAdmin: boolean;
   hasCorpAccess: boolean;
   isCorpAdmin: boolean;
   isPermanentUser: boolean;
   permanentPlanType: string | null;
-  userRole: 'admin' | 'member' | 'personal' | null;
+  userRole: 'admin' | 'member' | 'personal' | 'financial-admin' | null;
   hasActivePlan: boolean;
   isTrialPeriod: boolean;
   planType: 'personal' | 'corporate' | 'permanent' | null;
@@ -106,6 +117,7 @@ interface Navigation {
   menuItems: MenuItem[];
 }
 
+// ナビゲーション生成機能（統合版）
 function generateNavigationEnhanced(
   permissions: Permissions,
   currentPath?: string | null,
@@ -113,10 +125,17 @@ function generateNavigationEnhanced(
   const { userType, permanentPlanType } = permissions;
 
   const menuTemplates: Record<string, MenuItem[]> = {
+    // スーパー管理者用メニュー
     admin: [
       { title: '管理者ダッシュボード', href: '/dashboard/admin', icon: 'HiShieldCheck' },
+      { title: '財務管理', href: '#financial-divider', icon: '', isDivider: true },
+      { title: '財務ダッシュボード', href: '/dashboard/admin/financial', icon: 'HiCurrencyDollar' },
+      { title: '経費管理', href: '/dashboard/admin/company-expenses', icon: 'HiDocumentText' },
+      { title: '売上管理', href: '/dashboard/admin/stripe/revenue', icon: 'HiLightningBolt' },
+      { title: '受託者支払い管理', href: '/dashboard/admin/contractor-payments', icon: 'HiUsers' },
+      { title: '財務管理者管理', href: '/dashboard/admin/financial-admins', icon: 'HiUserGroup' },
+      { title: 'システム管理', href: '#system-divider', icon: '', isDivider: true },
       { title: 'ユーザー管理', href: '/dashboard/admin/users', icon: 'HiUsers' },
-      { title: 'プロフィール・QR管理', href: '/dashboard/admin/profiles', icon: 'HiEye' },
       {
         title: 'サブスクリプション管理',
         href: '/dashboard/admin/subscriptions',
@@ -127,10 +146,87 @@ function generateNavigationEnhanced(
         href: '/dashboard/admin/cancel-requests',
         icon: 'HiExclamationCircle',
       },
+      {
+        title: 'データエクスポート管理',
+        href: '/dashboard/admin/users/export',
+        icon: 'HiDownload',
+      },
+      { title: 'プロフィール・QR管理', href: '/dashboard/admin/profiles', icon: 'HiEye' },
       { title: '永久利用権管理', href: '/dashboard/admin/permissions', icon: 'HiKey' },
       { title: 'お知らせ管理', href: '/dashboard/admin/notifications', icon: 'HiBell' },
       { title: 'メール配信管理', href: '/dashboard/admin/email', icon: 'HiOutlineMail' },
     ],
+
+    // 🆕 財務管理者専用メニュー（完全版）
+    'financial-admin': [
+      { title: '管理者ダッシュボード', href: '/dashboard/admin', icon: 'HiShieldCheck' },
+      { title: '財務管理', href: '#financial-divider', icon: '', isDivider: true },
+      { title: '財務ダッシュボード', href: '/dashboard/admin/financial', icon: 'HiCurrencyDollar' },
+      { title: '経費管理', href: '/dashboard/admin/company-expenses', icon: 'HiDocumentText' },
+      { title: '売上管理', href: '/dashboard/admin/stripe/revenue', icon: 'HiLightningBolt' },
+      {
+        title: '受託者支払い管理',
+        href: '/dashboard/admin/contractor-payments',
+        icon: 'HiUsers',
+        readOnly: true,
+      },
+      {
+        title: '財務管理者管理',
+        href: '/dashboard/admin/financial-admins',
+        icon: 'HiUserGroup',
+        readOnly: true,
+      },
+      { title: 'システム管理', href: '#system-divider', icon: '', isDivider: true },
+      {
+        title: 'ユーザー管理',
+        href: '/dashboard/admin/users',
+        icon: 'HiUsers',
+        readOnly: true,
+      },
+      {
+        title: 'サブスクリプション管理',
+        href: '/dashboard/admin/subscriptions',
+        icon: 'HiCreditCard',
+        readOnly: true,
+      },
+      {
+        title: '解約申請管理',
+        href: '/dashboard/admin/cancel-requests',
+        icon: 'HiExclamationCircle',
+        readOnly: true,
+      },
+      {
+        title: 'データエクスポート管理',
+        href: '/dashboard/admin/users/export',
+        icon: 'HiDownload',
+        readOnly: true,
+      },
+      {
+        title: 'プロフィール・QR管理',
+        href: '/dashboard/admin/profiles',
+        icon: 'HiEye',
+        readOnly: true,
+      },
+      {
+        title: '永久利用権管理',
+        href: '/dashboard/admin/permissions',
+        icon: 'HiKey',
+        readOnly: true,
+      },
+      {
+        title: 'お知らせ管理',
+        href: '/dashboard/admin/notifications',
+        icon: 'HiBell',
+        readOnly: true,
+      },
+      {
+        title: 'メール配信管理',
+        href: '/dashboard/admin/email',
+        icon: 'HiOutlineMail',
+        readOnly: true,
+      },
+    ],
+
     'invited-member': [
       { title: '概要', href: '/dashboard/corporate-member', icon: 'HiUser' },
       { title: 'プロフィール編集', href: '/dashboard/corporate-member/profile', icon: 'HiUser' },
@@ -138,6 +234,7 @@ function generateNavigationEnhanced(
       { title: 'デザイン設定', href: '/dashboard/corporate-member/design', icon: 'HiColorSwatch' },
       { title: '共有設定', href: '/dashboard/corporate-member/share', icon: 'HiShare' },
     ],
+
     corporate: [
       { title: '法人ダッシュボード', href: '/dashboard/corporate', icon: 'HiOfficeBuilding' },
       { title: 'ユーザー管理', href: '/dashboard/corporate/users', icon: 'HiUsers' },
@@ -149,14 +246,16 @@ function generateNavigationEnhanced(
       { title: '法人メンバープロフィール', href: '/dashboard/corporate-member', icon: 'HiUser' },
       { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
     ],
+
     personal: [
       { title: 'ダッシュボード', href: '/dashboard', icon: 'HiHome' },
       { title: 'プロフィール編集', href: '/dashboard/profile', icon: 'HiUser' },
       { title: 'SNS・リンク管理', href: '/dashboard/links', icon: 'HiLink' },
       { title: 'デザイン設定', href: '/dashboard/design', icon: 'HiColorSwatch' },
       { title: '共有設定', href: '/dashboard/share', icon: 'HiShare' },
-      { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
+      { title: 'ご利用プラン', href: '/dashboard/plan', icon: 'HiCreditCard' },
     ],
+
     // 🔥 永久利用権ユーザーのメニューをプラン種別に応じて決定
     permanent: [], // この後、プラン種別に応じて動的に設定
   };
@@ -171,7 +270,6 @@ function generateNavigationEnhanced(
         { title: 'SNS・リンク管理', href: '/dashboard/links', icon: 'HiLink' },
         { title: 'デザイン設定', href: '/dashboard/design', icon: 'HiColorSwatch' },
         { title: '共有設定', href: '/dashboard/share', icon: 'HiShare' },
-        { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
       ];
     } else {
       // 法人永久プランは法人機能を含む
@@ -193,14 +291,17 @@ function generateNavigationEnhanced(
     }
   }
 
-  const menuItems = menuTemplates[userType] || menuTemplates.personal;
+  // 基本メニューアイテム
+  const menuItems = menuTemplates[userType] || [];
 
-  // リダイレクト処理
+  // デフォルトのリダイレクト設定
   const defaultRedirectMap: Record<string, string> = {
     admin: '/dashboard/admin',
-    'invited-member': '/dashboard/corporate-member',
-    permanent: permanentPlanType === 'personal' ? '/dashboard' : '/dashboard/corporate',
+    'financial-admin': '/dashboard/admin',
     corporate: '/dashboard/corporate',
+    'invited-member': '/dashboard/corporate-member',
+    personal: '/dashboard',
+    permanent: permanentPlanType === 'personal' ? '/dashboard' : '/dashboard/corporate',
   };
 
   // 🔥 永久利用権ユーザーの特別処理
@@ -282,18 +383,30 @@ function generateNavigationEnhanced(
     }
   }
 
-  // その他のユーザータイプの処理
-  const redirectPath = defaultRedirectMap[userType];
+  // 基本的なリダイレクト判定
+  if (currentPath === '/dashboard' || !currentPath) {
+    const redirectPath = defaultRedirectMap[userType];
+    return {
+      shouldRedirect: !!redirectPath,
+      redirectPath: redirectPath || null,
+      menuItems,
+    };
+  }
+
   return {
-    shouldRedirect: !!redirectPath && currentPath === '/dashboard',
-    redirectPath: redirectPath || null,
+    shouldRedirect: false,
+    redirectPath: null,
     menuItems,
   };
 }
 
 function calculatePermissionsFixed(userData: UserData): Permissions {
-  const ADMIN_EMAILS = ['admin@sns-share.com'];
-  const isAdminEmail = ADMIN_EMAILS.includes(userData.email.toLowerCase());
+  const isAdminEmail = userData.email.toLowerCase() === SUPER_ADMIN_EMAIL.toLowerCase();
+
+  // 🆕 財務管理者判定ロジック
+  const isFinancialAdmin =
+    userData.email.includes(FINANCIAL_ADMIN_DOMAIN) &&
+    userData.financialAdminRecord?.isActive === true;
 
   logger.debug('🔧 権限計算詳細デバッグ:', {
     email: userData.email,
@@ -302,23 +415,47 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
     hasAdminTenant: !!userData.adminOfTenant,
     hasTenant: !!userData.tenant,
     isAdminEmail,
+    isFinancialAdmin,
+    financialAdminRecord: userData.financialAdminRecord,
   });
 
-  // 管理者の早期リターン
+  // 🆕 スーパー管理者判定（最優先）
   if (isAdminEmail) {
+    logger.debug('✅ スーパー管理者を検出');
     return {
       userType: 'admin',
       isAdmin: true,
       isSuperAdmin: true,
+      isFinancialAdmin: false,
       hasCorpAccess: true,
-      isCorpAdmin: true,
+      isCorpAdmin: false,
       isPermanentUser: false,
       permanentPlanType: null,
       userRole: 'admin',
       hasActivePlan: true,
       isTrialPeriod: false,
       planType: null,
-      planDisplayName: 'システム管理者',
+      planDisplayName: 'スーパー管理者',
+    };
+  }
+
+  // 🆕 財務管理者判定
+  if (isFinancialAdmin) {
+    logger.debug('✅ 財務管理者を検出');
+    return {
+      userType: 'financial-admin',
+      isAdmin: true,
+      isSuperAdmin: false,
+      isFinancialAdmin: true,
+      hasCorpAccess: false,
+      isCorpAdmin: false,
+      isPermanentUser: false,
+      permanentPlanType: null,
+      userRole: 'financial-admin',
+      hasActivePlan: true,
+      isTrialPeriod: false,
+      planType: null,
+      planDisplayName: '財務管理者',
     };
   }
 
@@ -337,6 +474,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       userType: 'permanent',
       isAdmin: !isPermanentPersonal, // 個人プラン以外は管理者権限
       isSuperAdmin: false,
+      isFinancialAdmin: false,
       hasCorpAccess: !isPermanentPersonal, // 🔥 修正: 個人プランは法人アクセス権なし
       isCorpAdmin: !isPermanentPersonal, // 個人プラン以外は法人管理者権限
       isPermanentUser: true,
@@ -401,6 +539,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       userType: 'corporate',
       isAdmin: true,
       isSuperAdmin: false,
+      isFinancialAdmin: false,
       hasCorpAccess: true,
       isCorpAdmin: true,
       isPermanentUser: false,
@@ -420,6 +559,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
       userType: 'invited-member',
       isAdmin: false,
       isSuperAdmin: false,
+      isFinancialAdmin: false,
       hasCorpAccess: true,
       isCorpAdmin: false,
       isPermanentUser: false,
@@ -444,6 +584,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
     userType: 'personal',
     isAdmin: false,
     isSuperAdmin: false,
+    isFinancialAdmin: false,
     hasCorpAccess: false,
     isCorpAdmin: false,
     isPermanentUser: false,
@@ -464,32 +605,34 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
 function getPlanDisplayName(planType: string): string {
   const displayNames: Record<string, string> = {
     personal: '個人プラン',
-    starter: 'スタータープラン (10名まで)', // 🔥 修正
-    business: 'ビジネスプラン (30名まで)', // 🔥 修正
+    starter: 'スタータープラン (10名まで)',
+    business: 'ビジネスプラン (30名まで)',
     enterprise: 'エンタープライズ (50名まで)',
   };
   return displayNames[planType] || 'プラン';
 }
 
-export async function GET(request: Request) {
+export async function GET(request: NextRequest) {
   const startTime = Date.now();
   try {
     logger.debug('📊 Dashboard API開始 - タイムスタンプ:', new Date().toISOString());
+
     const url = new URL(request.url);
     const referer = request.headers.get('referer');
-    const currentPath = referer ? new URL(referer).pathname : null;
+    const currentPath = referer ? new URL(referer).pathname : url.searchParams.get('path');
 
     const session = await auth();
     if (!session?.user?.id) {
-      logger.debug('❌ 認証失敗 - セッションまたはユーザーIDがありません');
-      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 });
+      logger.debug('❌ 認証されていません');
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     const userId = session.user.id;
+    logger.debug('🔍 ユーザーID:', userId, '| パス:', currentPath);
 
-    let userData: UserData | null = null;
-    try {
-      userData = (await prisma.user.findUnique({
+    // 🆕 財務管理者情報も含めてユーザーデータを取得
+    const userData = await safeQuery(async () => {
+      return await prisma.user.findUnique({
         where: { id: userId },
         select: {
           id: true,
@@ -499,6 +642,12 @@ export async function GET(request: Request) {
           subscriptionStatus: true,
           corporateRole: true,
           trialEndsAt: true,
+          // 🆕 財務管理者情報を追加
+          financialAdminRecord: {
+            select: {
+              isActive: true,
+            },
+          },
           adminOfTenant: {
             select: {
               id: true,
@@ -507,7 +656,7 @@ export async function GET(request: Request) {
               primaryColor: true,
               secondaryColor: true,
               accountStatus: true,
-              maxUsers: true, // 🔥 追加
+              maxUsers: true,
             },
           },
           tenant: {
@@ -518,7 +667,7 @@ export async function GET(request: Request) {
               primaryColor: true,
               secondaryColor: true,
               accountStatus: true,
-              maxUsers: true, // 🔥 追加
+              maxUsers: true,
             },
           },
           subscription: {
@@ -529,30 +678,27 @@ export async function GET(request: Request) {
             },
           },
         },
-      })) as UserData | null;
-    } catch (dbError) {
-      logger.error('❌ データベースエラー詳細:', {
-        error: dbError,
-        userId,
-        timestamp: new Date().toISOString(),
       });
-      return NextResponse.json(
-        {
-          error: 'Database connection error',
-          details:
-            process.env.NODE_ENV === 'development' ? String(dbError) : 'Internal server error',
-          timestamp: new Date().toISOString(),
-        },
-        { status: 500 },
-      );
-    }
+    });
 
     if (!userData) {
-      logger.debug('❌ ユーザー見つからず - DB結果がnull');
+      logger.debug('❌ ユーザー見つからず');
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const permissions = calculatePermissionsFixed(userData);
+    // 🆕 財務管理者フラグを設定し、interval を適切に変換
+    const userDataWithFlags: UserData = {
+      ...userData,
+      isFinancialAdmin: !!userData.financialAdminRecord?.isActive,
+      subscription: userData.subscription
+        ? {
+            ...userData.subscription,
+            interval: userData.subscription.interval || null,
+          }
+        : null,
+    };
+
+    const permissions = calculatePermissionsFixed(userDataWithFlags);
     const navigation = generateNavigationEnhanced(permissions, currentPath);
 
     const tenant = userData.adminOfTenant || userData.tenant;
@@ -573,31 +719,21 @@ export async function GET(request: Request) {
             logoUrl: tenant.logoUrl,
             primaryColor: tenant.primaryColor,
             secondaryColor: tenant.secondaryColor,
+            accountStatus: tenant.accountStatus,
+            maxUsers: tenant.maxUsers,
           }
         : null,
+      processingTime: Date.now() - startTime,
     };
 
-    const duration = Date.now() - startTime;
-    return NextResponse.json(response, {
-      headers: {
-        'Cache-Control': 'private, max-age=300',
-        'X-Response-Time': `${duration}ms`,
-      },
-    });
-  } catch (error) {
-    const duration = Date.now() - startTime;
-    logger.error('❌ Dashboard API全体エラー:', {
-      error,
-      errorMessage: error instanceof Error ? error.message : 'Unknown error',
-      errorStack: error instanceof Error ? error.stack : undefined,
-      duration: `${duration}ms`,
-      timestamp: new Date().toISOString(),
-    });
+    logger.debug('✅ Dashboard API完了 - 処理時間:', Date.now() - startTime, 'ms');
+    return NextResponse.json(response);
+  } catch (error: any) {
+    logger.error('❌ Dashboard API エラー:', error);
     return NextResponse.json(
       {
         error: 'Internal server error',
-        timestamp: new Date().toISOString(),
-        duration: `${duration}ms`,
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
       },
       { status: 500 },
     );

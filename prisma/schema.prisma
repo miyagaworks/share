@@ -1,139 +1,118 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
   output   = "../node_modules/.prisma/client"
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  // directUrlは削除し、代わりに環境変数で管理
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
-  id                  String                 @id @default(cuid())
-  email               String                 @unique
-  name                String?
-  nameEn              String?
-  nameKana            String?
-  lastName            String?                // 姓
-  firstName           String?                // 名
-  lastNameKana        String?                // 姓（フリガナ）
-  firstNameKana       String?                // 名（フリガナ）
-  password            String? // ハッシュ化されたパスワード、OAuthの場合はnull
-  passwordResetTokens PasswordResetToken[]
-  image               String? // プロフィール画像URL
-  bio                 String? // 自己紹介
-  mainColor           String                 @default("#3B82F6") // デフォルトは青
-  snsIconColor        String?                @default("#333333") // デフォルトは黒に近いグレー
-  bioBackgroundColor  String?                @default("#FFFFFF")
-  bioTextColor        String?                @default("#333333")
-  headerText          String?
-  textColor           String?
-  phone               String? // 電話番号
-  company             String? // 会社/組織名
-  companyUrl          String? // 会社/組織のWebサイト
-  companyLabel        String? // 会社/組織のリンク表示名
-  activityLogs        CorporateActivityLog[] @relation("UserActivities")
-  emailVerificationToken EmailVerificationToken?
-
-  // 認証関連
-  emailVerified DateTime?
-  accounts      Account[]
-
-  // プロフィール関連
-  profile     Profile?
-  customLinks CustomLink[]
-  snsLinks    SnsLink[]
-
-  // QRコード関連
-  qrCodePages QrCodePage[]
-
-  // ご利用プラン関連
-  stripeCustomerId   String? // Stripeカスタマー識別子
-  subscription       Subscription?
-  billingHistory     BillingRecord[]
-  trialEndsAt        DateTime?
-  subscriptionStatus String?
-
-  // 法人テナント関連
-  corporateRole String? // "admin", "member" など
-  position      String? // 役職
-  department    Department?      @relation(fields: [departmentId], references: [id])
-  departmentId  String?
-  tenant        CorporateTenant? @relation("TenantUsers", fields: [tenantId], references: [id])
-  tenantId      String?
-  adminOfTenant CorporateTenant? @relation("TenantAdmin")
-
-  // 問い合わせ関連
-  contacts Contact[]
-
-  // 解約申請
-  cancelRequests    CancelRequest[]
-  
-  // 管理者メール関連
-  sentEmails AdminEmailLog[] @relation("SentByAdmin")
-  
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  // 財務関連リレーション
-  financialRecordsCreated    FinancialRecord[] @relation("FinancialRecordCreator")
-  financialRecordsApproved   FinancialRecord[] @relation("FinancialRecordApprover")
-  settlementsFinalized       MonthlySettlement[] @relation("SettlementFinalizer")
-  adjustmentsProposed        RevenueShareAdjustment[] @relation("AdjustmentProposer")
-  adjustmentsApproved        RevenueShareAdjustment[] @relation("AdjustmentApprover")
-  financialAccessLogs        FinancialAccessLog[] @relation("FinancialAccessUser")
+  id                       String                   @id @default(cuid())
+  email                    String                   @unique
+  name                     String?
+  nameEn                   String?
+  password                 String?
+  image                    String?
+  bio                      String?
+  mainColor                String                   @default("#3B82F6")
+  phone                    String?
+  company                  String?
+  emailVerified            DateTime?
+  createdAt                DateTime                 @default(now())
+  updatedAt                DateTime                 @updatedAt
+  companyLabel             String?
+  companyUrl               String?
+  snsIconColor             String?                  @default("#333333")
+  stripeCustomerId         String?
+  subscriptionStatus       String?
+  trialEndsAt              DateTime?
+  corporateRole            String?
+  departmentId             String?
+  position                 String?
+  tenantId                 String?
+  bioBackgroundColor       String?                  @default("#FFFFFF")
+  bioTextColor             String?                  @default("#333333")
+  nameKana                 String?
+  lastName                 String?
+  firstName                String?
+  lastNameKana             String?
+  firstNameKana            String?
+  headerText               String?
+  textColor                String?
+  isFinancialAdmin         Boolean                  @default(false)
+  accounts                 Account[]
+  sentEmails               AdminEmailLog[]          @relation("SentByAdmin")
+  billingHistory           BillingRecord[]
+  cancelRequests           CancelRequest[]
+  companyExpensesApproved  CompanyExpense[]         @relation("CompanyExpenseApprover")
+  companyExpensesInput     CompanyExpense[]         @relation("CompanyExpenseInputBy")
+  contacts                 Contact[]
+  activityLogs             CorporateActivityLog[]   @relation("UserActivities")
+  adminOfTenant            CorporateTenant?         @relation("TenantAdmin")
+  customLinks              CustomLink[]
+  emailVerificationToken   EmailVerificationToken?
+  financialAccessLogs      FinancialAccessLog[]     @relation("FinancialAccessUser")
+  addedFinancialAdmins     FinancialAdmin[]         @relation("AddedByUser")
+  financialAdminRecord     FinancialAdmin?
+  financialRecordsApproved FinancialRecord[]        @relation("FinancialRecordApprover")
+  financialRecordsCreated  FinancialRecord[]        @relation("FinancialRecordCreator")
+  settlementsFinalized     MonthlySettlement[]      @relation("SettlementFinalizer")
+  passwordResetTokens      PasswordResetToken[]
+  profile                  Profile?
+  qrCodePages              QrCodePage[]
+  adjustmentsApproved      RevenueShareAdjustment[] @relation("AdjustmentApprover")
+  adjustmentsProposed      RevenueShareAdjustment[] @relation("AdjustmentProposer")
+  snsLinks                 SnsLink[]
+  subscription             Subscription?
+  department               Department?              @relation(fields: [departmentId], references: [id])
+  tenant                   CorporateTenant?         @relation("TenantUsers", fields: [tenantId], references: [id])
 }
 
 model Profile {
   id           String    @id @default(cuid())
   userId       String    @unique
-  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  slug         String    @unique // カスタムURLスラッグ（12345）
-  views        Int       @default(0) // プロフィール閲覧数
+  slug         String    @unique
+  views        Int       @default(0)
   isPublic     Boolean   @default(true)
   lastAccessed DateTime?
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model SnsLink {
   id           String   @id @default(cuid())
   userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform     String // 'line', 'youtube', 'x', 'instagram', 等
-  username     String? // ユーザー名
-  url          String // 完全なURL
-  displayOrder Int // 表示順序（並べ替え用）
+  platform     String
+  username     String?
+  url          String
+  displayOrder Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, platform]) // 1ユーザーあたり各プラットフォーム1つまで
+  @@unique([userId, platform])
 }
 
 model CustomLink {
   id           String   @id @default(cuid())
   userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name         String // リンクの表示名
-  url          String // URL
-  displayOrder Int // 表示順序
+  name         String
+  url          String
+  displayOrder Int
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model Account {
   id                String   @id @default(cuid())
   userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  type              String // oauth, email
-  provider          String // google, apple, email
+  type              String
+  provider          String
   providerAccountId String?
   refresh_token     String?
   access_token      String?
@@ -144,19 +123,18 @@ model Account {
   session_state     String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
-// ご利用プランモデル
 model Subscription {
   id                 String           @id @default(cuid())
   userId             String           @unique
-  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status             String // 'trialing', 'active', 'past_due', 'canceled', 'incomplete'
-  plan               String // 'monthly', 'yearly', 'business'
-  priceId            String? // Stripe価格ID
-  subscriptionId     String? // Stripe ご利用プランID
+  status             String
+  plan               String
+  priceId            String?
+  subscriptionId     String?
   currentPeriodStart DateTime
   currentPeriodEnd   DateTime
   cancelAtPeriodEnd  Boolean          @default(false)
@@ -164,25 +142,25 @@ model Subscription {
   trialEnd           DateTime?
   canceledAt         DateTime?
   cancelReason       String?
-  interval           String?          // 追加: 'month', 'year', 'permanent'
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
-  corporateTenant    CorporateTenant?
+  interval           String?
   cancelRequests     CancelRequest[]
+  corporateTenant    CorporateTenant?
+  user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// 請求履歴モデル
 model BillingRecord {
   id          String    @id @default(cuid())
   userId      String
-  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  invoiceId   String? // Stripe インボイスID
-  amount      Int // 金額（円）
-  status      String // 'paid', 'pending', 'failed'
-  description String? // 請求内容
+  invoiceId   String?
+  amount      Int
+  status      String
+  description String?
   paidAt      DateTime?
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
 model PasswordResetToken {
@@ -190,156 +168,136 @@ model PasswordResetToken {
   token     String   @unique
   expires   DateTime
   userId    String
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@index([userId])
 }
 
-// お問い合わせモデル
 model Contact {
-  id        String   @id @default(cuid())
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
+  id          String   @id @default(cuid())
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
   name        String
   email       String
   companyName String?
-  type        String // 'account', 'billing', 'technical', 'feature', 'feedback', 'corporate', 'other'
+  type        String
   subject     String
-  message     String  @db.Text
-
-  status     String  @default("pending") // 'pending', 'in_progress', 'resolved', 'closed'
-  notes      String? @db.Text
-  assignedTo String? // スタッフのIDなど
-
-  // ユーザーとの関連付け
-  userId String?
-  user   User?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  message     String
+  status      String   @default("pending")
+  notes       String?
+  assignedTo  String?
+  userId      String?
+  user        User?    @relation(fields: [userId], references: [id])
 }
 
-// 法人テナント情報
 model CorporateTenant {
-  id             String                 @id @default(cuid())
-  name           String
-  logoUrl        String?
-  logoWidth      Int?
-  logoHeight     Int?
-  primaryColor   String?
-  secondaryColor String?
-  headerText     String?
-  textColor      String?
-  customDomain   String?                @unique
-  maxUsers       Int
-  createdAt      DateTime               @default(now())
-  updatedAt      DateTime               @updatedAt
-  activityLogs   CorporateActivityLog[] @relation("TenantActivities")
-  onboardingCompleted Boolean               @default(false)
-
-  // 追加する設定関連フィールド
-  securitySettings     Json? // パスワードポリシー等のセキュリティ設定
-  notificationSettings Json? // 通知設定
-  billingAddress       Json? // 請求先情報
-  billingEmail         String? // 請求先メールアドレス
-  billingContact       String? // 請求担当者名
-
-  // 高度な設定
-  accountStatus     String @default("active") // "active", "suspended", "deleted"
-  dataRetentionDays Int    @default(365) // データ保持期間（日数）
-
-  // リレーション
-  subscription      Subscription?      @relation(fields: [subscriptionId], references: [id])
-  subscriptionId    String?            @unique
-  admin             User               @relation("TenantAdmin", fields: [adminId], references: [id])
-  adminId           String             @unique
-  users             User[]             @relation("TenantUsers")
-  departments       Department[]
-  corporateSnsLinks CorporateSnsLink[] // 新しく追加
+  id                   String                 @id @default(cuid())
+  name                 String
+  logoUrl              String?
+  primaryColor         String?
+  secondaryColor       String?
+  customDomain         String?                @unique
+  maxUsers             Int
+  createdAt            DateTime               @default(now())
+  updatedAt            DateTime               @updatedAt
+  adminId              String                 @unique
+  accountStatus        String                 @default("active")
+  billingAddress       Json?
+  billingContact       String?
+  billingEmail         String?
+  dataRetentionDays    Int                    @default(365)
+  notificationSettings Json?
+  securitySettings     Json?
+  subscriptionId       String?                @unique
+  logoHeight           Int?
+  logoWidth            Int?
+  headerText           String?
+  textColor            String?
+  onboardingCompleted  Boolean                @default(false)
+  activityLogs         CorporateActivityLog[] @relation("TenantActivities")
+  corporateSnsLinks    CorporateSnsLink[]
+  admin                User                   @relation("TenantAdmin", fields: [adminId], references: [id])
+  subscription         Subscription?          @relation(fields: [subscriptionId], references: [id])
+  departments          Department[]
+  users                User[]                 @relation("TenantUsers")
 }
 
-// 部署/チーム管理
 model Department {
-  id          String   @id @default(cuid())
+  id          String          @id @default(cuid())
   name        String
   description String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // リレーション
-  tenant   CorporateTenant @relation(fields: [tenantId], references: [id])
-  tenantId String
-  users    User[]
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+  tenantId    String
+  tenant      CorporateTenant @relation(fields: [tenantId], references: [id])
+  users       User[]
 }
 
-// 法人共通SNSリンクモデル
 model CorporateSnsLink {
   id           String          @id @default(cuid())
   tenantId     String
-  tenant       CorporateTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  platform     String // 'line', 'youtube', 'x', 'instagram', 等
-  username     String? // ユーザー名
-  url          String // 完全なURL
-  displayOrder Int // 表示順序（並べ替え用）
-  isRequired   Boolean         @default(false) // 全メンバーに必須かどうか（削除不可）
+  platform     String
+  username     String?
+  url          String
+  displayOrder Int
+  isRequired   Boolean         @default(false)
   createdAt    DateTime        @default(now())
   updatedAt    DateTime        @updatedAt
+  tenant       CorporateTenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
-  @@unique([tenantId, platform]) // 1テナントあたり各プラットフォーム1つまで
+  @@unique([tenantId, platform])
 }
 
-// 法人アクティビティログ
 model CorporateActivityLog {
   id          String          @id @default(cuid())
   tenantId    String
-  tenant      CorporateTenant @relation("TenantActivities", fields: [tenantId], references: [id], onDelete: Cascade)
   userId      String?
-  user        User?           @relation("UserActivities", fields: [userId], references: [id], onDelete: SetNull)
-  action      String // 'create_user', 'update_settings', 'add_department', 等
-  entityType  String // 'user', 'department', 'tenant', 'sns_link', 'settings', 等
-  entityId    String? // 対象エンティティのID（存在する場合）
-  description String // 「ユーザーを追加しました」等の人間が読める説明
-  metadata    Json? // 追加情報（変更前後の値など）
+  action      String
+  entityType  String
+  entityId    String?
+  description String
+  metadata    Json?
   createdAt   DateTime        @default(now())
+  tenant      CorporateTenant @relation("TenantActivities", fields: [tenantId], references: [id], onDelete: Cascade)
+  user        User?           @relation("UserActivities", fields: [userId], references: [id])
 
   @@index([tenantId, createdAt(sort: Desc)])
   @@index([userId])
 }
 
-// QRコードページモデル
 model QrCodePage {
   id             String    @id @default(cuid())
   slug           String    @unique
   userId         String
-  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   userName       String
-  nameEn         String?
   profileUrl     String
   template       String
   primaryColor   String
   secondaryColor String
   accentColor    String?
-  textColor      String?
   views          Int       @default(0)
   lastAccessed   DateTime?
   createdAt      DateTime  @default(now())
   updatedAt      DateTime  @updatedAt
+  textColor      String?
+  nameEn         String?
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// お知らせモデル
 model Notification {
-  id          String      @id @db.Uuid
-  title       String
-  content     String      @db.Text
-  type        String
-  priority    String      @default("normal")
-  imageUrl    String?
-  startDate   DateTime    @db.Timestamptz
-  endDate     DateTime?   @db.Timestamptz
-  targetGroup String      @default("all")
-  active      Boolean     @default(true)
-  createdAt   DateTime    @db.Timestamptz
-  updatedAt   DateTime    @db.Timestamptz
-  
+  id           String             @id @db.Uuid
+  title        String
+  content      String
+  type         String
+  priority     String             @default("normal")
+  imageUrl     String?
+  startDate    DateTime           @db.Timestamptz(6)
+  endDate      DateTime?          @db.Timestamptz(6)
+  targetGroup  String             @default("all")
+  active       Boolean            @default(true)
+  createdAt    DateTime           @db.Timestamptz(6)
+  updatedAt    DateTime           @db.Timestamptz(6)
   readStatuses NotificationRead[]
 
   @@map("Notification")
@@ -348,10 +306,10 @@ model Notification {
 model NotificationRead {
   id             String       @id @db.Uuid
   notificationId String       @db.Uuid
-  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
   user_id        String
-  readAt         DateTime     @db.Timestamptz
-  
+  readAt         DateTime     @db.Timestamptz(6)
+  notification   Notification @relation(fields: [notificationId], references: [id], onDelete: Cascade)
+
   @@unique([notificationId, user_id])
   @@map("NotificationRead")
 }
@@ -360,7 +318,7 @@ model AdminEmailLog {
   id          String   @id @default(uuid())
   subject     String
   title       String
-  message     String   @db.Text
+  message     String
   targetGroup String
   ctaText     String?
   ctaUrl      String?
@@ -370,175 +328,304 @@ model AdminEmailLog {
   sentAt      DateTime @default(now())
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-
-  // リレーション
   sender      User     @relation("SentByAdmin", fields: [sentBy], references: [id])
-  
+
   @@index([sentBy])
   @@index([targetGroup])
   @@index([sentAt])
 }
 
 model IdempotencyRequest {
-  id          String    @id
-  endpoint    String    // どのAPIエンドポイントでのリクエストか
-  result      Json      // 処理結果
-  createdAt   DateTime  @default(now())
-  expiresAt   DateTime  // いつまで保持するか
-  
-  @@index([expiresAt]) // 期限切れレコードを効率的に削除するためのインデックス
+  id        String   @id
+  endpoint  String
+  result    Json
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+
+  @@index([expiresAt])
 }
 
-// メール認証トークンモデル
 model EmailVerificationToken {
   id        String   @id @default(cuid())
-  userId    String   @unique // ユーザーIDと一対一の関係
+  userId    String   @unique
   token     String   @unique
   expires   DateTime
   createdAt DateTime @default(now())
-  
-  // ユーザーとの関係
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-// 解約申請モデル
 model CancelRequest {
-  id              String   @id @default(cuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  subscriptionId  String
-  subscription    Subscription @relation(fields: [subscriptionId], references: [id])
-  
-  // 申請情報
+  id                  String       @id @default(cuid())
+  userId              String
+  subscriptionId      String
   requestedCancelDate DateTime
-  reason             String? @db.Text
-  currentPlan        String
-  currentInterval    String
-  
-  // 返金計算
-  paidAmount         Int // 支払い済み金額（円）
-  refundAmount       Int // 返金予定金額（円）
-  usedMonths         Int // 利用済み月数
-  
-  // ステータス管理
-  status            String   @default("pending") // "pending", "approved", "rejected", "processed"
-  adminNotes        String?  @db.Text
-  processedBy       String?
-  processedAt       DateTime?
-  
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
-  
+  reason              String?
+  currentPlan         String
+  currentInterval     String
+  paidAmount          Int
+  refundAmount        Int
+  usedMonths          Int
+  status              String       @default("pending")
+  adminNotes          String?
+  processedBy         String?
+  processedAt         DateTime?
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  subscription        Subscription @relation(fields: [subscriptionId], references: [id])
+  user                User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
   @@index([status])
 }
 
-// 財務記録テーブル
-model FinancialRecord {
+model FinancialAdmin {
   id          String   @id @default(cuid())
-  type        String   // 'revenue' | 'expense'
-  amount      Int      // 金額（円）
-  description String   // 説明
-  category    String?  // カテゴリ（任意）
-  date        DateTime // 発生日
-  
-  // 経費関連
-  needsApproval Boolean @default(false) // 承認が必要か（5,000円以上）
-  approvalStatus String @default("pending") // 'pending' | 'approved' | 'rejected'
-  approvedBy     String? // 承認者ID
-  approvedAt     DateTime? // 承認日時
-  
-  // 記録者情報
-  createdBy   String   // 入力者ID
+  userId      String   @unique
+  addedBy     String
+  addedAt     DateTime @default(now())
+  isActive    Boolean  @default(true)
+  notes       String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
-  // リレーション
-  creator     User     @relation("FinancialRecordCreator", fields: [createdBy], references: [id])
-  approver    User?    @relation("FinancialRecordApprover", fields: [approvedBy], references: [id])
-  
-  @@index([type, date])
-  @@index([createdBy])
-  @@index([approvalStatus])
+  addedByUser User     @relation("AddedByUser", fields: [addedBy], references: [id])
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([addedBy])
+  @@index([isActive])
 }
 
-// 月次精算テーブル
+model FinancialRecord {
+  id                String             @id @default(cuid())
+  recordType        String
+  title             String
+  description       String?
+  amount            Decimal
+  category          String
+  recordDate        DateTime
+  type              String
+  date              DateTime
+  sourceType        String?
+  sourceId          String?
+  isAutoImported    Boolean            @default(false)
+  feeAmount         Decimal?
+  netAmount         Decimal?
+  contractorId      String?
+  needsApproval     Boolean            @default(false)
+  approvalStatus    String             @default("approved")
+  approvedBy        String?
+  approvedAt        DateTime?
+  inputBy           String
+  createdBy         String
+  editHistory       Json?
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  companyExpense    CompanyExpense?
+  approver          User?              @relation("FinancialRecordApprover", fields: [approvedBy], references: [id])
+  creator           User               @relation("FinancialRecordCreator", fields: [createdBy], references: [id])
+  stripeTransaction StripeTransaction?
+
+  @@index([recordType, recordDate])
+  @@index([sourceType, isAutoImported])
+  @@index([contractorId])
+  @@index([approvalStatus])
+  @@index([type, date])
+}
+
 model MonthlySettlement {
-  id            String   @id @default(cuid())
-  year          Int      // 年
-  month         Int      // 月
-  totalRevenue  Int      // 総売上
-  totalExpenses Int      // 総経費
-  profit        Int      // 利益
-  
-  // 受託者配分
-  contractorShare     Int // 受託者配分総額（利益の30%）
-  yoshitsuneShare     Int // 小河原義経の配分
-  yoshitsunePercent   Float @default(15.0) // 小河原義経の配分率
-  kenseiShare         Int // 福島健世の配分
-  kenseiPercent       Float @default(15.0) // 福島健世の配分率
-  
-  // ステータス
-  status        String   @default("draft") // 'draft' | 'finalized' | 'paid'
-  finalizedBy   String?  // 確定者ID
-  finalizedAt   DateTime? // 確定日時
-  paidAt        DateTime? // 支払完了日時
-  
-  createdAt     DateTime @default(now())
-  updatedAt     DateTime @updatedAt
-  
-  // リレーション
-  finalizer     User?    @relation("SettlementFinalizer", fields: [finalizedBy], references: [id])
-  
+  id                String    @id @default(cuid())
+  year              Int
+  month             Int
+  totalRevenue      Int
+  totalExpenses     Int
+  profit            Int
+  contractorShare   Int
+  yoshitsuneShare   Int
+  yoshitsunePercent Float     @default(15.0)
+  kenseiShare       Int
+  kenseiPercent     Float     @default(15.0)
+  status            String    @default("draft")
+  finalizedBy       String?
+  finalizedAt       DateTime?
+  paidAt            DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
+  finalizer         User?     @relation("SettlementFinalizer", fields: [finalizedBy], references: [id])
+
   @@unique([year, month])
   @@index([year, month])
 }
 
-// 報酬調整記録テーブル
 model RevenueShareAdjustment {
   id              String   @id @default(cuid())
-  year            Int      // 対象年
-  month           Int      // 対象月
-  adjustmentType  String   // 'self_reduction' | 'admin_proposal' | 'peer_proposal'
-  targetPerson    String   // 'yoshitsune' | 'kensei'
-  
-  // 調整内容
-  originalPercent Float    // 元の配分率
-  adjustedPercent Float    // 調整後の配分率
-  reason          String   // 調整理由
-  
-  // 申請・承認
-  proposedBy      String   // 提案者ID
-  approvedBy      String?  // 承認者ID
-  status          String   @default("pending") // 'pending' | 'approved' | 'rejected'
-  
+  year            Int
+  month           Int
+  adjustmentType  String
+  targetPerson    String
+  originalPercent Float
+  adjustedPercent Float
+  reason          String
+  proposedBy      String
+  approvedBy      String?
+  status          String   @default("pending")
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
-  
-  // リレーション
-  proposer        User     @relation("AdjustmentProposer", fields: [proposedBy], references: [id])
   approver        User?    @relation("AdjustmentApprover", fields: [approvedBy], references: [id])
-  
+  proposer        User     @relation("AdjustmentProposer", fields: [proposedBy], references: [id])
+
   @@index([year, month])
   @@index([targetPerson])
 }
 
-// 財務アクセスログテーブル
 model FinancialAccessLog {
-  id          String   @id @default(cuid())
-  userId      String   // アクセス者ID
-  action      String   // 'view' | 'create' | 'update' | 'approve' | 'export'
-  entityType  String   // 'financial_record' | 'settlement' | 'adjustment'
-  entityId    String?  // 対象エンティティID
-  details     Json?    // 詳細情報
-  ipAddress   String?  // IPアドレス
-  userAgent   String?  // ユーザーエージェント
-  
-  createdAt   DateTime @default(now())
-  
-  // リレーション
-  user        User     @relation("FinancialAccessUser", fields: [userId], references: [id])
-  
+  id         String   @id @default(cuid())
+  userId     String
+  action     String
+  entityType String
+  entityId   String?
+  details    Json?
+  ipAddress  String?
+  userAgent  String?
+  createdAt  DateTime @default(now())
+  user       User     @relation("FinancialAccessUser", fields: [userId], references: [id])
+
   @@index([userId, createdAt])
   @@index([action, createdAt])
+}
+
+model StripeTransaction {
+  id                String           @id @default(cuid())
+  stripePaymentId   String           @unique
+  stripeChargeId    String?          @unique
+  stripeCustomerId  String?
+  amount            Decimal
+  currency          String           @default("jpy")
+  description       String?
+  customerEmail     String?
+  stripeFeeAmount   Decimal
+  stripeFeeRate     Decimal
+  netAmount         Decimal
+  transactionDate   DateTime
+  settledDate       DateTime?
+  actualSettledDate DateTime?
+  subscriptionType  String?
+  planName          String?
+  status            String
+  refundAmount      Decimal?
+  refundReason      String?
+  stripeMetadata    Json?
+  webhookProcessed  Boolean          @default(false)
+  financialRecordId String?          @unique
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  financialRecord   FinancialRecord? @relation(fields: [financialRecordId], references: [id])
+
+  @@index([transactionDate])
+  @@index([status])
+  @@index([subscriptionType])
+  @@index([webhookProcessed])
+}
+
+model CompanyExpense {
+  id                String           @id @default(cuid())
+  title             String
+  description       String?
+  amount            Decimal
+  category          String
+  subCategory       String?
+  expenseDate       DateTime
+  expenseType       String
+  isRecurring       Boolean          @default(false)
+  recurringCycle    String?
+  requiresApproval  Boolean          @default(false)
+  approvalStatus    String           @default("approved")
+  approvedBy        String?
+  approvedAt        DateTime?
+  approvalComments  String?
+  rejectionReason   String?
+  paymentMethod     String?
+  paymentStatus     String           @default("paid")
+  paidDate          DateTime?
+  invoiceNumber     String?
+  receiptUrl        String?
+  attachmentUrls    Json?
+  taxIncluded       Boolean          @default(true)
+  taxRate           Decimal?
+  taxAmount         Decimal?
+  financialRecordId String?          @unique
+  inputBy           String
+  editHistory       Json?
+  createdAt         DateTime         @default(now())
+  updatedAt         DateTime         @updatedAt
+  approvedByUser    User?            @relation("CompanyExpenseApprover", fields: [approvedBy], references: [id])
+  financialRecord   FinancialRecord? @relation(fields: [financialRecordId], references: [id])
+  inputByUser       User             @relation("CompanyExpenseInputBy", fields: [inputBy], references: [id])
+
+  @@index([category, expenseDate])
+  @@index([expenseType])
+  @@index([approvalStatus])
+  @@index([paymentStatus])
+}
+
+model MonthlyProfitSummary {
+  id                       String    @id @default(cuid())
+  targetYear               Int
+  targetMonth              Int
+  totalRevenue             Decimal
+  stripeTransactionCount   Int
+  averageTransactionAmount Decimal
+  totalStripeFees          Decimal
+  averageFeeRate           Decimal
+  totalCompanyExpenses     Decimal
+  totalContractorExpenses  Decimal
+  totalExpenses            Decimal
+  grossProfit              Decimal
+  netProfit                Decimal
+  profitMargin             Decimal
+  totalAllocations         Decimal
+  remainingProfit          Decimal
+  isFinalized              Boolean   @default(false)
+  finalizedAt              DateTime?
+  finalizedBy              String?
+  revenueBreakdown         Json?
+  expenseBreakdown         Json?
+  allocationBreakdown      Json?
+  createdAt                DateTime  @default(now())
+  updatedAt                DateTime  @updatedAt
+
+  @@unique([targetYear, targetMonth])
+  @@index([targetYear, targetMonth])
+  @@index([isFinalized])
+}
+
+model StripeWebhookLog {
+  id                   String   @id @default(cuid())
+  stripeEventId        String   @unique
+  eventType            String
+  eventData            Json
+  processingStatus     String   @default("pending")
+  processingResult     String?
+  errorMessage         String?
+  retryCount           Int      @default(0)
+  createdTransactionId String?
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  @@index([eventType, processingStatus])
+  @@index([createdAt])
+}
+
+model AutoSyncSettings {
+  id                        String    @id @default(cuid())
+  stripeAutoSync            Boolean   @default(true)
+  syncFrequency             String    @default("realtime")
+  lastSyncAt                DateTime?
+  defaultStripeFeeRate      Decimal   @default(0.036)
+  notifyOnLargeTransaction  Boolean   @default(true)
+  largeTransactionThreshold Decimal   @default(100000)
+  updatedBy                 String
+  updatedAt                 DateTime  @updatedAt
+  createdAt                 DateTime  @default(now())
+
+  @@map("AutoSyncSettings")
 }

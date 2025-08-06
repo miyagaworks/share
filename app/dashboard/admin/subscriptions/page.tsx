@@ -1,23 +1,27 @@
-// app/dashboard/admin/subscriptions/page.tsx
+// app/dashboard/admin/subscriptions/page.tsx - 財務管理者対応版
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
-import { 
-  HiRefresh, 
+import { getPagePermissions, ReadOnlyBanner } from '@/lib/utils/admin-permissions';
+import {
+  HiRefresh,
   HiCreditCard,
-  HiSearch, 
-  HiSortAscending, 
-  HiSortDescending
+  HiSearch,
+  HiSortAscending,
+  HiSortDescending,
+  HiShieldCheck,
+  HiExclamationCircle,
 } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
+
 // サブスクリプション情報の型定義
 interface UserSubscription {
   id: string;
   name: string | null;
-  nameKana: string | null;  // フリガナ追加
+  nameKana: string | null;
   email: string;
   createdAt: string;
   trialEndsAt: string | null;
@@ -29,18 +33,35 @@ interface UserSubscription {
   } | null;
   subscriptionStatus: string | null;
 }
+
+// 🆕 管理者アクセス権限の型定義
+interface AdminAccess {
+  isSuperAdmin: boolean;
+  isFinancialAdmin: boolean;
+  adminLevel: 'super' | 'financial' | 'none';
+}
+
 // 並び替えのタイプ
-type SortType = 'created_asc' | 'created_desc' | 'nameKana_asc' | 'nameKana_desc' | 'plan_asc' | 'plan_desc' | 'status';
+type SortType =
+  | 'created_asc'
+  | 'created_desc'
+  | 'nameKana_asc'
+  | 'nameKana_desc'
+  | 'plan_asc'
+  | 'plan_desc'
+  | 'status';
+
 export default function AdminSubscriptionsPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserSubscription[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminAccess, setAdminAccess] = useState<AdminAccess | null>(null); // 🔧 修正
   const [sortType, setSortType] = useState<SortType>('status');
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  // 管理者チェック
+
+  // 🔧 修正: 管理者チェック（財務管理者も許可）
   useEffect(() => {
     const checkAdminAccess = async () => {
       if (!session?.user?.id) {
@@ -50,18 +71,22 @@ export default function AdminSubscriptionsPage() {
       try {
         const response = await fetch('/api/admin/access');
         const data = await response.json();
-        if (data.isSuperAdmin) {
-          setIsAdmin(true);
+
+        if (data.adminLevel !== 'none') {
+          setAdminAccess(data);
           fetchUsers();
         } else {
           router.push('/dashboard');
         }
       } catch {
         router.push('/dashboard');
+      } finally {
+        setLoading(false);
       }
     };
     checkAdminAccess();
   }, [session, router]);
+
   // ユーザーサブスクリプション一覧の取得
   const fetchUsers = async () => {
     setLoading(true);
@@ -79,10 +104,12 @@ export default function AdminSubscriptionsPage() {
       setLoading(false);
     }
   };
+
   // 並び替え関数
   const handleSort = (type: SortType) => {
     setSortType(type);
   };
+
   // 検索結果のフィルタリング
   const filteredUsers = users.filter(
     (user) =>
@@ -92,6 +119,7 @@ export default function AdminSubscriptionsPage() {
       (user.subscription?.plan || '').toLowerCase().includes(searchTerm.toLowerCase()) ||
       (user.subscription?.status || '').toLowerCase().includes(searchTerm.toLowerCase()),
   );
+
   // ユーザーの並び替え
   const sortedUsers = [...filteredUsers].sort((a, b) => {
     // サブスクリプション状態で並び替え（アクティブ > トライアル > その他）
@@ -137,6 +165,7 @@ export default function AdminSubscriptionsPage() {
     }
     return 0;
   });
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -147,16 +176,52 @@ export default function AdminSubscriptionsPage() {
       </div>
     );
   }
-  if (!isAdmin) {
-    return null; // リダイレクト処理中は表示なし
+
+  if (!adminAccess) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-center">
+          <HiExclamationCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">アクセス権限がありません</h3>
+          <p className="text-gray-600">管理者権限が必要です</p>
+        </div>
+      </div>
+    );
   }
+
+  // 🆕 権限取得
+  const permissions = getPagePermissions(
+    adminAccess.isSuperAdmin ? 'admin' : 'financial-admin',
+    'subscriptions',
+  );
+
   return (
     <div className="max-w-[90vw] mx-auto px-4">
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
         <div className="flex items-center mb-6">
           <HiCreditCard className="h-6 w-6 text-blue-600 mr-3" />
-          <h1 className="text-2xl font-bold">サブスクリプション管理</h1>
+          <div>
+            <h1 className="text-2xl font-bold">サブスクリプション管理</h1>
+            <p className="text-gray-600 mt-1">ユーザーのサブスクリプション状態を管理</p>
+          </div>
         </div>
+
+        {/* 🆕 権限バッジ */}
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+            <HiShieldCheck className="h-4 w-4 mr-1" />
+            {adminAccess.isSuperAdmin ? 'スーパー管理者' : '財務管理者'}
+          </div>
+          {!permissions.canEdit && (
+            <div className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+              閲覧のみ
+            </div>
+          )}
+        </div>
+
+        {/* 🆕 権限制限メッセージ */}
+        <ReadOnlyBanner message={permissions.readOnlyMessage} />
+
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">
           <div className="relative w-full sm:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

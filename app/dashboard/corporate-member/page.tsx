@@ -1,4 +1,4 @@
-// app/dashboard/corporate-member/page.tsx
+// app/dashboard/corporate-member/page.tsx (修正版 - エラーハンドリング改善)
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -22,6 +22,7 @@ import {
   HiDeviceMobile,
   HiPlus,
 } from 'react-icons/hi';
+
 // テナント情報の型定義
 interface TenantData {
   id: string;
@@ -30,6 +31,7 @@ interface TenantData {
   primaryColor: string | null;
   secondaryColor: string | null;
 }
+
 // ユーザーデータの型定義
 interface UserWithProfile {
   id: string;
@@ -47,6 +49,7 @@ interface UserWithProfile {
     isPublic: boolean;
   } | null;
 }
+
 export default function CorporateMemberPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
@@ -66,24 +69,75 @@ export default function CorporateMemberPage() {
 
     const loadData = async () => {
       try {
-        // fetchData を直接定義するか、useCallback でメモ化
-        const response = await fetch('/api/corporate-profile');
-        if (!response.ok) {
-          throw new Error('法人プロフィール情報の取得に失敗しました');
+        // 🔧 修正: corporate-profile API呼び出しを改善
+        let profileData = null;
+        try {
+          const response = await fetch('/api/corporate-profile');
+          if (response.ok) {
+            const profileResponse = await response.json();
+            if (profileResponse.success) {
+              profileData = profileResponse.data;
+            }
+          }
+        } catch (profileError) {
+          console.error('プロフィール取得エラー:', profileError);
+          // プロフィール取得に失敗してもリンク取得は試行
         }
-        const profileData = await response.json();
 
-        const linksResponse = await fetch('/api/links');
-        if (!linksResponse.ok) {
-          throw new Error('リンク情報の取得に失敗しました');
+        // 🔧 修正: links API呼び出しを改善
+        let linksData = { snsLinks: [], customLinks: [] };
+        try {
+          const linksResponse = await fetch('/api/links');
+          if (linksResponse.ok) {
+            const linksResult = await linksResponse.json();
+            if (linksResult.success) {
+              linksData = linksResult;
+            }
+          }
+        } catch (linksError) {
+          console.error('リンク取得エラー:', linksError);
+          // リンク取得に失敗してもデフォルト値で続行
         }
-        const linksData = await linksResponse.json();
 
-        setUserData(profileData.user);
-        setTenantData(profileData.tenant);
+        // 🔧 修正: データが部分的に取得できた場合も表示
+        if (profileData) {
+          setUserData(profileData.user);
+          setTenantData(profileData.tenant);
+        } else {
+          // プロフィールデータが取得できない場合のフォールバック
+          setUserData({
+            id: session.user.id,
+            name: session.user.name,
+            image: session.user.image,
+          });
+          setTenantData({
+            id: 'fallback',
+            name: '法人テナント',
+            logoUrl: null,
+            primaryColor: '#1E3A8A',
+            secondaryColor: '#3B82F6',
+          });
+        }
+
         setSnsCount(linksData.snsLinks?.length || 0);
-      } catch {
-        setError('データの取得に失敗しました');
+      } catch (error) {
+        console.error('データ取得エラー:', error);
+
+        // 🔧 修正: 完全に失敗した場合でもセッション情報は表示
+        setUserData({
+          id: session.user.id || '',
+          name: session.user.name,
+          image: session.user.image,
+        });
+        setTenantData({
+          id: 'fallback',
+          name: '法人テナント',
+          logoUrl: null,
+          primaryColor: '#1E3A8A',
+          secondaryColor: '#3B82F6',
+        });
+
+        setError('一部のデータの取得に失敗しました');
       } finally {
         setIsLoading(false);
       }
@@ -91,6 +145,7 @@ export default function CorporateMemberPage() {
 
     loadData();
   }, [session, status, router]);
+
   // アニメーション設定
   const pageVariants = {
     hidden: { opacity: 0, y: 20 },
@@ -103,6 +158,7 @@ export default function CorporateMemberPage() {
       },
     },
   };
+
   const cardVariants = {
     hidden: { opacity: 0, y: 20 },
     visible: {
@@ -110,6 +166,7 @@ export default function CorporateMemberPage() {
       y: 0,
     },
   };
+
   // ローディング表示
   if (isLoading) {
     return (
@@ -130,8 +187,9 @@ export default function CorporateMemberPage() {
       </div>
     );
   }
-  // エラー表示
-  if (error || !userData || !tenantData) {
+
+  // 🔧 修正: エラー表示を改善（部分的エラーでも表示継続）
+  if (!userData || !tenantData) {
     return (
       <div className="space-y-6">
         <div className="flex items-center">
@@ -143,7 +201,7 @@ export default function CorporateMemberPage() {
         </div>
         <div className="rounded-lg border border-destructive bg-destructive/10 p-6">
           <p className="text-destructive">
-            エラーが発生しました: {error || 'データを取得できませんでした'}
+            データを取得できませんでした。しばらくしてから再度お試しください。
           </p>
           <Button variant="corporate" onClick={() => window.location.reload()} className="mt-4">
             ページを再読み込み
@@ -152,14 +210,13 @@ export default function CorporateMemberPage() {
       </div>
     );
   }
+
   // プロフィールURLの取得
   const profileUrl = userData.profile ? `/${userData.profile.slug}` : null;
-  // 法人テーマカラーを適用するためのスタイル
-  // const primaryColor = tenantData.primaryColor || 'var(--color-corporate-primary)';
-  // secondaryColorは必要な場合にだけコメントを外して使用
-  // const secondaryColor = tenantData.secondaryColor || 'var(--color-corporate-secondary)';
+
   // 管理者権限の確認
   const isAdmin = userData.corporateRole === 'admin' || corporateAccessState.isAdmin;
+
   return (
     <motion.div
       initial="hidden"
@@ -174,6 +231,14 @@ export default function CorporateMemberPage() {
           <p className="text-muted-foreground">法人ブランディングを適用したプロフィール管理</p>
         </div>
       </div>
+
+      {/* 🔧 追加: エラー表示バナー（部分的エラーの場合） */}
+      {error && (
+        <div className="rounded-lg border border-yellow-400 bg-yellow-50 p-4 mb-6">
+          <p className="text-yellow-800 text-sm">⚠️ {error}（表示可能な情報のみ表示しています）</p>
+        </div>
+      )}
+
       {/* 法人テナント情報カード */}
       <motion.div
         variants={cardVariants}
@@ -192,9 +257,9 @@ export default function CorporateMemberPage() {
                 <Image
                   src={tenantData.logoUrl}
                   alt={tenantData.name}
-                  width={40} // サイズを縮小
-                  height={40} // サイズを縮小
-                  className="object-contain w-10 h-10" // 明示的にサイズを制限
+                  width={40}
+                  height={40}
+                  className="object-contain w-10 h-10"
                   style={{
                     maxWidth: '100%',
                     maxHeight: '100%',
@@ -204,7 +269,7 @@ export default function CorporateMemberPage() {
             ) : (
               <div
                 className="w-16 h-16 rounded-full text-white flex items-center justify-center"
-                style={{ backgroundColor: 'var(--color-corporate-primary)' }}
+                style={{ backgroundColor: tenantData.primaryColor || '#1E3A8A' }}
               >
                 <HiOfficeBuilding className="h-8 w-8" />
               </div>
@@ -232,7 +297,7 @@ export default function CorporateMemberPage() {
                     isAdmin ? 'bg-blue-100' : 'bg-gray-100'
                   }`}
                   style={{
-                    color: isAdmin ? '#1e3a8a' : '#4b5563', // 固定の青色と灰色を使用
+                    color: isAdmin ? '#1e3a8a' : '#4b5563',
                   }}
                 >
                   {isAdmin ? '管理者' : 'メンバー'}
@@ -241,15 +306,18 @@ export default function CorporateMemberPage() {
             </div>
           </div>
           {isAdmin && (
-            <Link href="/dashboard/corporate">
-              <Button variant="corporateOutline" className="w-full">
-                <HiUserGroup className="mr-2 h-4 w-4" />
-                法人管理ダッシュボードへ
-              </Button>
-            </Link>
+            <Button
+              variant="corporateOutline"
+              className="w-full"
+              onClick={() => router.push('/dashboard/corporate')}
+            >
+              <HiUserGroup className="mr-2 h-4 w-4" />
+              法人管理ダッシュボードへ
+            </Button>
           )}
         </div>
       </motion.div>
+
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {/* プロフィールカード */}
         <motion.div
@@ -298,15 +366,15 @@ export default function CorporateMemberPage() {
                 {userData.nameEn && <p className="text-sm text-gray-500">{userData.nameEn}</p>}
               </div>
             </div>
-            <Link href="/dashboard/corporate-member/profile">
-              <Link href="/dashboard/corporate-member/profile">
-                <Button variant="corporate">
-                  <HiUser className="mr-2 h-4 w-4" />編 集
-                </Button>
-              </Link>
-            </Link>
+            <Button
+              variant="corporate"
+              onClick={() => router.push('/dashboard/corporate-member/profile')}
+            >
+              <HiUser className="mr-2 h-4 w-4" />編 集
+            </Button>
           </div>
         </motion.div>
+
         {/* SNSリンクカード */}
         <motion.div
           variants={cardVariants}
@@ -323,23 +391,23 @@ export default function CorporateMemberPage() {
               <div
                 className="h-10 w-10 rounded-full flex items-center justify-center"
                 style={{
-                  backgroundColor: 'var(--color-corporate-primary)20',
-                  color: 'var(--color-corporate-primary)',
+                  backgroundColor: `${tenantData.primaryColor || '#1E3A8A'}20`,
+                  color: tenantData.primaryColor || '#1E3A8A',
                 }}
               >
                 <span className="font-medium">{snsCount}</span>
               </div>
               <span className="ml-3 text-gray-600">/ 12 SNS設定済み</span>
             </div>
-            <Link href="/dashboard/corporate-member/links">
-              <Link href="/dashboard/corporate-member/links">
-                <Button variant="corporate">
-                  <HiLink className="mr-2 h-4 w-4" />管 理
-                </Button>
-              </Link>
-            </Link>
+            <Button
+              variant="corporate"
+              onClick={() => router.push('/dashboard/corporate-member/links')}
+            >
+              <HiLink className="mr-2 h-4 w-4" />管 理
+            </Button>
           </div>
         </motion.div>
+
         {/* 公開プロフィールカード */}
         <motion.div
           variants={cardVariants}
@@ -361,64 +429,39 @@ export default function CorporateMemberPage() {
                     : '' + profileUrl}
                 </div>
                 <div className="flex flex-wrap gap-3">
-                  <Link href={profileUrl} target="_blank">
-                    <Button variant="corporate" className="w-full">
-                      <svg
-                        className="mr-2 h-4 w-4"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
-                        />
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth="2"
-                          d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
-                        />
-                      </svg>
-                      表 示
-                    </Button>
-                  </Link>
-                  <Link href="/dashboard/corporate-member/share">
-                    <Button variant="corporateOutline">
-                      <HiShare className="mr-2 h-4 w-4" />
-                      共有設定
-                    </Button>
-                  </Link>
+                  <Button
+                    variant="corporate"
+                    className="w-full"
+                    onClick={() => window.open(profileUrl, '_blank')}
+                  >
+                    <HiEye className="mr-2 h-4 w-4" />表 示
+                  </Button>
+                  <Button
+                    variant="corporateOutline"
+                    onClick={() => router.push('/dashboard/corporate-member/share')}
+                  >
+                    <HiShare className="mr-2 h-4 w-4" />
+                    共有設定
+                  </Button>
                 </div>
               </>
             ) : (
               <>
                 <p className="text-gray-600 mb-4">プロフィールがまだ作成されていません</p>
-                <Link href="/dashboard/corporate-member/profile">
-                  <Button variant="corporate" className="w-full">
-                    <svg
-                      className="mr-2 h-4 w-4"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                      stroke="currentColor"
-                    >
-                      <path
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth="2"
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                      />
-                    </svg>
-                    プロフィール作成
-                  </Button>
-                </Link>
+                <Button
+                  variant="corporate"
+                  className="w-full"
+                  onClick={() => router.push('/dashboard/corporate-member/profile')}
+                >
+                  <HiPlus className="mr-2 h-4 w-4" />
+                  プロフィール作成
+                </Button>
               </>
             )}
           </div>
         </motion.div>
       </div>
+
       {/* 公開QRコードカード */}
       <motion.div
         variants={cardVariants}
@@ -436,7 +479,6 @@ export default function CorporateMemberPage() {
             <>
               <div className="flex justify-center mb-4">
                 <div className="bg-white p-3 rounded-lg shadow-sm">
-                  {/* QRコードを表示 - シンプルな画像として表示 */}
                   <div className="w-32 h-32 relative">
                     <Image
                       src={`/api/qr-image?url=${encodeURIComponent(`${typeof window !== 'undefined' ? window.location.origin : ''}/qr/${userData.profile?.slug}`)}`}
@@ -449,17 +491,21 @@ export default function CorporateMemberPage() {
                 </div>
               </div>
               <div className="flex flex-col space-y-2">
-                <Link href={`/qr/${userData.profile?.slug}`} target="_blank">
-                  <Button variant="corporate" className="w-full">
-                    <HiEye className="mr-2 h-4 w-4" />表 示
-                  </Button>
-                </Link>
-                <Link href="/qrcode">
-                  <Button variant="corporateOutline" className="w-full">
-                    <HiColorSwatch className="mr-2 h-4 w-4" />
-                    デザイン変更
-                  </Button>
-                </Link>
+                <Button
+                  variant="corporate"
+                  className="w-full"
+                  onClick={() => window.open(`/qr/${userData.profile?.slug}`, '_blank')}
+                >
+                  <HiEye className="mr-2 h-4 w-4" />表 示
+                </Button>
+                <Button
+                  variant="corporateOutline"
+                  className="w-full"
+                  onClick={() => router.push('/qrcode')}
+                >
+                  <HiColorSwatch className="mr-2 h-4 w-4" />
+                  デザイン変更
+                </Button>
                 <Button
                   variant="corporateOutline"
                   onClick={() => {
@@ -479,17 +525,20 @@ export default function CorporateMemberPage() {
                 <p className="text-gray-600 mt-2 mb-4">QRコードが作成されていません</p>
               </div>
               <div className="flex flex-col">
-                <Link href="/qrcode">
-                  <Button variant="corporate" className="w-full">
-                    <HiPlus className="mr-2 h-4 w-4" />
-                    QRコードを作成
-                  </Button>
-                </Link>
+                <Button
+                  variant="corporate"
+                  className="w-full"
+                  onClick={() => router.push('/qrcode')}
+                >
+                  <HiPlus className="mr-2 h-4 w-4" />
+                  QRコードを作成
+                </Button>
               </div>
             </>
           )}
         </div>
       </motion.div>
+
       {/* クイックアクションカード */}
       <motion.div
         variants={cardVariants}
@@ -503,24 +552,30 @@ export default function CorporateMemberPage() {
         </div>
         <div className="p-6">
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
-            <Link href="/dashboard/corporate-member/design">
-              <Button variant="corporate" className="w-full">
-                <HiColorSwatch className="mr-2 h-4 w-4" />
-                デザインをカスタマイズする
-              </Button>
-            </Link>
-            <Link href="/dashboard/corporate-member/links">
-              <Button variant="corporateOutline" className="w-full">
-                <HiLink className="mr-2 h-4 w-4" />
-                SNSを追加する
-              </Button>
-            </Link>
-            <Link href="/dashboard/corporate-member/share">
-              <Button variant="corporateOutline" className="w-full sm:col-span-2 lg:col-span-1">
-                <HiQrcode className="mr-2 h-4 w-4" />
-                QRコードを生成する
-              </Button>
-            </Link>
+            <Button
+              variant="corporate"
+              className="w-full"
+              onClick={() => router.push('/dashboard/corporate-member/design')}
+            >
+              <HiColorSwatch className="mr-2 h-4 w-4" />
+              デザインをカスタマイズする
+            </Button>
+            <Button
+              variant="corporateOutline"
+              className="w-full"
+              onClick={() => router.push('/dashboard/corporate-member/links')}
+            >
+              <HiLink className="mr-2 h-4 w-4" />
+              SNSを追加する
+            </Button>
+            <Button
+              variant="corporateOutline"
+              className="w-full sm:col-span-2 lg:col-span-1"
+              onClick={() => router.push('/dashboard/corporate-member/share')}
+            >
+              <HiQrcode className="mr-2 h-4 w-4" />
+              QRコードを生成する
+            </Button>
           </div>
         </div>
       </motion.div>

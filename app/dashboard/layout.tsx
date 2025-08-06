@@ -23,8 +23,16 @@ import {
   HiKey,
   HiBell,
   HiOutlineMail,
+  HiEye,
+  HiDownload,
+  HiExclamationCircle,
+  HiUserGroup,
+  HiCurrencyDollar, // 🆕 追加
+  HiDocumentText, // 🆕 追加
+  HiLightningBolt, // 🆕 追加
 } from 'react-icons/hi';
 
+// 拡張版アイコンマッピング
 const iconMap: Record<string, React.ReactNode> = {
   HiHome: <HiHome className="h-5 w-5" />,
   HiUser: <HiUser className="h-5 w-5" />,
@@ -40,6 +48,15 @@ const iconMap: Record<string, React.ReactNode> = {
   HiKey: <HiKey className="h-5 w-5" />,
   HiBell: <HiBell className="h-5 w-5" />,
   HiOutlineMail: <HiOutlineMail className="h-5 w-5" />,
+  HiEye: <HiEye className="h-5 w-5" />,
+  HiDownload: <HiDownload className="h-5 w-5" />,
+  HiExclamationCircle: <HiExclamationCircle className="h-5 w-5" />,
+  HiUserGroup: <HiUserGroup className="h-5 w-5" />,
+
+  // 🆕 財務管理関連アイコン追加
+  HiCurrencyDollar: <HiCurrencyDollar className="h-5 w-5" />,
+  HiDocumentText: <HiDocumentText className="h-5 w-5" />,
+  HiLightningBolt: <HiLightningBolt className="h-5 w-5" />,
 };
 
 interface DashboardLayoutWrapperProps {
@@ -109,7 +126,8 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
     // 1. 管理者ページのチェック
     if (pathname.startsWith('/dashboard/admin')) {
-      if (!permissions.isSuperAdmin) {
+      if (!permissions.isSuperAdmin && !permissions.isFinancialAdmin) {
+        // 🔧 修正
         return {
           hasAccess: false,
           redirectTo: permissions.hasCorpAccess
@@ -117,7 +135,7 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
               ? '/dashboard/corporate'
               : '/dashboard/corporate-member'
             : '/dashboard',
-          reason: 'admin権限なし',
+          reason: '管理者権限なし',
         };
       }
       return { hasAccess: true };

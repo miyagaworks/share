@@ -13,12 +13,22 @@ import {
   HiOutlineSearch,
   HiOutlineUser,
 } from 'react-icons/hi';
+import { getPagePermissions, ReadOnlyBanner } from '@/lib/utils/admin-permissions';
+
+// AdminAccess型定義
+interface AdminAccess {
+  isSuperAdmin: boolean;
+  isFinancialAdmin: boolean;
+  adminLevel: 'super' | 'financial' | 'none';
+}
+
 // ユーザー検索モーダル用の型
 interface User {
   id: string;
   name: string | null;
   email: string;
 }
+
 // メール履歴の型定義
 interface EmailHistory {
   id: string;
@@ -32,11 +42,12 @@ interface EmailHistory {
     email: string;
   };
 }
+
 export default function AdminEmailPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
+  const [adminAccess, setAdminAccess] = useState<AdminAccess | null>(null);
   const [sending, setSending] = useState(false);
   const [showHistory, setShowHistory] = useState(false);
   const [emailHistory, setEmailHistory] = useState<EmailHistory[]>([]);
@@ -44,12 +55,14 @@ export default function AdminEmailPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedHistoryIds, setSelectedHistoryIds] = useState<string[]>([]);
   const [bulkDeleting, setBulkDeleting] = useState(false);
+
   // ユーザー検索関連の状態
   const [showUserSearchModal, setShowUserSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<User[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
+
   const [formData, setFormData] = useState({
     subject: '',
     title: '',
@@ -59,6 +72,7 @@ export default function AdminEmailPage() {
     ctaUrl: '',
     userId: '', // 個別ユーザーID
   });
+
   // ターゲットグループオプション
   const targetGroups = [
     { value: 'all', label: '全ユーザー' },
@@ -73,20 +87,28 @@ export default function AdminEmailPage() {
     { value: 'corporate_yearly', label: '法人プラン（年更新）' },
     { value: 'inactive', label: '非アクティブユーザー' },
     { value: 'expired', label: '利用期限切れユーザー' },
-    { value: 'single_user', label: '特定のユーザー' }, // 追加: 特定ユーザーオプション
+    { value: 'single_user', label: '特定のユーザー' },
   ];
-  // 管理者チェック
+
+  // 🔧 修正: 財務管理者も許可する権限チェック
   useEffect(() => {
     const checkAdminAccess = async () => {
       if (!session?.user?.id) {
         router.push('/auth/signin');
         return;
       }
+
       try {
         const response = await fetch('/api/admin/access');
         const data = await response.json();
-        if (data.isSuperAdmin) {
-          setIsAdmin(true);
+
+        // スーパー管理者または財務管理者の場合アクセス許可
+        if (data.adminLevel !== 'none') {
+          setAdminAccess({
+            isSuperAdmin: data.isSuperAdmin,
+            isFinancialAdmin: data.isFinancialAdmin,
+            adminLevel: data.adminLevel,
+          });
         } else {
           router.push('/dashboard');
         }
@@ -96,8 +118,15 @@ export default function AdminEmailPage() {
         setLoading(false);
       }
     };
+
     checkAdminAccess();
   }, [session, router]);
+
+  // 🆕 権限設定の取得
+  const permissions = adminAccess
+    ? getPagePermissions(adminAccess.isSuperAdmin ? 'admin' : 'financial-admin', 'email')
+    : { canView: false, canEdit: false, canDelete: false, canCreate: false };
+
   // 入力フォームの変更ハンドラ
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
@@ -110,7 +139,8 @@ export default function AdminEmailPage() {
       setFormData((prev) => ({ ...prev, userId: '' }));
     }
   };
-  // 追加: ユーザー検索の実行
+
+  // ユーザー検索の実行
   const searchUsers = useCallback(async () => {
     if (!searchQuery.trim()) return;
     setSearchLoading(true);
@@ -130,12 +160,14 @@ export default function AdminEmailPage() {
       setSearchLoading(false);
     }
   }, [searchQuery]);
-  // 追加: ユーザー選択ハンドラ
+
+  // ユーザー選択ハンドラ
   const handleSelectUser = (user: User) => {
     setSelectedUser(user);
     setFormData((prev) => ({ ...prev, userId: user.id }));
     setShowUserSearchModal(false);
   };
+
   // 送信履歴の取得
   const fetchEmailHistory = async () => {
     setHistoryLoading(true);
@@ -153,16 +185,26 @@ export default function AdminEmailPage() {
       setHistoryLoading(false);
     }
   };
+
   // メール送信ハンドラ
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    // 権限チェック
+    if (!permissions.canCreate) {
+      toast.error('メール送信にはスーパー管理者権限が必要です');
+      return;
+    }
+
     // すでに送信中なら処理をスキップ
     if (sending) return;
+
     // 特定ユーザー選択時にユーザーIDがない場合はエラー
     if (formData.targetGroup === 'single_user' && !formData.userId) {
       toast.error('ユーザーを選択してください');
       return;
     }
+
     setSending(true);
     try {
       // 冪等性キーを生成
@@ -175,6 +217,7 @@ export default function AdminEmailPage() {
         },
         body: JSON.stringify(formData),
       });
+
       const data = await response.json();
       if (response.ok) {
         // 成功の場合
@@ -210,11 +253,18 @@ export default function AdminEmailPage() {
       setSending(false);
     }
   };
+
   // 単一の履歴を削除するハンドラ
   const handleDeleteHistory = async (id: string) => {
+    if (!permissions.canDelete) {
+      toast.error('履歴削除にはスーパー管理者権限が必要です');
+      return;
+    }
+
     if (!confirm('この送信履歴を削除しますか？')) {
       return;
     }
+
     setDeletingId(id);
     try {
       const response = await fetch(`/api/admin/email/history/${id}`, {
@@ -234,21 +284,30 @@ export default function AdminEmailPage() {
       setDeletingId(null);
     }
   };
+
   // 履歴の選択状態を切り替えるハンドラ
   const handleToggleSelectHistory = (id: string) => {
     setSelectedHistoryIds((prev) =>
       prev.includes(id) ? prev.filter((item) => item !== id) : [...prev, id],
     );
   };
+
   // 選択した履歴を一括削除するハンドラ
   const handleBulkDelete = async () => {
+    if (!permissions.canDelete) {
+      toast.error('履歴削除にはスーパー管理者権限が必要です');
+      return;
+    }
+
     if (selectedHistoryIds.length === 0) {
       toast.error('削除する履歴を選択してください');
       return;
     }
+
     if (!confirm(`選択した${selectedHistoryIds.length}件の送信履歴を削除しますか？`)) {
       return;
     }
+
     setBulkDeleting(true);
     try {
       const response = await fetch('/api/admin/email/history', {
@@ -275,11 +334,13 @@ export default function AdminEmailPage() {
       setBulkDeleting(false);
     }
   };
+
   // ターゲットグループの表示名を取得
   const getTargetGroupLabel = (value: string) => {
     const group = targetGroups.find((g) => g.value === value);
     return group ? group.label : value;
   };
+
   // 日付フォーマット
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
@@ -291,6 +352,7 @@ export default function AdminEmailPage() {
       minute: '2-digit',
     });
   };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -301,17 +363,28 @@ export default function AdminEmailPage() {
       </div>
     );
   }
-  if (!isAdmin) {
+
+  if (!adminAccess) {
     return null; // リダイレクト処理中は表示なし
   }
+
   return (
     <div className="max-w-[90vw] mx-auto px-4">
+      {/* 🆕 権限バナー表示 */}
+      <ReadOnlyBanner message={permissions.readOnlyMessage} />
+
       {/* メール送信フォーム */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 sm:p-8 mb-8">
         <div className="flex items-center justify-between mb-8">
           <div className="flex items-center">
             <HiOutlineMail className="h-6 w-6 text-blue-600 mr-4" />
-            <h1 className="text-2xl font-bold">メール配信</h1>
+            <div>
+              <h1 className="text-2xl font-bold">メール配信</h1>
+              {/* 🆕 権限バッジ表示 */}
+              <div className="mt-2 bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium inline-block">
+                {adminAccess.isSuperAdmin ? 'スーパー管理者' : '財務管理者'}
+              </div>
+            </div>
           </div>
           <button
             type="button"
@@ -327,6 +400,7 @@ export default function AdminEmailPage() {
             {showHistory ? '履歴を非表示' : '送信履歴を表示'}
           </button>
         </div>
+
         <div className="bg-yellow-50 border-l-4 border-yellow-400 p-5 mb-8">
           <div className="flex">
             <div className="flex-shrink-0">
@@ -339,13 +413,14 @@ export default function AdminEmailPage() {
             </div>
           </div>
         </div>
+
         {/* 送信履歴セクション */}
         {showHistory && (
           <div className="mb-8">
             <div className="flex justify-between items-center mb-4">
               <h2 className="text-xl font-semibold">送信履歴</h2>
-              {/* 一括削除ボタン */}
-              {selectedHistoryIds.length > 0 && (
+              {/* 🆕 権限に応じて一括削除ボタンを制御 */}
+              {selectedHistoryIds.length > 0 && permissions.canDelete && (
                 <button
                   onClick={handleBulkDelete}
                   disabled={bulkDeleting}
@@ -360,6 +435,7 @@ export default function AdminEmailPage() {
                 </button>
               )}
             </div>
+
             {historyLoading ? (
               <div className="flex justify-center items-center py-8">
                 <Spinner size="md" />
@@ -374,23 +450,26 @@ export default function AdminEmailPage() {
                 <table className="min-w-full divide-y divide-gray-200">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th scope="col" className="px-4 py-3 w-10">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                          checked={
-                            selectedHistoryIds.length === emailHistory.length &&
-                            emailHistory.length > 0
-                          }
-                          onChange={() => {
-                            if (selectedHistoryIds.length === emailHistory.length) {
-                              setSelectedHistoryIds([]);
-                            } else {
-                              setSelectedHistoryIds(emailHistory.map((h) => h.id));
+                      {/* 🆕 権限に応じてチェックボックス列を制御 */}
+                      {permissions.canDelete && (
+                        <th scope="col" className="px-4 py-3 w-10">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                            checked={
+                              selectedHistoryIds.length === emailHistory.length &&
+                              emailHistory.length > 0
                             }
-                          }}
-                        />
-                      </th>
+                            onChange={() => {
+                              if (selectedHistoryIds.length === emailHistory.length) {
+                                setSelectedHistoryIds([]);
+                              } else {
+                                setSelectedHistoryIds(emailHistory.map((h) => h.id));
+                              }
+                            }}
+                          />
+                        </th>
+                      )}
                       <th
                         scope="col"
                         className="px-6 py-3 text-left text-base font-medium text-gray-500"
@@ -415,25 +494,31 @@ export default function AdminEmailPage() {
                       >
                         送信日時
                       </th>
-                      <th
-                        scope="col"
-                        className="px-6 py-3 w-16 text-right text-base font-medium text-gray-500"
-                      >
-                        操作
-                      </th>
+                      {/* 🆕 権限に応じて操作列を制御 */}
+                      {permissions.canDelete && (
+                        <th
+                          scope="col"
+                          className="px-6 py-3 w-16 text-right text-base font-medium text-gray-500"
+                        >
+                          操作
+                        </th>
+                      )}
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-gray-200">
                     {emailHistory.map((history) => (
                       <tr key={history.id} className="hover:bg-gray-50">
-                        <td className="px-4 py-4 whitespace-nowrap">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
-                            checked={selectedHistoryIds.includes(history.id)}
-                            onChange={() => handleToggleSelectHistory(history.id)}
-                          />
-                        </td>
+                        {/* 🆕 権限に応じてチェックボックス列を制御 */}
+                        {permissions.canDelete && (
+                          <td className="px-4 py-4 whitespace-nowrap">
+                            <input
+                              type="checkbox"
+                              className="h-4 w-4 text-blue-600 border-gray-300 rounded focus:ring-blue-500"
+                              checked={selectedHistoryIds.includes(history.id)}
+                              onChange={() => handleToggleSelectHistory(history.id)}
+                            />
+                          </td>
+                        )}
                         <td className="px-6 py-4 whitespace-nowrap text-base text-gray-900">
                           {history.subject}
                         </td>
@@ -449,19 +534,22 @@ export default function AdminEmailPage() {
                         <td className="px-6 py-4 whitespace-nowrap text-base text-gray-900">
                           {formatDate(history.sentAt)}
                         </td>
-                        <td className="px-6 py-4 whitespace-nowrap text-base text-gray-900 text-right">
-                          <button
-                            onClick={() => handleDeleteHistory(history.id)}
-                            className="text-red-600 hover:text-red-900 p-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
-                            disabled={deletingId === history.id}
-                          >
-                            {deletingId === history.id ? (
-                              <Spinner size="sm" />
-                            ) : (
-                              <HiOutlineTrash className="h-5 w-5" />
-                            )}
-                          </button>
-                        </td>
+                        {/* 🆕 権限に応じて削除ボタンを制御 */}
+                        {permissions.canDelete && (
+                          <td className="px-6 py-4 whitespace-nowrap text-base text-gray-900 text-right">
+                            <button
+                              onClick={() => handleDeleteHistory(history.id)}
+                              className="text-red-600 hover:text-red-900 p-2 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500 disabled:opacity-50"
+                              disabled={deletingId === history.id}
+                            >
+                              {deletingId === history.id ? (
+                                <Spinner size="sm" />
+                              ) : (
+                                <HiOutlineTrash className="h-5 w-5" />
+                              )}
+                            </button>
+                          </td>
+                        )}
                       </tr>
                     ))}
                   </tbody>
@@ -470,168 +558,196 @@ export default function AdminEmailPage() {
             )}
           </div>
         )}
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div>
-            <label htmlFor="targetGroup" className="block text-base font-medium text-gray-700 mb-2">
-              送信対象
-            </label>
-            <select
-              id="targetGroup"
-              name="targetGroup"
-              value={formData.targetGroup}
-              onChange={handleChange}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
-              required
-            >
-              {targetGroups.map((group) => (
-                <option key={group.value} value={group.value}>
-                  {group.label}
-                </option>
-              ))}
-            </select>
-          </div>
-          {/* 特定ユーザー選択フィールド */}
-          {formData.targetGroup === 'single_user' && (
+
+        {/* 🆕 権限に応じてメール送信フォームを表示 */}
+        {permissions.canCreate ? (
+          <form onSubmit={handleSubmit} className="space-y-8">
             <div>
-              <label className="block text-base font-medium text-gray-700 mb-2">
-                ユーザーを選択
+              <label
+                htmlFor="targetGroup"
+                className="block text-base font-medium text-gray-700 mb-2"
+              >
+                送信対象
               </label>
-              <div className="flex items-center">
-                <div
-                  className={`flex-1 p-3 border ${selectedUser ? 'border-green-300 bg-green-50' : 'border-gray-300'} rounded-md`}
-                >
-                  {selectedUser ? (
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <div className="font-medium">{selectedUser.name || '名前なし'}</div>
-                        <div className="text-sm text-gray-500">{selectedUser.email}</div>
+              <select
+                id="targetGroup"
+                name="targetGroup"
+                value={formData.targetGroup}
+                onChange={handleChange}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
+                required
+              >
+                {targetGroups.map((group) => (
+                  <option key={group.value} value={group.value}>
+                    {group.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {/* 特定ユーザー選択フィールド */}
+            {formData.targetGroup === 'single_user' && (
+              <div>
+                <label className="block text-base font-medium text-gray-700 mb-2">
+                  ユーザーを選択
+                </label>
+                <div className="flex items-center">
+                  <div
+                    className={`flex-1 p-3 border ${selectedUser ? 'border-green-300 bg-green-50' : 'border-gray-300'} rounded-md`}
+                  >
+                    {selectedUser ? (
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="font-medium">{selectedUser.name || '名前なし'}</div>
+                          <div className="text-sm text-gray-500">{selectedUser.email}</div>
+                        </div>
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setSelectedUser(null);
+                            setFormData((prev) => ({ ...prev, userId: '' }));
+                          }}
+                          className="text-red-500 hover:text-red-700 p-1"
+                        >
+                          <HiOutlineTrash className="h-5 w-5" />
+                        </button>
                       </div>
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setSelectedUser(null);
-                          setFormData((prev) => ({ ...prev, userId: '' }));
-                        }}
-                        className="text-red-500 hover:text-red-700 p-1"
-                      >
-                        <HiOutlineTrash className="h-5 w-5" />
-                      </button>
-                    </div>
-                  ) : (
-                    <div className="text-gray-500">ユーザーが選択されていません</div>
-                  )}
+                    ) : (
+                      <div className="text-gray-500">ユーザーが選択されていません</div>
+                    )}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setShowUserSearchModal(true)}
+                    className="ml-3 inline-flex items-center px-4 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+                  >
+                    <HiOutlineSearch className="mr-2 h-5 w-5" />
+                    ユーザー検索
+                  </button>
                 </div>
-                <button
-                  type="button"
-                  onClick={() => setShowUserSearchModal(true)}
-                  className="ml-3 inline-flex items-center px-4 py-3 border border-gray-300 shadow-sm text-base font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
-                >
-                  <HiOutlineSearch className="mr-2 h-5 w-5" />
-                  ユーザー検索
-                </button>
+              </div>
+            )}
+
+            <div>
+              <label htmlFor="subject" className="block text-base font-medium text-gray-700 mb-2">
+                件名
+              </label>
+              <input
+                type="text"
+                id="subject"
+                name="subject"
+                value={formData.subject}
+                onChange={handleChange}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
+                placeholder="メールの件名"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="title" className="block text-base font-medium text-gray-700 mb-2">
+                タイトル
+              </label>
+              <input
+                type="text"
+                id="title"
+                name="title"
+                value={formData.title}
+                onChange={handleChange}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
+                placeholder="メール本文内のタイトル"
+                required
+              />
+            </div>
+
+            <div>
+              <label htmlFor="message" className="block text-base font-medium text-gray-700 mb-2">
+                本文
+              </label>
+              <textarea
+                id="message"
+                name="message"
+                value={formData.message}
+                onChange={handleChange}
+                rows={8}
+                className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
+                placeholder="メールの本文"
+                required
+              />
+            </div>
+
+            <div className="border-t border-gray-200 pt-6">
+              <h3 className="text-lg font-medium text-gray-700 mb-4">
+                Call To Action（オプション）
+              </h3>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <label
+                    htmlFor="ctaText"
+                    className="block text-base font-medium text-gray-700 mb-2"
+                  >
+                    CTAボタンテキスト
+                  </label>
+                  <input
+                    type="text"
+                    id="ctaText"
+                    name="ctaText"
+                    value={formData.ctaText}
+                    onChange={handleChange}
+                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
+                    placeholder="今すぐ確認する"
+                  />
+                </div>
+                <div>
+                  <label
+                    htmlFor="ctaUrl"
+                    className="block text-base font-medium text-gray-700 mb-2"
+                  >
+                    CTAリンクURL
+                  </label>
+                  <input
+                    type="url"
+                    id="ctaUrl"
+                    name="ctaUrl"
+                    value={formData.ctaUrl}
+                    onChange={handleChange}
+                    className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
+                    placeholder="https://app.sns-share.com/dashboard"
+                  />
+                </div>
               </div>
             </div>
-          )}
-          <div>
-            <label htmlFor="subject" className="block text-base font-medium text-gray-700 mb-2">
-              件名
-            </label>
-            <input
-              type="text"
-              id="subject"
-              name="subject"
-              value={formData.subject}
-              onChange={handleChange}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
-              placeholder="メールの件名"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="title" className="block text-base font-medium text-gray-700 mb-2">
-              タイトル
-            </label>
-            <input
-              type="text"
-              id="title"
-              name="title"
-              value={formData.title}
-              onChange={handleChange}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
-              placeholder="メール本文内のタイトル"
-              required
-            />
-          </div>
-          <div>
-            <label htmlFor="message" className="block text-base font-medium text-gray-700 mb-2">
-              本文
-            </label>
-            <textarea
-              id="message"
-              name="message"
-              value={formData.message}
-              onChange={handleChange}
-              rows={8}
-              className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
-              placeholder="メールの本文"
-              required
-            />
-          </div>
-          <div className="border-t border-gray-200 pt-6">
-            <h3 className="text-lg font-medium text-gray-700 mb-4">Call To Action（オプション）</h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div>
-                <label htmlFor="ctaText" className="block text-base font-medium text-gray-700 mb-2">
-                  CTAボタンテキスト
-                </label>
-                <input
-                  type="text"
-                  id="ctaText"
-                  name="ctaText"
-                  value={formData.ctaText}
-                  onChange={handleChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
-                  placeholder="今すぐ確認する"
-                />
-              </div>
-              <div>
-                <label htmlFor="ctaUrl" className="block text-base font-medium text-gray-700 mb-2">
-                  CTAリンクURL
-                </label>
-                <input
-                  type="url"
-                  id="ctaUrl"
-                  name="ctaUrl"
-                  value={formData.ctaUrl}
-                  onChange={handleChange}
-                  className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
-                  placeholder="https://app.sns-share.com/dashboard"
-                />
-              </div>
+
+            <div className="flex justify-end">
+              <button
+                type="submit"
+                disabled={sending || (formData.targetGroup === 'single_user' && !formData.userId)}
+                className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {sending ? (
+                  <>
+                    <Spinner size="sm" className="mr-3" />
+                    送信中...
+                  </>
+                ) : (
+                  <>
+                    <HiOutlineMail className="mr-3 h-5 w-5" />
+                    メールを送信する
+                  </>
+                )}
+              </button>
             </div>
+          </form>
+        ) : (
+          <div className="text-center py-8">
+            <HiOutlineMail className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">メール送信は閲覧のみです</h3>
+            <p className="text-gray-600">メール送信機能はスーパー管理者権限が必要です</p>
           </div>
-          <div className="flex justify-end">
-            <button
-              type="submit"
-              disabled={sending || (formData.targetGroup === 'single_user' && !formData.userId)}
-              className="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-md shadow-sm text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {sending ? (
-                <>
-                  <Spinner size="sm" className="mr-3" />
-                  送信中...
-                </>
-              ) : (
-                <>
-                  <HiOutlineMail className="mr-3 h-5 w-5" />
-                  メールを送信する
-                </>
-              )}
-            </button>
-          </div>
-        </form>
+        )}
       </div>
-      {/* 追加: ユーザー検索モーダル */}
+
+      {/* ユーザー検索モーダル */}
       {showUserSearchModal && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
           <div className="bg-white rounded-lg p-6 max-w-2xl w-full">

@@ -1,9 +1,12 @@
-// app/dashboard/admin/cancel-requests/page.tsx
+// app/dashboard/admin/cancel-requests/page.tsx - 財務管理者対応版
 'use client';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { Spinner } from '@/components/ui/Spinner';
-import { HiCheck, HiX, HiExclamationCircle, HiEye } from 'react-icons/hi';
+import { getPagePermissions, ReadOnlyBanner } from '@/lib/utils/admin-permissions';
+import { HiCheck, HiX, HiExclamationCircle, HiEye, HiShieldCheck } from 'react-icons/hi';
 
 interface CancelRequest {
   id: string;
@@ -23,12 +26,48 @@ interface CancelRequest {
   adminNotes: string | null;
 }
 
+// 🆕 管理者アクセス権限の型定義
+interface AdminAccess {
+  isSuperAdmin: boolean;
+  isFinancialAdmin: boolean;
+  adminLevel: 'super' | 'financial' | 'none';
+}
+
 export default function AdminCancelRequestsPage() {
+  const { data: session } = useSession();
+  const router = useRouter();
   const [requests, setRequests] = useState<CancelRequest[]>([]);
   const [loading, setLoading] = useState(true);
+  const [adminAccess, setAdminAccess] = useState<AdminAccess | null>(null); // 🔧 修正
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<CancelRequest | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
+
+  // 🔧 修正: 管理者チェック（財務管理者も許可）
+  useEffect(() => {
+    const checkAdminAccess = async () => {
+      if (!session?.user?.id) {
+        router.push('/auth/signin');
+        return;
+      }
+      try {
+        const response = await fetch('/api/admin/access');
+        const data = await response.json();
+
+        if (data.adminLevel !== 'none') {
+          setAdminAccess(data);
+          fetchCancelRequests();
+        } else {
+          router.push('/dashboard');
+        }
+      } catch {
+        router.push('/dashboard');
+      } finally {
+        setLoading(false);
+      }
+    };
+    checkAdminAccess();
+  }, [session, router]);
 
   // 解約申請一覧取得
   const fetchCancelRequests = async () => {
@@ -46,8 +85,19 @@ export default function AdminCancelRequestsPage() {
     }
   };
 
-  // 解約申請処理
+  // 🔧 修正: 解約申請処理（権限チェック追加）
   const handleProcessRequest = async (requestId: string, action: 'approve' | 'reject') => {
+    // 権限チェック
+    const permissions = getPagePermissions(
+      adminAccess?.isSuperAdmin ? 'admin' : 'financial-admin',
+      'cancel-requests',
+    );
+
+    if (!permissions.canEdit) {
+      toast.error('この操作を実行する権限がありません');
+      return;
+    }
+
     if (!window.confirm(`この解約申請を${action === 'approve' ? '承認' : '却下'}しますか？`)) {
       return;
     }
@@ -79,10 +129,6 @@ export default function AdminCancelRequestsPage() {
       setProcessingId(null);
     }
   };
-
-  useEffect(() => {
-    fetchCancelRequests();
-  }, []);
 
   // プラン表示名
   const getPlanDisplayName = (plan: string, interval: string) => {
@@ -139,15 +185,52 @@ export default function AdminCancelRequestsPage() {
     );
   }
 
+  if (!adminAccess) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-center">
+          <HiExclamationCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">アクセス権限がありません</h3>
+          <p className="text-gray-600">管理者権限が必要です</p>
+        </div>
+      </div>
+    );
+  }
+
+  // 🆕 権限取得
+  const permissions = getPagePermissions(
+    adminAccess.isSuperAdmin ? 'admin' : 'financial-admin',
+    'cancel-requests',
+  );
+
   return (
     <div className="max-w-[90vw] mx-auto px-4">
       <div className="bg-gradient-to-r from-red-600 to-pink-700 rounded-lg p-6 mb-6 text-white">
-        <div className="flex items-center">
-          <HiExclamationCircle className="h-8 w-8 mr-3" />
-          <h1 className="text-2xl font-bold">解約申請管理</h1>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center">
+            <HiExclamationCircle className="h-8 w-8 mr-3" />
+            <div>
+              <h1 className="text-2xl font-bold">解約申請管理</h1>
+              <p className="mt-2 opacity-90">ユーザーからの解約申請を確認・処理します</p>
+            </div>
+          </div>
+          {/* 🆕 権限バッジ */}
+          <div className="flex items-center space-x-3">
+            <div className="bg-white/20 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center">
+              <HiShieldCheck className="h-4 w-4 mr-1" />
+              {adminAccess.isSuperAdmin ? 'スーパー管理者' : '財務管理者'}
+            </div>
+            {!permissions.canEdit && (
+              <div className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+                閲覧のみ
+              </div>
+            )}
+          </div>
         </div>
-        <p className="mt-2 opacity-90">ユーザーからの解約申請を確認・処理します</p>
       </div>
+
+      {/* 🆕 権限制限メッセージ */}
+      <ReadOnlyBanner message={permissions.readOnlyMessage} />
 
       {/* 統計情報 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
@@ -246,8 +329,8 @@ export default function AdminCancelRequestsPage() {
                       >
                         <HiEye className="h-4 w-4" />
                       </button>
-                      {request.status === 'pending' && (
-                        <div className="flex space-x-2">
+                      {request.status === 'pending' && permissions.canEdit && (
+                        <div className="inline-flex space-x-2">
                           <button
                             onClick={() => handleProcessRequest(request.id, 'approve')}
                             disabled={processingId === request.id}
@@ -352,8 +435,8 @@ export default function AdminCancelRequestsPage() {
                 </div>
               )}
 
-              {/* 管理者メモ */}
-              {selectedRequest.status === 'pending' && (
+              {/* 管理者メモ（権限に応じて制御） */}
+              {selectedRequest.status === 'pending' && permissions.canEdit && (
                 <div>
                   <h4 className="font-semibold mb-2">管理者メモ</h4>
                   <textarea
@@ -376,8 +459,8 @@ export default function AdminCancelRequestsPage() {
                 </div>
               )}
 
-              {/* アクションボタン */}
-              {selectedRequest.status === 'pending' && (
+              {/* アクションボタン（権限に応じて制御） */}
+              {selectedRequest.status === 'pending' && permissions.canEdit && (
                 <div className="flex space-x-3 pt-4">
                   <button
                     onClick={() => handleProcessRequest(selectedRequest.id, 'approve')}

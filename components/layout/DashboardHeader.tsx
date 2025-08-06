@@ -1,4 +1,4 @@
-// components/layout/DashboardHeader.tsx (プラン別アイコン色対応版)
+// components/layout/DashboardHeader.tsx (プロフィール編集リンク追加版)
 'use client';
 import React, { useState, useRef, useEffect } from 'react';
 import { signOut, useSession } from 'next-auth/react';
@@ -7,25 +7,35 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useDashboardInfo } from '@/hooks/useDashboardInfo';
 import NotificationBell from './NotificationBell';
+
 export function DashboardHeader() {
   const { data: session } = useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const menuRef = useRef<HTMLDivElement>(null);
   const buttonRef = useRef<HTMLButtonElement>(null);
   const router = useRouter();
+
   // 🚀 統合APIからユーザー情報を取得
   const { data: dashboardInfo } = useDashboardInfo();
+
   // 🚀 統合されたプロフィール情報（APIを優先、フォールバックはセッション）
   const profileData = {
     name: dashboardInfo?.user.name || session?.user?.name || 'ユーザー',
     image: dashboardInfo?.user.image || session?.user?.image || null,
   };
+
+  // 🚀 管理者権限判定（厳密な判定）
+  const isAdmin =
+    dashboardInfo?.permissions?.isSuperAdmin === true ||
+    dashboardInfo?.permissions?.isFinancialAdmin === true;
+
   // 🚀 法人プランユーザーかどうかを判定
   const isCorporateUser =
     dashboardInfo?.permissions.userType === 'corporate' ||
     dashboardInfo?.permissions.userType === 'invited-member' ||
     dashboardInfo?.permissions.hasCorpAccess === true ||
     dashboardInfo?.permissions.planType === 'corporate';
+
   // 🚀 プラン別のアイコン色を設定
   const getIconColors = () => {
     if (isCorporateUser) {
@@ -42,7 +52,9 @@ export function DashboardHeader() {
       };
     }
   };
+
   const iconColors = getIconColors();
+
   // クリックイベントハンドラを設定して、メニュー外のクリックを検知
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
@@ -60,19 +72,23 @@ export function DashboardHeader() {
       document.removeEventListener('mousedown', handleClickOutside);
     };
   }, []);
+
   // セッションがない場合はログインページにリダイレクト
   if (!session) {
     return null;
   }
+
   // ログアウト処理
   const handleLogout = async () => {
     await signOut({ callbackUrl: '/' });
   };
+
   // アカウント削除処理
   const handleDeleteAccount = () => {
     setIsMenuOpen(false);
     router.push('/dashboard/account/delete');
   };
+
   return (
     <header className="fixed top-0 left-0 right-0 z-40 bg-white border-b border-gray-200">
       <div className="mx-auto flex h-16 items-center justify-between px-2 sm:px-6 lg:px-8">
@@ -134,7 +150,25 @@ export function DashboardHeader() {
               >
                 <div className="px-4 py-2 border-b border-gray-100">
                   <p className="text-sm font-medium text-gray-900">{profileData.name}</p>
+                  {/* 🆕 管理者バッジを追加 */}
+                  {isAdmin && (
+                    <p className="text-xs text-blue-600 font-medium">
+                      {dashboardInfo?.permissions.isSuperAdmin ? 'スーパー管理者' : '財務管理者'}
+                    </p>
+                  )}
                 </div>
+
+                {/* 🆕 管理者用プロフィール編集リンクを追加 */}
+                {isAdmin && (
+                  <Link
+                    href="/dashboard/admin/profile"
+                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    プロフィール編集
+                  </Link>
+                )}
+
                 <Link
                   href="/auth/change-password"
                   className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-100"

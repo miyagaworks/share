@@ -1,45 +1,96 @@
 // app/api/admin/users/search/route.ts
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { isAdminUser } from '@/lib/utils/admin-access-server';
+import { isSuperAdmin } from '@/lib/utils/admin-access-server';
+
 export async function GET(request: Request) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-    // 管理者チェック
-    const isAdmin = await isAdminUser(session.user.id);
-    if (!isAdmin) {
-      return NextResponse.json({ error: '管理者権限がありません' }, { status: 403 });
+
+    // スーパー管理者チェック
+    const isSuper = await isSuperAdmin(session.user.id);
+    if (!isSuper) {
+      return NextResponse.json({ error: 'スーパー管理者権限が必要です' }, { status: 403 });
     }
-    // クエリパラメータを取得
-    const url = new URL(request.url);
-    const query = url.searchParams.get('query');
-    if (!query) {
-      return NextResponse.json({ users: [] });
+
+    // クエリパラメータを取得（フロントエンドは'q'を使用）
+    const { searchParams } = new URL(request.url);
+    const query = searchParams.get('q'); // 🔧 修正: 'query' → 'q'
+
+    if (!query || query.trim().length < 2) {
+      return NextResponse.json({
+        success: true,
+        users: [],
+        message: '2文字以上で検索してください',
+      });
     }
-    // ユーザー検索（名前またはメールアドレスで部分一致）
+
+    // 既存の財務管理者IDを取得
+    const existingFinancialAdmins = await prisma.financialAdmin.findMany({
+      where: { isActive: true },
+      select: { userId: true },
+    });
+
+    const excludeIds = existingFinancialAdmins.map((fa: { userId: string }) => fa.userId);
+
+    // ユーザー検索（財務管理者、永久利用権ユーザー、スーパー管理者を除外）
     const users = await prisma.user.findMany({
       where: {
-        OR: [
-          { name: { contains: query, mode: 'insensitive' } },
-          { email: { contains: query, mode: 'insensitive' } },
+        AND: [
+          {
+            OR: [
+              { email: { contains: query, mode: 'insensitive' } },
+              { name: { contains: query, mode: 'insensitive' } },
+            ],
+          },
+          {
+            id: { notIn: excludeIds },
+          },
+          {
+            email: { not: 'admin@sns-share.com' },
+          },
+          {
+            subscriptionStatus: { not: 'permanent' },
+          },
         ],
       },
       select: {
         id: true,
         name: true,
         email: true,
+        image: true,
+        subscriptionStatus: true,
       },
-      take: 20, // 最大20件まで
+      take: 10,
+      orderBy: [{ name: 'asc' }, { email: 'asc' }],
     });
-    return NextResponse.json({ users });
-  } catch (error) {
+
+    logger.info('ユーザー検索成功:', {
+      executorUserId: session.user.id,
+      query: query.trim(),
+      resultCount: users.length,
+    });
+
+    return NextResponse.json({
+      success: true,
+      users,
+      query: query.trim(),
+      count: users.length,
+    });
+  } catch (error: any) {
     logger.error('ユーザー検索エラー:', error);
-    return NextResponse.json({ error: 'ユーザー検索に失敗しました' }, { status: 500 });
+    return NextResponse.json(
+      {
+        error: 'ユーザー検索に失敗しました',
+        details: process.env.NODE_ENV === 'development' ? error.message : undefined,
+      },
+      { status: 500 },
+    );
   }
 }

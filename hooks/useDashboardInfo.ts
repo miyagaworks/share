@@ -11,14 +11,21 @@ export interface DashboardInfo {
     subscriptionStatus: string | null;
   };
   permissions: {
-    userType: 'admin' | 'corporate' | 'personal' | 'permanent' | 'invited-member';
+    userType:
+      | 'admin'
+      | 'corporate'
+      | 'personal'
+      | 'permanent'
+      | 'invited-member'
+      | 'financial-admin'; // 🔧 'financial-admin'追加
     isAdmin: boolean;
     isSuperAdmin: boolean;
+    isFinancialAdmin: boolean; // 🆕 追加
     hasCorpAccess: boolean;
     isCorpAdmin: boolean;
     isPermanentUser: boolean;
     permanentPlanType: string | null;
-    userRole: 'admin' | 'member' | 'personal' | null;
+    userRole: 'admin' | 'member' | 'personal' | 'financial-admin' | null; // 🔧 'financial-admin'追加
     // プラン関連プロパティ
     hasActivePlan: boolean;
     isTrialPeriod: boolean;
@@ -101,6 +108,10 @@ export function useIsAdmin() {
 export function useIsSuperAdmin() {
   const { data } = useDashboardInfo();
   return data?.permissions.isSuperAdmin === true;
+}
+export function useIsFinancialAdmin() {
+  const { data } = useDashboardInfo();
+  return data?.permissions.isFinancialAdmin === true;
 }
 export function usePlanInfo() {
   const { data } = useDashboardInfo();

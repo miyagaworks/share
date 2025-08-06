@@ -138,3 +138,51 @@ export async function checkDatabaseHealth() {
     };
   }
 }
+
+// 🔧 追加: safeQuery関数
+export async function safeQuery<T>(queryFn: () => Promise<T>): Promise<T> {
+  const isServer = typeof window === 'undefined';
+  
+  if (!isServer) {
+    throw new Error('safeQueryはサーバーサイドでのみ実行可能です');
+  }
+
+  try {
+    const result = await queryFn();
+    return result;
+  } catch (error) {
+    logger.error('safeQuery エラー:', error);
+
+    // 特定のエラーコードに対する処理
+    if (error instanceof Error) {
+      // 接続エラーの場合
+      if (error.message.includes('connection') || error.message.includes('timeout')) {
+        logger.error('データベース接続エラーが発生しました');
+      }
+
+      // テーブルが存在しないエラーの場合
+      if (error.message.includes('does not exist') || error.message.includes('relation')) {
+        logger.error('データベーステーブルまたはリレーションエラー');
+      }
+    }
+
+    throw error;
+  }
+}
+
+// 🔧 追加: ensurePrismaConnection関数
+export async function ensurePrismaConnection(): Promise<boolean> {
+  const isServer = typeof window === 'undefined';
+  
+  if (!isServer) return false;
+
+  try {
+    // シンプルな接続テスト
+    await prisma.$queryRaw`SELECT 1 as test`;
+    logger.debug('Prisma接続確認: OK');
+    return true;
+  } catch (error) {
+    logger.error('Prisma接続確認エラー:', error);
+    return false;
+  }
+}

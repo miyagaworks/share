@@ -1,38 +1,63 @@
-// app/api/notifications/route.ts
+// app/api/notifications/route.ts (修正版 - エラー解決)
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from "@/lib/utils/logger";
+import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+
+// 型定義
+interface Notification {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+  priority: string;
+  imageUrl: string | null;
+  startDate: Date;
+  endDate: Date | null;
+  targetGroup: string;
+  active: boolean;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+interface NotificationWithReadStatus extends Notification {
+  isRead: boolean;
+}
+
+interface ReadStatus {
+  notificationId: string;
+}
+
 export async function GET() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
-    // ここを修正: ユーザーIDを文字列として確実に扱う
-    const userId = String(session.user.id);
-    logger.debug('認証済みユーザー:', userId);
+
+    const userId: string = session.user.id;
+    logger.debug('通知API: 認証済みユーザー:', userId);
+
     try {
-      // 有効期限内のお知らせを取得
+      // 🔧 修正: Prismaクエリを簡素化
       const activeNotifications = await prisma.notification.findMany({
         where: {
           active: true,
-          // 日付フィルターを追加
-          startDate: { lte: new Date() }, // 現在時刻以前に開始
-          OR: [
-            { endDate: null }, // 終了日なし
-            { endDate: { gte: new Date() } }, // または現在時刻より後に終了
-          ],
+          startDate: { lte: new Date() },
+          OR: [{ endDate: null }, { endDate: { gte: new Date() } }],
         },
         orderBy: {
           createdAt: 'desc',
         },
       });
-      logger.debug('取得したお知らせ:', activeNotifications.length);
+
+      logger.debug('通知API: 取得したお知らせ数:', activeNotifications.length);
+
+      // 🔧 修正: 既読ステータス取得を簡素化
+      let readStatuses: ReadStatus[] = [];
       try {
-        // 既読ステータス確認
-        const readStatuses = await prisma.notificationRead.findMany({
+        readStatuses = await prisma.notificationRead.findMany({
           where: {
             user_id: userId,
           },
@@ -40,43 +65,68 @@ export async function GET() {
             notificationId: true,
           },
         });
-        logger.debug('既読ステータス取得:', readStatuses.length);
-        // 既読情報を含むお知らせリストを作成
-        const readStatusMap = new Map(readStatuses.map((status) => [status.notificationId, true]));
-        const notificationsWithReadStatus = activeNotifications.map((notification) => ({
+      } catch (readError) {
+        logger.error('通知API: 既読ステータス取得エラー:', readError);
+        // 既読情報が取得できなくても処理を続行
+      }
+
+      logger.debug('通知API: 既読ステータス取得数:', readStatuses.length);
+
+      // 既読情報をマップに変換
+      const readStatusMap = new Map(
+        readStatuses.map((status: ReadStatus) => [status.notificationId, true]),
+      );
+
+      // お知らせリストに既読情報を追加
+      const notificationsWithReadStatus: NotificationWithReadStatus[] = activeNotifications.map(
+        (notification: Notification) => ({
           ...notification,
           isRead: readStatusMap.has(notification.id),
-        }));
-        logger.debug('未読数:', notificationsWithReadStatus.filter((n) => !n.isRead).length);
-        return NextResponse.json({
-          notifications: notificationsWithReadStatus,
-          unreadCount: notificationsWithReadStatus.filter((n) => !n.isRead).length,
-        });
-      } catch (readError) {
-        logger.error('既読状態取得エラー:', readError);
-        // 既読状態がなくてもお知らせは返す
-        return NextResponse.json({
-          notifications: activeNotifications.map((n) => ({ ...n, isRead: false })),
-          unreadCount: activeNotifications.length,
-          warning: '既読状態の取得に失敗しました',
-        });
-      }
+        }),
+      );
+
+      const unreadCount = notificationsWithReadStatus.filter(
+        (n: NotificationWithReadStatus) => !n.isRead,
+      ).length;
+
+      logger.debug('通知API: 未読数:', unreadCount);
+
+      return NextResponse.json({
+        notifications: notificationsWithReadStatus,
+        unreadCount,
+      });
     } catch (dbError) {
-      logger.error('データベースクエリエラー:', dbError);
+      logger.error('通知API: データベースクエリエラー:', dbError);
+
+      // 🔧 修正: フォールバック処理を改善
       return NextResponse.json(
         {
           error: 'お知らせの取得に失敗しました',
-          details: dbError instanceof Error ? dbError.message : String(dbError),
+          notifications: [],
+          unreadCount: 0,
+          details:
+            process.env.NODE_ENV === 'development'
+              ? dbError instanceof Error
+                ? dbError.message
+                : String(dbError)
+              : undefined,
         },
         { status: 500 },
       );
     }
   } catch (error) {
-    logger.error('お知らせ取得エラー:', error);
+    logger.error('通知API: 全体エラー:', error);
     return NextResponse.json(
       {
         error: 'お知らせの取得に失敗しました',
-        details: error instanceof Error ? error.message : String(error),
+        notifications: [],
+        unreadCount: 0,
+        details:
+          process.env.NODE_ENV === 'development'
+            ? error instanceof Error
+              ? error.message
+              : String(error)
+            : undefined,
       },
       { status: 500 },
     );
