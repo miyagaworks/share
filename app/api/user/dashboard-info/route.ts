@@ -305,77 +305,96 @@ function generateNavigationEnhanced(
     permanent: permanentPlanType === 'personal' ? '/dashboard' : '/dashboard/corporate',
   };
 
-  // 🔥 永久利用権ユーザーの特別処理
-  if (userType === 'permanent') {
-    const isPermanentPersonal = permanentPlanType === 'personal';
-    const isCorporatePath = currentPath?.startsWith('/dashboard/corporate');
-    const isCorporateMemberPath = currentPath?.startsWith('/dashboard/corporate-member');
-    const isPersonalPath =
-      currentPath === '/dashboard' ||
-      currentPath?.startsWith('/dashboard/profile') ||
-      currentPath?.startsWith('/dashboard/links') ||
-      currentPath?.startsWith('/dashboard/design') ||
-      currentPath?.startsWith('/dashboard/share');
-    const isSubscriptionPath = currentPath?.startsWith('/dashboard/subscription');
+  // 🔧 1. 管理者ページのチェック（型を正しく修正）
+  if (currentPath?.startsWith('/dashboard/admin')) {
+    if (!permissions.isSuperAdmin && !permissions.isFinancialAdmin) {
+      // 権限がない場合は適切なページにリダイレクト
+      const redirectTarget = permissions.hasCorpAccess
+        ? permissions.isAdmin
+          ? '/dashboard/corporate'
+          : '/dashboard/corporate-member'
+        : '/dashboard';
 
-    if (isPermanentPersonal) {
-      // 個人永久プランユーザーは法人機能にアクセス不可
-      if (isCorporatePath || isCorporateMemberPath) {
-        return {
-          shouldRedirect: true,
-          redirectPath: '/dashboard',
-          menuItems,
-        };
-      }
-    } else {
-      // 法人永久プランユーザーは個人機能にアクセスした場合、法人ダッシュボードにリダイレクト
-      if (currentPath === '/dashboard' || isPersonalPath) {
-        return {
-          shouldRedirect: true,
-          redirectPath: '/dashboard/corporate',
-          menuItems,
-        };
-      }
-    }
-
-    // 許可されたパスではリダイレクトしない
-    if (isCorporatePath || isCorporateMemberPath || isPersonalPath || isSubscriptionPath) {
       return {
-        shouldRedirect: false,
-        redirectPath: null,
+        shouldRedirect: true,
+        redirectPath: redirectTarget,
         menuItems,
       };
     }
+    return { shouldRedirect: false, redirectPath: null, menuItems };
   }
 
-  // 法人管理者の特別処理
-  if (userType === 'corporate') {
-    const isCorporateMemberPath = currentPath?.startsWith('/dashboard/corporate-member');
-    const isCorporatePath = currentPath?.startsWith('/dashboard/corporate');
-    const isSubscriptionPath = currentPath?.startsWith('/dashboard/subscription');
-
-    // 許可されたパスではリダイレクトしない
-    if (isCorporateMemberPath || isCorporatePath || isSubscriptionPath) {
+  // 2. 法人管理ページのチェック (/dashboard/corporate)
+  if (
+    currentPath?.startsWith('/dashboard/corporate') &&
+    !currentPath.startsWith('/dashboard/corporate-member')
+  ) {
+    if (!permissions.isAdmin && !permissions.isSuperAdmin) {
       return {
-        shouldRedirect: false,
-        redirectPath: null,
+        shouldRedirect: true,
+        redirectPath: permissions.hasCorpAccess ? '/dashboard/corporate-member' : '/dashboard',
         menuItems,
       };
     }
-    // 個人機能ページや/dashboardへのアクセスは法人ダッシュボードにリダイレクト
-    else if (
-      currentPath === '/dashboard' ||
-      currentPath?.startsWith('/dashboard/profile') ||
-      currentPath?.startsWith('/dashboard/links') ||
-      currentPath?.startsWith('/dashboard/design') ||
-      currentPath?.startsWith('/dashboard/share')
+    return { shouldRedirect: false, redirectPath: null, menuItems };
+  }
+
+  // 3. 法人メンバーページのチェック (/dashboard/corporate-member)
+  if (currentPath?.startsWith('/dashboard/corporate-member')) {
+    if (!permissions.hasCorpAccess && !permissions.isSuperAdmin) {
+      return {
+        shouldRedirect: true,
+        redirectPath: '/dashboard',
+        menuItems,
+      };
+    }
+    return { shouldRedirect: false, redirectPath: null, menuItems };
+  }
+
+  // 🔧 4. 個人ダッシュボードページ（/dashboard）の処理
+  if (currentPath === '/dashboard') {
+    // 法人管理者は法人ダッシュボードにリダイレクト
+    if (permissions.isAdmin && permissions.hasCorpAccess && !permissions.isSuperAdmin) {
+      return {
+        shouldRedirect: true,
+        redirectPath: '/dashboard/corporate',
+        menuItems,
+      };
+    }
+
+    // 法人招待メンバーは法人メンバーページにリダイレクト
+    if (permissions.userRole === 'member' && permissions.hasCorpAccess) {
+      return {
+        shouldRedirect: true,
+        redirectPath: '/dashboard/corporate-member',
+        menuItems,
+      };
+    }
+
+    // 永久利用権法人プランユーザーは法人ダッシュボードにリダイレクト
+    if (
+      permissions.isPermanentUser &&
+      permissions.permanentPlanType !== 'personal' &&
+      permissions.hasCorpAccess
     ) {
       return {
         shouldRedirect: true,
         redirectPath: '/dashboard/corporate',
         menuItems,
       };
-    } else {
+    }
+
+    // 🔧 個人ユーザーは /dashboard にとどまる（リダイレクトしない）
+    if (permissions.userType === 'personal') {
+      return {
+        shouldRedirect: false,
+        redirectPath: null,
+        menuItems,
+      };
+    }
+
+    // 🔧 永久利用権個人プランも /dashboard にとどまる
+    if (permissions.isPermanentUser && permissions.permanentPlanType === 'personal') {
       return {
         shouldRedirect: false,
         redirectPath: null,
@@ -384,16 +403,64 @@ function generateNavigationEnhanced(
     }
   }
 
-  // 基本的なリダイレクト判定
-  if (currentPath === '/dashboard' || !currentPath) {
-    const redirectPath = defaultRedirectMap[userType];
-    return {
-      shouldRedirect: !!redirectPath,
-      redirectPath: redirectPath || null,
-      menuItems,
-    };
+  // 5. 個人機能ページでの法人ユーザーリダイレクト
+  const personalPages = [
+    '/dashboard/profile',
+    '/dashboard/links',
+    '/dashboard/design',
+    '/dashboard/share',
+    '/dashboard/subscription',
+  ];
+
+  if (personalPages.some((page) => currentPath?.startsWith(page))) {
+    // 法人管理者は対応する法人ページにリダイレクト
+    if (permissions.isAdmin && permissions.hasCorpAccess) {
+      const corporatePageMap: Record<string, string> = {
+        '/dashboard/profile': '/dashboard/corporate-member/profile',
+        '/dashboard/links': '/dashboard/corporate-member/links',
+        '/dashboard/design': '/dashboard/corporate-member/design',
+        '/dashboard/share': '/dashboard/corporate-member/share',
+        '/dashboard/subscription': '/dashboard/subscription',
+      };
+      const targetPage = personalPages.find((page) => currentPath?.startsWith(page));
+      if (
+        targetPage &&
+        corporatePageMap[targetPage] &&
+        corporatePageMap[targetPage] !== currentPath
+      ) {
+        return {
+          shouldRedirect: true,
+          redirectPath: corporatePageMap[targetPage],
+          menuItems,
+        };
+      }
+    }
+
+    // 法人招待メンバーも同様
+    if (permissions.userRole === 'member' && permissions.hasCorpAccess) {
+      const corporatePageMap: Record<string, string> = {
+        '/dashboard/profile': '/dashboard/corporate-member/profile',
+        '/dashboard/links': '/dashboard/corporate-member/links',
+        '/dashboard/design': '/dashboard/corporate-member/design',
+        '/dashboard/share': '/dashboard/corporate-member/share',
+        '/dashboard/subscription': '/dashboard/subscription',
+      };
+      const targetPage = personalPages.find((page) => currentPath?.startsWith(page));
+      if (
+        targetPage &&
+        corporatePageMap[targetPage] &&
+        corporatePageMap[targetPage] !== currentPath
+      ) {
+        return {
+          shouldRedirect: true,
+          redirectPath: corporatePageMap[targetPage],
+          menuItems,
+        };
+      }
+    }
   }
 
+  // 6. デフォルト: リダイレクトなし
   return {
     shouldRedirect: false,
     redirectPath: null,
