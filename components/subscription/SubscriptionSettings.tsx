@@ -7,7 +7,7 @@ import { HiCheck, HiOutlineOfficeBuilding, HiExclamationCircle } from 'react-ico
 import { FiUsers } from 'react-icons/fi';
 import { HiUser, HiOfficeBuilding } from 'react-icons/hi';
 import { useDashboardInfo } from '@/hooks/useDashboardInfo';
-import { STRIPE_PAYMENT_LINKS } from '@/lib/stripe';
+import { STRIPE_PAYMENT_LINKS } from '@/lib/stripeClient';
 
 // 型定義
 type SubscriptionPlan = 'monthly' | 'yearly' | 'starter' | 'business' | 'enterprise';
