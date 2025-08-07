@@ -96,19 +96,18 @@ export function MemberProfileForm({
         firstName,
         lastNameKana,
         firstNameKana,
-        // 英語名はそのまま使用 - 自動生成しない
         nameEn: userData.nameEn || '',
         bio: userData.bio || '',
         phone: userData.phone || '',
         position: userData.position || '',
-        // 会社/組織情報を追加
-        company: userData.company || '',
+        // ✅ 会社名は管理者設定値またはテナント名を使用（編集不可）
+        company: tenantData?.name || userData.company || '',
         companyUrl: userData.companyUrl || '',
         companyLabel: userData.companyLabel || '会社HP',
       });
       setImage(userData.image);
     }
-  }, [userData]);
+  }, [userData, tenantData]); // ← tenantDataも依存配列に追加
 
   // 入力フォーム変更のハンドリング
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
@@ -151,11 +150,12 @@ export function MemberProfileForm({
         firstName: processedFirstName,
         lastNameKana: processedLastNameKana,
         firstNameKana: processedFirstNameKana,
-        nameEn: processedNameEn, // 英語名はユーザー入力をそのまま使用
+        nameEn: processedNameEn,
         bio: processedBio,
         phone: processedPhone,
         position: processedPosition,
-        company: processedCompany,
+        // ✅ 会社名は常にテナント名を使用（ユーザー入力は無視）
+        company: tenantData?.name || undefined,
         companyUrl: processedCompanyUrl,
         companyLabel: processedCompanyLabel,
         image: image !== userData?.image ? image : undefined,
@@ -449,10 +449,9 @@ export function MemberProfileForm({
             </label>
             <Input
               name="company"
-              placeholder="株式会社〇〇"
-              value={formData.company}
-              onChange={handleChange}
-              disabled={isSaving}
+              value={tenantData?.name || formData.company}
+              disabled={true} // ← 常に編集不可
+              helperText="会社名は管理者によって設定されます。変更が必要な場合は管理者にお問い合わせください。"
             />
           </div>
 
