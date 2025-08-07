@@ -11,7 +11,46 @@ import {
 } from '@/lib/utils/admin-access-server';
 import { prisma } from '@/lib/prisma';
 
-// 財務管理者一覧取得（スーパー管理者のみ）
+// 🔧 修正: 財務管理者を含む管理者権限チェック
+async function checkAdminAccess(
+  userId: string,
+): Promise<{ isSuper: boolean; isFinancial: boolean; hasAccess: boolean }> {
+  try {
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: {
+        email: true,
+        financialAdminRecord: {
+          select: {
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return { isSuper: false, isFinancial: false, hasAccess: false };
+    }
+
+    // スーパー管理者チェック
+    const isSuper = user.email === process.env.ADMIN_EMAIL || user.email === 'admin@sns-share.com';
+
+    // 財務管理者チェック
+    const isFinancial =
+      user.email.includes('@sns-share.com') && user.financialAdminRecord?.isActive === true;
+
+    return {
+      isSuper,
+      isFinancial,
+      hasAccess: isSuper || isFinancial,
+    };
+  } catch (error) {
+    console.error('管理者権限チェックエラー:', error);
+    return { isSuper: false, isFinancial: false, hasAccess: false };
+  }
+}
+
+// 財務管理者一覧取得（スーパー管理者 + 財務管理者が閲覧可能）
 export async function GET() {
   try {
     const session = await auth();
@@ -21,11 +60,11 @@ export async function GET() {
 
     const userId = session.user.id;
 
-    // スーパー管理者チェック
-    const isSuper = await isSuperAdmin(userId);
-    if (!isSuper) {
+    // 🔧 修正: 管理者権限チェック
+    const access = await checkAdminAccess(userId);
+    if (!access.hasAccess) {
       logger.warn('財務管理者一覧取得の権限なし:', { userId });
-      return NextResponse.json({ error: 'スーパー管理者権限が必要です' }, { status: 403 });
+      return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
     }
 
     // 財務管理者一覧取得
@@ -33,6 +72,8 @@ export async function GET() {
 
     logger.info('財務管理者一覧取得成功:', {
       executorId: userId,
+      isSuper: access.isSuper,
+      isFinancial: access.isFinancial,
       count: financialAdmins.length,
     });
 
@@ -62,11 +103,14 @@ export async function POST(request: Request) {
 
     const executorUserId = session.user.id;
 
-    // スーパー管理者チェック
-    const isSuper = await isSuperAdmin(executorUserId);
-    if (!isSuper) {
+    // 🔧 修正: スーパー管理者権限のみ許可（追加・削除はスーパー管理者限定）
+    const access = await checkAdminAccess(executorUserId);
+    if (!access.isSuper) {
       logger.warn('財務管理者追加の権限なし:', { executorUserId });
-      return NextResponse.json({ error: 'スーパー管理者権限が必要です' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'この操作にはスーパー管理者権限が必要です' },
+        { status: 403 },
+      );
     }
 
     // リクエストボディの検証
@@ -126,11 +170,14 @@ export async function DELETE(request: Request) {
 
     const executorUserId = session.user.id;
 
-    // スーパー管理者チェック
-    const isSuper = await isSuperAdmin(executorUserId);
-    if (!isSuper) {
+    // 🔧 修正: スーパー管理者権限のみ許可（追加・削除はスーパー管理者限定）
+    const access = await checkAdminAccess(executorUserId);
+    if (!access.isSuper) {
       logger.warn('財務管理者削除の権限なし:', { executorUserId });
-      return NextResponse.json({ error: 'スーパー管理者権限が必要です' }, { status: 403 });
+      return NextResponse.json(
+        { error: 'この操作にはスーパー管理者権限が必要です' },
+        { status: 403 },
+      );
     }
 
     // リクエストボディの検証
