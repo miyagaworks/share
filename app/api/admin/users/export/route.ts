@@ -1,212 +1,144 @@
-// app/api/admin/users/export/route.ts
+// app/api/admin/access/route.ts (修正版 - 財務管理者にエクスポート権限付与)
 export const dynamic = 'force-dynamic';
-
-import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@/auth';
-import { prisma } from '@/lib/prisma';
-import { isAdminUser } from '@/lib/utils/admin-access-server';
-import { addDays } from 'date-fns';
+import { NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
+import { auth } from '@/auth';
+import { getAdminLevel, getAdminInfo } from '@/lib/utils/admin-access-server';
 
-interface ExportFilters {
-  planStatus?: string[];
-  startDate?: string;
-  endDate?: string;
-  searchTerm?: string;
-  sortType?: string;
+// 管理者権限の定義
+interface AdminPermissions {
+  canManageUsers: boolean;
+  canManageSubscriptions: boolean;
+  canManageFinancialAdmins: boolean;
+  canViewFinancialData: boolean;
+  canManageFinancialData: boolean;
+  canManageNotifications: boolean;
+  canManageEmails: boolean;
+  canViewProfiles: boolean;
+  canAccessSystemInfo: boolean;
+  canExportUserData: boolean; // 🆕 追加: ユーザーデータエクスポート権限
+  canViewCancelRequests: boolean; // 🆕 追加: 解約申請閲覧権限
 }
 
-export async function POST(request: NextRequest) {
+// 管理者レベルから権限を生成する関数
+function generatePermissions(adminLevel: 'super' | 'financial' | 'none'): AdminPermissions {
+  if (adminLevel === 'super') {
+    // スーパー管理者: 全権限
+    return {
+      canManageUsers: true,
+      canManageSubscriptions: true,
+      canManageFinancialAdmins: true,
+      canViewFinancialData: true,
+      canManageFinancialData: true,
+      canManageNotifications: true,
+      canManageEmails: true,
+      canViewProfiles: true,
+      canAccessSystemInfo: true,
+      canExportUserData: true, // 🆕 スーパー管理者はエクスポート可能
+      canViewCancelRequests: true, // 🆕 スーパー管理者は解約申請管理可能
+    };
+  } else if (adminLevel === 'financial') {
+    // 🔧 修正: 財務管理者に必要な権限を追加
+    return {
+      canManageUsers: false,
+      canManageSubscriptions: false, // 閲覧のみ（管理は不可）
+      canManageFinancialAdmins: false,
+      canViewFinancialData: true,
+      canManageFinancialData: true,
+      canManageNotifications: false,
+      canManageEmails: false,
+      canViewProfiles: true, // 🔧 修正: 財務管理者はプロフィール閲覧可能
+      canAccessSystemInfo: false,
+      canExportUserData: true, // 🆕 財務管理者はユーザーデータエクスポート可能
+      canViewCancelRequests: true, // 🆕 財務管理者は解約申請閲覧・管理可能
+    };
+  } else {
+    // 一般ユーザー: 権限なし
+    return {
+      canManageUsers: false,
+      canManageSubscriptions: false,
+      canManageFinancialAdmins: false,
+      canViewFinancialData: false,
+      canManageFinancialData: false,
+      canManageNotifications: false,
+      canManageEmails: false,
+      canViewProfiles: false,
+      canAccessSystemInfo: false,
+      canExportUserData: false,
+      canViewCancelRequests: false,
+    };
+  }
+}
+
+export async function GET() {
   try {
     const session = await auth();
     if (!session?.user?.id) {
-      return NextResponse.json({ error: '認証されていません' }, { status: 401 });
-    }
-
-    // 管理者チェック
-    const isAdmin = await isAdminUser(session.user.id);
-    if (!isAdmin) {
-      return NextResponse.json({ error: '管理者権限がありません' }, { status: 403 });
-    }
-
-    const body = await request.json();
-    const filters: ExportFilters = body.filters || {};
-    const isPreview = body.preview || false; // プレビューモードかどうか
-
-    // すべてのユーザーを取得
-    const users = await prisma.user.findMany({
-      select: {
-        id: true,
-        name: true,
-        nameKana: true,
-        email: true,
-        createdAt: true,
-        updatedAt: true,
-        trialEndsAt: true,
-        phone: true,
-        company: true,
-        subscription: {
-          select: {
-            status: true,
-            plan: true,
-            currentPeriodEnd: true,
-          },
+      return NextResponse.json(
+        {
+          isSuperAdmin: false,
+          isFinancialAdmin: false,
+          adminLevel: 'none',
+          permissions: generatePermissions('none'),
+          error: '認証されていません',
         },
-        subscriptionStatus: true,
-      },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const now = new Date();
-
-    // ユーザーデータの整形とフィルタリング
-    let filteredUsers = users.map((user) => {
-      const isGracePeriodExpired = user.trialEndsAt
-        ? now > addDays(new Date(user.trialEndsAt), 7)
-        : false;
-      const isPermanentUser = user.subscriptionStatus === 'permanent';
-
-      return {
-        ...user,
-        isPermanentUser,
-        isGracePeriodExpired,
-      };
-    });
-
-    // フィルタリング適用
-    if (filters.searchTerm) {
-      const searchTerm = filters.searchTerm.toLowerCase();
-      filteredUsers = filteredUsers.filter(
-        (user) =>
-          user.name?.toLowerCase().includes(searchTerm) ||
-          user.email.toLowerCase().includes(searchTerm),
+        { status: 401 },
       );
     }
 
-    if (filters.planStatus && filters.planStatus.length > 0) {
-      filteredUsers = filteredUsers.filter((user) => {
-        if (filters.planStatus!.includes('permanent') && user.isPermanentUser) return true;
-        if (filters.planStatus!.includes('active') && user.subscription?.status === 'active')
-          return true;
-        if (filters.planStatus!.includes('expired') && user.isGracePeriodExpired) return true;
-        if (filters.planStatus!.includes('trial') && user.trialEndsAt && !user.isGracePeriodExpired)
-          return true;
-        if (filters.planStatus!.includes('none') && !user.subscription && !user.trialEndsAt)
-          return true;
-        return false;
-      });
-    }
+    const userId = session.user.id;
 
-    if (filters.startDate) {
-      const startDate = new Date(filters.startDate);
-      filteredUsers = filteredUsers.filter((user) => new Date(user.createdAt) >= startDate);
-    }
+    // 管理者レベルを取得
+    const adminLevel = await getAdminLevel(userId);
+    const adminInfo = await getAdminInfo(userId);
 
-    if (filters.endDate) {
-      const endDate = new Date(filters.endDate);
-      endDate.setHours(23, 59, 59, 999); // 終日まで含める
-      filteredUsers = filteredUsers.filter((user) => new Date(user.createdAt) <= endDate);
-    }
+    // 権限オブジェクトを生成
+    const permissions = generatePermissions(adminLevel);
 
-    // 並び替え
-    if (filters.sortType) {
-      filteredUsers.sort((a, b) => {
-        switch (filters.sortType) {
-          case 'created_desc':
-            return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
-          case 'created_asc':
-            return new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime();
-          case 'nameKana_asc':
-            return (a.nameKana || '').localeCompare(b.nameKana || '');
-          case 'nameKana_desc':
-            return (b.nameKana || '').localeCompare(a.nameKana || '');
-          case 'email_asc':
-            return a.email.localeCompare(b.email);
-          case 'email_desc':
-            return b.email.localeCompare(a.email);
-          case 'grace_period':
-          default:
-            if (a.isGracePeriodExpired && !b.isGracePeriodExpired) return -1;
-            if (!a.isGracePeriodExpired && b.isGracePeriodExpired) return 1;
-            return (a.nameKana || '').localeCompare(b.nameKana || '');
-        }
-      });
-    }
-
-    // プレビューモードの場合は件数のみ返す
-    if (isPreview) {
-      return NextResponse.json({ count: filteredUsers.length });
-    }
-
-    // CSVデータの生成
-    const csvHeaders = [
-      'ユーザーID',
-      'ユーザー名',
-      'フリガナ',
-      'メールアドレス',
-      '電話番号',
-      '会社名',
-      '登録日',
-      '更新日',
-      'プラン状態',
-      'サブスクリプションプラン',
-      'サブスクリプション期限',
-      'トライアル期限',
-      '永久利用権',
-      '猶予期間切れ',
-    ];
-
-    const csvRows = filteredUsers.map((user) => {
-      const getPlanStatus = () => {
-        if (user.isGracePeriodExpired) return '猶予期間終了';
-        if (user.isPermanentUser) return '永久利用権';
-        if (user.subscription?.status === 'active') return '有効';
-        if (user.trialEndsAt) return 'トライアル';
-        return 'なし';
-      };
-
-      const formatDate = (date: Date | string | null) => {
-        if (!date) return '';
-        return new Date(date).toLocaleDateString('ja-JP');
-      };
-
-      return [
-        user.id,
-        user.name || '',
-        user.nameKana || '',
-        user.email,
-        user.phone || '',
-        user.company || '',
-        formatDate(user.createdAt),
-        formatDate(user.updatedAt),
-        getPlanStatus(),
-        user.subscription?.plan || '',
-        formatDate(user.subscription?.currentPeriodEnd || null),
-        formatDate(user.trialEndsAt),
-        user.isPermanentUser ? 'はい' : 'いいえ',
-        user.isGracePeriodExpired ? 'はい' : 'いいえ',
-      ];
+    logger.debug('管理者チェック結果:', {
+      userId,
+      email: session.user.email,
+      adminLevel,
+      isSuperAdmin: adminInfo.isSuperAdmin,
+      isFinancialAdmin: adminInfo.isFinancialAdmin,
+      permissions,
     });
 
-    // CSV形式に変換
-    const csvContent = [csvHeaders, ...csvRows]
-      .map((row) => row.map((field) => `"${String(field).replace(/"/g, '""')}"`).join(','))
-      .join('\n');
+    // 管理者権限がない場合
+    if (adminLevel === 'none') {
+      return NextResponse.json({
+        isSuperAdmin: false,
+        isFinancialAdmin: false,
+        adminLevel: 'none',
+        permissions: generatePermissions('none'),
+        userId,
+        email: session.user.email,
+        message: '管理者権限がありません',
+      });
+    }
 
-    // BOMを付加してUTF-8で正しく表示されるようにする
-    const bom = '\uFEFF';
-    const csvWithBom = bom + csvContent;
-
-    const fileName = `users_export_${new Date().toISOString().split('T')[0]}.csv`;
-
-    return new NextResponse(csvWithBom, {
-      headers: {
-        'Content-Type': 'text/csv; charset=utf-8',
-        'Content-Disposition': `attachment; filename="${fileName}"`,
-      },
+    // 管理者権限がある場合
+    return NextResponse.json({
+      isSuperAdmin: adminInfo.isSuperAdmin,
+      isFinancialAdmin: adminInfo.isFinancialAdmin,
+      adminLevel,
+      permissions,
+      userId,
+      email: session.user.email,
+      userType: adminInfo.userType,
+      message: '管理者権限が確認されました',
     });
   } catch (error) {
-    logger.error('ユーザーエクスポートエラー:', error);
-    return NextResponse.json({ error: 'エクスポート処理に失敗しました' }, { status: 500 });
+    logger.error('管理者アクセスチェックエラー:', error);
+    return NextResponse.json(
+      {
+        isSuperAdmin: false,
+        isFinancialAdmin: false,
+        adminLevel: 'none',
+        permissions: generatePermissions('none'),
+        error: '管理者アクセスチェック中にエラーが発生しました',
+      },
+      { status: 500 },
+    );
   }
 }

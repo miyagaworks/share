@@ -8,6 +8,12 @@ import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { HiDownload, HiArrowLeft, HiFilter, HiRefresh } from 'react-icons/hi';
 
+// 🆕 権限インターフェース
+interface AdminPermissions {
+  canExportUserData?: boolean;
+  canViewProfiles?: boolean;
+}
+
 // 並び替えのタイプ
 type SortType =
   | 'created_asc'
@@ -42,6 +48,8 @@ export default function UserExportPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [permissions, setPermissions] = useState<AdminPermissions>({});
+  const [adminType, setAdminType] = useState<string>(''); // 🆕 管理者タイプ
   const [exporting, setExporting] = useState(false);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [previewCount, setPreviewCount] = useState<number>(0);
@@ -54,7 +62,7 @@ export default function UserExportPage() {
     sortType: 'grace_period',
   });
 
-  // 管理者チェック
+  // 🔧 修正: 権限チェック強化
   useEffect(() => {
     const checkAdminAccess = async () => {
       if (!session?.user?.id) {
@@ -64,13 +72,23 @@ export default function UserExportPage() {
       try {
         const response = await fetch('/api/admin/access');
         const data = await response.json();
-        if (data.isSuperAdmin) {
+
+        // 🔧 修正: 詳細な権限チェック
+        const hasExportPermission =
+          data.permissions?.canExportUserData || data.isSuperAdmin || data.isFinancialAdmin;
+
+        if (hasExportPermission) {
           setIsAdmin(true);
+          setPermissions(data.permissions || {});
+          setAdminType(data.isSuperAdmin ? 'スーパー管理者' : '財務管理者');
           fetchUserStats();
         } else {
-          router.push('/dashboard');
+          toast.error('ユーザーデータエクスポート権限がありません');
+          router.push('/dashboard/admin');
         }
-      } catch {
+      } catch (error) {
+        console.error('権限チェックエラー:', error);
+        toast.error('権限の確認に失敗しました');
         router.push('/dashboard');
       } finally {
         setLoading(false);
@@ -135,6 +153,12 @@ export default function UserExportPage() {
 
   // エクスポート実行
   const handleExport = async () => {
+    // 🆕 エクスポート権限の最終確認
+    if (!permissions.canExportUserData) {
+      toast.error('エクスポート権限がありません');
+      return;
+    }
+
     setExporting(true);
     try {
       const response = await fetch('/api/admin/users/export', {
@@ -160,9 +184,11 @@ export default function UserExportPage() {
 
         toast.success(`${previewCount}件のユーザーデータをエクスポートしました`);
       } else {
-        toast.error('エクスポートに失敗しました');
+        const errorData = await response.json();
+        toast.error(errorData.error || 'エクスポートに失敗しました');
       }
-    } catch {
+    } catch (error) {
+      console.error('エクスポートエラー:', error);
       toast.error('エクスポート中にエラーが発生しました');
     } finally {
       setExporting(false);
@@ -213,6 +239,10 @@ export default function UserExportPage() {
               <h1 className="text-2xl font-bold flex items-center">
                 <HiDownload className="mr-3 h-6 w-6 text-blue-600" />
                 ユーザーデータエクスポート
+                {/* 🆕 管理者タイプ表示 */}
+                <span className="ml-3 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
+                  {adminType}
+                </span>
               </h1>
               <p className="text-gray-600 mt-1">
                 条件を指定してユーザーデータをCSV形式でエクスポートできます
@@ -390,7 +420,7 @@ export default function UserExportPage() {
               </Button>
               <Button
                 onClick={handleExport}
-                disabled={exporting || previewCount === 0}
+                disabled={exporting || previewCount === 0 || !permissions.canExportUserData}
                 className="flex items-center"
               >
                 {exporting ? (

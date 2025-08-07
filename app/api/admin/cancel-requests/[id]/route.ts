@@ -7,8 +7,8 @@ import { logger } from '@/lib/utils/logger';
 import { sendEmail } from '@/lib/email';
 import { getAdminNotificationEmailTemplate } from '@/lib/email/templates/admin-notification';
 
-// 🔧 修正: 財務管理者を含む管理者権限チェック
-async function checkAdminAccess(userId: string) {
+// 🔧 修正: 管理者権限チェック（処理権限も含む）
+async function checkCancelRequestProcessAccess(userId: string) {
   const user = await prisma.user.findUnique({
     where: { id: userId },
     select: {
@@ -21,15 +21,22 @@ async function checkAdminAccess(userId: string) {
     },
   });
 
+  if (!user) {
+    return { canView: false, canProcess: false };
+  }
+
   // スーパー管理者チェック
   const isSuperAdmin =
-    user?.email === process.env.ADMIN_EMAIL || user?.email === 'admin@sns-share.com';
+    user.email === process.env.ADMIN_EMAIL || user.email === 'admin@sns-share.com';
 
-  // 財務管理者チェック（@sns-share.comドメインかつ有効な財務管理者レコードを持つ）
+  // 財務管理者チェック
   const isFinancialAdmin =
-    user?.email?.includes('@sns-share.com') && user?.financialAdminRecord?.isActive === true;
+    user.email.includes('@sns-share.com') && user.financialAdminRecord?.isActive === true;
 
-  return isSuperAdmin || isFinancialAdmin;
+  return {
+    canView: isSuperAdmin || isFinancialAdmin, // 両方とも閲覧可能
+    canProcess: isSuperAdmin, // 🔧 処理はスーパー管理者のみ
+  };
 }
 
 // 解約申請処理
@@ -43,10 +50,20 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     // paramsを非同期で取得
     const params = await context.params;
 
-    // 管理者権限チェック
-    const isAdmin = await checkAdminAccess(session.user.id);
-    if (!isAdmin) {
+    // 🔧 修正: 管理者権限チェック（処理権限も確認）
+    const access = await checkCancelRequestProcessAccess(session.user.id);
+    if (!access.canView) {
       return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
+    }
+
+    // 🆕 追加: 処理権限チェック
+    if (!access.canProcess) {
+      return NextResponse.json(
+        {
+          error: '解約申請の処理権限がありません。閲覧のみ可能です。',
+        },
+        { status: 403 },
+      );
     }
 
     const { action, adminNotes } = await req.json();

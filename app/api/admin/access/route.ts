@@ -1,4 +1,4 @@
-// app/api/admin/access/route.ts (修正版 - permissions オブジェクト対応)
+// app/api/admin/access/route.ts (修正版 - 財務管理者は閲覧のみ)
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
@@ -16,6 +16,9 @@ interface AdminPermissions {
   canManageEmails: boolean;
   canViewProfiles: boolean;
   canAccessSystemInfo: boolean;
+  canViewCancelRequests: boolean; // 解約申請ページへのアクセス権限
+  canProcessCancelRequests: boolean; // 🆕 解約申請の処理権限（承認・却下）
+  canExportUserData: boolean; // 🆕 ユーザーデータエクスポート実行権限
 }
 
 // 管理者レベルから権限を生成する関数
@@ -32,19 +35,25 @@ function generatePermissions(adminLevel: 'super' | 'financial' | 'none'): AdminP
       canManageEmails: true,
       canViewProfiles: true,
       canAccessSystemInfo: true,
+      canViewCancelRequests: true,
+      canProcessCancelRequests: true, // スーパー管理者は処理可能
+      canExportUserData: true, // スーパー管理者はエクスポート可能
     };
   } else if (adminLevel === 'financial') {
-    // 財務管理者: 財務関連のみ
+    // 🔧 財務管理者: 閲覧のみ権限
     return {
       canManageUsers: false,
-      canManageSubscriptions: false, // 閲覧のみ（管理は不可）
+      canManageSubscriptions: false,
       canManageFinancialAdmins: false,
       canViewFinancialData: true,
       canManageFinancialData: true,
       canManageNotifications: false,
       canManageEmails: false,
-      canViewProfiles: false,
+      canViewProfiles: true, // 🔧 修正: エクスポートページアクセスのため
       canAccessSystemInfo: false,
+      canViewCancelRequests: true, // 🔧 解約申請ページは閲覧可能
+      canProcessCancelRequests: false, // 🔧 解約申請の処理は不可
+      canExportUserData: false, // 🔧 エクスポート実行は不可
     };
   } else {
     // 一般ユーザー: 権限なし
@@ -58,6 +67,9 @@ function generatePermissions(adminLevel: 'super' | 'financial' | 'none'): AdminP
       canManageEmails: false,
       canViewProfiles: false,
       canAccessSystemInfo: false,
+      canViewCancelRequests: false,
+      canProcessCancelRequests: false,
+      canExportUserData: false,
     };
   }
 }
