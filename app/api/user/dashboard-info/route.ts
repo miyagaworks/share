@@ -253,7 +253,7 @@ function generateNavigationEnhanced(
       { title: 'SNS・リンク管理', href: '/dashboard/links', icon: 'HiLink' },
       { title: 'デザイン設定', href: '/dashboard/design', icon: 'HiColorSwatch' },
       { title: '共有設定', href: '/dashboard/share', icon: 'HiShare' },
-      { title: 'ご利用プラン', href: '/dashboard/plan', icon: 'HiCreditCard' },
+      { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
     ],
 
     // 🔥 永久利用権ユーザーのメニューをプラン種別に応じて決定
@@ -270,6 +270,7 @@ function generateNavigationEnhanced(
         { title: 'SNS・リンク管理', href: '/dashboard/links', icon: 'HiLink' },
         { title: 'デザイン設定', href: '/dashboard/design', icon: 'HiColorSwatch' },
         { title: '共有設定', href: '/dashboard/share', icon: 'HiShare' },
+        { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
       ];
     } else {
       // 法人永久プランは法人機能を含む
