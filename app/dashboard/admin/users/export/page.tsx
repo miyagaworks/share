@@ -6,12 +6,14 @@ import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
-import { HiDownload, HiArrowLeft, HiFilter, HiRefresh } from 'react-icons/hi';
+import { getPagePermissions, ReadOnlyBanner } from '@/lib/utils/admin-permissions';
+import { HiDownload, HiArrowLeft, HiFilter, HiRefresh, HiShieldCheck } from 'react-icons/hi';
 
-// 🆕 権限インターフェース
-interface AdminPermissions {
-  canExportUserData?: boolean;
-  canViewProfiles?: boolean;
+// 🆕 管理者アクセス権限の型定義
+interface AdminAccess {
+  isSuperAdmin: boolean;
+  isFinancialAdmin: boolean;
+  adminLevel: 'super' | 'financial' | 'none';
 }
 
 // 並び替えのタイプ
@@ -47,9 +49,7 @@ export default function UserExportPage() {
   const { data: session } = useSession();
   const router = useRouter();
   const [loading, setLoading] = useState(true);
-  const [isAdmin, setIsAdmin] = useState(false);
-  const [permissions, setPermissions] = useState<AdminPermissions>({});
-  const [adminType, setAdminType] = useState<string>(''); // 🆕 管理者タイプ
+  const [adminAccess, setAdminAccess] = useState<AdminAccess | null>(null);
   const [exporting, setExporting] = useState(false);
   const [userStats, setUserStats] = useState<UserStats | null>(null);
   const [previewCount, setPreviewCount] = useState<number>(0);
@@ -62,7 +62,7 @@ export default function UserExportPage() {
     sortType: 'grace_period',
   });
 
-  // 🔧 修正: 権限チェック強化
+  // 🔧 修正: 管理者チェック（財務管理者も許可）
   useEffect(() => {
     const checkAdminAccess = async () => {
       if (!session?.user?.id) {
@@ -73,22 +73,14 @@ export default function UserExportPage() {
         const response = await fetch('/api/admin/access');
         const data = await response.json();
 
-        // 🔧 修正: 詳細な権限チェック
-        const hasExportPermission =
-          data.permissions?.canExportUserData || data.isSuperAdmin || data.isFinancialAdmin;
-
-        if (hasExportPermission) {
-          setIsAdmin(true);
-          setPermissions(data.permissions || {});
-          setAdminType(data.isSuperAdmin ? 'スーパー管理者' : '財務管理者');
+        // スーパー管理者または財務管理者をチェック
+        if (data.adminLevel !== 'none') {
+          setAdminAccess(data);
           fetchUserStats();
         } else {
-          toast.error('ユーザーデータエクスポート権限がありません');
-          router.push('/dashboard/admin');
+          router.push('/dashboard');
         }
-      } catch (error) {
-        console.error('権限チェックエラー:', error);
-        toast.error('権限の確認に失敗しました');
+      } catch {
         router.push('/dashboard');
       } finally {
         setLoading(false);
@@ -96,6 +88,11 @@ export default function UserExportPage() {
     };
     checkAdminAccess();
   }, [session, router]);
+
+  // 🆕 権限設定の取得
+  const permissions = adminAccess
+    ? getPagePermissions(adminAccess.isSuperAdmin ? 'admin' : 'financial-admin', 'data-export')
+    : { canView: false, canEdit: false, canDelete: false, canCreate: false };
 
   // ユーザー統計情報の取得
   const fetchUserStats = async () => {
@@ -146,15 +143,15 @@ export default function UserExportPage() {
 
   // フィルター変更時にプレビュー件数を更新
   useEffect(() => {
-    if (isAdmin) {
+    if (adminAccess) {
       fetchPreviewCount();
     }
-  }, [exportFilters, isAdmin, fetchPreviewCount]);
+  }, [exportFilters, adminAccess, fetchPreviewCount]);
 
   // エクスポート実行
   const handleExport = async () => {
     // 🆕 エクスポート権限の最終確認
-    if (!permissions.canExportUserData) {
+    if (!permissions.canEdit) {
       toast.error('エクスポート権限がありません');
       return;
     }
@@ -217,12 +214,15 @@ export default function UserExportPage() {
     );
   }
 
-  if (!isAdmin) {
+  if (!adminAccess) {
     return null;
   }
 
   return (
     <div className="max-w-[90vw] mx-auto px-4">
+      {/* 🆕 権限バナー表示（最上部） */}
+      <ReadOnlyBanner message={permissions.readOnlyMessage} />
+
       {/* ヘッダー */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
         <div className="flex items-center justify-between mb-4">
@@ -239,15 +239,23 @@ export default function UserExportPage() {
               <h1 className="text-2xl font-bold flex items-center">
                 <HiDownload className="mr-3 h-6 w-6 text-blue-600" />
                 ユーザーデータエクスポート
-                {/* 🆕 管理者タイプ表示 */}
-                <span className="ml-3 text-sm bg-blue-100 text-blue-800 px-2 py-1 rounded-full">
-                  {adminType}
-                </span>
               </h1>
               <p className="text-gray-600 mt-1">
                 条件を指定してユーザーデータをCSV形式でエクスポートできます
               </p>
             </div>
+          </div>
+          {/* 🆕 権限バッジ表示（ヘッダー内） */}
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+              <HiShieldCheck className="h-4 w-4 mr-1" />
+              {adminAccess.isSuperAdmin ? 'スーパー管理者' : '財務管理者'}
+            </div>
+            {!permissions.canEdit && (
+              <div className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+                閲覧のみ
+              </div>
+            )}
           </div>
         </div>
 
@@ -420,7 +428,7 @@ export default function UserExportPage() {
               </Button>
               <Button
                 onClick={handleExport}
-                disabled={exporting || previewCount === 0 || !permissions.canExportUserData}
+                disabled={exporting || previewCount === 0 || !permissions.canEdit}
                 className="flex items-center"
               >
                 {exporting ? (

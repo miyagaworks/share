@@ -1,4 +1,4 @@
-// app/dashboard/admin/users/page.tsx - 財務管理者対応版
+// app/dashboard/admin/users/page.tsx - 財務管理者対応版（権限バナー最上部）
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -68,7 +68,7 @@ export default function AdminUsersPage() {
   const [loading, setLoading] = useState(true);
   const [users, setUsers] = useState<UserData[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
-  const [adminAccess, setAdminAccess] = useState<AdminAccess | null>(null); // 🔧 修正
+  const [adminAccess, setAdminAccess] = useState<AdminAccess | null>(null);
   const [deleteConfirm, setDeleteConfirm] = useState<string | null>(null);
   const [deletingUser, setDeletingUser] = useState<string | null>(null);
   const [sortType, setSortType] = useState<SortType>('grace_period');
@@ -112,6 +112,11 @@ export default function AdminUsersPage() {
     checkAdminAccess();
   }, [session, router]);
 
+  // 🆕 権限設定の取得
+  const permissions = adminAccess
+    ? getPagePermissions(adminAccess.isSuperAdmin ? 'admin' : 'financial-admin', 'users')
+    : { canView: false, canEdit: false, canDelete: false, canCreate: false };
+
   // ユーザー一覧の取得
   const fetchUsers = async () => {
     setLoading(true);
@@ -133,11 +138,6 @@ export default function AdminUsersPage() {
   // 🔧 修正: ユーザー削除の実行（権限チェック追加）
   const deleteUser = async (userId: string) => {
     // 権限チェック
-    const permissions = getPagePermissions(
-      adminAccess?.isSuperAdmin ? 'admin' : 'financial-admin',
-      'users',
-    );
-
     if (!permissions.canDelete) {
       toast.error('削除権限がありません');
       return;
@@ -218,35 +218,6 @@ export default function AdminUsersPage() {
     return 0;
   });
 
-  if (loading) {
-    return (
-      <div className="flex justify-center items-center min-h-[300px]">
-        <div className="text-center">
-          <Spinner size="lg" />
-          <p className="mt-2 text-gray-500">ユーザー情報を読み込み中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  if (!adminAccess) {
-    return (
-      <div className="flex justify-center items-center min-h-[400px]">
-        <div className="text-center">
-          <HiExclamationCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">アクセス権限がありません</h3>
-          <p className="text-gray-600">管理者権限が必要です</p>
-        </div>
-      </div>
-    );
-  }
-
-  // 🆕 権限取得
-  const permissions = getPagePermissions(
-    adminAccess.isSuperAdmin ? 'admin' : 'financial-admin',
-    'users',
-  );
-
   // 日付フォーマット用のヘルパー関数
   const formatDate = (dateString: string | undefined | null) => {
     if (!dateString) return '未設定';
@@ -283,32 +254,56 @@ export default function AdminUsersPage() {
     return '未設定';
   };
 
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center min-h-[300px]">
+        <div className="text-center">
+          <Spinner size="lg" />
+          <p className="mt-2 text-gray-500">ユーザー情報を読み込み中...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!adminAccess) {
+    return (
+      <div className="flex justify-center items-center min-h-[400px]">
+        <div className="text-center">
+          <HiExclamationCircle className="h-16 w-16 text-red-500 mx-auto mb-4" />
+          <h3 className="text-xl font-semibold text-gray-900 mb-2">アクセス権限がありません</h3>
+          <p className="text-gray-600">管理者権限が必要です</p>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="max-w-[90vw] mx-auto px-4">
+      {/* 🆕 権限バナー表示（最上部） */}
+      <ReadOnlyBanner message={permissions.readOnlyMessage} />
+
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 mb-6">
-        <div className="flex items-center mb-4">
-          <HiUsers className="h-6 w-6 text-blue-600 mr-3" />
-          <div>
-            <h1 className="text-2xl font-bold">ユーザー管理</h1>
-            <p className="text-gray-600 mt-1">システム内のすべてのユーザーを管理</p>
-          </div>
-        </div>
-
-        {/* 🆕 権限バッジ */}
-        <div className="flex items-center space-x-3 mb-4">
-          <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
-            <HiShieldCheck className="h-4 w-4 mr-1" />
-            {adminAccess.isSuperAdmin ? 'スーパー管理者' : '財務管理者'}
-          </div>
-          {!permissions.canEdit && (
-            <div className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
-              閲覧のみ
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <HiUsers className="h-6 w-6 text-blue-600 mr-3" />
+            <div>
+              <h1 className="text-2xl font-bold">ユーザー管理</h1>
+              <p className="text-gray-600 mt-1">システム内のすべてのユーザーを管理</p>
             </div>
-          )}
+          </div>
+          {/* 🆕 権限バッジ表示（ヘッダー内） */}
+          <div className="flex items-center space-x-3">
+            <div className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm font-medium flex items-center">
+              <HiShieldCheck className="h-4 w-4 mr-1" />
+              {adminAccess.isSuperAdmin ? 'スーパー管理者' : '財務管理者'}
+            </div>
+            {!permissions.canEdit && (
+              <div className="bg-amber-100 text-amber-800 px-3 py-1 rounded-full text-sm font-medium">
+                閲覧のみ
+              </div>
+            )}
+          </div>
         </div>
-
-        {/* 🆕 権限制限メッセージ */}
-        <ReadOnlyBanner message={permissions.readOnlyMessage} />
 
         {/* 検索フィールドと操作ボタン */}
         <div className="flex flex-col sm:flex-row items-center justify-between mb-6 gap-4">

@@ -1,4 +1,4 @@
-// app/dashboard/admin/cancel-requests/page.tsx - 財務管理者対応版
+// app/dashboard/admin/cancel-requests/page.tsx - 財務管理者対応版（権限バナー最上部）
 'use client';
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
@@ -38,7 +38,7 @@ export default function AdminCancelRequestsPage() {
   const router = useRouter();
   const [requests, setRequests] = useState<CancelRequest[]>([]);
   const [loading, setLoading] = useState(true);
-  const [adminAccess, setAdminAccess] = useState<AdminAccess | null>(null); // 🔧 修正
+  const [adminAccess, setAdminAccess] = useState<AdminAccess | null>(null);
   const [processingId, setProcessingId] = useState<string | null>(null);
   const [selectedRequest, setSelectedRequest] = useState<CancelRequest | null>(null);
   const [adminNotes, setAdminNotes] = useState('');
@@ -69,6 +69,11 @@ export default function AdminCancelRequestsPage() {
     checkAdminAccess();
   }, [session, router]);
 
+  // 🆕 権限設定の取得
+  const permissions = adminAccess
+    ? getPagePermissions(adminAccess.isSuperAdmin ? 'admin' : 'financial-admin', 'cancel-requests')
+    : { canView: false, canEdit: false, canDelete: false, canCreate: false };
+
   // 解約申請一覧取得
   const fetchCancelRequests = async () => {
     try {
@@ -88,11 +93,6 @@ export default function AdminCancelRequestsPage() {
   // 🔧 修正: 解約申請処理（権限チェック追加）
   const handleProcessRequest = async (requestId: string, action: 'approve' | 'reject') => {
     // 権限チェック
-    const permissions = getPagePermissions(
-      adminAccess?.isSuperAdmin ? 'admin' : 'financial-admin',
-      'cancel-requests',
-    );
-
     if (!permissions.canEdit) {
       toast.error('この操作を実行する権限がありません');
       return;
@@ -197,14 +197,11 @@ export default function AdminCancelRequestsPage() {
     );
   }
 
-  // 🆕 権限取得
-  const permissions = getPagePermissions(
-    adminAccess.isSuperAdmin ? 'admin' : 'financial-admin',
-    'cancel-requests',
-  );
-
   return (
     <div className="max-w-[90vw] mx-auto px-4">
+      {/* 🆕 権限バナー表示（最上部） */}
+      <ReadOnlyBanner message={permissions.readOnlyMessage} />
+
       <div className="bg-gradient-to-r from-red-600 to-pink-700 rounded-lg p-6 mb-6 text-white">
         <div className="flex items-center justify-between">
           <div className="flex items-center">
@@ -214,7 +211,7 @@ export default function AdminCancelRequestsPage() {
               <p className="mt-2 opacity-90">ユーザーからの解約申請を確認・処理します</p>
             </div>
           </div>
-          {/* 🆕 権限バッジ */}
+          {/* 🆕 権限バッジ表示（ヘッダー内） */}
           <div className="flex items-center space-x-3">
             <div className="bg-white/20 text-white px-3 py-1 rounded-full text-sm font-medium flex items-center">
               <HiShieldCheck className="h-4 w-4 mr-1" />
@@ -228,9 +225,6 @@ export default function AdminCancelRequestsPage() {
           </div>
         </div>
       </div>
-
-      {/* 🆕 権限制限メッセージ */}
-      <ReadOnlyBanner message={permissions.readOnlyMessage} />
 
       {/* 統計情報 */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
