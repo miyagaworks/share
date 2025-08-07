@@ -104,6 +104,36 @@ export function getSubscriptionStatusText(status: string): string {
   }
 }
 
+// プラン名取得関数（クライアントサイド用）
+export function getPlanNameFromId(planId: string, interval?: string): string {
+  if (planId === 'monthly') {
+    return '個人プラン(1ヶ月で自動更新)';
+  } else if (planId === 'yearly') {
+    return '個人プラン(1年で自動更新)';
+  } else if (planId === 'starter') {
+    return interval === 'year'
+      ? '法人スタータープラン(10名まで・年額)'
+      : '法人スタータープラン(10名まで・月額)';
+  } else if (planId === 'business') {
+    return interval === 'year'
+      ? '法人ビジネスプラン(30名まで・年額)'
+      : '法人ビジネスプラン(30名まで・月額)';
+  } else if (planId === 'enterprise') {
+    return interval === 'year'
+      ? '法人エンタープライズプラン(50名まで・年額)'
+      : '法人エンタープライズプラン(50名まで・月額)';
+  } else if (planId === 'business_legacy') {
+    return '法人スタータープラン(10名まで)';
+  } else if (planId === 'business-plus' || planId === 'business_plus') {
+    return '法人ビジネスプラン(30名まで)';
+  } else if (planId === 'permanent') {
+    return '永久利用可能';
+  } else if (planId === 'trial') {
+    return '無料トライアル中';
+  }
+  return '不明なプラン';
+}
+
 // プラン定義
 export const PLANS = {
   MONTHLY: {

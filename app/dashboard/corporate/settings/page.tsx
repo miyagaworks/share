@@ -16,7 +16,7 @@ import {
   HiExclamation,
 } from 'react-icons/hi';
 import { toast } from 'react-hot-toast';
-import { getPlanNameFromId } from '@/lib/stripe';
+import { getPlanNameFromId } from '@/lib/stripeClient';
 // 型定義
 interface PasswordPolicy {
   minLength: number;
