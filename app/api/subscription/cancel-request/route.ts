@@ -26,13 +26,13 @@ function calculateRefund(plan: string, interval: string, paidAmount: number, use
 
     // プランごとの月額換算レート
     if (plan === 'yearly' || plan.includes('individual')) {
-      monthlyRate = 500; // 個人プラン年額の月額換算
+      monthlyRate = 550; // 個人プラン年額の月額換算
     } else if (plan.includes('starter')) {
-      monthlyRate = 3000; // スタータープラン年額の月額換算
+      monthlyRate = 3300; // スタータープラン年額の月額換算
     } else if (plan.includes('business')) {
-      monthlyRate = 6000; // ビジネスプラン年額の月額換算
+      monthlyRate = 6600; // ビジネスプラン年額の月額換算
     } else if (plan.includes('enterprise')) {
-      monthlyRate = 9000; // エンタープライズプラン年額の月額換算
+      monthlyRate = 9900; // エンタープライズプラン年額の月額換算
     }
 
     const usedAmount = usedMonths * monthlyRate;
@@ -119,14 +119,14 @@ export async function POST(req: NextRequest) {
 
     // 支払い済み金額（実際の運用では請求履歴から取得）
     let paidAmount = 0;
-    if (subscription.plan === 'monthly') paidAmount = 500;
-    else if (subscription.plan === 'yearly') paidAmount = 5000;
+    if (subscription.plan === 'monthly') paidAmount = 550;
+    else if (subscription.plan === 'yearly') paidAmount = 5500;
     else if (subscription.plan.includes('starter')) {
-      paidAmount = subscription.interval === 'year' ? 30000 : 3000;
+      paidAmount = subscription.interval === 'year' ? 33000 : 3300;
     } else if (subscription.plan.includes('business')) {
-      paidAmount = subscription.interval === 'year' ? 60000 : 6000;
+      paidAmount = subscription.interval === 'year' ? 66000 : 6600;
     } else if (subscription.plan.includes('enterprise')) {
-      paidAmount = subscription.interval === 'year' ? 90000 : 9000;
+      paidAmount = subscription.interval === 'year' ? 99000 : 9900;
     }
 
     // 返金額計算

@@ -345,7 +345,7 @@ export default function SubscriptionSettings() {
                   <div>
                     <h3 className="font-semibold">月額プラン</h3>
                     <p className="text-2xl font-bold mt-2">
-                      ¥500 <span className="text-sm font-normal text-gray-500">/月</span>
+                      ¥550 <span className="text-sm font-normal text-gray-500">/月</span>
                     </p>
                     <ul className="mt-4 space-y-2 text-sm">
                       <li className="flex items-center">
@@ -393,7 +393,7 @@ export default function SubscriptionSettings() {
                       </span>
                     </div>
                     <p className="text-2xl font-bold mt-2">
-                      ¥5,000 <span className="text-sm font-normal text-gray-500">/年</span>
+                      ¥5,500 <span className="text-sm font-normal text-gray-500">/年</span>
                     </p>
                     <p className="text-xs text-green-600">2ヶ月分お得</p>
                     <ul className="mt-4 space-y-2 text-sm">
@@ -462,7 +462,7 @@ export default function SubscriptionSettings() {
                       <h3 className="font-semibold">スタータープラン</h3>
                     </div>
                     <p className="text-2xl font-bold mt-2">
-                      ¥{selectedInterval === 'month' ? '3,000' : '30,000'}
+                      ¥{selectedInterval === 'month' ? '3,300' : '33,000'}
                       <span className="text-sm font-normal text-gray-500">
                         /{selectedInterval === 'month' ? '月' : '年'}
                       </span>
@@ -550,7 +550,7 @@ export default function SubscriptionSettings() {
                       <h3 className="font-semibold">ビジネスプラン</h3>
                     </div>
                     <p className="text-2xl font-bold mt-2">
-                      ¥{selectedInterval === 'month' ? '6,000' : '60,000'}
+                      ¥{selectedInterval === 'month' ? '6,600' : '66,000'}
                       <span className="text-sm font-normal text-gray-500">
                         /{selectedInterval === 'month' ? '月' : '年'}
                       </span>
@@ -638,7 +638,7 @@ export default function SubscriptionSettings() {
                       <h3 className="font-semibold">エンタープライズプラン</h3>
                     </div>
                     <p className="text-2xl font-bold mt-2">
-                      ¥{selectedInterval === 'month' ? '9,000' : '90,000'}
+                      ¥{selectedInterval === 'month' ? '9,900' : '99,000'}
                       <span className="text-sm font-normal text-gray-500">
                         /{selectedInterval === 'month' ? '月' : '年'}
                       </span>

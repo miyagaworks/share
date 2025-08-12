@@ -66,24 +66,24 @@ export default function CancelRequestForm({
 
       // 支払い済み金額
       let paidAmount = 0;
-      if (subscription.plan === 'monthly') paidAmount = 500;
-      else if (subscription.plan === 'yearly') paidAmount = 5000;
+      if (subscription.plan === 'monthly') paidAmount = 550;
+      else if (subscription.plan === 'yearly') paidAmount = 5;
       else if (subscription.plan.includes('starter')) {
-        paidAmount = isYearly ? 30000 : 3000;
+        paidAmount = isYearly ? 33000 : 3300;
       } else if (subscription.plan.includes('business')) {
-        paidAmount = isYearly ? 60000 : 6000;
+        paidAmount = isYearly ? 66000 : 6600;
       } else if (subscription.plan.includes('enterprise')) {
-        paidAmount = isYearly ? 90000 : 9000;
+        paidAmount = isYearly ? 99000 : 9900;
       }
 
       // 返金額計算
       let refundAmount = 0;
       if (isYearly) {
         let monthlyRate = 0;
-        if (isIndividual) monthlyRate = 500;
-        else if (subscription.plan.includes('starter')) monthlyRate = 3000;
-        else if (subscription.plan.includes('business')) monthlyRate = 6000;
-        else if (subscription.plan.includes('enterprise')) monthlyRate = 9000;
+        if (isIndividual) monthlyRate = 550;
+        else if (subscription.plan.includes('starter')) monthlyRate = 3300;
+        else if (subscription.plan.includes('business')) monthlyRate = 6600;
+        else if (subscription.plan.includes('enterprise')) monthlyRate = 9900;
 
         const usedAmount = usedMonths * monthlyRate;
         refundAmount = Math.max(0, paidAmount - usedAmount);

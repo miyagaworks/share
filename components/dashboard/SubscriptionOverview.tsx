@@ -154,8 +154,8 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                   </p>
                   <ul className="text-sm text-blue-600 space-y-1 font-medium">
                     <li>
-                      • <span className="text-base font-bold">月額500円</span> または{' '}
-                      <span className="text-base font-bold">年額5,000円</span>（2ヶ月分お得）
+                      • <span className="text-base font-bold">月額550円</span> または{' '}
+                      <span className="text-base font-bold">年額5,500円</span>（2ヶ月分お得）
                     </li>
                     <li>• 全機能利用可能・いつでもキャンセル可能</li>
                   </ul>
@@ -172,14 +172,14 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                     <div className="bg-white rounded p-3 border border-purple-100">
                       <div className="font-bold text-purple-800 text-base">スタータープラン</div>
                       <div className="text-purple-600 font-semibold">
-                        <span className="text-base font-bold">月額3,000円</span>・
+                        <span className="text-base font-bold">月額3,300円</span>・
                         <span className="text-base font-bold">最大10名</span>まで
                       </div>
                     </div>
                     <div className="bg-white rounded p-3 border border-purple-100">
                       <div className="font-bold text-purple-800 text-base">ビジネスプラン</div>
                       <div className="text-purple-600 font-semibold">
-                        <span className="text-base font-bold">月額6,000円</span>・
+                        <span className="text-base font-bold">月額6,600円</span>・
                         <span className="text-base font-bold">最大30名</span>まで
                       </div>
                     </div>
@@ -188,7 +188,7 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
                         エンタープライズプラン
                       </div>
                       <div className="text-purple-600 font-semibold">
-                        <span className="text-base font-bold">月額9,000円</span>・
+                        <span className="text-base font-bold">月額9,900円</span>・
                         <span className="text-base font-bold">最大50名</span>まで
                       </div>
                     </div>
@@ -298,8 +298,8 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
               <p className="text-sm text-blue-700 mb-2">個人でご利用される方向けのプランです。</p>
               <ul className="text-sm text-blue-600 space-y-1 font-medium">
                 <li>
-                  • <span className="text-base font-bold">月額500円</span> または{' '}
-                  <span className="text-base font-bold">年額5,000円</span>（2ヶ月分お得）
+                  • <span className="text-base font-bold">月額550円</span> または{' '}
+                  <span className="text-base font-bold">年額5,500円</span>（2ヶ月分お得）
                 </li>
                 <li>• 全機能利用可能・いつでもキャンセル可能</li>
               </ul>
@@ -315,15 +315,15 @@ export default function SubscriptionOverview({ userId }: SubscriptionOverviewPro
               <div className="grid grid-cols-1 gap-2 text-xs">
                 <div className="bg-white rounded p-2 border border-purple-100">
                   <div className="font-semibold text-purple-800">スタータープラン</div>
-                  <div className="text-purple-600">月額3,000円・最大10名まで</div>
+                  <div className="text-purple-600">月額3,300円・最大10名まで</div>
                 </div>
                 <div className="bg-white rounded p-2 border border-purple-100">
                   <div className="font-semibold text-purple-800">ビジネスプラン</div>
-                  <div className="text-purple-600">月額6,000円・最大30名まで</div>
+                  <div className="text-purple-600">月額6,600円・最大30名まで</div>
                 </div>
                 <div className="bg-white rounded p-2 border border-purple-100">
                   <div className="font-semibold text-purple-800">エンタープライズプラン</div>
-                  <div className="text-purple-600">月額9,000円・最大50名まで</div>
+                  <div className="text-purple-600">月額9,900円・最大50名まで</div>
                 </div>
               </div>
               <p className="text-xs text-purple-600 mt-2">※年間プランは16%お得です</p>

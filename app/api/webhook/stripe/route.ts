@@ -627,15 +627,15 @@ function extractPlanInfoFromPaymentIntent(paymentIntent: Stripe.PaymentIntent) {
 
   // 金額から推定（最後の手段）
   const amount = paymentIntent.amount / 100;
-  if (amount === 500) return { planId: 'monthly', displayName: '個人プラン（月額）' };
-  if (amount === 5000) return { planId: 'yearly', displayName: '個人プラン（年額）' };
-  if (amount === 3000) return { planId: 'starter', displayName: '法人スタータープラン（月額）' };
-  if (amount === 30000) return { planId: 'starter', displayName: '法人スタータープラン（年額）' };
-  if (amount === 6000) return { planId: 'business', displayName: '法人ビジネスプラン（月額）' };
-  if (amount === 60000) return { planId: 'business', displayName: '法人ビジネスプラン（年額）' };
-  if (amount === 9000)
+  if (amount === 550) return { planId: 'monthly', displayName: '個人プラン（月額）' };
+  if (amount === 5500) return { planId: 'yearly', displayName: '個人プラン（年額）' };
+  if (amount === 3300) return { planId: 'starter', displayName: '法人スタータープラン（月額）' };
+  if (amount === 33000) return { planId: 'starter', displayName: '法人スタータープラン（年額）' };
+  if (amount === 6600) return { planId: 'business', displayName: '法人ビジネスプラン（月額）' };
+  if (amount === 66000) return { planId: 'business', displayName: '法人ビジネスプラン（年額）' };
+  if (amount === 9900)
     return { planId: 'enterprise', displayName: '法人エンタープライズプラン（月額）' };
-  if (amount === 90000)
+  if (amount === 99000)
     return { planId: 'enterprise', displayName: '法人エンタープライズプラン（年額）' };
 
   return { planId: 'unknown', displayName: '不明なプラン' };

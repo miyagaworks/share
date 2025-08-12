@@ -250,9 +250,9 @@ const SnsGuideModal = ({ platform, isOpen, onClose }) => {
 
 #### 2.2.1 サブスクリプションモデル
 - 7日間の無料トライアル
-- 月額プラン: 500円/月
-- 年間プラン: 5,000円/年（2ヶ月分お得）
-- 法人プラン: 3,000円/月〜（別途設定）
+- 月額プラン: 550円/月
+- 年間プラン: 5,500円/年（2ヶ月分お得）
+- 法人プラン: 3,300円/月〜（別途設定）
 
 #### 2.2.2 主要機能
 1. **トライアル期間管理**
@@ -642,7 +642,7 @@ const SubscriptionSettings = () => {
             >
               <div className="plan-header">
                 <h4>月額プラン</h4>
-                <p className="price">¥500/月</p>
+                <p className="price">¥550/月</p>
               </div>
               <div className="plan-features">
                 <ul>

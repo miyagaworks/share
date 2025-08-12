@@ -24,21 +24,21 @@ export const STRIPE_PAYMENT_LINKS = {
     url: 'https://buy.stripe.com/7sY9AUfxOdGogw4cQbcs800',
     planId: 'monthly',
     interval: 'month',
-    amount: 500,
+    amount: 550,
     isCorporate: false,
   },
   YEARLY: {
     url: 'https://buy.stripe.com/bJe5kE1GYcCkenW6rNcs801',
     planId: 'yearly',
     interval: 'year',
-    amount: 5000,
+    amount: 5500,
     isCorporate: false,
   },
   STARTER_MONTHLY: {
     url: 'https://buy.stripe.com/dRm14oaducCk93C5nJcs802',
     planId: 'starter',
     interval: 'month',
-    amount: 3000,
+    amount: 3300,
     isCorporate: true,
     maxUsers: 10,
   },
@@ -46,7 +46,7 @@ export const STRIPE_PAYMENT_LINKS = {
     url: 'https://buy.stripe.com/eVqeVeclC7i00x67vRcs803',
     planId: 'starter',
     interval: 'year',
-    amount: 30000,
+    amount: 33000,
     isCorporate: true,
     maxUsers: 10,
   },
@@ -54,7 +54,7 @@ export const STRIPE_PAYMENT_LINKS = {
     url: 'https://buy.stripe.com/6oUdRa4Ta1XG2Feg2ncs804',
     planId: 'business',
     interval: 'month',
-    amount: 6000,
+    amount: 6600,
     isCorporate: true,
     maxUsers: 30,
   },
@@ -62,7 +62,7 @@ export const STRIPE_PAYMENT_LINKS = {
     url: 'https://buy.stripe.com/5kQbJ24TacCk5Rq3fBcs805',
     planId: 'business',
     interval: 'year',
-    amount: 60000,
+    amount: 66000,
     isCorporate: true,
     maxUsers: 30,
   },
@@ -70,7 +70,7 @@ export const STRIPE_PAYMENT_LINKS = {
     url: 'https://buy.stripe.com/bJe14o4TaeKs4Nm17tcs806',
     planId: 'enterprise',
     interval: 'month',
-    amount: 9000,
+    amount: 9900,
     isCorporate: true,
     maxUsers: 50,
   },
@@ -78,7 +78,7 @@ export const STRIPE_PAYMENT_LINKS = {
     url: 'https://buy.stripe.com/4gMcN699q9q8a7G9DZcs807',
     planId: 'enterprise',
     interval: 'year',
-    amount: 90000,
+    amount: 99000,
     isCorporate: true,
     maxUsers: 50,
   },
@@ -138,49 +138,49 @@ export function getPlanNameFromId(planId: string, interval?: string): string {
 export const PLANS = {
   MONTHLY: {
     name: '月額プラン',
-    price: 500, // 円
+    price: 550, // 円
     interval: 'month',
   },
   YEARLY: {
     name: '年額プラン',
-    price: 5000, // 円
+    price: 5500, // 円
     interval: 'year',
   },
   // 法人プラン更新
   STARTER: {
     name: '法人スタータープラン',
-    price: 3000, // 円
+    price: 3300, // 円
     interval: 'month',
     maxUsers: 10,
   },
   BUSINESS: {
     name: '法人ビジネスプラン',
-    price: 6000, // 円
+    price: 6600, // 円
     interval: 'month',
     maxUsers: 30,
   },
   ENTERPRISE: {
     name: '法人エンタープライズプラン',
-    price: 9000, // 円
+    price: 9900, // 円
     interval: 'month',
     maxUsers: 50,
   },
   // 年額プラン
   STARTER_YEARLY: {
     name: '法人スタータープラン(年間)',
-    price: 30000, // 円
+    price: 33000, // 円
     interval: 'year',
     maxUsers: 10,
   },
   BUSINESS_YEARLY: {
     name: '法人ビジネスプラン(年間)',
-    price: 60000, // 円
+    price: 66000, // 円
     interval: 'year',
     maxUsers: 30,
   },
   ENTERPRISE_YEARLY: {
     name: '法人エンタープライズプラン(年間)',
-    price: 90000, // 円
+    price: 99000, // 円
     interval: 'year',
     maxUsers: 50,
   },

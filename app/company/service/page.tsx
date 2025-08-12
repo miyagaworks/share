@@ -88,7 +88,7 @@ export default function ServiceAboutPage() {
             <div className="border rounded-lg p-6">
               <h3 className="font-medium text-lg mb-2">個人プラン</h3>
               <div className="text-2xl font-bold mb-4">
-                月額500円<span className="text-sm font-normal text-gray-600">（税込）</span>
+                月額550円<span className="text-sm font-normal text-gray-600">（税込）</span>
               </div>
               <ul className="space-y-2 mb-6">
                 <li className="flex items-start">
@@ -161,13 +161,13 @@ export default function ServiceAboutPage() {
                 </li>
               </ul>
               <p className="text-sm text-gray-600 mb-6 text-justify">
-                ※年間プラン（5,000円/年）もご用意しています。
+                ※年間プラン（5,500円/年）もご用意しています。
               </p>
             </div>
             <div className="border rounded-lg p-6">
               <h3 className="font-medium text-lg mb-2">法人プラン</h3>
               <div className="text-2xl font-bold mb-4">
-                月額3,000円〜<span className="text-sm font-normal text-gray-600">（税込）</span>
+                月額3,300円〜<span className="text-sm font-normal text-gray-600">（税込）</span>
               </div>
               <ul className="space-y-2 mb-6">
                 <li className="flex items-start">

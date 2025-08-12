@@ -54,9 +54,9 @@ export default function TransactionsPage() {
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">サービス価格</th>
                 <td className="py-4 px-4">
                   <ul className="list-disc pl-5 space-y-1 text-justify">
-                    <li>個人プラン: 月額500円（税込）</li>
-                    <li>個人プラン（年間）: 年額5,000円（税込）</li>
-                    <li>法人スタータープラン: 月額3,000円（税込）〜</li>
+                    <li>個人プラン: 月額550円（税込）</li>
+                    <li>個人プラン（年間）: 年額5,500円（税込）</li>
+                    <li>法人スタータープラン: 月額3,300円（税込）〜</li>
                   </ul>
                 </td>
               </tr>
