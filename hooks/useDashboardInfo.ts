@@ -10,6 +10,15 @@ export interface DashboardInfo {
     image: string | null;
     subscriptionStatus: string | null;
   };
+  // 🆕 追加
+  subscription: {
+    id: string;
+    plan: string;
+    status: string;
+    interval: string;
+    currentPeriodEnd: string;
+    displayName: string;
+  } | null;
   permissions: {
     userType:
       | 'admin'

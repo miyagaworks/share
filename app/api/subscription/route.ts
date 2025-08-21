@@ -144,7 +144,7 @@ export async function GET() {
           id: 'mock-id-DO-NOT-USE-IN-PRODUCTION',
           userId: session.user.id,
           status: isTrialActive ? 'trialing' : user?.subscriptionStatus || 'incomplete',
-          plan: isTrialActive ? 'trial' : 'none',
+          plan: isTrialActive ? 'trialing' : 'none',
           priceId: 'price_mock',
           currentPeriodStart: new Date(),
           currentPeriodEnd: trialEndsAt || new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),

@@ -1,0 +1,158 @@
+// types/touch-seal.ts
+export const TOUCH_SEAL_COLORS = ['black', 'gray', 'white'] as const;
+export type TouchSealColor = (typeof TOUCH_SEAL_COLORS)[number];
+
+export const TOUCH_SEAL_STATUS = ['pending', 'paid', 'preparing', 'shipped', 'delivered'] as const;
+export type TouchSealStatus = (typeof TOUCH_SEAL_STATUS)[number];
+
+export const ORDER_TYPES = ['individual', 'corporate'] as const;
+export type OrderType = (typeof ORDER_TYPES)[number];
+
+// 基本設定
+export const TOUCH_SEAL_CONFIG = {
+  UNIT_PRICE: 550, // 税込
+  SHIPPING_FEE: 185, // 税込
+  TAX_RATE: 0, // 税込価格のため税率0
+  MAX_QUANTITY_PER_COLOR: 100, // 1色あたり最大100枚
+  MAX_TOTAL_QUANTITY: 100, // 合計最大100枚
+} as const;
+
+// 色の表示名
+export const TOUCH_SEAL_COLOR_NAMES: Record<TouchSealColor, string> = {
+  black: 'ブラック',
+  gray: 'グレー',
+  white: 'ホワイト',
+};
+
+// ステータスの表示名
+export const TOUCH_SEAL_STATUS_NAMES: Record<TouchSealStatus, string> = {
+  pending: '注文受付中',
+  paid: '支払い完了',
+  preparing: '準備中',
+  shipped: '発送済み',
+  delivered: '配送完了',
+};
+
+// 配送先情報（基本）
+export interface ShippingAddress {
+  postalCode: string;
+  address: string;
+  recipientName: string;
+}
+
+// 配送先情報（拡張版）
+export interface EnhancedShippingAddress {
+  postalCode: string;
+  address: string; // 番地まで
+  building?: string; // マンション名・部屋番号
+  companyName?: string; // 会社名（任意）
+  recipientName: string; // お届け先名（山田 太郎 形式）
+}
+
+// 注文アイテム（データベース構造）
+export interface TouchSealItem {
+  id: string;
+  orderId: string;
+  memberUserId: string | null;
+  color: TouchSealColor;
+  quantity: number;
+  unitPrice: number;
+  qrSlug: string;
+  createdAt: string;
+  memberName?: string | null;
+  memberEmail?: string | null;
+}
+
+// 注文作成用のアイテム型（idやorderId、createdAtなし）
+export interface CreateTouchSealItem {
+  color: TouchSealColor;
+  quantity: number;
+  qrSlug: string;
+  memberUserId?: string;
+}
+
+// バリデーション用のアイテム型（unitPriceを含む）
+export interface ValidationTouchSealItem extends CreateTouchSealItem {
+  unitPrice: number;
+}
+
+// 注文データ（データベース構造）
+export interface TouchSealOrder {
+  id: string;
+  userId: string;
+  tenantId: string | null;
+  subscriptionId: string | null;
+  orderType: OrderType;
+  orderDate: string;
+  status: TouchSealStatus;
+  sealTotal: number;
+  shippingFee: number;
+  taxAmount: number;
+  totalAmount: number;
+  shippingAddress: EnhancedShippingAddress; // 拡張版を使用
+  trackingNumber: string | null;
+  shippedAt: string | null;
+  shippedBy: string | null;
+  stripePaymentIntentId: string | null;
+  createdAt: string;
+  updatedAt: string;
+  items: TouchSealItem[];
+  tenant?: {
+    name: string;
+  } | null;
+  user?: {
+    name?: string | null;
+    email: string;
+  };
+}
+
+// 注文作成リクエスト
+export interface CreateTouchSealOrderRequest {
+  orderType: OrderType;
+  items: CreateTouchSealItem[];
+  shippingAddress: EnhancedShippingAddress; // 拡張版を使用
+  tenantId?: string; // 法人注文時
+}
+
+// 注文計算結果
+export interface OrderCalculation {
+  sealTotal: number; // シール代金小計（税込）
+  shippingFee: number; // 配送料（税込）
+  taxAmount: number; // 消費税（0円）
+  totalAmount: number; // 合計（税込）
+  itemCount: number; // アイテム総数
+}
+
+// バリデーション結果
+export interface ValidationResult {
+  isValid: boolean;
+  errors: string[];
+}
+
+// 注文ステップ
+export type OrderStep = 'items' | 'url' | 'address' | 'confirm';
+
+// 色・数量選択
+export interface TouchSealSelection {
+  black: number;
+  gray: number;
+  white: number;
+}
+
+// QRスラッグ情報
+export interface QrSlugInfo {
+  slug: string;
+  isExisting: boolean;
+  isAvailable: boolean;
+  userId?: string;
+  userName?: string;
+}
+
+// メンバーQRスラッグ情報（法人用）
+export interface MemberQrSlugInfo {
+  userId: string;
+  name: string;
+  email: string;
+  existingSlugs: string[];
+  hasNoSlug: boolean;
+}

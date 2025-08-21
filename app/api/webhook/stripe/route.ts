@@ -1,13 +1,17 @@
-// app/api/webhook/stripe/route.ts (財務管理機能統合版) - console.log修正版
+// app/api/webhook/stripe/route.ts (正しい修正版 - トライアルユーザーも正常処理)
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
-import { stripe, getPlanInfoByPriceId, getStripeInstance } from '@/lib/stripe';
+import {
+  stripe,
+  getPlanInfoByPriceId,
+  getStripeInstance,
+  getPaymentLinkByPlan,
+} from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
-import type { PrismaClient } from '@prisma/client';
 
-// 🚀 Webhookハンドラー - 高速レスポンス + 財務管理対応
+// 🚀 Webhookハンドラー - 高速レスポンス + 財務管理 + ワンタップシール対応
 export async function POST(req: NextRequest) {
   const startTime = Date.now();
 
@@ -19,12 +23,12 @@ export async function POST(req: NextRequest) {
 
     if (!process.env.STRIPE_WEBHOOK_SECRET) {
       logger.error('STRIPE_WEBHOOK_SECRET not defined');
-      return new Response('Webhook secret not defined', { status: 200 }); // 200で返してリトライを停止
+      return new Response('Webhook secret not defined', { status: 200 });
     }
 
     if (!signature) {
       logger.error('No Stripe signature');
-      return new Response('No signature', { status: 200 }); // 200で返してリトライを停止
+      return new Response('No signature', { status: 200 });
     }
 
     let event: Stripe.Event;
@@ -44,11 +48,10 @@ export async function POST(req: NextRequest) {
     const responseTime = Date.now() - startTime;
     logger.info(`Quick response sent in ${responseTime}ms for event: ${event.type}`);
 
-    // 🔄 非同期でバックグラウンド処理を実行（レスポンス後）
+    // 📄 非同期でバックグラウンド処理を実行（レスポンス後）
     setImmediate(() => {
       processWebhookEventAsync(event).catch((error) => {
         logger.error('Background webhook processing failed:', error);
-        logger.error('Background webhook processing error:', error);
       });
     });
 
@@ -59,20 +62,19 @@ export async function POST(req: NextRequest) {
         eventType: event.type,
         responseTime: responseTime,
         status: 'processing_async',
-        financialIntegration: true, // 財務連携有効フラグ
+        financialIntegration: true,
+        oneTapSealSupport: true,
       },
       { status: 200 },
     );
   } catch (error) {
     const responseTime = Date.now() - startTime;
     logger.error('Webhook fatal error:', error);
-
-    // エラーでも200を返してリトライループを防ぐ
     return new Response(`Error handled: ${responseTime}ms`, { status: 200 });
   }
 }
 
-// 🔄 非同期バックグラウンド処理
+// 📄 非同期バックグラウンド処理
 async function processWebhookEventAsync(event: Stripe.Event) {
   const processingStart = Date.now();
 
@@ -98,7 +100,6 @@ async function processWebhookEventAsync(event: Stripe.Event) {
       case 'checkout.session.completed':
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
         break;
-      // 🆕 財務管理用イベント追加
       case 'payment_intent.succeeded':
         await handlePaymentIntentSucceeded(event.data.object as Stripe.PaymentIntent);
         break;
@@ -117,19 +118,15 @@ async function processWebhookEventAsync(event: Stripe.Event) {
       `Background processing failed for ${event.type} after ${processingTime}ms:`,
       error,
     );
-
-    // エラーの場合もログに記録して処理を続行
-    logger.error(`Background processing error for ${event.type}:`, error);
   }
 }
 
-// 🔧 最適化されたサブスクリプション作成ハンドラー
+// 🔧 サブスクリプション作成ハンドラー
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
   try {
     const customerId = subscription.customer as string;
     logger.info(`Processing subscription created: ${subscription.id} for customer: ${customerId}`);
 
-    // カスタマーIDからユーザーを検索
     const user = await prisma.user.findFirst({
       where: { stripeCustomerId: customerId },
     });
@@ -149,7 +146,6 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
 
     logger.info(`Plan info: ${planInfo.planId}, corporate: ${planInfo.isCorporate}`);
 
-    // サブスクリプション情報をデータベースに保存/更新
     const subscriptionData = {
       status: subscription.status,
       subscriptionId: subscription.id,
@@ -164,9 +160,7 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
       canceledAt: subscription.canceled_at ? new Date(subscription.canceled_at * 1000) : null,
     };
 
-    // 🚀 トランザクションで高速処理
     const result = await prisma.$transaction(async (tx: any) => {
-      // サブスクリプション作成/更新
       const upsertedSubscription = await tx.subscription.upsert({
         where: { userId: user.id },
         update: subscriptionData,
@@ -176,12 +170,11 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
         },
       });
 
-      // ユーザー状態更新
       await tx.user.update({
         where: { id: user.id },
         data: {
           subscriptionStatus: 'active',
-          trialEndsAt: null,
+          trialEndsAt: null, // 有料プラン開始でトライアル終了
           corporateRole: planInfo.isCorporate ? 'admin' : null,
         },
       });
@@ -189,26 +182,22 @@ async function handleSubscriptionCreated(subscription: Stripe.Subscription) {
       return upsertedSubscription;
     });
 
-    logger.info(`Subscription data saved for user: ${user.id}`);
-
-    // 🏢 法人プランの場合は別途処理（エラーがあっても継続）
     if (planInfo.isCorporate) {
       try {
         await handleCorporateTenantCreation(user.id, result.id, planInfo);
       } catch (corporateError) {
         logger.warn('Corporate tenant creation failed:', corporateError);
-        // 法人テナント作成失敗してもサブスクリプション自体は有効
       }
     }
 
     logger.info(`Subscription creation completed for: ${subscription.id}`);
   } catch (error) {
     logger.error('Subscription creation failed:', error);
-    throw error; // エラーをログに記録するため再スロー
+    throw error;
   }
 }
 
-// 🏢 法人テナント作成を分離（エラー処理を独立）
+// 🏢 法人テナント作成
 async function handleCorporateTenantCreation(
   userId: string,
   subscriptionId: string,
@@ -216,7 +205,6 @@ async function handleCorporateTenantCreation(
 ) {
   logger.info('Creating corporate tenant...');
 
-  // 既存テナントチェック
   const existingTenant = await prisma.corporateTenant.findUnique({
     where: { adminId: userId },
   });
@@ -249,7 +237,7 @@ async function handleCorporateTenantCreation(
   }
 }
 
-// 🔄 サブスクリプション更新ハンドラー
+// 📄 サブスクリプション更新ハンドラー
 async function handleSubscriptionUpdated(subscription: Stripe.Subscription) {
   try {
     logger.info(`Processing subscription updated: ${subscription.id}`);
@@ -312,7 +300,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
     }
 
     await prisma.$transaction(async (tx: any) => {
-      // サブスクリプション状態更新
       await tx.subscription.update({
         where: { userId: user.id },
         data: {
@@ -321,7 +308,6 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
         },
       });
 
-      // ユーザー状態更新
       await tx.user.update({
         where: { id: user.id },
         data: {
@@ -337,10 +323,10 @@ async function handleSubscriptionDeleted(subscription: Stripe.Subscription) {
   }
 }
 
-// 💰 支払い成功ハンドラー（財務管理機能統合版）
+// 💰 支払い成功ハンドラー
 async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
   try {
-    logger.info(`Processing payment succeeded with financial integration: ${invoice.id}`);
+    logger.info(`Processing payment succeeded: ${invoice.id}`);
 
     if (invoice.subscription) {
       const customerId = invoice.customer as string;
@@ -349,19 +335,17 @@ async function handleInvoicePaymentSucceeded(invoice: Stripe.Invoice) {
       });
 
       if (user) {
-        // 既存のユーザーステータス更新
         await prisma.user.update({
           where: { id: user.id },
           data: { subscriptionStatus: 'active' },
         });
 
-        // 🆕 財務データの記録
+        // 財務データの記録
         if (invoice.payment_intent) {
           try {
             await recordFinancialDataFromInvoice(invoice, user);
           } catch (financialError) {
             logger.warn('Financial data recording failed:', financialError);
-            // 財務データ記録失敗してもサブスクリプション処理は継続
           }
         }
 
@@ -402,41 +386,178 @@ async function handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) 
   try {
     logger.info(`Processing checkout completed: ${session.id}`);
 
-    if (session.subscription && session.customer) {
-      const customerId = session.customer as string;
-      const user = await prisma.user.findFirst({
-        where: { stripeCustomerId: customerId },
+    const customerId = session.customer as string;
+    const user = await prisma.user.findFirst({
+      where: { stripeCustomerId: customerId },
+    });
+
+    if (!user) {
+      logger.error(`User not found for customer: ${customerId}`);
+      return;
+    }
+
+    // メタデータから決済タイプを確認
+    const subscriptionType = session.metadata?.subscriptionType || 'standard';
+    const hasOneTapSealOrder = session.metadata?.oneTapSealOrder === 'true';
+    const plan = session.metadata?.plan;
+    const interval = session.metadata?.interval || 'month';
+    const isCorporate = session.metadata?.isCorporate === 'true';
+
+    logger.info(`Checkout type: ${subscriptionType}, OneTapSeal: ${hasOneTapSealOrder}`);
+
+    await prisma.$transaction(async (tx: any) => {
+      // 🆕 ワンタップシール単独決済の場合
+      if (subscriptionType === 'one_tap_seal_only') {
+        logger.info('Processing OneTapSeal-only checkout');
+
+        // ワンタップシール注文の状態更新
+        const orderId = session.metadata?.orderId;
+        if (orderId) {
+          const order = await tx.oneTapSealOrder.findUnique({
+            where: { id: orderId },
+          });
+
+          if (order) {
+            await tx.oneTapSealOrder.update({
+              where: { id: orderId },
+              data: {
+                status: 'paid',
+                stripePaymentIntentId: session.payment_intent as string,
+              },
+            });
+
+            logger.info(`OneTapSeal order updated to paid: ${orderId}`);
+          } else {
+            logger.warn(`OneTapSeal order not found: ${orderId}`);
+          }
+        }
+
+        // ユーザー状態は更新しない（ワンタップシール単独購入のため）
+        logger.info(`OneTapSeal-only checkout completed for user: ${user.id}`);
+        return;
+      }
+      
+      // 1. ユーザー状態更新
+      await tx.user.update({
+        where: { id: user.id },
+        data: {
+          subscriptionStatus: 'active',
+          trialEndsAt: null, // 有料プラン開始でトライアル終了
+          corporateRole: isCorporate ? 'admin' : null,
+        },
       });
 
-      if (user) {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { subscriptionStatus: 'active' },
+      // 2. 一回限り決済の場合は、サブスクリプションを手動作成
+      if (subscriptionType === 'plan_with_onetap' || !session.subscription) {
+        logger.info('Creating subscription manually for one-time payment');
+
+        // 既存のpendingサブスクリプションを検索・更新
+        const existingSubscription = await tx.subscription.findFirst({
+          where: {
+            userId: user.id,
+            subscriptionId: session.id, // Checkout Session IDで検索
+            status: 'pending',
+          },
         });
-        logger.info(`Checkout completion processed for user: ${user.id}`);
+
+        if (existingSubscription) {
+          // Stripeでサブスクリプションを作成
+          let stripeSubscription = null;
+
+          if (plan && stripe) {
+            try {
+              const planInfo = getPaymentLinkByPlan(plan, interval);
+
+              if (planInfo && planInfo.priceId) {
+                stripeSubscription = await stripe.subscriptions.create({
+                  customer: customerId,
+                  items: [{ price: planInfo.priceId }],
+                  metadata: {
+                    userId: user.id,
+                    plan: plan,
+                    interval: interval,
+                    createdViaCheckout: 'true',
+                  },
+                });
+
+                logger.info(`Stripe subscription created: ${stripeSubscription.id}`);
+              }
+            } catch (stripeError) {
+              logger.error('Failed to create Stripe subscription:', stripeError);
+            }
+          }
+
+          // ローカルサブスクリプション更新
+          await tx.subscription.update({
+            where: { id: existingSubscription.id },
+            data: {
+              status: 'active',
+              subscriptionId: stripeSubscription?.id || `manual_${session.id}`,
+              currentPeriodStart: new Date(),
+              currentPeriodEnd: new Date(
+                Date.now() + (interval === 'year' ? 365 : 30) * 24 * 60 * 60 * 1000,
+              ),
+            },
+          });
+
+          logger.info(`Subscription updated: ${existingSubscription.id}`);
+        }
       }
-    }
+      // 3. 通常のサブスクリプション決済の場合
+      else if (session.subscription) {
+        await tx.subscription.updateMany({
+          where: {
+            userId: user.id,
+            subscriptionId: session.id,
+          },
+          data: {
+            status: 'active',
+            subscriptionId: session.subscription as string,
+          },
+        });
+      }
+
+      // 4. ワンタップシール注文の状態更新
+      if (hasOneTapSealOrder) {
+        logger.info(`Processing OneTapSeal order for checkout: ${session.id}`);
+
+        const oneTapSealOrder = await tx.oneTapSealOrder.findFirst({
+          where: {
+            userId: user.id,
+            stripePaymentIntentId: session.id,
+            status: 'pending',
+          },
+        });
+
+        if (oneTapSealOrder) {
+          await tx.oneTapSealOrder.update({
+            where: { id: oneTapSealOrder.id },
+            data: {
+              status: 'paid',
+              stripePaymentIntentId: session.payment_intent as string,
+            },
+          });
+
+          logger.info(`OneTapSeal order updated to paid: ${oneTapSealOrder.id}`);
+        } else {
+          logger.warn(`OneTapSeal order not found for checkout: ${session.id}`);
+        }
+      }
+    });
+
+    logger.info(
+      `Checkout completion processed for user: ${user.id}, Type: ${subscriptionType}, OneTapSeal: ${hasOneTapSealOrder}`,
+    );
   } catch (error) {
     logger.error('Checkout completion failed:', error);
   }
 }
 
-// 🆕 PaymentIntent成功ハンドラー（財務管理用）
+// PaymentIntentサクセスハンドラー
 async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent) {
   try {
     logger.info(`Processing PaymentIntent succeeded: ${paymentIntent.id}`);
 
-    // 既存トランザクションチェック
-    const existingTransaction = await prisma.stripeTransaction.findUnique({
-      where: { stripePaymentId: paymentIntent.id },
-    });
-
-    if (existingTransaction) {
-      logger.info(`Transaction already exists: ${paymentIntent.id}`);
-      return;
-    }
-
-    // ユーザー検索
     const user = await prisma.user.findFirst({
       where: { stripeCustomerId: paymentIntent.customer as string },
     });
@@ -446,8 +567,32 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
       return;
     }
 
-    // 財務データ記録
-    await recordFinancialDataFromPaymentIntent(paymentIntent, user);
+    await prisma.$transaction(async (tx: any) => {
+      // 財務データ記録
+      await recordFinancialDataFromPaymentIntent(paymentIntent, user, tx);
+
+      // ワンタップシール注文の最終確認・更新
+      const oneTapSealOrder = await tx.oneTapSealOrder.findFirst({
+        where: {
+          userId: user.id,
+          stripePaymentIntentId: paymentIntent.id,
+          status: 'paid',
+        },
+      });
+
+      if (oneTapSealOrder) {
+        logger.info(`Confirmed OneTapSeal order payment: ${oneTapSealOrder.id}`);
+
+        await tx.oneTapSealOrder.update({
+          where: { id: oneTapSealOrder.id },
+          data: {
+            status: 'preparing',
+          },
+        });
+
+        logger.info(`OneTapSeal order status updated to preparing: ${oneTapSealOrder.id}`);
+      }
+    });
 
     logger.info(`PaymentIntent financial data recorded: ${paymentIntent.id}`);
   } catch (error) {
@@ -455,12 +600,11 @@ async function handlePaymentIntentSucceeded(paymentIntent: Stripe.PaymentIntent)
   }
 }
 
-// 🆕 チャージバック処理ハンドラー
+// チャージバック処理ハンドラー
 async function handleChargeDispute(dispute: Stripe.Dispute) {
   try {
     logger.info(`Processing charge dispute: ${dispute.id}`);
 
-    // 関連する取引を検索して更新
     const transaction = await prisma.stripeTransaction.findUnique({
       where: { stripeChargeId: dispute.charge as string },
     });
@@ -486,7 +630,6 @@ async function recordFinancialDataFromInvoice(invoice: Stripe.Invoice, user: any
   try {
     logger.info('Recording financial data from invoice:', invoice.id);
 
-    // PaymentIntentを取得
     const stripeClient = getStripeInstance();
     const paymentIntent = await stripeClient.paymentIntents.retrieve(
       invoice.payment_intent as string,
@@ -497,19 +640,19 @@ async function recordFinancialDataFromInvoice(invoice: Stripe.Invoice, user: any
     }
   } catch (error) {
     logger.error('Failed to record financial data from invoice:', error);
-    throw error; // 再スローしてエラーを上位で処理
+    throw error;
   }
 }
 
-// 💳 PaymentIntentから財務データを記録
+// 💳 PaymentIntentから財務データを記録（ワンタップシール対応）
 async function recordFinancialDataFromPaymentIntent(
   paymentIntent: Stripe.PaymentIntent,
   user: any,
+  tx?: any,
 ) {
   try {
     logger.info('Recording financial data from PaymentIntent:', paymentIntent.id);
 
-    // Charge情報取得（手数料計算用）
     const stripeClient = getStripeInstance();
     const charges = await stripeClient.charges.list({
       payment_intent: paymentIntent.id,
@@ -522,22 +665,24 @@ async function recordFinancialDataFromPaymentIntent(
       return;
     }
 
-    // 手数料情報の取得
     const balanceTransaction = await stripeClient.balanceTransactions.retrieve(
       charge.balance_transaction as string,
     );
 
-    const amount = paymentIntent.amount / 100; // センバーツを円に変換
+    const amount = paymentIntent.amount / 100;
     const feeAmount = balanceTransaction.fee / 100;
     const netAmount = balanceTransaction.net / 100;
 
-    // プラン情報の推定
+    // ワンタップシール注文情報の確認
+    const isOneTapSealOrder = paymentIntent.metadata?.orderType === 'one_tap_seal';
     const planInfo = extractPlanInfoFromPaymentIntent(paymentIntent);
 
+    const transactionProcessor = tx || prisma;
+
     // 財務データをトランザクションで記録
-    await prisma.$transaction(async (tx: any) => {
+    const financialOperation = async (transaction: any) => {
       // 1. StripeTransactionレコード作成
-      const stripeTransaction = await tx.stripeTransaction.create({
+      const stripeTransaction = await transaction.stripeTransaction.create({
         data: {
           stripePaymentId: paymentIntent.id,
           stripeChargeId: charge.id,
@@ -559,11 +704,11 @@ async function recordFinancialDataFromPaymentIntent(
       });
 
       // 2. FinancialRecordレコード作成（統合管理用）
-      await tx.financialRecord.create({
+      await transaction.financialRecord.create({
         data: {
-          recordType: 'stripe_revenue',
+          recordType: isOneTapSealOrder ? 'one_tap_seal_revenue' : 'stripe_revenue',
           title: `売上: ${paymentIntent.description || 'Stripe決済'}`,
-          description: `プラン: ${planInfo.displayName || '不明'}`,
+          description: `プラン: ${planInfo.displayName || '不明'}${isOneTapSealOrder ? ' + ワンタップシール' : ''}`,
           amount: amount,
           category: planInfo.planId || 'subscription',
           recordDate: new Date(paymentIntent.created * 1000),
@@ -572,7 +717,7 @@ async function recordFinancialDataFromPaymentIntent(
           isAutoImported: true,
           feeAmount: feeAmount,
           netAmount: netAmount,
-          inputBy: 'system', // システム自動記録
+          inputBy: 'system',
           createdBy: 'system',
           type: 'revenue',
           date: new Date(paymentIntent.created * 1000),
@@ -587,21 +732,47 @@ async function recordFinancialDataFromPaymentIntent(
         amount: amount,
         fees: feeAmount,
         net: netAmount,
+        isOneTapSeal: isOneTapSealOrder,
       });
-    });
+    };
+
+    if (tx) {
+      await financialOperation(tx);
+    } else {
+      await prisma.$transaction(financialOperation);
+    }
   } catch (error) {
     logger.error('Failed to record financial data from PaymentIntent:', error);
     throw error;
   }
 }
 
-// プラン情報をPaymentIntentから推定
+// プラン情報をPaymentIntentから推定（ワンタップシール+プラン同時決済対応）
 function extractPlanInfoFromPaymentIntent(paymentIntent: Stripe.PaymentIntent) {
   // メタデータから取得を試行
   if (paymentIntent.metadata?.subscription_type) {
     return {
       planId: paymentIntent.metadata.subscription_type,
       displayName: paymentIntent.metadata.plan_name || paymentIntent.metadata.subscription_type,
+    };
+  }
+
+  // 同時決済の場合のメタデータ処理
+  if (paymentIntent.metadata?.subscriptionType === 'plan_with_onetap') {
+    const plan = paymentIntent.metadata.plan;
+    const interval = paymentIntent.metadata.interval || 'month';
+
+    return {
+      planId: plan || 'unknown',
+      displayName: `${plan}プラン（${interval === 'year' ? '年額' : '月額'}）+ ワンタップシール`,
+    };
+  }
+
+  // ワンタップシール注文の場合
+  if (paymentIntent.metadata?.orderType === 'one_tap_seal') {
+    return {
+      planId: 'one_tap_seal',
+      displayName: 'ワンタップシール注文',
     };
   }
 
@@ -617,6 +788,7 @@ function extractPlanInfoFromPaymentIntent(paymentIntent: Stripe.PaymentIntent) {
       planId: 'enterprise',
       displayName: '法人エンタープライズプラン',
     },
+    { pattern: /ワンタップシール/i, planId: 'one_tap_seal', displayName: 'ワンタップシール注文' },
   ];
 
   for (const { pattern, planId, displayName } of planPatterns) {
@@ -625,8 +797,10 @@ function extractPlanInfoFromPaymentIntent(paymentIntent: Stripe.PaymentIntent) {
     }
   }
 
-  // 金額から推定（最後の手段）
+  // 金額から推定（同時決済の場合の複合金額対応）
   const amount = paymentIntent.amount / 100;
+
+  // 単体プラン金額
   if (amount === 550) return { planId: 'monthly', displayName: '個人プラン（月額）' };
   if (amount === 5500) return { planId: 'yearly', displayName: '個人プラン（年額）' };
   if (amount === 3300) return { planId: 'starter', displayName: '法人スタータープラン（月額）' };
@@ -637,6 +811,36 @@ function extractPlanInfoFromPaymentIntent(paymentIntent: Stripe.PaymentIntent) {
     return { planId: 'enterprise', displayName: '法人エンタープライズプラン（月額）' };
   if (amount === 99000)
     return { planId: 'enterprise', displayName: '法人エンタープライズプラン（年額）' };
+
+  // ワンタップシール単体価格帯の推定
+  if (amount >= 735 && amount <= 5685) {
+    return { planId: 'one_tap_seal', displayName: 'ワンタップシール注文' };
+  }
+
+  // プラン+ワンタップシール組み合わせの推定
+  if (amount >= 1285 && amount <= 6235) {
+    const sealAmount = amount - 550;
+    if (sealAmount >= 735 && sealAmount <= 5685) {
+      return { planId: 'monthly_with_seal', displayName: '個人プラン（月額）+ ワンタップシール' };
+    }
+  }
+
+  if (amount >= 6235 && amount <= 11185) {
+    const sealAmount = amount - 5500;
+    if (sealAmount >= 735 && sealAmount <= 5685) {
+      return { planId: 'yearly_with_seal', displayName: '個人プラン（年額）+ ワンタップシール' };
+    }
+  }
+
+  if (amount >= 4035 && amount <= 8985) {
+    const sealAmount = amount - 3300;
+    if (sealAmount >= 735 && sealAmount <= 5685) {
+      return {
+        planId: 'starter_with_seal',
+        displayName: '法人スタータープラン（月額）+ ワンタップシール',
+      };
+    }
+  }
 
   return { planId: 'unknown', displayName: '不明なプラン' };
 }

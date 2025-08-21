@@ -289,104 +289,123 @@ export default function SubscriptionStatus({
   }, [fetchSubscription, refreshCorporateAccess]);
 
   // ご利用プランステータスに基づいた表示情報を取得
-  const getStatusDisplay = useCallback((sub: SubscriptionData | null): StatusDisplay => {
-    if (!sub) return { text: '不明', className: 'bg-gray-100 text-gray-800' };
+  const getStatusDisplay = useCallback(
+    (sub: SubscriptionData | null): StatusDisplay => {
+      // 🔧 修正: trialEndsAtがあり、トライアル期間中の場合を最初にチェック
+      if (userData?.trialEndsAt && userData?.subscriptionStatus === 'trialing') {
+        const now = new Date();
+        const trialEndDate = new Date(userData.trialEndsAt);
 
-    // 永久利用権ユーザーの場合
-    if (sub.isPermanentUser) {
+        // トライアル期間中の場合
+        if (now < trialEndDate) {
+          return { text: '無料トライアル中', className: 'bg-blue-100 text-blue-800' };
+        }
+      }
+
+      if (!sub) return { text: '無料トライアル中', className: 'bg-blue-100 text-blue-800' };
+
+      // 永久利用権ユーザーの場合
+      if (sub.isPermanentUser) {
+        return {
+          text: '永久利用',
+          className: 'bg-blue-100 text-blue-800',
+        };
+      }
+
+      // 🔧 修正: トライアル中の判定を追加
+      if (sub.status === 'trialing' || sub.plan === 'trialing') {
+        return {
+          text: '無料トライアル中',
+          className: 'bg-blue-100 text-blue-800',
+        };
+      }
+
+      // 無料トライアル中（従来の判定も維持）
+      if (sub.plan === 'trial' || sub.plan === 'none') {
+        return { text: '無料トライアル中', className: 'bg-blue-100 text-blue-800' };
+      }
+
+      // アクティブなプラン
+      if (sub.status === 'active') {
+        let planType = '';
+        let renewalInfo = '';
+
+        // プランの種類を判定（修正版）
+        const planName = sub.plan.toLowerCase();
+        const interval = sub.interval || 'month';
+
+        // 法人プランの判定
+        if (planName.includes('starter') || planName === 'starter') {
+          planType = 'スタータープラン';
+          renewalInfo = interval === 'year' ? '（年額/10名）' : '（月額/10名）';
+        } else if (planName.includes('business') && !planName.includes('enterprise')) {
+          planType = 'ビジネスプラン';
+          renewalInfo = interval === 'year' ? '（年額/30名）' : '（月額/30名）';
+        } else if (planName.includes('enterprise') || planName === 'enterprise') {
+          planType = 'エンタープライズプラン';
+          renewalInfo = interval === 'year' ? '（年額/50名）' : '（月額/50名）';
+        }
+        // 古いプランIDとの互換性
+        else if (planName === 'business_legacy') {
+          planType = 'スタータープラン';
+          renewalInfo = '（10名まで）';
+        } else if (planName === 'business_plus' || planName === 'business-plus') {
+          planType = 'ビジネスプラン';
+          renewalInfo = '（30名まで）';
+        }
+        // 個人プラン
+        else if (planName === 'monthly' || planName.includes('monthly')) {
+          planType = '個人プラン';
+          renewalInfo = '（月額）';
+        } else if (planName === 'yearly' || planName.includes('yearly')) {
+          planType = '個人プラン';
+          renewalInfo = '（年額）';
+        }
+
+        // 法人プランの場合は「法人」をプレフィックス
+        if (
+          planName.includes('starter') ||
+          planName.includes('business') ||
+          planName.includes('enterprise')
+        ) {
+          planType = `法人${planType}`;
+        }
+
+        // プラン名が決定できた場合
+        if (planType) {
+          return {
+            text: `${planType} ${renewalInfo}`,
+            className:
+              planName.includes('starter') ||
+              planName.includes('business') ||
+              planName.includes('enterprise')
+                ? 'bg-blue-100 text-blue-800'
+                : 'bg-green-100 text-green-800',
+          };
+        }
+      }
+
+      // キャンセル済み・猶予期間
+      if (sub.status === 'past_due' || sub.cancelAtPeriodEnd) {
+        return { text: 'キャンセル予定', className: 'bg-yellow-100 text-yellow-800' };
+      }
+
+      if (sub.status === 'canceled') {
+        return { text: 'キャンセル済み', className: 'bg-red-100 text-red-800' };
+      }
+
+      if (sub.status === 'incomplete') {
+        return { text: '支払い未完了', className: 'bg-red-100 text-red-800' };
+      }
+
+      // 🔧 修正: その他の場合のデフォルト（以前の「不明」を回避）
       return {
-        text: '永久利用',
-        className: 'bg-blue-100 text-blue-800',
+        text: 'プラン確認中',
+        className: 'bg-gray-100 text-gray-800',
       };
-    }
-
-    // 無料トライアル中
-    if (sub.status === 'trialing') {
-      return {
-        text: '無料トライアル中',
-        className: 'bg-blue-100 text-blue-800',
-      };
-    }
-
-    // アクティブなプラン
-    if (sub.status === 'active') {
-      let planType = '';
-      let renewalInfo = '';
-
-      // プランの種類を判定（修正版）
-      const planName = sub.plan.toLowerCase();
-      const interval = sub.interval || 'month';
-
-      // 法人プランの判定
-      if (planName.includes('starter') || planName === 'starter') {
-        planType = 'スタータープラン';
-        renewalInfo = interval === 'year' ? '（年間/10名）' : '（月額/10名）';
-      } else if (planName.includes('business') && !planName.includes('enterprise')) {
-        planType = 'ビジネスプラン';
-        renewalInfo = interval === 'year' ? '（年間/30名）' : '（月額/30名）';
-      } else if (planName.includes('enterprise') || planName === 'enterprise') {
-        planType = 'エンタープライズプラン';
-        renewalInfo = interval === 'year' ? '（年間/50名）' : '（月額/50名）';
-      }
-      // 古いプランIDとの互換性
-      else if (planName === 'business_legacy') {
-        planType = 'スタータープラン';
-        renewalInfo = '（10名まで）';
-      } else if (planName === 'business_plus' || planName === 'business-plus') {
-        planType = 'ビジネスプラン';
-        renewalInfo = '（30名まで）';
-      }
-      // 個人プラン
-      else if (planName === 'monthly' || planName.includes('monthly')) {
-        planType = '個人プラン';
-        renewalInfo = '（月額）';
-      } else if (planName === 'yearly' || planName.includes('yearly')) {
-        planType = '個人プラン';
-        renewalInfo = '（年額）';
-      }
-
-      // 法人プランの場合は「法人」をプレフィックス
-      if (
-        planName.includes('starter') ||
-        planName.includes('business') ||
-        planName.includes('enterprise')
-      ) {
-        planType = `法人${planType}`;
-      }
-
-      // プラン名が決定できた場合
-      if (planType) {
-        return {
-          text: `${planType} ${renewalInfo}`,
-          className:
-            planName.includes('starter') ||
-            planName.includes('business') ||
-            planName.includes('enterprise')
-              ? 'bg-blue-100 text-blue-800' // 法人プランは青色
-              : 'bg-green-100 text-green-800', // 個人プランは緑色
-        };
-      }
-    }
-
-    // その他のケース
-    switch (sub.status) {
-      case 'past_due':
-        return {
-          text: '支払い遅延中',
-          className: 'bg-yellow-100 text-yellow-800',
-        };
-      case 'canceled':
-        return {
-          text: 'キャンセル済み',
-          className: 'bg-red-100 text-red-800',
-        };
-      default:
-        return {
-          text: sub.displayStatus || '不明',
-          className: 'bg-gray-100 text-gray-800',
-        };
-    }
-  }, []);
+    },
+    [userData],
+  );
 
   // ご利用プランを再アクティブ化
   const handleReactivate = async () => {
@@ -539,17 +558,79 @@ export default function SubscriptionStatus({
   };
 
   const gracePeriodInfo = getGracePeriodInfo();
-  const statusDisplay = subscription
-    ? getStatusDisplay(subscription)
-    : { text: '読み込み中...', className: 'bg-gray-100 text-gray-800' };
 
-  // 読み込み中
-  if (loading || !permanentPlanLoaded) {
+  // 🔧 修正: トライアル状態を正しく判定してstatusDisplayを取得
+  const statusDisplay = (() => {
+    // トライアル中の場合
+    if (userData?.trialEndsAt && userData?.subscriptionStatus === 'trialing') {
+      const now = new Date();
+      const trialEndDate = new Date(userData.trialEndsAt);
+      const daysRemaining = Math.ceil(
+        (trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24),
+      );
+
+      if (now < trialEndDate) {
+        return {
+          text: `無料トライアル中 (残り${daysRemaining}日)`,
+          className: 'bg-blue-100 text-blue-800',
+        };
+      }
+    }
+
+    // その他の場合は既存のgetStatusDisplay関数を使用
+    return subscription
+      ? getStatusDisplay(subscription)
+      : { text: '読み込み中...', className: 'bg-gray-100 text-gray-800' };
+  })();
+
+  // 🔧 修正: トライアル中の正しい判定を追加
+  const isCurrentlyInTrial = () => {
+    if (!userData?.trialEndsAt) return false;
+
+    const now = new Date();
+    const trialEndDate = new Date(userData.trialEndsAt);
+    return now < trialEndDate && userData.subscriptionStatus === 'trialing';
+  };
+
+  // 🔧 修正: メインのreturn文の条件を修正
+  // ご利用プランなし（無料トライアル中）- 条件を修正
+  if (!subscription || subscription.status === 'trialing' || isCurrentlyInTrial()) {
+    // トライアル期間が終了しているかどうかの判定を追加
+    const now = new Date();
+    const trialEndDate = userData?.trialEndsAt ? new Date(userData.trialEndsAt) : null;
+    const isTrialActive = trialEndDate && now < trialEndDate;
+
+    // トライアル残日数計算
+    const daysRemaining = trialEndDate
+      ? Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24))
+      : 0;
+
     return (
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6 flex items-center justify-center min-h-[200px]">
-        <div className="text-center">
-          <Spinner size="lg" className="mb-3" />
-          <p className="text-sm text-gray-500">プラン情報を読み込んでいます...</p>
+      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
+        <div className="flex items-start">
+          <div className="flex-shrink-0 text-blue-500 mr-3">
+            <HiClock className="h-6 w-6" />
+          </div>
+          <div>
+            <h3 className="text-lg font-medium">
+              {isTrialActive
+                ? `無料トライアル中 (残り${daysRemaining}日)`
+                : 'プランが選択されていません'}
+            </h3>
+            <p className="mt-2 text-sm text-gray-500 text-justify">
+              {isTrialActive
+                ? `現在、無料トライアル期間をご利用中です。有料プランにアップグレードすると、すべての機能を継続してご利用いただけます。`
+                : `現在、プランが選択されていません。プランを選択して、すべての機能をご利用ください。`}
+            </p>
+            <div className="mt-4">
+              <button
+                className="h-[48px] px-6 bg-blue-600 text-white rounded-md hover:bg-blue-700 transition-colors text-base sm:text-sm flex items-center justify-center"
+                onClick={handlePlanSelection}
+              >
+                プランを選択
+              </button>
+            </div>
+          </div>
         </div>
       </div>
     );

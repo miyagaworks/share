@@ -640,13 +640,43 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
     };
   }
 
-  // 個人ユーザーの判定
+  // 🔧 修正: 個人ユーザーの判定 - プラン表示名の改善
   logger.debug('✅ 個人ユーザーとして判定');
   const hasPersonalPlan = userData.subscription?.status === 'active';
   const isTrialUser =
     userData.subscriptionStatus === 'trialing' || userData.subscription?.status === 'trialing';
   const isTrialActive =
     isTrialUser && userData.trialEndsAt ? new Date(userData.trialEndsAt) > new Date() : false;
+
+  // 🔧 プラン表示名のロジックを改善
+  let planDisplayName = 'プランなし';
+  
+  if (hasPersonalPlan) {
+    // アクティブな個人プランがある場合
+    if (userData.subscription?.plan && userData.subscription?.interval) {
+      const plan = userData.subscription.plan.toLowerCase();
+      const interval = userData.subscription.interval;
+      
+      if (plan.includes('monthly') || interval === 'month') {
+        planDisplayName = '個人プラン（月額）';
+      } else if (plan.includes('yearly') || interval === 'year') {
+        planDisplayName = '個人プラン（年額）';
+      } else {
+        planDisplayName = '個人プラン';
+      }
+    } else {
+      planDisplayName = '個人プラン';
+    }
+  } else if (isTrialActive) {
+    // トライアル中の場合
+    planDisplayName = '無料トライアル中';
+  } else if (isTrialUser) {
+    // トライアル期間が終了している場合
+    planDisplayName = 'トライアル終了';
+  } else {
+    // その他の場合
+    planDisplayName = 'プランなし';
+  }
 
   return {
     userType: 'personal',
@@ -661,11 +691,7 @@ function calculatePermissionsFixed(userData: UserData): Permissions {
     hasActivePlan: hasPersonalPlan || isTrialActive,
     isTrialPeriod: isTrialActive,
     planType: 'personal',
-    planDisplayName: hasPersonalPlan
-      ? '個人プラン'
-      : isTrialActive
-        ? '無料トライアル'
-        : '無料プラン',
+    planDisplayName,
   };
 }
 

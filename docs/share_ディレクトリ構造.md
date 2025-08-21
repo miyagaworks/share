@@ -17,6 +17,9 @@ share/
 │   ├── [slug]
 │   │   └── page.tsx
 │   ├── api
+│   │   ├── address
+│   │   │   └── search
+│   │   │       └── route.ts
 │   │   ├── admin
 │   │   │   ├── access
 │   │   │   │   └── route.ts
@@ -49,6 +52,11 @@ share/
 │   │   │   │   ├── create
 │   │   │   │   │   └── route.ts
 │   │   │   │   └── route.ts
+│   │   │   ├── one-tap-seal
+│   │   │   │   └── orders
+│   │   │   │       ├── [id]
+│   │   │   │       │   └── route.ts
+│   │   │   │       └── route.ts
 │   │   │   ├── permissions
 │   │   │   │   └── route.ts
 │   │   │   ├── profile
@@ -70,6 +78,11 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── system-info
 │   │   │   │   └── route.ts
+│   │   │   ├── touch-seal
+│   │   │   │   └── orders
+│   │   │   │       ├── [id]
+│   │   │   │       │   └── route.ts
+│   │   │   │       └── route.ts
 │   │   │   └── users
 │   │   │       ├── delete
 │   │   │       │   └── route.ts
@@ -126,6 +139,9 @@ share/
 │   │   │   │   ├── [id]
 │   │   │   │   │   └── route.ts
 │   │   │   │   └── route.ts
+│   │   │   ├── members
+│   │   │   │   └── qr-slugs
+│   │   │   │       └── route.ts
 │   │   │   ├── settings
 │   │   │   │   ├── delete
 │   │   │   │   │   └── route.ts
@@ -200,6 +216,15 @@ share/
 │   │   │   ├── read
 │   │   │   │   └── route.ts
 │   │   │   └── route.ts
+│   │   ├── one-tap-seal
+│   │   │   ├── create-payment-intent
+│   │   │   │   └── route.ts
+│   │   │   ├── order
+│   │   │   │   └── route.ts
+│   │   │   ├── orders
+│   │   │   │   └── route.ts
+│   │   │   └── validate-qr
+│   │   │       └── route.ts
 │   │   ├── profile
 │   │   │   ├── route.ts
 │   │   │   ├── share
@@ -229,7 +254,9 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── reactivate
 │   │   │   │   └── route.ts
-│   │   │   └── route.ts
+│   │   │   ├── route.ts
+│   │   │   └── verify-payment
+│   │   │       └── route.ts
 │   │   ├── support
 │   │   │   └── contact
 │   │   │       └── route.ts
@@ -241,6 +268,15 @@ share/
 │   │   ├── test-email
 │   │   │   └── route.ts
 │   │   ├── test-financial
+│   │   ├── touch-seal
+│   │   │   ├── create-payment-intent
+│   │   │   │   └── route.ts
+│   │   │   ├── order
+│   │   │   │   └── route.ts
+│   │   │   ├── orders
+│   │   │   │   └── route.ts
+│   │   │   └── validate-qr
+│   │   │       └── route.ts
 │   │   ├── user
 │   │   │   ├── [userId]
 │   │   │   │   └── profile
@@ -250,8 +286,7 @@ share/
 │   │   │   ├── check-password
 │   │   │   │   └── route.ts
 │   │   │   ├── dashboard-info
-│   │   │   │   ├── route.ts
-│   │   │   │   └── route.ts.current
+│   │   │   │   └── route.ts
 │   │   │   ├── delete
 │   │   │   │   └── route.ts
 │   │   │   └── permanent-plan-type
@@ -306,6 +341,8 @@ share/
 │   │   │   │   └── page.tsx
 │   │   │   ├── notifications
 │   │   │   │   └── page.tsx
+│   │   │   ├── one-tap-seal-orders
+│   │   │   │   └── page.tsx
 │   │   │   ├── page.tsx
 │   │   │   ├── permissions
 │   │   │   │   ├── fix-permanent-button.tsx
@@ -318,6 +355,8 @@ share/
 │   │   │   │   └── revenue
 │   │   │   │       └── page.tsx
 │   │   │   ├── subscriptions
+│   │   │   │   └── page.tsx
+│   │   │   ├── touch-seal-orders
 │   │   │   │   └── page.tsx
 │   │   │   └── users
 │   │   │       ├── export
@@ -384,7 +423,9 @@ share/
 │   │   ├── share
 │   │   │   └── page.tsx
 │   │   └── subscription
-│   │       └── page.tsx
+│   │       ├── page.tsx
+│   │       └── success
+│   │           └── page.tsx
 │   ├── error.tsx
 │   ├── favicon.ico
 │   ├── globals.css
@@ -444,6 +485,7 @@ share/
 │           └── page.tsx
 ├── auth.config.ts
 ├── auth.ts
+├── backup_before_migration_20250816.sql
 ├── components
 │   ├── admin
 │   │   └── GrantPermanentAccess.tsx
@@ -495,6 +537,15 @@ share/
 │   │   ├── NotificationBell.tsx
 │   │   ├── PageLayout.tsx
 │   │   └── Sidebar.tsx
+│   ├── one-tap-seal
+│   │   ├── AddressSearchInput.tsx
+│   │   ├── OneTapSealColorSelector.tsx
+│   │   ├── OneTapSealOrderForm.tsx
+│   │   ├── OneTapSealOrderSummary.tsx
+│   │   ├── OneTapSealSection.tsx
+│   │   ├── OneTapSealStripeCheckout.tsx
+│   │   ├── OneTapSealUrlManager.tsx
+│   │   └── ShippingAddressForm.tsx
 │   ├── profile
 │   │   ├── ProfileCustomLink.tsx
 │   │   └── ProfileSnsLink.tsx
@@ -523,8 +574,21 @@ share/
 │   │   ├── PaymentMethodForm.tsx
 │   │   ├── PlanBanner.tsx
 │   │   ├── SubscriptionSettings.tsx
+│   │   ├── SubscriptionSettingsWithSeal.tsx
+│   │   ├── SubscriptionSettingsWithTouchSeal.tsx
 │   │   ├── SubscriptionStatus.tsx
+│   │   ├── SubscriptionWithOneTapSeal.tsx
+│   │   ├── SubscriptionWithTouchSeal.tsx
+│   │   ├── TouchSealSection.tsx
 │   │   └── TrialBanner.tsx
+│   ├── touch-seal
+│   │   ├── AddressSearchInput.tsx
+│   │   ├── ShippingAddressForm.tsx
+│   │   ├── StripeCheckout.tsx
+│   │   ├── TouchSealColorSelector.tsx
+│   │   ├── TouchSealOrderForm.tsx
+│   │   ├── TouchSealOrderSummary.tsx
+│   │   └── TouchSealUrlManager.tsx
 │   └── ui
 │       ├── Button.tsx
 │       ├── Card.tsx
@@ -546,6 +610,7 @@ share/
 │   ├── development-process.md
 │   ├── mvp-requirements.md
 │   ├── mvp-technical-design.md
+│   ├── one_tap_seal_feature_plan.md
 │   ├── progress-tracking.md
 │   ├── project-overview.md
 │   ├── security-privacy-plan.md
@@ -569,6 +634,9 @@ share/
 │   ├── useOptimizedTenant.ts
 │   └── usePlanInfo.ts
 ├── lib
+│   ├── address
+│   │   ├── address-validator.ts
+│   │   └── zipcloud-api.ts
 │   ├── corporateAccess
 │   │   ├── adminAccess.ts
 │   │   ├── api.ts
@@ -591,20 +659,29 @@ share/
 │   │       └── trial-ending.ts
 │   ├── email.ts
 │   ├── errorHandler.ts
+│   ├── feature-config.ts
 │   ├── jikogene
 │   │   ├── ai-service.ts
 │   │   ├── env.ts
 │   │   ├── fallback-generator.ts
 │   │   ├── prompt-builder.ts
 │   │   └── validator.ts
+│   ├── one-tap-seal
+│   │   ├── order-calculator.ts
+│   │   └── qr-slug-manager.ts
 │   ├── prisma.ts
 │   ├── profit-allocation.ts
 │   ├── react-query.ts
 │   ├── stripe-revenue.ts
 │   ├── stripe.ts
 │   ├── stripeClient.ts
+│   ├── subscription-integrity.ts
+│   ├── touch-seal
+│   │   ├── order-calculator.ts
+│   │   └── qr-slug-manager.ts
 │   ├── utils
 │   │   ├── activity-logger.ts
+│   │   ├── admin-access-api.ts
 │   │   ├── admin-access-server.ts
 │   │   ├── admin-access.ts
 │   │   ├── admin-permissions.ts
@@ -673,6 +750,8 @@ share/
 │   │   │   └── migration.sql
 │   │   ├── 20250501150000_add_bio_customization
 │   │   │   └── migration.sql
+│   │   ├── 20250814054714_add_touch_seal_models
+│   │   │   └── migration.sql
 │   │   └── migration_lock.toml
 │   └── schema.prisma
 ├── public
@@ -722,6 +801,9 @@ share/
 │   │   │   ├── ogp_line.png
 │   │   │   ├── ogp.png
 │   │   │   └── share_iphone.svg
+│   │   ├── nfc
+│   │   │   ├── 3colors.png
+│   │   │   └── reading.png
 │   │   └── usecase
 │   │       ├── business-scene.png
 │   │       ├── business-scene.webp
@@ -770,11 +852,13 @@ share/
 ├── types
 │   ├── financial-admin.ts
 │   ├── next-auth.d.ts
+│   ├── one-tap-seal.ts
 │   ├── prisma-extensions.ts
 │   ├── profiles.ts
 │   ├── recaptcha.d.ts
 │   ├── sns-guide.ts
 │   ├── sns.ts
 │   ├── tinycolor2.d.ts
+│   ├── touch-seal.ts
 │   └── user.ts
 └── vercel.json

@@ -69,6 +69,11 @@ model User {
   subscription             Subscription?
   department               Department?              @relation(fields: [departmentId], references: [id])
   tenant                   CorporateTenant?         @relation("TenantUsers", fields: [tenantId], references: [id])
+  touchSealOrders          TouchSealOrder[]
+  touchSealItems           TouchSealItem[]
+  // ワンタップシール関連のリレーション
+  oneTapSealOrders         OneTapSealOrder[]
+  oneTapSealItems          OneTapSealItem[] @relation("OneTapSealItemMember")
 }
 
 model Profile {
@@ -148,6 +153,8 @@ model Subscription {
   cancelRequests     CancelRequest[]
   corporateTenant    CorporateTenant?
   user               User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  touchSealOrders    TouchSealOrder[]
+  oneTapSealOrders   OneTapSealOrder[]
 }
 
 model BillingRecord {
@@ -221,6 +228,8 @@ model CorporateTenant {
   subscription         Subscription?          @relation(fields: [subscriptionId], references: [id])
   departments          Department[]
   users                User[]                 @relation("TenantUsers")
+  touchSealOrders TouchSealOrder[]
+  oneTapSealOrders     OneTapSealOrder[]
 }
 
 model Department {
@@ -283,6 +292,8 @@ model QrCodePage {
   textColor      String?
   nameEn         String?
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  touchSealItems TouchSealItem[]
+  oneTapSealItems OneTapSealItem[]
 }
 
 model Notification {
@@ -628,4 +639,136 @@ model AutoSyncSettings {
   createdAt                 DateTime  @default(now())
 
   @@map("AutoSyncSettings")
+}
+
+// タッチシール注文テーブル
+model TouchSealOrder {
+  id                 String    @id @default(cuid())
+  userId             String
+  tenantId           String?              // 法人注文の場合
+  subscriptionId     String?              // 同時注文の場合
+  orderType          String               // 'individual', 'corporate'
+  orderDate          DateTime  @default(now())
+  status             String    @default("pending") // 'pending', 'paid', 'preparing', 'shipped', 'delivered'
+  
+  // 配送情報
+  postalCode         String
+  address            String
+  recipientName      String
+  
+  // 金額情報（税抜）
+  sealTotal          Int                  // シール代金小計
+  shippingFee        Int       @default(200) // 配送料（固定200円）
+  taxAmount          Int                  // 消費税
+  totalAmount        Int                  // 合計金額（税込）
+  
+  // 配送管理
+  trackingNumber     String?              // クリックポスト追跡番号
+  shippedAt          DateTime?            // 発送日時
+  shippedBy          String?              // 発送処理者（admin ID）
+  
+  // Stripe情報
+  stripePaymentIntentId String?
+  
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // リレーション
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant             CorporateTenant? @relation(fields: [tenantId], references: [id])
+  subscription       Subscription? @relation(fields: [subscriptionId], references: [id])
+  items              TouchSealItem[]
+  
+  @@index([userId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([orderDate])
+}
+
+// タッチシール詳細テーブル
+model TouchSealItem {
+  id              String    @id @default(cuid())
+  orderId         String
+  memberUserId    String?               // 法人注文時のメンバーID
+  color           String                // 'black', 'gray', 'white'
+  quantity        Int
+  unitPrice       Int       @default(500) // 500円固定
+  qrSlug          String                // QRCodePage.slug参照
+  
+  createdAt       DateTime  @default(now())
+  
+  // リレーション
+  order           TouchSealOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  memberUser      User?     @relation(fields: [memberUserId], references: [id])
+  qrCodePage      QrCodePage @relation(fields: [qrSlug], references: [slug])
+  
+  @@index([orderId])
+  @@index([memberUserId])
+  @@index([qrSlug])
+}
+
+// ワンタップシール注文テーブル (TouchSealOrderと完全に同じ構造)
+model OneTapSealOrder {
+  id                 String    @id @default(cuid())
+  userId             String
+  tenantId           String?              // 法人注文の場合
+  subscriptionId     String?              // 同時注文の場合
+  orderType          String               // 'individual', 'corporate'
+  orderDate          DateTime  @default(now())
+  status             String    @default("pending") // 'pending', 'paid', 'preparing', 'shipped', 'delivered'
+  
+  // 配送情報
+  postalCode         String
+  address            String
+  recipientName      String
+  
+  // 金額情報（税抜）
+  sealTotal          Int                  // シール代金小計
+  shippingFee        Int       @default(185) // 配送料（クリックポスト185円）
+  taxAmount          Int                  // 消費税
+  totalAmount        Int                  // 合計金額（税込）
+  
+  // 配送管理
+  trackingNumber     String?              // クリックポスト追跡番号
+  shippedAt          DateTime?            // 発送日時
+  shippedBy          String?              // 発送処理者（admin ID）
+  
+  // Stripe情報
+  stripePaymentIntentId String?
+  
+  createdAt          DateTime  @default(now())
+  updatedAt          DateTime  @updatedAt
+  
+  // リレーション
+  user               User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant             CorporateTenant? @relation(fields: [tenantId], references: [id])
+  subscription       Subscription? @relation(fields: [subscriptionId], references: [id])
+  items              OneTapSealItem[]
+  
+  @@index([userId])
+  @@index([tenantId])
+  @@index([status])
+  @@index([orderDate])
+}
+
+// ワンタップシール詳細テーブル (TouchSealItemと完全に同じ構造)
+model OneTapSealItem {
+  id              String    @id @default(cuid())
+  orderId         String
+  memberUserId    String?               // 法人注文時のメンバーID
+  color           String                // 'black', 'gray', 'white'
+  quantity        Int
+  unitPrice       Int       @default(550) // 550円固定
+  qrSlug          String                // QRCodePage.slug参照
+  
+  createdAt       DateTime  @default(now())
+  
+  // リレーション
+  order           OneTapSealOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
+  memberUser      User?     @relation("OneTapSealItemMember", fields: [memberUserId], references: [id])
+  qrCodePage      QrCodePage @relation(fields: [qrSlug], references: [slug])
+  
+  @@index([orderId])
+  @@index([memberUserId])
+  @@index([qrSlug])
 }
