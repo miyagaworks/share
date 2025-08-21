@@ -68,15 +68,14 @@ export default function RootLayout({
           defer
         />
 
-        {/* 🚀 JavaScript による拡大防止（passive対応版） */}
+        {/* 🚀 JavaScript による拡大防止（passive最適化版） */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // ピンチアウト拡大を防ぐ（passive対応版）
                 let lastTouchEnd = 0;
                 
-                // ダブルタップ拡大防止（passive: false が必要）
+                // ダブルタップ拡大防止のみpassive: false
                 document.addEventListener('touchend', function (event) {
                   const now = Date.now();
                   if (now - lastTouchEnd <= 300) {
@@ -85,41 +84,16 @@ export default function RootLayout({
                   lastTouchEnd = now;
                 }, { passive: false });
                 
-                // ピンチジェスチャー検出（passive: trueに変更）
-                let touchCount = 0;
-                document.addEventListener('touchstart', function(event) {
-                  touchCount = event.touches.length;
-                  if (touchCount > 1) {
-                    // passiveのため、preventDefaultは使用不可
-                    // 代わりにCSSで対応: touch-action: manipulation
-                  }
-                }, { passive: true });
-                
-                document.addEventListener('touchmove', function(event) {
-                  if (touchCount > 1) {
-                    // passiveのため、preventDefaultは使用不可
-                  }
-                }, { passive: true });
-                
-                // ジェスチャーイベント（iOS Safari専用、passive: false必要）
+                // iOS Safari ジェスチャー防止のみpassive: false  
                 if ('ongesturestart' in window) {
-                  document.addEventListener('gesturestart', function(event) {
-                    event.preventDefault();
-                  }, { passive: false });
-                  
-                  document.addEventListener('gesturechange', function(event) {
-                    event.preventDefault();
-                  }, { passive: false });
-                  
-                  document.addEventListener('gestureend', function(event) {
-                    event.preventDefault();
-                  }, { passive: false });
+                  document.addEventListener('gesturestart', function(e) { e.preventDefault(); }, { passive: false });
+                  document.addEventListener('gesturechange', function(e) { e.preventDefault(); }, { passive: false });
+                  document.addEventListener('gestureend', function(e) { e.preventDefault(); }, { passive: false });
                 }
                 
-                // キーボードショートカットでの拡大防止
+                // キーボード拡大防止
                 document.addEventListener('keydown', function(event) {
-                  if ((event.ctrlKey || event.metaKey) && 
-                      (event.key === '+' || event.key === '-' || event.key === '0')) {
+                  if ((event.ctrlKey || event.metaKey) && ['+', '-', '0'].includes(event.key)) {
                     event.preventDefault();
                   }
                 }, { passive: false });
