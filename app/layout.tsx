@@ -68,53 +68,55 @@ export default function RootLayout({
           defer
         />
 
-        {/* 🚀 JavaScript による拡大防止 */}
+        {/* 🚀 JavaScript による拡大防止（passive対応版） */}
         <script
           dangerouslySetInnerHTML={{
             __html: `
               (function() {
-                // ピンチアウト拡大を防ぐ
+                // ピンチアウト拡大を防ぐ（passive対応版）
                 let lastTouchEnd = 0;
-                let isZooming = false;
                 
-                // ダブルタップ拡大防止
+                // ダブルタップ拡大防止（passive: false が必要）
                 document.addEventListener('touchend', function (event) {
-                  const now = (new Date()).getTime();
+                  const now = Date.now();
                   if (now - lastTouchEnd <= 300) {
                     event.preventDefault();
                   }
                   lastTouchEnd = now;
                 }, { passive: false });
                 
-                // ピンチジェスチャー検出と防止
+                // ピンチジェスチャー検出（passive: trueに変更）
+                let touchCount = 0;
                 document.addEventListener('touchstart', function(event) {
-                  if (event.touches.length > 1) {
-                    event.preventDefault();
+                  touchCount = event.touches.length;
+                  if (touchCount > 1) {
+                    // passiveのため、preventDefaultは使用不可
+                    // 代わりにCSSで対応: touch-action: manipulation
                   }
-                }, { passive: false });
+                }, { passive: true });
                 
                 document.addEventListener('touchmove', function(event) {
-                  if (event.touches.length > 1) {
-                    event.preventDefault();
+                  if (touchCount > 1) {
+                    // passiveのため、preventDefaultは使用不可
                   }
-                }, { passive: false });
+                }, { passive: true });
                 
-                // ピンチ拡大の検出
-                document.addEventListener('gesturestart', function(event) {
-                  event.preventDefault();
-                  isZooming = true;
-                }, { passive: false });
+                // ジェスチャーイベント（iOS Safari専用、passive: false必要）
+                if ('ongesturestart' in window) {
+                  document.addEventListener('gesturestart', function(event) {
+                    event.preventDefault();
+                  }, { passive: false });
+                  
+                  document.addEventListener('gesturechange', function(event) {
+                    event.preventDefault();
+                  }, { passive: false });
+                  
+                  document.addEventListener('gestureend', function(event) {
+                    event.preventDefault();
+                  }, { passive: false });
+                }
                 
-                document.addEventListener('gesturechange', function(event) {
-                  event.preventDefault();
-                }, { passive: false });
-                
-                document.addEventListener('gestureend', function(event) {
-                  event.preventDefault();
-                  isZooming = false;
-                }, { passive: false });
-                
-                // キーボードショートカットでの拡大も防止
+                // キーボードショートカットでの拡大防止
                 document.addEventListener('keydown', function(event) {
                   if ((event.ctrlKey || event.metaKey) && 
                       (event.key === '+' || event.key === '-' || event.key === '0')) {

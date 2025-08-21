@@ -1,6 +1,6 @@
-// components/RecaptchaWrapper.tsx - シンプル版（エラーなし） - console.log修正版
+// components/RecaptchaWrapper.tsx - layout.tsx読み込み版（簡素化）
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 
 interface RecaptchaWrapperProps {
   onVerify: (token: string | null) => void;
@@ -19,6 +19,33 @@ export default function RecaptchaWrapper({
 
   const siteKey = process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY;
 
+  const executeRecaptcha = useCallback(async () => {
+    if (!window.grecaptcha || hasExecuted || !siteKey) {
+      return;
+    }
+
+    try {
+      setHasExecuted(true);
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🚀 Executing reCAPTCHA v3...');
+      }
+
+      const token = await window.grecaptcha.execute(siteKey, { action });
+
+      if (process.env.NODE_ENV === 'development') {
+        console.log('✅ reCAPTCHA v3 token received');
+      }
+
+      onVerify(token);
+      setIsLoaded(true);
+      setError(null);
+    } catch (err) {
+      console.error('❌ reCAPTCHA execution error:', err);
+      setError('reCAPTCHA実行エラーが発生しました');
+      onVerify(null);
+    }
+  }, [siteKey, action, onVerify, hasExecuted]);
+
   useEffect(() => {
     if (!siteKey) {
       setError('reCAPTCHA Site Keyが設定されていません');
@@ -29,53 +56,43 @@ export default function RecaptchaWrapper({
       return;
     }
 
-    const executeRecaptcha = async () => {
-      if (!window.grecaptcha || hasExecuted) {
-        return;
-      }
-
-      try {
-        setHasExecuted(true);
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🚀 Executing reCAPTCHA v3...');
-        }
-        const token = await window.grecaptcha.execute(siteKey, { action });
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ reCAPTCHA v3 token received');
-        }
-        onVerify(token);
-      } catch (err) {
-        console.error('❌ reCAPTCHA execution error:', err);
-        setError('reCAPTCHA実行エラーが発生しました');
-        onVerify(null);
-      }
-    };
-
-    const checkAndExecute = () => {
+    // layout.tsxで既に読み込み済みのスクリプトを使用
+    const initializeRecaptcha = () => {
       if (window.grecaptcha && window.grecaptcha.ready) {
         window.grecaptcha.ready(() => {
-          setIsLoaded(true);
-          setError(null);
           executeRecaptcha();
         });
       } else {
-        // 3秒後に再試行（1回のみ）
-        setTimeout(() => {
+        // スクリプト読み込み完了を待機（最大5秒）
+        let attempts = 0;
+        const maxAttempts = 50; // 5秒間 (100ms × 50)
+
+        const checkRecaptcha = () => {
+          attempts++;
           if (window.grecaptcha && window.grecaptcha.ready && !hasExecuted) {
             window.grecaptcha.ready(() => {
-              setIsLoaded(true);
-              setError(null);
               executeRecaptcha();
             });
+          } else if (attempts < maxAttempts && !hasExecuted) {
+            setTimeout(checkRecaptcha, 100);
           } else if (!hasExecuted) {
-            setError('reCAPTCHAの読み込みに失敗しました');
+            setError('reCAPTCHAの読み込みがタイムアウトしました');
+            onVerify(null);
           }
-        }, 3000);
+        };
+
+        checkRecaptcha();
       }
     };
 
-    checkAndExecute();
-  }, [siteKey, action, onVerify, hasExecuted]);
+    initializeRecaptcha();
+  }, [executeRecaptcha, hasExecuted, siteKey, onVerify]);
+
+  const handleRetry = () => {
+    setError(null);
+    setHasExecuted(false);
+    setIsLoaded(false);
+  };
 
   if (!siteKey) {
     return (
@@ -89,6 +106,12 @@ export default function RecaptchaWrapper({
     return (
       <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-md">
         <p className="text-yellow-600 text-sm">{error}</p>
+        <button
+          onClick={handleRetry}
+          className="mt-2 px-3 py-1 bg-yellow-100 text-yellow-700 rounded text-sm hover:bg-yellow-200 transition-colors"
+        >
+          再試行
+        </button>
       </div>
     );
   }
@@ -96,7 +119,10 @@ export default function RecaptchaWrapper({
   if (!isLoaded || !hasExecuted) {
     return (
       <div className="p-4 bg-blue-50 border border-blue-200 rounded-md">
-        <p className="text-blue-600 text-sm">reCAPTCHA v3 読み込み中...</p>
+        <div className="flex items-center space-x-2">
+          <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+          <p className="text-blue-600 text-sm">reCAPTCHA v3 認証中...</p>
+        </div>
       </div>
     );
   }

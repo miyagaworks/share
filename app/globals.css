@@ -42,6 +42,27 @@ body {
     overflow-x: hidden !important;
 }
 
+/* ピンチズーム防止 */
+html,
+body {
+    touch-action: manipulation;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+}
+
+/* 必要な箇所でのみテキスト選択を許可 */
+input,
+textarea,
+[contenteditable] {
+    -webkit-user-select: auto;
+    -moz-user-select: auto;
+    -ms-user-select: auto;
+    user-select: auto;
+}
+
 /* 🚀 修正: ボタンとインタラクティブ要素は除外 */
 *:not(button):not(a):not(input):not(textarea):not(select):not([role="button"]):not(.interactive),
 *:not(button):not(a):not(input):not(textarea):not(select):not([role="button"]):not(.interactive)::before,
