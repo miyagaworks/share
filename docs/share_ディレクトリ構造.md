@@ -78,11 +78,6 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── system-info
 │   │   │   │   └── route.ts
-│   │   │   ├── touch-seal
-│   │   │   │   └── orders
-│   │   │   │       ├── [id]
-│   │   │   │       │   └── route.ts
-│   │   │   │       └── route.ts
 │   │   │   └── users
 │   │   │       ├── delete
 │   │   │       │   └── route.ts
@@ -268,15 +263,6 @@ share/
 │   │   ├── test-email
 │   │   │   └── route.ts
 │   │   ├── test-financial
-│   │   ├── touch-seal
-│   │   │   ├── create-payment-intent
-│   │   │   │   └── route.ts
-│   │   │   ├── order
-│   │   │   │   └── route.ts
-│   │   │   ├── orders
-│   │   │   │   └── route.ts
-│   │   │   └── validate-qr
-│   │   │       └── route.ts
 │   │   ├── user
 │   │   │   ├── [userId]
 │   │   │   │   └── profile
@@ -355,8 +341,6 @@ share/
 │   │   │   │   └── revenue
 │   │   │   │       └── page.tsx
 │   │   │   ├── subscriptions
-│   │   │   │   └── page.tsx
-│   │   │   ├── touch-seal-orders
 │   │   │   │   └── page.tsx
 │   │   │   └── users
 │   │   │       ├── export
@@ -575,20 +559,9 @@ share/
 │   │   ├── PlanBanner.tsx
 │   │   ├── SubscriptionSettings.tsx
 │   │   ├── SubscriptionSettingsWithSeal.tsx
-│   │   ├── SubscriptionSettingsWithTouchSeal.tsx
 │   │   ├── SubscriptionStatus.tsx
 │   │   ├── SubscriptionWithOneTapSeal.tsx
-│   │   ├── SubscriptionWithTouchSeal.tsx
-│   │   ├── TouchSealSection.tsx
 │   │   └── TrialBanner.tsx
-│   ├── touch-seal
-│   │   ├── AddressSearchInput.tsx
-│   │   ├── ShippingAddressForm.tsx
-│   │   ├── StripeCheckout.tsx
-│   │   ├── TouchSealColorSelector.tsx
-│   │   ├── TouchSealOrderForm.tsx
-│   │   ├── TouchSealOrderSummary.tsx
-│   │   └── TouchSealUrlManager.tsx
 │   └── ui
 │       ├── Button.tsx
 │       ├── Card.tsx
@@ -676,9 +649,6 @@ share/
 │   ├── stripe.ts
 │   ├── stripeClient.ts
 │   ├── subscription-integrity.ts
-│   ├── touch-seal
-│   │   ├── order-calculator.ts
-│   │   └── qr-slug-manager.ts
 │   ├── utils
 │   │   ├── activity-logger.ts
 │   │   ├── admin-access-api.ts
@@ -859,6 +829,5 @@ share/
 │   ├── sns-guide.ts
 │   ├── sns.ts
 │   ├── tinycolor2.d.ts
-│   ├── touch-seal.ts
 │   └── user.ts
 └── vercel.json

@@ -195,10 +195,13 @@ export async function addFinancialAdmin(
         where: { userId: targetUserId },
       });
 
-      // ユーザーテーブルのフラグを更新
+      // 🔧 修正: ユーザーテーブルのフラグとsubscriptionStatusを更新
       await tx.user.update({
         where: { id: targetUserId },
-        data: { isFinancialAdmin: true },
+        data: {
+          isFinancialAdmin: true,
+          subscriptionStatus: 'active', // ← この行を追加
+        },
       });
 
       // 新しい財務管理者レコードを作成
@@ -216,6 +219,7 @@ export async function addFinancialAdmin(
       targetUserId,
       targetEmail: targetUser.email,
       executorUserId,
+      subscriptionStatusUpdated: 'active',
     });
 
     return { success: true, message: '財務管理者を追加しました' };
@@ -246,6 +250,12 @@ export async function removeFinancialAdmin(
         id: true,
         email: true,
         isFinancialAdmin: true,
+        subscriptionStatus: true,
+        subscription: {
+          select: {
+            status: true,
+          },
+        },
       },
     });
 
@@ -257,12 +267,26 @@ export async function removeFinancialAdmin(
       return { success: false, message: '対象ユーザーは財務管理者ではありません' };
     }
 
+    // 🔧 修正: 削除後の適切なsubscriptionStatusを決定
+    let newSubscriptionStatus = 'active';
+
+    // ユーザーのサブスクリプション状況に応じて適切な状態を設定
+    if (targetUser.subscription?.status) {
+      newSubscriptionStatus = targetUser.subscription.status;
+    } else {
+      // サブスクリプションがない場合は trialing に戻す
+      newSubscriptionStatus = 'trialing';
+    }
+
     // トランザクションで財務管理者を削除
     await prisma.$transaction(async (tx: any) => {
-      // ユーザーテーブルのフラグを更新
+      // 🔧 修正: ユーザーテーブルのフラグとsubscriptionStatusを更新
       await tx.user.update({
         where: { id: targetUserId },
-        data: { isFinancialAdmin: false },
+        data: {
+          isFinancialAdmin: false,
+          subscriptionStatus: newSubscriptionStatus, // ← 適切な状態に戻す
+        },
       });
 
       // FinancialAdminレコードを完全削除
@@ -275,6 +299,7 @@ export async function removeFinancialAdmin(
       targetUserId,
       targetEmail: targetUser.email,
       executorUserId,
+      subscriptionStatusReverted: newSubscriptionStatus,
     });
 
     return { success: true, message: '財務管理者を削除しました' };
