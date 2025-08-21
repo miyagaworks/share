@@ -145,13 +145,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           try {
+            // 🔧 修正: trialEndsAtを7日後に設定
+            const now = new Date();
+            const trialEndsAt = new Date(now);
+            trialEndsAt.setDate(trialEndsAt.getDate() + 7); // 7日間のトライアル
+
             const newUser = await prisma.user.create({
               data: {
                 email: email,
                 name: user.name || profile?.name || 'Google User',
                 image: user.image || profile?.picture || null,
                 emailVerified: new Date(),
-                subscriptionStatus: 'trial',
+                subscriptionStatus: 'trialing', // 🔧 修正: 'trial' → 'trialing'
+                trialEndsAt: trialEndsAt, // 🔧 追加: 7日後の日付を設定
                 password: null,
               },
             });
