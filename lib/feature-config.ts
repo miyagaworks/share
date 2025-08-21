@@ -32,10 +32,10 @@ export function canUseOneTapSeal(userRole?: string, isAdmin?: boolean): boolean 
 
 // API エンドポイントの取得
 export function getSealApiEndpoint(): string {
-  return FEATURE_FLAGS.USE_ONE_TAP_SEAL ? '/api/one-tap-seal' : '/api/touch-seal';
+  return '/api/one-tap-seal';
 }
 
 // コンポーネントパスの取得
 export function getSealComponentPath(): string {
-  return FEATURE_FLAGS.USE_ONE_TAP_SEAL ? 'one-tap-seal' : 'touch-seal';
+  return 'one-tap-seal';
 }

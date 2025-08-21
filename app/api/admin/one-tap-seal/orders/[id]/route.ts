@@ -13,13 +13,13 @@ const UpdateOrderSchema = z.object({
   shippedBy: z.string().optional(),
 });
 
-interface RouteParams {
-  params: {
+interface RouteContext {
+  params: Promise<{
     id: string;
-  };
+  }>;
 }
 
-export async function PUT(request: Request, { params }: RouteParams) {
+export async function PUT(request: Request, context: RouteContext) {
   try {
     const session = await auth();
     if (!session?.user?.id) {
@@ -56,6 +56,7 @@ export async function PUT(request: Request, { params }: RouteParams) {
     }
 
     const { status, trackingNumber, shippedBy } = validation.data;
+    const params = await context.params;
     const orderId = params.id;
 
     // 注文の存在確認
