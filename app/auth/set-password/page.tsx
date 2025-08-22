@@ -1,4 +1,4 @@
-// app/auth/set-password/page.tsx
+// app/auth/set-password/page.tsx (パスワード表示切り替え対応版)
 'use client';
 import { useState } from 'react';
 import { useSession } from 'next-auth/react';
@@ -28,6 +28,8 @@ export default function SetPasswordPage() {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, setIsPending] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   const {
     register,
@@ -140,27 +142,115 @@ export default function SetPasswordPage() {
 
           <div className="space-y-4">
             <div>
-              <Input
-                label="新しいパスワード"
-                type="password"
-                placeholder="8文字以上のパスワード"
-                {...register('password')}
-                error={errors.password?.message}
-                disabled={isPending}
-                className="bg-white shadow-sm"
-              />
+              <div className="relative">
+                <Input
+                  label="新しいパスワード"
+                  type={showPassword ? 'text' : 'password'}
+                  placeholder="8文字以上のパスワード"
+                  {...register('password')}
+                  error={errors.password?.message}
+                  disabled={isPending}
+                  className="bg-white shadow-sm"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 h-5 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none z-10"
+                  onClick={() => setShowPassword(!showPassword)}
+                  tabIndex={-1}
+                  style={{
+                    top: 'calc(50% + 3px)',
+                    transform: 'translateY(-50%)',
+                  }}
+                >
+                  {showPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
 
             <div>
-              <Input
-                label="パスワード確認"
-                type="password"
-                placeholder="パスワードを再入力"
-                {...register('confirmPassword')}
-                error={errors.confirmPassword?.message}
-                disabled={isPending}
-                className="bg-white shadow-sm"
-              />
+              <div className="relative">
+                <Input
+                  label="パスワード確認"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  placeholder="パスワードを再入力"
+                  {...register('confirmPassword')}
+                  error={errors.confirmPassword?.message}
+                  disabled={isPending}
+                  className="bg-white shadow-sm"
+                />
+                <button
+                  type="button"
+                  className="absolute right-3 h-5 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none z-10"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  tabIndex={-1}
+                  style={{
+                    top: 'calc(50% + 3px)',
+                    transform: 'translateY(-50%)',
+                  }}
+                >
+                  {showConfirmPassword ? (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                      <line x1="1" y1="1" x2="23" y2="23"></line>
+                    </svg>
+                  ) : (
+                    <svg
+                      xmlns="http://www.w3.org/2000/svg"
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                      <circle cx="12" cy="12" r="3"></circle>
+                    </svg>
+                  )}
+                </button>
+              </div>
             </div>
           </div>
 

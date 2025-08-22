@@ -147,7 +147,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
           }
 
-          // 新規ユーザーの場合
+          // 新規ユーザーの場合 - 管理者のみ許可
           if (email === 'admin@sns-share.com') {
             if (process.env.NODE_ENV === 'development') {
               console.log('👑 Admin user detected');
@@ -155,38 +155,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
           }
 
+          // 🔧 セキュリティ修正: 新規Googleユーザーの自動作成を禁止
           if (process.env.NODE_ENV === 'development') {
-            console.log('🆕 Creating new Google user');
+            console.log('❌ 未登録のGoogleアカウントによるログイン試行を拒否');
           }
-
-          try {
-            const now = new Date();
-            const trialEndsAt = new Date(now);
-            trialEndsAt.setDate(trialEndsAt.getDate() + 7);
-
-            const newUser = await prisma.user.create({
-              data: {
-                email: email,
-                name: user.name || profile?.name || 'Google User',
-                image: user.image || profile?.picture || null,
-                emailVerified: new Date(),
-                subscriptionStatus: 'trialing',
-                trialEndsAt: trialEndsAt,
-                password: null, // Googleユーザーは初期はパスワードなし
-              },
-            });
-
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✅ New Google user created:', newUser.id);
-            }
-            user.id = newUser.id;
-            user.name = newUser.name;
-            user.email = newUser.email;
-            return true;
-          } catch (createError) {
-            console.error('❌ Failed to create new user:', createError);
-            return false;
-          }
+          return false; // 未登録ユーザーはログイン拒否
         }
 
         if (process.env.NODE_ENV === 'development') {
