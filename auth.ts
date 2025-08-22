@@ -54,7 +54,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    // auth.ts の signIn コールバック部分（完全相互互換版）
+    // auth.ts の signIn コールバック部分（詳細エラーメッセージ対応版）
     async signIn({ user, account, profile }) {
       if (process.env.NODE_ENV === 'development') {
         console.log('🚀 SignIn callback started', {
@@ -64,15 +64,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       try {
-        // 🔧 Credentials認証の場合
+        // 🔧 Credentials認証の場合は常に許可
         if (account?.provider === 'credentials') {
           if (process.env.NODE_ENV === 'development') {
             console.log('✅ Credentials authentication successful for:', user?.email);
           }
-          return true; // パスワード認証は常に許可
+          return true;
         }
 
-        // 🔧 Google認証の場合（完全相互互換版）
+        // 🔧 Google認証の場合の処理（詳細エラーメッセージ対応版）
         if (account?.provider === 'google' && user?.email) {
           const email = user.email.toLowerCase();
 
@@ -155,11 +155,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
           }
 
-          // 🔧 セキュリティ修正: 新規Googleユーザーの自動作成を禁止
+          // 🔧 セキュリティ修正: 未登録ユーザーを適切なエラーで拒否
           if (process.env.NODE_ENV === 'development') {
             console.log('❌ 未登録のGoogleアカウントによるログイン試行を拒否');
           }
-          return false; // 未登録ユーザーはログイン拒否
+
+          // 🆕 NextAuthのエラーハンドリングを利用して詳細メッセージを設定
+          throw new Error('このメールアドレスは登録されていません。まず新規登録を行ってください。');
         }
 
         if (process.env.NODE_ENV === 'development') {
@@ -168,7 +170,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return true;
       } catch (error) {
         console.error('💥 SignIn callback error:', error);
-        return false;
+        // エラーメッセージをそのまま伝播
+        throw error;
       }
     },
 

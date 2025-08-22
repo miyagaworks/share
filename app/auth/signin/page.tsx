@@ -307,7 +307,10 @@ export default function SigninPage() {
       if (result?.error) {
         console.error('Google signin error:', result.error);
 
-        if (
+        // 🔧 エラーメッセージを詳細に判定
+        if (result.error.includes('このメールアドレスは登録されていません')) {
+          setError('このメールアドレスは登録されていません。まず新規登録を行ってください。');
+        } else if (
           result.error.includes('メール/パスワードで登録') ||
           result.error.includes('CredentialsSignin')
         ) {
@@ -591,7 +594,7 @@ export default function SigninPage() {
                   onClick={() => setIsEmailFormExpanded(!isEmailFormExpanded)}
                   disabled={isPending}
                 >
-                  <span>メール / パスワードでログイン</span>
+                  <span>メール/パスワードでログイン</span>
                   <ChevronIcon isOpen={isEmailFormExpanded} />
                 </Button>
               </div>
