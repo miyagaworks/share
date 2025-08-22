@@ -1,4 +1,4 @@
-// app/auth/signin/page.tsx (メール/パスワードメイン版) - console.log修正版
+// app/auth/signin/page.tsx (UIレイアウト改善版 - 利用規約チェック削除)
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -11,6 +11,20 @@ import { signIn, getSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import RecaptchaWrapper from '@/components/RecaptchaWrapper';
+
+// 折りたたみアイコンコンポーネント
+function ChevronIcon({ isOpen }: { isOpen: boolean }) {
+  return (
+    <svg
+      className={`w-4 h-4 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`}
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+    >
+      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+    </svg>
+  );
+}
 
 // SessionTimeoutMessageの内部実装
 function SessionTimeoutMessageInner() {
@@ -242,7 +256,6 @@ function VerificationMessage() {
   );
 }
 
-// Suspenseでラップしたコンポーネント
 function SessionTimeoutMessage() {
   return (
     <Suspense fallback={null}>
@@ -261,17 +274,14 @@ export default function SigninPage() {
   const [isPasswordValid, setIsPasswordValid] = useState(false);
   const [isFormValid, setIsFormValid] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
-  const [termsAccepted, setTermsAccepted] = useState(false);
   const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [recaptchaLoaded, setRecaptchaLoaded] = useState(false);
 
+  // 🎨 新機能: 折りたたみ状態の管理
+  const [isEmailFormExpanded, setIsEmailFormExpanded] = useState(false);
+
   // Google認証を開始する関数
   const handleGoogleSignIn = async () => {
-    if (!termsAccepted) {
-      setError('Googleでログインする場合も利用規約に同意していただく必要があります');
-      return;
-    }
-
     if (!recaptchaToken) {
       setError('Googleでログインする場合もreCAPTCHAを完了してください');
       return;
@@ -285,7 +295,6 @@ export default function SigninPage() {
         console.log('🚀 Google signin started');
       }
 
-      // 🔧 redirect: false に変更してエラーハンドリングを可能にする
       const result = await signIn('google', {
         redirect: false,
         callbackUrl: '/dashboard',
@@ -295,17 +304,15 @@ export default function SigninPage() {
         console.log('Google signin result:', result);
       }
 
-      // 🔧 エラーハンドリングを追加
       if (result?.error) {
         console.error('Google signin error:', result.error);
 
-        // 特定のエラーメッセージに応じて適切な案内を表示
         if (
           result.error.includes('メール/パスワードで登録') ||
           result.error.includes('CredentialsSignin')
         ) {
           setError(
-            'このメールアドレスはメール/パスワードで登録されています。上記のフォームからメールアドレスとパスワードでログインしてください。',
+            'このメールアドレスはメール/パスワードで登録されています。下記のフォームからメールアドレスとパスワードでログインしてください。',
           );
         } else {
           setError('Googleログインでエラーが発生しました。再度お試しください。');
@@ -314,14 +321,12 @@ export default function SigninPage() {
         return;
       }
 
-      // 🔧 成功時の処理
       if (result?.ok && result?.url) {
         if (process.env.NODE_ENV === 'development') {
           console.log('✅ Google signin successful, redirecting...');
         }
         window.location.href = result.url;
       } else if (result?.ok) {
-        // URLが返されない場合はダッシュボードにリダイレクト
         window.location.href = '/dashboard';
       }
     } catch (error) {
@@ -366,11 +371,10 @@ export default function SigninPage() {
       passwordValue.length >= 8 &&
       !Object.keys(errors).length &&
       !!recaptchaToken &&
-      recaptchaLoaded &&
-      termsAccepted;
+      recaptchaLoaded;
 
     setIsFormValid(formIsValid);
-  }, [watchEmail, watchPassword, errors, isValid, recaptchaToken, recaptchaLoaded, termsAccepted]);
+  }, [watchEmail, watchPassword, errors, isValid, recaptchaToken, recaptchaLoaded]);
 
   // reCAPTCHA確認時の処理
   const handleRecaptchaChange = (token: string | null) => {
@@ -383,7 +387,6 @@ export default function SigninPage() {
     if (!token) {
       setError('reCAPTCHAの認証に失敗しました。再度お試しください。');
     } else {
-      // トークンが正常に取得できた場合はエラーをクリア
       if (error && error.includes('reCAPTCHA')) {
         setError(null);
       }
@@ -393,11 +396,6 @@ export default function SigninPage() {
   const onSubmit = async (data: { email: string; password: string }) => {
     if (!recaptchaToken) {
       setError('reCAPTCHAを完了してください');
-      return;
-    }
-
-    if (!termsAccepted) {
-      setError('利用規約に同意してください');
       return;
     }
 
@@ -422,7 +420,6 @@ export default function SigninPage() {
       }
 
       if (result?.error) {
-        // 具体的なエラーメッセージを表示
         if (result.error === 'CredentialsSignin') {
           setError(
             'メールアドレスまたはパスワードが正しくありません。Googleで登録した場合は「Googleでログイン」をご利用ください。',
@@ -430,7 +427,6 @@ export default function SigninPage() {
         } else {
           setError('ログインに失敗しました。再度お試しください。');
         }
-        // エラー後にreCAPTCHAをリセット
         setRecaptchaToken(null);
         setRecaptchaLoaded(false);
       } else if (result?.ok) {
@@ -454,7 +450,6 @@ export default function SigninPage() {
     } catch (error) {
       console.error('💥 Credentials signin exception:', error);
       setError('ログイン処理中にエラーが発生しました。');
-      // エラー後にreCAPTCHAをリセット
       setRecaptchaToken(null);
       setRecaptchaLoaded(false);
     } finally {
@@ -517,8 +512,9 @@ export default function SigninPage() {
           {/* Suspenseでラップしたセッションタイムアウトメッセージ */}
           <SessionTimeoutMessage />
 
-          {/* メイン：メール/パスワードログインフォーム */}
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+          {/* 🎨 新レイアウト: Googleログインを最優先 */}
+          <div className="space-y-6">
+            {/* エラー表示 */}
             {error && (
               <div className="rounded-lg bg-red-50 p-4 text-sm text-red-600 border border-red-200 shadow-sm">
                 <div className="flex items-center">
@@ -539,139 +535,8 @@ export default function SigninPage() {
               </div>
             )}
 
-            <div className="space-y-4">
-              <div>
-                <Input
-                  label="メールアドレス"
-                  type="email"
-                  placeholder="example@example.com"
-                  {...register('email')}
-                  error={errors.email?.message}
-                  disabled={isPending}
-                  className={`bg-white shadow-sm transition-colors ${isEmailFilled && isEmailValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
-                  autoComplete="email"
-                />
-                {isEmailFilled && !isEmailValid && !errors.email?.message && (
-                  <p className="text-xs text-amber-600 mt-1">
-                    有効なメールアドレスを入力してください
-                  </p>
-                )}
-              </div>
-
-              <div>
-                <div className="relative">
-                  <Input
-                    label="パスワード"
-                    type={showPassword ? 'text' : 'password'}
-                    placeholder="********"
-                    {...register('password')}
-                    error={errors.password?.message}
-                    disabled={isPending}
-                    className={`bg-white shadow-sm transition-colors ${isPasswordFilled && isPasswordValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
-                    autoComplete="current-password"
-                  />
-                  <button
-                    type="button"
-                    className="absolute right-3 top-8 h-5 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none z-10"
-                    onClick={togglePasswordVisibility}
-                    tabIndex={-1}
-                    style={{
-                      top: 'calc(50% + 3px)',
-                      transform: 'translateY(-50%)',
-                    }}
-                  >
-                    {showPassword ? (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
-                        <line x1="1" y1="1" x2="23" y2="23"></line>
-                      </svg>
-                    ) : (
-                      <svg
-                        xmlns="http://www.w3.org/2000/svg"
-                        width="20"
-                        height="20"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      >
-                        <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
-                        <circle cx="12" cy="12" r="3"></circle>
-                      </svg>
-                    )}
-                  </button>
-                </div>
-                {isPasswordFilled && !isPasswordValid && !errors.password?.message && (
-                  <p className="text-xs text-amber-600 mt-1">
-                    パスワードは8文字以上である必要があります
-                  </p>
-                )}
-                <div className="flex justify-end mt-1">
-                  <Link
-                    href="/auth/forgot-password"
-                    className="text-sm text-blue-600 hover:text-blue-500 hover:underline"
-                  >
-                    パスワードをお忘れの方
-                  </Link>
-                </div>
-              </div>
-            </div>
-
-            {/* 利用規約同意チェックボックス */}
-            <div className="mt-4">
-              <div className="flex items-start">
-                <div className="flex items-center h-5">
-                  <input
-                    id="terms"
-                    name="terms"
-                    type="checkbox"
-                    checked={termsAccepted}
-                    onChange={(e) => setTermsAccepted(e.target.checked)}
-                    style={{
-                      backgroundColor: '#ffffff',
-                      borderColor: '#d1d5db',
-                      accentColor: '#2563eb',
-                      colorScheme: 'light',
-                      filter: 'none',
-                      appearance: 'auto',
-                      WebkitAppearance: 'checkbox',
-                      MozAppearance: 'checkbox',
-                    }}
-                    className="h-4 w-4 rounded border-gray-300 text-blue-600 focus:ring-blue-500 focus:ring-2 focus:ring-offset-0"
-                    disabled={isPending}
-                  />
-                </div>
-                <div className="ml-3 text-sm">
-                  <label htmlFor="terms" className="text-gray-700">
-                    <span className="font-medium">利用規約</span>に同意します
-                  </label>
-                  <p className="text-gray-500 mt-1">
-                    <Link
-                      href="/legal/terms"
-                      target="_blank"
-                      className="text-blue-600 hover:text-blue-500 hover:underline"
-                    >
-                      利用規約を読む
-                    </Link>
-                  </p>
-                </div>
-              </div>
-            </div>
-
             {/* reCAPTCHA */}
-            <div className="mt-6">
+            <div>
               <RecaptchaWrapper
                 onVerify={handleRecaptchaChange}
                 onExpired={() => {
@@ -682,69 +547,15 @@ export default function SigninPage() {
               />
             </div>
 
-            {/* メインログインボタン */}
+            {/* 🎨 メイン: Googleログインボタン（最優先） */}
             <div>
               <Button
-                type="submit"
-                className={`w-full text-white transition-colors shadow-md min-h-[48px] md:min-h-0 ${
-                  isFormValid
-                    ? 'bg-blue-600 hover:bg-blue-800 transform hover:-translate-y-0.5'
-                    : 'bg-blue-300 hover:bg-blue-400'
-                }`}
-                disabled={isPending || !isFormValid}
-              >
-                {isPending ? (
-                  <span className="flex items-center justify-center">
-                    <svg
-                      className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                      xmlns="http://www.w3.org/2000/svg"
-                      fill="none"
-                      viewBox="0 0 24 24"
-                    >
-                      <circle
-                        className="opacity-25"
-                        cx="12"
-                        cy="12"
-                        r="10"
-                        stroke="currentColor"
-                        strokeWidth="4"
-                      ></circle>
-                      <path
-                        className="opacity-75"
-                        fill="currentColor"
-                        d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                      ></path>
-                    </svg>
-                    ログイン中...
-                  </span>
-                ) : (
-                  'ログイン'
-                )}
-              </Button>
-            </div>
-          </form>
-
-          {/* 別の方法としてGoogleログイン */}
-          <div className="mt-8">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-white text-gray-500">または</span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Button
                 className={`w-full bg-white text-gray-700 border border-gray-300 flex items-center justify-center transform hover:-translate-y-0.5 transition min-h-[48px] md:min-h-0 ${
-                  termsAccepted && recaptchaToken
-                    ? 'hover:bg-gray-50 shadow-sm'
-                    : 'opacity-50 cursor-not-allowed'
+                  recaptchaToken ? 'hover:bg-gray-50 shadow-sm' : 'opacity-50 cursor-not-allowed'
                 }`}
                 variant="outline"
                 onClick={handleGoogleSignIn}
-                disabled={isPending || !termsAccepted || !recaptchaToken}
+                disabled={isPending || !recaptchaToken}
               >
                 <Image
                   src="/google-logo.svg"
@@ -756,20 +567,185 @@ export default function SigninPage() {
                 Googleでログイン
               </Button>
               <p className="text-xs text-gray-500 mt-2 text-center">
-                別の方法：Googleアカウントで簡単ログイン
+                推奨：Googleアカウントで簡単ログイン
               </p>
             </div>
-          </div>
 
-          <div className="text-center text-sm mt-8">
-            アカウントをお持ちでない場合は{' '}
-            <Link
-              href="/auth/signup"
-              className="font-medium text-blue-600 hover:text-blue-500 hover:underline"
-            >
-              新規登録
-            </Link>{' '}
-            してください。
+            {/* 🎨 折りたたみ式: メール/パスワード認証 */}
+            <div className="space-y-4">
+              <div className="relative">
+                <div className="absolute inset-0 flex items-center">
+                  <div className="w-full border-t border-gray-200"></div>
+                </div>
+                <div className="relative flex justify-center text-sm">
+                  <span className="px-2 bg-white text-gray-500">または</span>
+                </div>
+              </div>
+
+              {/* 折りたたみトリガーボタン */}
+              <div>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="w-full bg-gray-50 text-gray-700 border border-gray-200 flex items-center justify-center hover:bg-gray-100 transition min-h-[48px] md:min-h-0"
+                  onClick={() => setIsEmailFormExpanded(!isEmailFormExpanded)}
+                  disabled={isPending}
+                >
+                  <span>メール / パスワードでログイン</span>
+                  <ChevronIcon isOpen={isEmailFormExpanded} />
+                </Button>
+              </div>
+
+              {/* 🎨 展開可能なメール/パスワードフォーム */}
+              <div
+                className={`space-y-4 transition-all duration-300 ease-in-out overflow-hidden ${
+                  isEmailFormExpanded ? 'max-h-96 opacity-100' : 'max-h-0 opacity-0'
+                }`}
+              >
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+                  <div>
+                    <Input
+                      label="メールアドレス"
+                      type="email"
+                      placeholder="example@example.com"
+                      {...register('email')}
+                      error={errors.email?.message}
+                      disabled={isPending}
+                      className={`bg-white shadow-sm transition-colors ${isEmailFilled && isEmailValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
+                      autoComplete="email"
+                    />
+                    {isEmailFilled && !isEmailValid && !errors.email?.message && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        有効なメールアドレスを入力してください
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="relative">
+                      <Input
+                        label="パスワード"
+                        type={showPassword ? 'text' : 'password'}
+                        placeholder="********"
+                        {...register('password')}
+                        error={errors.password?.message}
+                        disabled={isPending}
+                        className={`bg-white shadow-sm transition-colors ${isPasswordFilled && isPasswordValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
+                        autoComplete="current-password"
+                      />
+                      <button
+                        type="button"
+                        className="absolute right-3 top-8 h-5 flex items-center text-gray-500 hover:text-gray-700 focus:outline-none z-10"
+                        onClick={togglePasswordVisibility}
+                        tabIndex={-1}
+                        style={{
+                          top: 'calc(50% + 3px)',
+                          transform: 'translateY(-50%)',
+                        }}
+                      >
+                        {showPassword ? (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"></path>
+                            <line x1="1" y1="1" x2="23" y2="23"></line>
+                          </svg>
+                        ) : (
+                          <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                          >
+                            <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                            <circle cx="12" cy="12" r="3"></circle>
+                          </svg>
+                        )}
+                      </button>
+                    </div>
+                    {isPasswordFilled && !isPasswordValid && !errors.password?.message && (
+                      <p className="text-xs text-amber-600 mt-1">
+                        パスワードは8文字以上である必要があります
+                      </p>
+                    )}
+                    <div className="flex justify-end mt-1">
+                      <Link
+                        href="/auth/forgot-password"
+                        className="text-sm text-blue-600 hover:text-blue-500 hover:underline"
+                      >
+                        パスワードをお忘れの方
+                      </Link>
+                    </div>
+                  </div>
+
+                  {/* メール/パスワードログインボタン */}
+                  <div>
+                    <Button
+                      type="submit"
+                      className={`w-full text-white transition-colors shadow-md min-h-[48px] md:min-h-0 ${
+                        isFormValid
+                          ? 'bg-blue-600 hover:bg-blue-800 transform hover:-translate-y-0.5'
+                          : 'bg-blue-300 hover:bg-blue-400'
+                      }`}
+                      disabled={isPending || !isFormValid}
+                    >
+                      {isPending ? (
+                        <span className="flex items-center justify-center">
+                          <svg
+                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                            xmlns="http://www.w3.org/2000/svg"
+                            fill="none"
+                            viewBox="0 0 24 24"
+                          >
+                            <circle
+                              className="opacity-25"
+                              cx="12"
+                              cy="12"
+                              r="10"
+                              stroke="currentColor"
+                              strokeWidth="4"
+                            ></circle>
+                            <path
+                              className="opacity-75"
+                              fill="currentColor"
+                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                            ></path>
+                          </svg>
+                          ログイン中...
+                        </span>
+                      ) : (
+                        'ログイン'
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </div>
+            </div>
+
+            {/* 新規登録リンク */}
+            <div className="text-center text-sm mt-8">
+              アカウントをお持ちでない場合は{' '}
+              <Link
+                href="/auth/signup"
+                className="font-medium text-blue-600 hover:text-blue-500 hover:underline"
+              >
+                新規登録
+              </Link>{' '}
+              してください。
+            </div>
           </div>
         </div>
       </div>
