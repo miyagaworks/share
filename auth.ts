@@ -54,8 +54,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
+    // auth.ts の signIn コールバック部分（完全相互互換版）
     async signIn({ user, account, profile }) {
-      // 🔧 本番用: デバッグログを条件付きに変更
       if (process.env.NODE_ENV === 'development') {
         console.log('🚀 SignIn callback started', {
           provider: account?.provider,
@@ -64,15 +64,15 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       try {
-        // 🔧 Credentials認証の場合は常に許可
+        // 🔧 Credentials認証の場合
         if (account?.provider === 'credentials') {
           if (process.env.NODE_ENV === 'development') {
             console.log('✅ Credentials authentication successful for:', user?.email);
           }
-          return true;
+          return true; // パスワード認証は常に許可
         }
 
-        // 🔧 Google認証の場合の処理（既存のロジック維持）
+        // 🔧 Google認証の場合（完全相互互換版）
         if (account?.provider === 'google' && user?.email) {
           const email = user.email.toLowerCase();
 
@@ -107,32 +107,47 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               });
             }
 
-            if (existingUser.password) {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('❌ パスワード登録ユーザーのGoogleログイン試行を拒否');
-              }
-              return false;
-            }
-
+            // 🆕 新ロジック: 既存ユーザーは常にGoogle認証を許可
             const hasGoogleAccount = existingUser.accounts.some(
               (acc: { provider: string }) => acc.provider === 'google',
             );
+
             if (!hasGoogleAccount) {
-              if (process.env.NODE_ENV === 'development') {
-                console.log('❌ Googleアカウント連携なし、ログイン拒否');
+              // Google連携がない場合は自動で追加
+              try {
+                await prisma.account.create({
+                  data: {
+                    userId: existingUser.id,
+                    type: 'oauth',
+                    provider: 'google',
+                    providerAccountId: profile?.sub || user.id,
+                    access_token: '',
+                    token_type: 'bearer',
+                  },
+                });
+
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('🔗 Google連携を自動追加しました');
+                }
+              } catch (accountError) {
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('⚠️ Google連携追加でエラーが発生しましたが、ログインは許可します');
+                }
               }
-              return false;
             }
 
+            // 既存ユーザーは常にログイン許可
             if (process.env.NODE_ENV === 'development') {
-              console.log('✅ 正常なGoogleユーザーのログイン');
+              console.log('✅ 既存ユーザーのGoogleログインを許可');
             }
+
             user.id = existingUser.id;
             user.name = existingUser.name || user.name;
             user.email = existingUser.email;
             return true;
           }
 
+          // 新規ユーザーの場合
           if (email === 'admin@sns-share.com') {
             if (process.env.NODE_ENV === 'development') {
               console.log('👑 Admin user detected');
@@ -141,14 +156,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           if (process.env.NODE_ENV === 'development') {
-            console.log('🆕 Creating new Google user (no password)');
+            console.log('🆕 Creating new Google user');
           }
 
           try {
-            // 🔧 修正: trialEndsAtを7日後に設定
             const now = new Date();
             const trialEndsAt = new Date(now);
-            trialEndsAt.setDate(trialEndsAt.getDate() + 7); // 7日間のトライアル
+            trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
             const newUser = await prisma.user.create({
               data: {
@@ -156,9 +170,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                 name: user.name || profile?.name || 'Google User',
                 image: user.image || profile?.picture || null,
                 emailVerified: new Date(),
-                subscriptionStatus: 'trialing', // 🔧 修正: 'trial' → 'trialing'
-                trialEndsAt: trialEndsAt, // 🔧 追加: 7日後の日付を設定
-                password: null,
+                subscriptionStatus: 'trialing',
+                trialEndsAt: trialEndsAt,
+                password: null, // Googleユーザーは初期はパスワードなし
               },
             });
 
@@ -170,7 +184,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             user.email = newUser.email;
             return true;
           } catch (createError) {
-            // 🔧 エラーログは本番でも残す
             console.error('❌ Failed to create new user:', createError);
             return false;
           }
@@ -181,7 +194,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         }
         return true;
       } catch (error) {
-        // 🔧 エラーログは本番でも残す
         console.error('💥 SignIn callback error:', error);
         return false;
       }

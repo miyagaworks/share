@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
+import { PasswordSetupBanner } from '@/components/PasswordSetupBanner';
 import Image from 'next/image';
 import { HiUser, HiLink, HiColorSwatch, HiShare, HiQrcode } from 'react-icons/hi';
 
@@ -196,6 +197,8 @@ export default function DashboardPage() {
           <p className="text-muted-foreground">あなたのプロフィールの概要と管理</p>
         </div>
       </div>
+
+      <PasswordSetupBanner />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* プロフィールカード */}

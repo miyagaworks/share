@@ -9,6 +9,7 @@ import { DashboardCard } from '@/components/ui/DashboardCard';
 import { Input, Textarea, FormGroup } from '@/components/ui/Input';
 import { ImageUpload } from '@/components/ui/ImageUpload';
 import { QuickIntroButton } from '@/components/ui/QuickIntroButton';
+import { SecuritySettingsSection } from '@/components/SecuritySettingsSection';
 import { toast } from 'react-hot-toast';
 import { motion } from 'framer-motion';
 import {
@@ -441,6 +442,7 @@ export default function ProfilePage() {
           </Button>
         </div>
       </form>
+      <SecuritySettingsSection />
     </motion.div>
   );
 }
