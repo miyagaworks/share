@@ -106,7 +106,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
 
           if (existingUser) {
-            // 既存ユーザーの処理（変更なし）
+            // 既存ユーザーの処理
             if (process.env.NODE_ENV === 'development') {
               console.log('👤 既存ユーザー発見:', {
                 id: existingUser.id,
@@ -150,7 +150,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
           }
 
-          // 新規ユーザーの場合 - 管理者のみ許可
+          // 管理者の場合は常に許可
           if (email === 'admin@sns-share.com') {
             if (process.env.NODE_ENV === 'development') {
               console.log('👑 Admin user detected');
@@ -158,21 +158,62 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
           }
 
-          // 🔧 未登録ユーザーの場合：カスタムリダイレクト
+          // 🆕 新規ユーザーの場合：自動でアカウントを作成
           if (process.env.NODE_ENV === 'development') {
-            console.log('❌ 未登録のGoogleアカウントによるログイン試行を拒否');
+            console.log('🆕 新規Googleユーザーのアカウント作成を開始');
           }
 
-          // 🆕 エラーページにリダイレクト（メールアドレス付き）
-          const errorUrl = `/auth/error?error=AccessDenied&email=${encodeURIComponent(email)}`;
+          try {
+            // 7日間の無料トライアル期間を設定
+            const now = new Date();
+            const trialEndsAt = new Date(now);
+            trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🔗 Redirecting to:', errorUrl);
+            // 新規ユーザーを作成
+            const newUser = await prisma.user.create({
+              data: {
+                name: user.name || email.split('@')[0],
+                nameEn: '',
+                nameKana: '',
+                lastName: '',
+                firstName: '',
+                lastNameKana: '',
+                firstNameKana: '',
+                email: email,
+                password: null, // Google認証のためパスワードは不要
+                mainColor: '#3B82F6',
+                trialEndsAt,
+                subscriptionStatus: 'trialing',
+                emailVerified: new Date(), // Google認証済みなので即座に認証済み
+              },
+            });
+
+            // Google アカウント連携を作成
+            await prisma.account.create({
+              data: {
+                userId: newUser.id,
+                type: 'oauth',
+                provider: 'google',
+                providerAccountId: profile?.sub || user.id,
+                access_token: '',
+                token_type: 'bearer',
+              },
+            });
+
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ 新規Googleユーザー作成完了:', newUser.id);
+            }
+
+            // NextAuth用にユーザー情報を設定
+            user.id = newUser.id;
+            user.name = newUser.name;
+            user.email = newUser.email;
+
+            return true;
+          } catch (createError) {
+            console.error('💥 新規Googleユーザー作成エラー:', createError);
+            throw new Error('アカウントの作成中にエラーが発生しました。もう一度お試しください。');
           }
-
-          // NextAuthの仕様上、signInコールバックではリダイレクトURLを直接返せないため
-          // falseを返してNextAuthにエラー処理を委ね、別の方法でメールアドレスを渡す
-          return errorUrl;
         }
 
         if (process.env.NODE_ENV === 'development') {
