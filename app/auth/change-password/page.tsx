@@ -193,6 +193,7 @@ export default function ChangePasswordPage() {
                       type={showCurrentPassword ? 'text' : 'password'}
                       value={currentPassword}
                       onChange={(e) => setCurrentPassword(e.target.value)}
+                      autoComplete="current-password"
                       required
                     />
                     <button
@@ -252,6 +253,7 @@ export default function ChangePasswordPage() {
                     type={showNewPassword ? 'text' : 'password'}
                     value={newPassword}
                     onChange={(e) => setNewPassword(e.target.value)}
+                    autoComplete="new-password"
                     required
                   />
                   <button
@@ -311,6 +313,7 @@ export default function ChangePasswordPage() {
                     type={showConfirmPassword ? 'text' : 'password'}
                     value={confirmPassword}
                     onChange={(e) => setConfirmPassword(e.target.value)}
+                    autoComplete="new-password"
                     required
                   />
                   <button

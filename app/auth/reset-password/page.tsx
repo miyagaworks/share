@@ -254,6 +254,7 @@ function ResetPasswordContent() {
                 type="password"
                 placeholder="********"
                 {...register('password')}
+                autoComplete="new-password"
                 error={errors.password?.message}
                 disabled={isPending}
                 className="bg-white shadow-sm"
@@ -265,6 +266,7 @@ function ResetPasswordContent() {
                 type="password"
                 placeholder="********"
                 {...register('confirmPassword')}
+                autoComplete="new-password"
                 error={errors.confirmPassword?.message}
                 disabled={isPending}
                 className="bg-white shadow-sm"

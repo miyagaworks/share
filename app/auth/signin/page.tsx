@@ -631,10 +631,10 @@ export default function SigninPage() {
                         type={showPassword ? 'text' : 'password'}
                         placeholder="********"
                         {...register('password')}
+                        autoComplete="current-password"
                         error={errors.password?.message}
                         disabled={isPending}
                         className={`bg-white shadow-sm transition-colors ${isPasswordFilled && isPasswordValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
-                        autoComplete="current-password"
                       />
                       <button
                         type="button"

@@ -541,6 +541,7 @@ export default function SignupPage() {
                         type={showPassword ? 'text' : 'password'}
                         placeholder="********"
                         {...register('password')}
+                        autoComplete="new-password"
                         error={errors.password?.message}
                         disabled={isPending}
                         className={`bg-white shadow-sm transition-colors ${isPasswordFilled && isPasswordValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
