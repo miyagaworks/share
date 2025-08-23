@@ -479,6 +479,7 @@ export default function SignupPage() {
                         {...register('lastName')}
                         error={errors.lastName?.message}
                         disabled={isPending}
+                        autoComplete="family-name"
                         className={`bg-white shadow-sm transition-colors ${isLastNameFilled ? 'border-blue-500 focus:border-blue-500' : ''}`}
                       />
                     </div>
@@ -490,6 +491,7 @@ export default function SignupPage() {
                         {...register('firstName')}
                         error={errors.firstName?.message}
                         disabled={isPending}
+                        autoComplete="given-name"
                         className={`bg-white shadow-sm transition-colors ${isFirstNameFilled ? 'border-blue-500 focus:border-blue-500' : ''}`}
                       />
                     </div>
@@ -501,6 +503,7 @@ export default function SignupPage() {
                         {...register('lastNameKana')}
                         error={errors.lastNameKana?.message}
                         disabled={isPending}
+                        autoComplete="family-name"
                         className={`bg-white shadow-sm transition-colors ${isLastNameKanaFilled ? 'border-blue-500 focus:border-blue-500' : ''}`}
                       />
                     </div>
@@ -512,6 +515,7 @@ export default function SignupPage() {
                         {...register('firstNameKana')}
                         error={errors.firstNameKana?.message}
                         disabled={isPending}
+                        autoComplete="given-name"
                         className={`bg-white shadow-sm transition-colors ${isFirstNameKanaFilled ? 'border-blue-500 focus:border-blue-500' : ''}`}
                       />
                     </div>
@@ -525,6 +529,7 @@ export default function SignupPage() {
                       {...register('email')}
                       error={errors.email?.message}
                       disabled={isPending}
+                      autoComplete="email"
                       className={`bg-white shadow-sm transition-colors ${isEmailFilled && isEmailValid ? 'border-blue-500 focus:border-blue-500' : ''}`}
                     />
                     {isEmailFilled && !isEmailValid && !errors.email?.message && (
