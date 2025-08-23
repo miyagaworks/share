@@ -28,14 +28,11 @@ declare module 'next-auth/jwt' {
 
 // NextAuth設定
 export const { handlers, auth, signIn, signOut } = NextAuth({
-  // 🔧 重要: PrismaAdapterを削除してJWT戦略のみ使用
-  // adapter: PrismaAdapter(prisma), // これが問題の原因
   session: {
-    strategy: 'jwt', // JWTストラテジーを明示
+    strategy: 'jwt',
     maxAge: 4 * 60 * 60, // 4時間
   },
   jwt: {
-    // 🔧 JWT設定を明示的に追加
     maxAge: 4 * 60 * 60, // 4時間
   },
   cookies: {
@@ -54,7 +51,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
   },
   callbacks: {
-    // auth.ts の signIn コールバック部分（詳細エラーメッセージ対応版）
+    // 🔧 カスタムエラーハンドリングを追加
+    async redirect({ url, baseUrl }) {
+      // エラーページへのリダイレクト時にパラメータを保持
+      if (url.includes('/auth/error')) {
+        return url;
+      }
+
+      // 通常のリダイレクト処理
+      if (url.startsWith('/')) return `${baseUrl}${url}`;
+      if (new URL(url).origin === baseUrl) return url;
+      return baseUrl;
+    },
+
     async signIn({ user, account, profile }) {
       if (process.env.NODE_ENV === 'development') {
         console.log('🚀 SignIn callback started', {
@@ -64,7 +73,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       try {
-        // 🔧 Credentials認証の場合は常に許可
+        // Credentials認証の場合は常に許可
         if (account?.provider === 'credentials') {
           if (process.env.NODE_ENV === 'development') {
             console.log('✅ Credentials authentication successful for:', user?.email);
@@ -72,7 +81,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           return true;
         }
 
-        // 🔧 Google認証の場合の処理（詳細エラーメッセージ対応版）
+        // Google認証の場合の処理
         if (account?.provider === 'google' && user?.email) {
           const email = user.email.toLowerCase();
 
@@ -97,6 +106,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           });
 
           if (existingUser) {
+            // 既存ユーザーの処理（変更なし）
             if (process.env.NODE_ENV === 'development') {
               console.log('👤 既存ユーザー発見:', {
                 id: existingUser.id,
@@ -107,13 +117,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               });
             }
 
-            // 🆕 新ロジック: 既存ユーザーは常にGoogle認証を許可
             const hasGoogleAccount = existingUser.accounts.some(
               (acc: { provider: string }) => acc.provider === 'google',
             );
 
             if (!hasGoogleAccount) {
-              // Google連携がない場合は自動で追加
               try {
                 await prisma.account.create({
                   data: {
@@ -136,11 +144,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               }
             }
 
-            // 既存ユーザーは常にログイン許可
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✅ 既存ユーザーのGoogleログインを許可');
-            }
-
             user.id = existingUser.id;
             user.name = existingUser.name || user.name;
             user.email = existingUser.email;
@@ -155,13 +158,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
           }
 
-          // 🔧 セキュリティ修正: 未登録ユーザーを適切なエラーで拒否
+          // 🔧 未登録ユーザーの場合：カスタムリダイレクト
           if (process.env.NODE_ENV === 'development') {
             console.log('❌ 未登録のGoogleアカウントによるログイン試行を拒否');
           }
 
-          // 🆕 NextAuthのエラーハンドリングを利用して詳細メッセージを設定
-          throw new Error('このメールアドレスは登録されていません。まず新規登録を行ってください。');
+          // 🆕 エラーページにリダイレクト（メールアドレス付き）
+          const errorUrl = `/auth/error?error=AccessDenied&email=${encodeURIComponent(email)}`;
+
+          if (process.env.NODE_ENV === 'development') {
+            console.log('🔗 Redirecting to:', errorUrl);
+          }
+
+          // NextAuthの仕様上、signInコールバックではリダイレクトURLを直接返せないため
+          // falseを返してNextAuthにエラー処理を委ね、別の方法でメールアドレスを渡す
+          return errorUrl;
         }
 
         if (process.env.NODE_ENV === 'development') {
@@ -170,7 +181,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         return true;
       } catch (error) {
         console.error('💥 SignIn callback error:', error);
-        // エラーメッセージをそのまま伝播
         throw error;
       }
     },
