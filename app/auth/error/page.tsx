@@ -1,4 +1,5 @@
-'use client';
+// app/auth/error/page.tsx
+('use client');
 import { Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
@@ -18,9 +19,17 @@ function ErrorContent() {
       errorDetails = 'システム管理者にお問い合わせください。';
       break;
     case 'AccessDenied':
-      errorMessage = 'このメールアドレスはメール/パスワードで登録されています。';
-      errorDetails =
-        'Googleでログインするのではなく、メールアドレスとパスワードを入力してログインしてください。正しいログイン方法：①ログインページに戻る ②メールアドレスとパスワードを入力 ③「ログイン」ボタンをクリック';
+      const email = searchParams.get('email');
+
+      if (email) {
+        // メールアドレスが未登録の場合
+        errorMessage = `${email} は登録されていません。`;
+        errorDetails = 'まず新規登録を行ってからログインしてください。';
+      } else {
+        // 既存のメッセージを維持
+        errorMessage = 'このメールアドレスはメール/パスワードで登録されています。';
+        errorDetails = 'Googleでログインするのではなく...';
+      }
       break;
     case 'Verification':
       errorMessage = '認証リンクの検証エラーが発生しました。';
