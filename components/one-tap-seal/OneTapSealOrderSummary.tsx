@@ -52,55 +52,88 @@ export function OneTapSealOrderSummary({
     return fullAddress;
   };
 
-  // Googleマップ用のURLを生成（マーカー表示対応版）
+  // Googleマップ用のURLを生成（本番環境対応版）
   const getGoogleMapsUrl = () => {
     const fullAddress = `〒${shippingAddress.postalCode} ${formatFullAddress()}`;
     const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
+    // APIキーが設定されていない場合の処理
+    if (!apiKey) {
+      console.error('Google Maps API key is not set');
+      return null;
+    }
+
     // searchモードを使用してマーカーを表示
     return `https://www.google.com/maps/embed/v1/search?key=${apiKey}&q=${encodeURIComponent(fullAddress)}&language=ja&region=JP&zoom=16`;
   };
 
-  // 住所確認モーダル
-  const AddressConfirmationModal = () => (
-    <div
-      className="fixed inset-0 flex items-center justify-center z-50 p-4"
-      style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
-    >
-      <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center p-4 border-b">
-          <h3 className="text-lg font-semibold">お届け先住所の確認</h3>
-          <Button variant="ghost" size="sm" onClick={() => setShowAddressModal(false)}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-        <div className="p-4">
-          <iframe
-            src={getGoogleMapsUrl()}
-            width="100%"
-            height="400"
-            style={{ border: 0 }}
-            allowFullScreen
-            loading="lazy"
-            referrerPolicy="no-referrer-when-downgrade"
-            className="rounded-lg"
-          />
-          <div className="mt-4 p-3 bg-gray-50 rounded-lg">
-            <p className="text-sm text-gray-700">
-              上記の地図で正しい住所が表示されているかご確認ください。
-              <br />
-              地図が正確でない場合は、住所を修正してください。
-            </p>
+  // 住所確認モーダル（エラーハンドリング対応版）
+  const AddressConfirmationModal = () => {
+    const mapUrl = getGoogleMapsUrl();
+
+    return (
+      <div
+        className="fixed inset-0 flex items-center justify-center z-50 p-4"
+        style={{ backgroundColor: 'rgba(0, 0, 0, 0.5)' }}
+      >
+        <div className="bg-white rounded-lg max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+          <div className="flex justify-between items-center p-4 border-b">
+            <h3 className="text-lg font-semibold">お届け先住所の確認</h3>
+            <Button variant="ghost" size="sm" onClick={() => setShowAddressModal(false)}>
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="p-4">
+            {mapUrl ? (
+              <iframe
+                src={mapUrl}
+                width="100%"
+                height="400"
+                style={{ border: 0 }}
+                allowFullScreen
+                loading="lazy"
+                referrerPolicy="no-referrer-when-downgrade"
+                className="rounded-lg"
+                onError={(e) => {
+                  console.error('Google Maps iframe error:', e);
+                }}
+              />
+            ) : (
+              <div className="w-full h-[400px] flex items-center justify-center bg-gray-100 rounded-lg">
+                <div className="text-center">
+                  <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <p className="text-gray-600 mb-2">地図を読み込めませんでした</p>
+                  <Button
+                    onClick={() => {
+                      const searchUrl = `https://www.google.com/maps/search/${encodeURIComponent(`〒${shippingAddress.postalCode} ${formatFullAddress()}`)}`;
+                      window.open(searchUrl, '_blank', 'noopener,noreferrer');
+                    }}
+                    variant="outline"
+                    size="sm"
+                  >
+                    Googleマップで開く
+                  </Button>
+                </div>
+              </div>
+            )}
+            <div className="mt-4 p-3 bg-gray-50 rounded-lg">
+              <p className="text-sm text-gray-700">
+                上記の地図で正しい住所が表示されているかご確認ください。
+                <br />
+                地図が正確でない場合は、住所を修正してください。
+              </p>
+            </div>
+          </div>
+          <div className="flex justify-end gap-2 p-4 border-t">
+            <Button variant="outline" onClick={() => setShowAddressModal(false)}>
+              閉じる
+            </Button>
+            <Button onClick={onEdit}>住所を修正</Button>
           </div>
         </div>
-        <div className="flex justify-end gap-2 p-4 border-t">
-          <Button variant="outline" onClick={() => setShowAddressModal(false)}>
-            閉じる
-          </Button>
-          <Button onClick={onEdit}>住所を修正</Button>
-        </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="space-y-6">
