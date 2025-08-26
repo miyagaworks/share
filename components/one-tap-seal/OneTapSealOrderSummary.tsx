@@ -52,10 +52,10 @@ export function OneTapSealOrderSummary({
     return fullAddress;
   };
 
-  // Googleマップ用のURLを生成
+  // Googleマップ用のURLを生成（修正版）
   const getGoogleMapsUrl = () => {
-    const fullAddress = formatFullAddress();
-    return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(fullAddress)}`;
+    const fullAddress = `〒${shippingAddress.postalCode} ${formatFullAddress()}`;
+    return `https://maps.google.com/maps?width=100%25&height=400&hl=ja&q=${encodeURIComponent(fullAddress)}&t=&z=16&ie=UTF8&iwloc=&output=embed`;
   };
 
   // 住所確認モーダル
