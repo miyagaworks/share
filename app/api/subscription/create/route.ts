@@ -413,14 +413,12 @@ export async function POST(req: NextRequest) {
               tenantId: isCorporate ? corporateTenant?.id : null,
               subscriptionId: subscriptionRecord?.id || null,
               orderType: isCorporate ? 'corporate' : 'individual',
-              postalCode: oneTapSeal.shippingAddress.postalCode,
-              address: oneTapSeal.shippingAddress.address,
-              recipientName: oneTapSeal.shippingAddress.recipientName,
+              shippingAddress: oneTapSeal.shippingAddress, // JSONフィールドとして保存
               sealTotal: calculation.sealTotal,
               shippingFee: calculation.shippingFee,
               taxAmount: calculation.taxAmount,
               totalAmount: calculation.totalAmount,
-              status: 'pending', // 決済完了後に paid に変更
+              status: 'pending',
               stripePaymentIntentId: checkoutSession.id,
             },
           });
@@ -434,6 +432,7 @@ export async function POST(req: NextRequest) {
                 color: item.color,
                 quantity: item.quantity,
                 unitPrice: ONE_TAP_SEAL_CONFIG.UNIT_PRICE,
+                profileSlug: item.profileSlug, // 追加
                 qrSlug: item.qrSlug,
               },
             });

@@ -1,10 +1,9 @@
 // app/api/one-tap-seal/orders/route.ts
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
-import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { OneTapSealOrder } from '@/types/one-tap-seal';
+import { type OneTapSealOrder } from '@/types/one-tap-seal';
 
 export async function GET() {
   try {
@@ -13,41 +12,38 @@ export async function GET() {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    // ユーザーの注文履歴を取得
+    // ユーザーの注文データを取得
     const orders = await prisma.oneTapSealOrder.findMany({
       where: {
         userId: session.user.id,
       },
       include: {
-        items: true,
         tenant: {
           select: {
             name: true,
           },
         },
+        items: true,
       },
-      orderBy: {
-        orderDate: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    // OneTapSealOrder型に整形
     const formattedOrders: OneTapSealOrder[] = orders.map((order) => ({
       id: order.id,
       userId: order.userId,
       tenantId: order.tenantId,
       subscriptionId: order.subscriptionId,
       orderType: order.orderType as 'individual' | 'corporate',
-      orderDate: order.orderDate.toISOString(),
+      orderDate: order.createdAt.toISOString().split('T')[0],
       status: order.status as OneTapSealOrder['status'],
       sealTotal: order.sealTotal,
       shippingFee: order.shippingFee,
       taxAmount: order.taxAmount,
       totalAmount: order.totalAmount,
       shippingAddress: {
-        postalCode: order.postalCode,
-        address: order.address,
-        recipientName: order.recipientName,
+        postalCode: (order.shippingAddress as any)?.postalCode || '',
+        address: (order.shippingAddress as any)?.address || '',
+        recipientName: (order.shippingAddress as any)?.recipientName || '',
       },
       trackingNumber: order.trackingNumber,
       shippedAt: order.shippedAt?.toISOString() || null,
@@ -62,21 +58,21 @@ export async function GET() {
         color: item.color as any,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
-        qrSlug: item.qrSlug,
+        profileSlug: item.profileSlug, // データベースから取得
+        qrSlug: item.qrSlug || undefined,
         createdAt: item.createdAt.toISOString(),
-        memberName: null, // 個人注文では不要
-        memberEmail: null,
+        memberName: null, // ユーザー向けAPIでは不要
+        memberEmail: null, // ユーザー向けAPIでは不要
       })),
       tenant: order.tenant,
-      user: {
-        name: null, // 自分の注文なので不要
-        email: session.user.email || '',
-      },
     }));
 
-    return NextResponse.json({ orders: formattedOrders });
+    return NextResponse.json({
+      success: true,
+      orders: formattedOrders,
+    });
   } catch (error) {
-    logger.error('ワンタップシール注文履歴取得エラー:', error);
-    return NextResponse.json({ error: 'サーバーエラーが発生しました' }, { status: 500 });
+    console.error('ワンタップシール注文取得エラー:', error);
+    return NextResponse.json({ error: '注文データの取得に失敗しました' }, { status: 500 });
   }
 }

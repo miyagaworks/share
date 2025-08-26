@@ -44,8 +44,9 @@ export function validateOneTapSealOrder(items: ValidationOneTapSealItem[]): Vali
   const colorQuantities: Record<string, number> = {};
 
   for (const item of items) {
-    if (!item.qrSlug || item.qrSlug.length < 3) {
-      errors.push(`${item.color}のQRスラッグが無効です`);
+    // profileSlug のバリデーション
+    if (!item.profileSlug || item.profileSlug.length < 3) {
+      errors.push(`${item.color}のプロフィールスラッグが無効です`);
     }
 
     if (item.quantity <= 0) {

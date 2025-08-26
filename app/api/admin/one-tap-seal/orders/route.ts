@@ -4,7 +4,7 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { OneTapSealOrder } from '@/types/one-tap-seal';
+import { type OneTapSealOrder } from '@/types/one-tap-seal';
 
 export async function GET() {
   try {
@@ -13,42 +13,28 @@ export async function GET() {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    // 管理者権限チェック - isFinancialAdminまたはadmin@sns-share.comかsuper-adminロール
+    // 管理者権限チェック
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: {
-        email: true,
-        isFinancialAdmin: true,
-      },
+      select: { isFinancialAdmin: true, email: true },
     });
 
-    const isAuthorized =
-      user?.isFinancialAdmin ||
-      user?.email === 'admin@sns-share.com' ||
-      (session.user as any)?.role === 'super-admin' ||
-      (session.user as any)?.role === 'financial-admin';
-
-    if (!isAuthorized) {
-      return NextResponse.json({ error: 'アクセス権限がありません' }, { status: 403 });
+    if (!user || !user.isFinancialAdmin) {
+      logger.warn('管理者以外のワンタップシール注文アクセス試行', {
+        userId: session.user.id,
+        email: user?.email,
+        isFinancialAdmin: user?.isFinancialAdmin,
+      });
+      return NextResponse.json({ error: '管理者権限が必要です' }, { status: 403 });
     }
 
-    // 全てのワンタップシール注文を取得
+    // 注文データを取得（管理者用）
     const orders = await prisma.oneTapSealOrder.findMany({
       include: {
-        items: {
-          include: {
-            memberUser: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
-          },
-        },
         user: {
           select: {
-            name: true,
             email: true,
+            name: true,
           },
         },
         tenant: {
@@ -56,29 +42,36 @@ export async function GET() {
             name: true,
           },
         },
+        items: {
+          include: {
+            memberUser: {
+              select: {
+                email: true,
+                name: true,
+              },
+            },
+          },
+        },
       },
-      orderBy: {
-        orderDate: 'desc',
-      },
+      orderBy: { createdAt: 'desc' },
     });
 
-    // 管理者用の形式で整形（OneTapSealOrder型を使用）
     const formattedOrders: OneTapSealOrder[] = orders.map((order) => ({
       id: order.id,
       userId: order.userId,
       tenantId: order.tenantId,
       subscriptionId: order.subscriptionId,
       orderType: order.orderType as 'individual' | 'corporate',
-      orderDate: order.orderDate.toISOString(),
+      orderDate: order.createdAt.toISOString().split('T')[0],
       status: order.status as OneTapSealOrder['status'],
       sealTotal: order.sealTotal,
       shippingFee: order.shippingFee,
       taxAmount: order.taxAmount,
       totalAmount: order.totalAmount,
       shippingAddress: {
-        postalCode: order.postalCode,
-        address: order.address,
-        recipientName: order.recipientName,
+        postalCode: (order.shippingAddress as any)?.postalCode || '',
+        address: (order.shippingAddress as any)?.address || '',
+        recipientName: (order.shippingAddress as any)?.recipientName || '',
       },
       trackingNumber: order.trackingNumber,
       shippedAt: order.shippedAt?.toISOString() || null,
@@ -93,7 +86,8 @@ export async function GET() {
         color: item.color as any,
         quantity: item.quantity,
         unitPrice: item.unitPrice,
-        qrSlug: item.qrSlug,
+        profileSlug: item.profileSlug, // データベースから取得
+        qrSlug: item.qrSlug || undefined,
         createdAt: item.createdAt.toISOString(),
         memberName: item.memberUser?.name || null,
         memberEmail: item.memberUser?.email || null,

@@ -14,33 +14,36 @@ import {
   Copy,
   Settings,
 } from 'lucide-react';
-import { isValidQrSlug } from '@/lib/one-tap-seal/qr-slug-manager';
+import { isValidProfileSlug } from '@/lib/one-tap-seal/profile-slug-manager'; // qr-slug-manager → profile-slug-manager に変更
 
-interface QrSlugValidationResult {
+interface ProfileSlugValidationResult {
+  // QrSlugValidationResult → ProfileSlugValidationResult に変更
   isValid: boolean;
   isAvailable: boolean;
   isOwn?: boolean;
   message: string;
-  qrCodeId?: string;
+  profileUrl?: string; // qrCodeId → profileUrl に変更
 }
 
 interface OneTapSealUrlManagerProps {
-  qrSlug: string;
-  onQrSlugChange: (slug: string) => void;
+  profileSlug: string; // qrSlug → profileSlug に変更
+  onProfileSlugChange: (slug: string) => void; // onQrSlugChange → onProfileSlugChange に変更
   disabled?: boolean;
-  userQrSlug?: string;
+  userProfileSlug?: string; // userQrSlug → userProfileSlug に変更
   userName?: string;
 }
 
 export function OneTapSealUrlManager({
-  qrSlug,
-  onQrSlugChange,
+  profileSlug, // qrSlug → profileSlug に変更
+  onProfileSlugChange, // onQrSlugChange → onProfileSlugChange に変更
   disabled = false,
-  userQrSlug,
+  userProfileSlug, // userQrSlug → userProfileSlug に変更
   userName,
 }: OneTapSealUrlManagerProps) {
   const [isChecking, setIsChecking] = useState(false);
-  const [validationResult, setValidationResult] = useState<QrSlugValidationResult | null>(null);
+  const [validationResult, setValidationResult] = useState<ProfileSlugValidationResult | null>(
+    null,
+  );
 
   // スラッグの検証
   const validateSlug = useCallback(async (slug: string) => {
@@ -53,7 +56,8 @@ export function OneTapSealUrlManager({
       return;
     }
 
-    if (!isValidQrSlug(slug)) {
+    if (!isValidProfileSlug(slug)) {
+      // isValidQrSlug → isValidProfileSlug に変更
       setValidationResult({
         isValid: false,
         isAvailable: false,
@@ -65,7 +69,7 @@ export function OneTapSealUrlManager({
     setIsChecking(true);
     try {
       const response = await fetch(
-        `/api/one-tap-seal/validate-qr?slug=${encodeURIComponent(slug)}`,
+        `/api/one-tap-seal/validate-profile?slug=${encodeURIComponent(slug)}`, // validate-qr → validate-profile に変更
       );
       const data = await response.json();
 
@@ -76,7 +80,7 @@ export function OneTapSealUrlManager({
         message:
           data.message ||
           (data.isValid && (data.isAvailable || data.isOwn) ? '使用可能です' : '使用できません'),
-        qrCodeId: data.qrCodeId,
+        profileUrl: data.profileUrl, // qrCodeId → profileUrl に変更
       });
     } catch (error) {
       console.error('スラッグ検証エラー:', error);
@@ -94,37 +98,39 @@ export function OneTapSealUrlManager({
   const handleSlugChange = useCallback(
     (e: React.ChangeEvent<HTMLInputElement>) => {
       const value = e.target.value.toLowerCase().replace(/[^a-z0-9-]/g, '');
-      onQrSlugChange(value);
+      onProfileSlugChange(value); // onQrSlugChange → onProfileSlugChange に変更
       setValidationResult(null);
     },
-    [onQrSlugChange],
+    [onProfileSlugChange],
   );
 
   // デバウンス付きの検証実行
   useEffect(() => {
-    if (!qrSlug) {
+    if (!profileSlug) {
+      // qrSlug → profileSlug に変更
       setValidationResult(null);
       return;
     }
 
     const timer = setTimeout(() => {
-      validateSlug(qrSlug);
+      validateSlug(profileSlug); // qrSlug → profileSlug に変更
     }, 500);
 
     return () => clearTimeout(timer);
-  }, [qrSlug, validateSlug]);
+  }, [profileSlug, validateSlug]); // qrSlug → profileSlug に変更
 
-  // 既存QRスラッグの使用
+  // 既存プロフィールスラッグの使用
   const useExistingSlug = useCallback(() => {
-    if (userQrSlug) {
-      onQrSlugChange(userQrSlug);
-      toast.success('既存のQRスラッグを設定しました');
+    if (userProfileSlug) {
+      // userQrSlug → userProfileSlug に変更
+      onProfileSlugChange(userProfileSlug); // onQrSlugChange → onProfileSlugChange, userQrSlug → userProfileSlug に変更
+      toast.success('既存のプロフィールスラッグを設定しました'); // QRスラッグ → プロフィールスラッグ に変更
     }
-  }, [userQrSlug, onQrSlugChange]);
+  }, [userProfileSlug, onProfileSlugChange]); // userQrSlug, onQrSlugChange → userProfileSlug, onProfileSlugChange に変更
 
   // URLのコピー
   const copyUrl = useCallback(() => {
-    const url = `https://app.share-sns.com/qr/${qrSlug}`;
+    const url = `https://app.sns-share.com/${profileSlug}`; // /qr/ を削除
     navigator.clipboard
       .writeText(url)
       .then(() => {
@@ -133,13 +139,13 @@ export function OneTapSealUrlManager({
       .catch(() => {
         toast.error('URLのコピーに失敗しました');
       });
-  }, [qrSlug]);
+  }, [profileSlug]);
 
   // プレビューURLを開く
   const openPreview = useCallback(() => {
-    const url = `https://app.share-sns.com/qr/${qrSlug}`;
+    const url = `https://app.sns-share.com/${profileSlug}`; // /qr/ を削除
     window.open(url, '_blank');
-  }, [qrSlug]);
+  }, [profileSlug]);
 
   // QRコードデザイナーページを開く
   const openQrDesigner = useCallback(() => {
@@ -154,19 +160,24 @@ export function OneTapSealUrlManager({
     <Card className="p-6">
       <div className="flex items-center mb-4">
         <Link className="h-5 w-5 mr-2 text-blue-600" />
-        <h3 className="text-lg font-semibold">QRコードURL設定</h3>
+        <h3 className="text-lg font-semibold">NFCタグURL設定</h3>{' '}
+        {/* QRコードURL → NFCタグURL に変更 */}
       </div>
 
       <div className="space-y-4">
-        {/* QRコードデザイナーで設定するよう案内 */}
-        {!userQrSlug && (
+        {/* プロフィールURL設定案内 */}
+        {!userProfileSlug && ( // userQrSlug → userProfileSlug に変更
           <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
             <div className="flex items-start space-x-3">
               <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-yellow-900">カスタムURLの設定が必要です</p>
+                <p className="text-sm font-medium text-yellow-900">
+                  プロフィールURLの設定が必要です
+                </p>{' '}
+                {/* カスタム → プロフィール に変更 */}
                 <p className="text-xs text-yellow-700 mt-1">
-                  タッチシールを注文するには、まずQRコードデザイナーでカスタムURLを設定してください。
+                  ワンタップシールを注文するには、まずプロフィール設定でプロフィールURLを設定してください。{' '}
+                  {/* QRコードデザイナー → プロフィール設定、カスタム → プロフィール に変更 */}
                 </p>
                 <Button
                   size="sm"
@@ -175,40 +186,46 @@ export function OneTapSealUrlManager({
                   className="mt-2 h-7 px-3 border-yellow-300 text-yellow-800 hover:bg-yellow-100 w-full sm:w-auto text-xs"
                 >
                   <Settings className="h-3 w-3 mr-1" />
-                  QRコードデザイナーで設定
+                  プロフィール設定で設定 {/* QRコードデザイナー → プロフィール設定 に変更 */}
                 </Button>
               </div>
             </div>
           </div>
         )}
 
-        {/* 既存QRスラッグの利用オプション */}
-        {userQrSlug && userQrSlug !== qrSlug && (
-          <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-sm font-medium text-blue-900">既存のQRスラッグを使用</p>
-                <p className="text-xs text-blue-700">app.share-sns.com/qr/{userQrSlug}</p>
+        {/* 既存プロフィールスラッグの利用オプション */}
+        {userProfileSlug &&
+          userProfileSlug !== profileSlug && ( // userQrSlug → userProfileSlug に変更
+            <div className="p-3 bg-blue-50 border border-blue-200 rounded-lg">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium text-blue-900">
+                    既存のプロフィールスラッグを使用
+                  </p>{' '}
+                  {/* QRスラッグ → プロフィールスラッグ に変更 */}
+                  <p className="text-xs text-blue-700">app.sns-share.com/{userProfileSlug}</p>{' '}
+                  {/* /qr/ を削除、userQrSlug → userProfileSlug に変更 */}
+                </div>
+                <Button size="sm" variant="outline" onClick={useExistingSlug} disabled={disabled}>
+                  使用する
+                </Button>
               </div>
-              <Button size="sm" variant="outline" onClick={useExistingSlug} disabled={disabled}>
-                使用する
-              </Button>
             </div>
-          </div>
-        )}
+          )}
 
         {/* URL入力 */}
         <div>
           <label className="block text-sm font-medium mb-2">
-            カスタム URL <span className="text-red-500">*</span>
+            プロフィールURL <span className="text-red-500">*</span>{' '}
+            {/* カスタム → プロフィール に変更 */}
           </label>
           <div className="flex">
             <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-              app.share-sns.com/qr/
+              app.sns-share.com/ {/* /qr/ を削除 */}
             </span>
             <Input
               type="text"
-              value={qrSlug}
+              value={profileSlug} // qrSlug → profileSlug に変更
               onChange={handleSlugChange}
               placeholder="yourname"
               disabled={disabled}
@@ -224,7 +241,7 @@ export function OneTapSealUrlManager({
             />
           </div>
 
-          {/* 検証状態表示 */}
+          {/* 検証ステート表示 */}
           <div className="mt-2 space-y-2">
             {isChecking ? (
               <div className="flex items-center text-xs text-blue-600">
@@ -245,7 +262,7 @@ export function OneTapSealUrlManager({
                 {validationResult.message}
                 {isOwnSlug && <span className="ml-1 text-blue-600">(既に使用中)</span>}
               </div>
-            ) : qrSlug.length > 0 && qrSlug.length < 3 ? (
+            ) : profileSlug.length > 0 && profileSlug.length < 3 ? ( // qrSlug → profileSlug に変更
               <div className="flex items-center text-xs text-gray-500">
                 <AlertCircle className="h-3 w-3 mr-1" />
                 3文字以上入力してください
@@ -256,7 +273,8 @@ export function OneTapSealUrlManager({
             {canUseSlug && (
               <div className="flex items-center space-x-2 text-xs">
                 <span className="text-gray-600">
-                  完成URL: https://app.share-sns.com/qr/{qrSlug}
+                  完成URL: https://app.sns-share.com/{profileSlug}{' '}
+                  {/* /qr/ を削除、qrSlug → profileSlug に変更 */}
                 </span>
                 <Button
                   size="sm"

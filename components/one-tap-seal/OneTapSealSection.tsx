@@ -32,6 +32,11 @@ interface UserInfo {
   subscriptionStatus?: string;
   corporateRole?: string;
   tenantId?: string;
+  profile?: {
+    id: string;
+    slug: string;
+    views: number;
+  };
   qrCodes?: Array<{
     id: string;
     slug: string;
@@ -88,6 +93,10 @@ export function OneTapSealSection() {
             const profileData = await profileResponse.json();
             if (profileData.user) {
               basicUserInfo = { ...basicUserInfo, ...profileData.user };
+              // profileフィールドを明示的に設定
+              if (profileData.user.profile) {
+                basicUserInfo.profile = profileData.user.profile;
+              }
             }
           }
         } catch (error) {
@@ -151,7 +160,7 @@ export function OneTapSealSection() {
   };
 
   // ユーザーのQRスラッグを取得
-  const userQrSlug = userInfo?.qrCodes?.[0]?.slug;
+  const userProfileSlug = userInfo?.profile?.slug;
 
   if (isLoading) {
     return (
@@ -170,7 +179,7 @@ export function OneTapSealSection() {
       <OneTapSealOrderForm
         onOrderComplete={handleOrderComplete}
         onCancel={() => setShowOrderForm(false)}
-        userQrSlug={userQrSlug}
+        userProfileSlug={userProfileSlug}
         userName={userInfo?.name}
       />
     );
@@ -263,7 +272,7 @@ export function OneTapSealSection() {
         </Button>
 
         {/* 現在のURL設定とボタンをレイアウト改善 */}
-        {userQrSlug && (
+        {userProfileSlug && (
           <div className="bg-green-50 border border-green-200 rounded-lg p-4">
             <div className="space-y-3">
               <div className="flex items-start space-x-2">
@@ -271,7 +280,7 @@ export function OneTapSealSection() {
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-green-800">URL設定済み:</p>
                   <p className="text-sm text-green-700 break-all">
-                    app.share-sns.com/qr/{userQrSlug}
+                    app.share-sns.com/{userProfileSlug}
                   </p>
                 </div>
               </div>
@@ -290,7 +299,7 @@ export function OneTapSealSection() {
           </div>
         )}
 
-        {!userQrSlug && (
+        {!userProfileSlug && (
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-start space-x-2 mb-3">
               <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />

@@ -83,6 +83,7 @@ model Profile {
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
   user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  oneTapSealItems OneTapSealItem[] // 新規追加
 }
 
 model SnsLink {
@@ -644,10 +645,8 @@ model OneTapSealOrder {
   orderDate          DateTime  @default(now())
   status             String    @default("pending") // 'pending', 'paid', 'preparing', 'shipped', 'delivered'
   
-  // 配送情報
-  postalCode         String
-  address            String
-  recipientName      String
+  // 配送情報（JSON形式に変更）
+  shippingAddress    Json                 // EnhancedShippingAddress 型のJSONデータ
   
   // 金額情報（税抜）
   sealTotal          Int                  // シール代金小計
@@ -685,16 +684,19 @@ model OneTapSealItem {
   color           String                // 'black', 'gray', 'white'
   quantity        Int
   unitPrice       Int       @default(550) // 550円固定
-  qrSlug          String                // QRCodePage.slug参照
+  profileSlug     String                // Profile.slug参照（NFCタグ書き込み用）
+  qrSlug          String?               // QRCodePage.slug参照（後方互換性用）
   
   createdAt       DateTime  @default(now())
   
   // リレーション
   order           OneTapSealOrder @relation(fields: [orderId], references: [id], onDelete: Cascade)
   memberUser      User?     @relation("OneTapSealItemMember", fields: [memberUserId], references: [id])
-  qrCodePage      QrCodePage @relation(fields: [qrSlug], references: [slug])
+  profile         Profile   @relation(fields: [profileSlug], references: [slug]) // 新規追加
+  qrCodePage      QrCodePage? @relation(fields: [qrSlug], references: [slug]) // 任意に変更
   
   @@index([orderId])
   @@index([memberUserId])
+  @@index([profileSlug])
   @@index([qrSlug])
 }

@@ -24,16 +24,16 @@ import { validateOneTapSealOrder } from '@/lib/one-tap-seal/order-calculator';
 interface OneTapSealOrderFormProps {
   onOrderComplete?: (orderId: string) => void;
   onCancel?: () => void;
-  userQrSlug?: string;
+  userProfileSlug?: string; // userQrSlug → userProfileSlug に変更
   userName?: string;
 }
 
-// 🔧 フォームデータ保存・復元用のヘルパー関数（SubscriptionSettings.tsxと完全に同じ）
+// 📧 フォームデータ保存・復元用のヘルパー関数（SubscriptionSettings.tsxと完全に同じ）
 const STORAGE_KEY = 'oneTapSealOrderForm';
 
 interface FormData {
   items?: OneTapSealSelection;
-  qrSlug?: string;
+  profileSlug?: string; // qrSlug → profileSlug に変更
   shippingAddress?: EnhancedShippingAddress;
   currentStep?: OrderStep;
   timestamp: number;
@@ -81,7 +81,7 @@ const clearFormData = () => {
 export function OneTapSealOrderForm({
   onOrderComplete,
   onCancel,
-  userQrSlug,
+  userProfileSlug, // userQrSlug → userProfileSlug に変更
   userName,
 }: OneTapSealOrderFormProps) {
   // 注文データ
@@ -90,7 +90,7 @@ export function OneTapSealOrderForm({
     gray: 0,
     white: 0,
   });
-  const [qrSlug, setQrSlug] = useState(userQrSlug || '');
+  const [profileSlug, setProfileSlug] = useState(userProfileSlug || ''); // qrSlug → profileSlug に変更
   const [shippingAddress, setShippingAddress] = useState<EnhancedShippingAddress>({
     postalCode: '',
     address: '',
@@ -99,27 +99,23 @@ export function OneTapSealOrderForm({
     recipientName: '',
   });
 
-  // UI状態
+  // UIステイト
   const [currentStep, setCurrentStep] = useState<OrderStep>('items');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  // 決済関連
-  const [createdOrderId, setCreatedOrderId] = useState<string | null>(null);
-  const [showPayment, setShowPayment] = useState(false);
-  const [orderAmount, setOrderAmount] = useState(0);
-
-  // 🔧 データ復元状態の管理（SubscriptionSettings.tsxと同じ）
+  // 📧 データ復元状態の管理（SubscriptionSettings.tsxと同じ）
   const [isDataRestored, setIsDataRestored] = useState(false);
 
-  // 🔧 保存データの復元（SubscriptionSettings.tsxと完全に同じパターン）
+  // 📧 保存データの復元（SubscriptionSettings.tsxと完全に同じパターン）
   useEffect(() => {
     const savedData = loadFormData();
 
     if (savedData.items) {
       setItems(savedData.items);
     }
-    if (savedData.qrSlug && !userQrSlug) {
-      setQrSlug(savedData.qrSlug); // userQrSlugがない場合のみ復元
+    if (savedData.profileSlug && !userProfileSlug) {
+      // qrSlug → profileSlug に変更
+      setProfileSlug(savedData.profileSlug); // userProfileSlugがない場合のみ復元
     }
     if (savedData.shippingAddress) {
       setShippingAddress(savedData.shippingAddress);
@@ -130,21 +126,21 @@ export function OneTapSealOrderForm({
 
     // 復元完了フラグを設定
     setIsDataRestored(true);
-  }, [userQrSlug]);
+  }, [userProfileSlug]);
 
-  // 🔧 フォーム変更時の自動保存（復元完了後のみ）- SubscriptionSettings.tsxと完全に同じ
+  // 📧 フォーム変更時の自動保存（復元完了後のみ）- SubscriptionSettings.tsxと完全に同じ
   useEffect(() => {
     if (isDataRestored) {
       saveFormData({
         items,
-        qrSlug,
+        profileSlug, // qrSlug → profileSlug に変更
         shippingAddress,
         currentStep,
       });
     }
-  }, [items, qrSlug, shippingAddress, currentStep, isDataRestored]);
+  }, [items, profileSlug, shippingAddress, currentStep, isDataRestored]);
 
-  // 🔧 決済成功時のデータクリア（SubscriptionSettings.tsxと同じパターン）
+  // 📧 決済成功時のデータクリア（SubscriptionSettings.tsxと同じパターン）
   useEffect(() => {
     const urlParams = new URLSearchParams(window.location.search);
     if (urlParams.get('success') === 'true') {
@@ -158,8 +154,9 @@ export function OneTapSealOrderForm({
     setShippingAddress(address);
   }, []);
 
-  const handleQrSlugChange = useCallback((slug: string) => {
-    setQrSlug(slug);
+  const handleProfileSlugChange = useCallback((slug: string) => {
+    // handleQrSlugChange → handleProfileSlugChange に変更
+    setProfileSlug(slug);
   }, []);
 
   const handleItemsChange = useCallback((newItems: OneTapSealSelection) => {
@@ -172,8 +169,10 @@ export function OneTapSealOrderForm({
       case 'items':
         return Object.values(items).some((quantity) => quantity > 0);
       case 'url':
-        // QRスラッグが3文字以上で、既存のユーザーQRスラッグまたは有効な新規スラッグ
-        return qrSlug.length >= 3 && (qrSlug === userQrSlug || qrSlug.length >= 3);
+        // プロフィールスラグが3文字以上で、既存のユーザープロフィールスラグまたは有効な新規スラッグ
+        return (
+          profileSlug.length >= 3 && (profileSlug === userProfileSlug || profileSlug.length >= 3)
+        );
       case 'address':
         return !!(
           shippingAddress.postalCode &&
@@ -191,7 +190,7 @@ export function OneTapSealOrderForm({
   const goToNextStep = () => {
     const steps: OrderStep[] = ['items', 'url', 'address', 'confirm'];
     const currentIndex = steps.indexOf(currentStep);
-    if (currentIndex < steps.length - 1 && isStepValid(currentStep)) {
+    if (currentIndex < steps.length - 1) {
       setCurrentStep(steps[currentIndex + 1]);
     }
   };
@@ -204,142 +203,88 @@ export function OneTapSealOrderForm({
     }
   };
 
-  // 🔧 修正: Stripe Checkout Session使用版に置き換え
+  // 注文送信
   const handleSubmit = async () => {
-    if (!isStepValid('address') || !isStepValid('url') || !isStepValid('items')) {
-      toast.error('すべての項目を正しく入力してください');
-      return;
-    }
-
     setIsSubmitting(true);
-    try {
-      // 🔧 決済前に現在の状態を保存（SubscriptionSettings.tsxと同じパターン）
-      saveFormData({
-        items,
-        qrSlug,
-        shippingAddress,
-        currentStep,
-      });
 
-      // 注文アイテムを構築
+    try {
+      // 注文アイテム構築
       const orderItems: CreateOneTapSealItem[] = ONE_TAP_SEAL_COLORS.filter(
         (color) => items[color] > 0,
       ).map((color) => ({
         color,
         quantity: items[color],
-        qrSlug,
+        profileSlug,
       }));
 
       // バリデーション
-      const validationItems = orderItems.map((item) => ({
-        ...item,
-        unitPrice: ONE_TAP_SEAL_CONFIG.UNIT_PRICE,
-      }));
+      const validation = validateOneTapSealOrder(
+        orderItems.map((item) => ({
+          ...item,
+          unitPrice: ONE_TAP_SEAL_CONFIG.UNIT_PRICE,
+        })),
+      );
 
-      const validation = validateOneTapSealOrder(validationItems);
       if (!validation.isValid) {
-        toast.error(validation.errors[0]);
+        validation.errors.forEach((error) => toast.error(error));
         return;
       }
 
-      toast.loading('注文を準備中...', { id: 'order-loading' });
-
-      // Step 1: 注文作成
-      const orderResponse = await fetch('/api/one-tap-seal/order', {
+      // 注文作成リクエスト
+      const response = await fetch('/api/one-tap-seal/order', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+        },
         body: JSON.stringify({
           orderType: 'individual',
           items: orderItems,
-          shippingAddress: {
-            postalCode: shippingAddress.postalCode,
-            address: shippingAddress.address,
-            building: shippingAddress.building,
-            companyName: shippingAddress.companyName,
-            recipientName: shippingAddress.recipientName,
-          },
+          shippingAddress,
         }),
       });
 
-      const orderData = await orderResponse.json();
-
-      if (!orderResponse.ok) {
-        throw new Error(orderData.error || '注文の作成に失敗しました');
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.error || '注文の作成に失敗しました');
       }
 
-      toast.dismiss('order-loading');
-      toast.loading('決済画面を準備中...', { id: 'checkout-loading' });
+      const orderData = await response.json();
 
-      // Step 2: Stripe Checkout Session作成（ワンタップシール単独決済）
-      const checkoutResponse = await fetch('/api/subscription/create', {
+      // 修正: 独自決済画面を表示する代わりに、直接Checkout Sessionを作成してリダイレクト
+      toast.success('注文を作成しました。決済画面に移動します...');
+
+      // Checkout Session作成とリダイレクト
+      const checkoutResponse = await fetch('/api/one-tap-seal/create-checkout-session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          plan: 'one_tap_seal_only',
-          interval: 'month',
-          isCorporate: false,
-          oneTapSeal: {
-            orderId: orderData.orderId,
-            items: orderItems,
-            shippingAddress,
-          },
-        }),
+        body: JSON.stringify({ orderId: orderData.orderId }),
       });
 
-      const checkoutData = await checkoutResponse.json();
-
       if (!checkoutResponse.ok) {
-        throw new Error(checkoutData.error || '決済の準備に失敗しました');
+        const errorData = await checkoutResponse.json();
+        throw new Error(errorData.error || '決済セッションの作成に失敗しました');
       }
 
-      toast.dismiss('checkout-loading');
-      toast.success('決済画面に移動します...');
+      const { checkoutUrl } = await checkoutResponse.json();
 
-      // Step 3: Stripe Checkoutページにリダイレクト
-      if (checkoutData.checkoutUrl) {
-        window.location.href = checkoutData.checkoutUrl;
-      } else {
-        throw new Error('決済URLの取得に失敗しました');
-      }
-    } catch (error) {
-      console.error('ワンタップシール注文エラー:', error);
-      toast.dismiss();
-      toast.error(
-        error instanceof Error ? error.message : 'ワンタップシール注文の作成に失敗しました',
-      );
+      // フォームデータはクリアしない（戻った時の復元用）
+      // clearFormData(); // 決済完了時にのみクリアする
+
+      // Stripe Checkoutにリダイレクト
+      window.location.href = checkoutUrl;
+    } catch (error: any) {
+      console.error('注文作成エラー:', error);
+      toast.error(error.message || 'ワンタップシール注文の作成に失敗しました');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  // 決済成功時の処理
-  const handlePaymentSuccess = () => {
-    if (createdOrderId) {
-      // 🔧 決済成功時にフォームデータをクリア
-      clearFormData();
-      onOrderComplete?.(createdOrderId);
-    }
-  };
-
-  // 🔧 キャンセル時にフォームデータをクリア
+  // 📧 キャンセル時にフォームデータをクリア
   const handleCancel = () => {
     clearFormData();
     onCancel?.();
   };
-
-  // 決済画面の表示
-  if (showPayment && createdOrderId) {
-    return (
-      <div className="w-full">
-        <OneTapSealStripeCheckout
-          orderId={createdOrderId}
-          amount={orderAmount}
-          onSuccess={handlePaymentSuccess}
-          onCancel={() => setShowPayment(false)}
-        />
-      </div>
-    );
-  }
 
   return (
     <div className="w-full space-y-6">
@@ -402,9 +347,9 @@ export function OneTapSealOrderForm({
               <h3 className="text-lg font-semibold">URL設定</h3>
             </div>
             <OneTapSealUrlManager
-              qrSlug={qrSlug}
-              onQrSlugChange={handleQrSlugChange}
-              userQrSlug={userQrSlug}
+              profileSlug={profileSlug} // qrSlug → profileSlug に変更
+              onProfileSlugChange={handleProfileSlugChange} // onQrSlugChange → onProfileSlugChange に変更
+              userProfileSlug={userProfileSlug} // userQrSlug → userProfileSlug に変更
               userName={userName}
             />
           </Card>
@@ -420,7 +365,7 @@ export function OneTapSealOrderForm({
         {currentStep === 'confirm' && (
           <OneTapSealOrderSummary
             items={items}
-            qrSlug={qrSlug}
+            profileSlug={profileSlug} // qrSlug → profileSlug に変更
             shippingAddress={shippingAddress}
             onConfirm={handleSubmit}
             onEdit={() => setCurrentStep('items')}

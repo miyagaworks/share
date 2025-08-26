@@ -268,6 +268,8 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── orders
 │   │   │   │   └── route.ts
+│   │   │   ├── validate-profile
+│   │   │   │   └── route.ts
 │   │   │   └── validate-qr
 │   │   │       └── route.ts
 │   │   ├── profile
@@ -463,7 +465,6 @@ share/
 │   ├── error.tsx
 │   ├── favicon.ico
 │   ├── globals.css
-│   ├── globals.css.backup
 │   ├── jikogene
 │   │   ├── components
 │   │   │   ├── FormSteps
@@ -580,6 +581,7 @@ share/
 │   │   ├── OneTapSealStripeCheckout.tsx
 │   │   ├── OneTapSealUrlManager.tsx
 │   │   └── ShippingAddressForm.tsx
+│   ├── PasswordSetupBanner.tsx
 │   ├── profile
 │   │   ├── ProfileCustomLink.tsx
 │   │   └── ProfileSnsLink.tsx
@@ -591,6 +593,7 @@ share/
 │   │   ├── QrCodeGenerator.tsx
 │   │   └── QrCodePreview.tsx
 │   ├── RecaptchaWrapper.tsx
+│   ├── SecuritySettingsSection.tsx
 │   ├── shared
 │   │   ├── AuthDebugger.tsx
 │   │   ├── Breadcrumb.tsx
@@ -637,7 +640,7 @@ share/
 │   ├── progress-tracking.md
 │   ├── project-overview.md
 │   ├── security-privacy-plan.md
-│   ├── share_ディレクトリ構造.md
+│   ├── share_ディレクトリ構造.md
 │   ├── share-next-development-plan.md
 │   ├── share-project-plan.md
 │   ├── share-roadmap.md
@@ -691,6 +694,7 @@ share/
 │   │   └── validator.ts
 │   ├── one-tap-seal
 │   │   ├── order-calculator.ts
+│   │   ├── profile-slug-manager.ts
 │   │   └── qr-slug-manager.ts
 │   ├── prisma.ts
 │   ├── profit-allocation.ts
@@ -717,7 +721,6 @@ share/
 │   │   ├── performance-monitor.ts
 │   │   ├── subscription-server.ts
 │   │   ├── subscription.ts
-│   │   ├── subscription.ts.backup
 │   │   └── validation.ts
 │   └── utils.ts
 ├── middleware
@@ -771,6 +774,8 @@ share/
 │   │   ├── 20250501150000_add_bio_customization
 │   │   │   └── migration.sql
 │   │   ├── 20250814054714_add_touch_seal_models
+│   │   │   └── migration.sql
+│   │   ├── 20250826103953_add_one_tap_seal_with_profile_slug
 │   │   │   └── migration.sql
 │   │   └── migration_lock.toml
 │   └── schema.prisma

@@ -11,7 +11,7 @@ import {
   type CreateOneTapSealItem,
 } from '@/types/one-tap-seal';
 import { calculateOrderAmount, validateOneTapSealOrder } from '@/lib/one-tap-seal/order-calculator';
-import { validatePostalCode } from '@/lib/one-tap-seal/qr-slug-manager';
+import { validatePostalCode } from '@/lib/one-tap-seal/profile-slug-manager'; // qr-slug-manager → profile-slug-manager に変更
 
 // リクエストスキーマ
 const CreateOrderSchema = z.object({
@@ -20,7 +20,7 @@ const CreateOrderSchema = z.object({
     z.object({
       color: z.enum(ONE_TAP_SEAL_COLORS),
       quantity: z.number().min(1).max(ONE_TAP_SEAL_CONFIG.MAX_QUANTITY_PER_COLOR),
-      qrSlug: z.string().min(3).max(20),
+      profileSlug: z.string().min(3).max(20), // qrSlug → profileSlug に変更
       memberUserId: z.string().optional(),
     }),
   ),
@@ -48,82 +48,44 @@ export async function POST(request: Request) {
     const validation = CreateOrderSchema.safeParse(body);
     if (!validation.success) {
       return NextResponse.json(
-        { error: 'リクエストデータが無効です', details: validation.error.errors },
+        { error: 'リクエストが無効です', details: validation.error.errors },
         { status: 400 },
       );
     }
 
-    const orderData: CreateOrderRequest = validation.data;
+    const orderData = validation.data;
 
-    // ValidationOneTapSealItem型に変換してバリデーション
+    // 注文アイテムの検証用にunitPriceを追加
     const validationItems = orderData.items.map((item) => ({
       ...item,
       unitPrice: ONE_TAP_SEAL_CONFIG.UNIT_PRICE,
     }));
 
+    // 注文内容の検証
     const itemValidation = validateOneTapSealOrder(validationItems);
     if (!itemValidation.isValid) {
-      return NextResponse.json({ error: itemValidation.errors[0] }, { status: 400 });
-    }
-
-    // 郵便番号バリデーション
-    if (!validatePostalCode(orderData.shippingAddress.postalCode)) {
-      return NextResponse.json({ error: '郵便番号の形式が正しくありません' }, { status: 400 });
-    }
-
-    // 個人注文の場合の権限チェック
-    if (orderData.orderType === 'individual') {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          subscriptionStatus: true,
-          trialEndsAt: true,
-          corporateRole: true,
-          tenantId: true,
-        },
-      });
-
-      if (!user) {
-        return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
-      }
-
-      // アクティブなプランまたはトライアル中かチェック
-      const now = new Date();
-      const isTrialing = user.trialEndsAt && now < user.trialEndsAt;
-      const isActive = user.subscriptionStatus === 'active';
-      const isPermanent = user.subscriptionStatus === 'permanent';
-
-      if (!isActive && !isTrialing && !isPermanent) {
-        return NextResponse.json(
-          { error: 'ワンタップシールを注文するには有効なプランが必要です' },
-          { status: 403 },
-        );
-      }
-
-      // 法人メンバーの場合は管理者権限をチェック
-      if (user.tenantId && user.corporateRole !== 'admin') {
-        return NextResponse.json({ error: '法人メンバーは個人注文できません' }, { status: 403 });
-      }
-    }
-
-    // 法人注文の場合の権限チェック
-    if (orderData.orderType === 'corporate') {
-      const user = await prisma.user.findUnique({
-        where: { id: session.user.id },
-        select: {
-          corporateRole: true,
-          tenantId: true,
-          adminOfTenant: true,
-        },
-      });
-
-      if (!user?.adminOfTenant && user?.corporateRole !== 'admin') {
-        return NextResponse.json({ error: '法人管理者権限が必要です' }, { status: 403 });
-      }
+      return NextResponse.json(
+        { error: '注文内容が無効です', details: itemValidation.errors },
+        { status: 400 },
+      );
     }
 
     // 金額計算
     const calculation = calculateOrderAmount(validationItems);
+
+    // Profile.slug の存在確認
+    for (const item of orderData.items) {
+      const existingProfile = await prisma.profile.findUnique({
+        where: { slug: item.profileSlug },
+      });
+
+      if (!existingProfile) {
+        return NextResponse.json(
+          { error: `プロフィールスラッグ ${item.profileSlug} が見つかりません` },
+          { status: 400 },
+        );
+      }
+    }
 
     // データベーストランザクション
     const result = await prisma.$transaction(async (tx) => {
@@ -131,23 +93,13 @@ export async function POST(request: Request) {
       const order = await tx.oneTapSealOrder.create({
         data: {
           userId: session.user.id,
-          tenantId:
-            orderData.orderType === 'corporate'
-              ? (
-                  await tx.user.findUnique({
-                    where: { id: session.user.id },
-                    select: { tenantId: true },
-                  })
-                )?.tenantId
-              : null,
           orderType: orderData.orderType,
-          postalCode: orderData.shippingAddress.postalCode,
-          address: orderData.shippingAddress.address,
-          recipientName: orderData.shippingAddress.recipientName,
+          status: 'pending',
           sealTotal: calculation.sealTotal,
           shippingFee: calculation.shippingFee,
           taxAmount: calculation.taxAmount,
           totalAmount: calculation.totalAmount,
+          shippingAddress: orderData.shippingAddress,
           subscriptionId: orderData.subscriptionId,
         },
       });
@@ -161,34 +113,9 @@ export async function POST(request: Request) {
             color: item.color,
             quantity: item.quantity,
             unitPrice: ONE_TAP_SEAL_CONFIG.UNIT_PRICE,
-            qrSlug: item.qrSlug,
+            profileSlug: item.profileSlug, // profileSlug を保存
           },
         });
-
-        // QRコードページが存在しない場合は作成
-        const existingQrCode = await tx.qrCodePage.findUnique({
-          where: { slug: item.qrSlug },
-        });
-
-        if (!existingQrCode) {
-          // ユーザー情報を取得してQRコードページ作成に必要な情報を準備
-          const user = await tx.user.findUnique({
-            where: { id: item.memberUserId || session.user.id },
-            select: { name: true, email: true },
-          });
-
-          await tx.qrCodePage.create({
-            data: {
-              slug: item.qrSlug,
-              userId: item.memberUserId || session.user.id,
-              userName: user?.name || user?.email || item.qrSlug,
-              profileUrl: `https://app.sns-share.com/qr/${item.qrSlug}`,
-              template: 'default',
-              primaryColor: '#3B82F6',
-              secondaryColor: '#1E40AF',
-            },
-          });
-        }
       }
 
       return order;

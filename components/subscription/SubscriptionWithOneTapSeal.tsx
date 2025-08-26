@@ -15,6 +15,11 @@ interface UserData {
   subscriptionStatus?: string;
   corporateRole?: string;
   tenantId?: string;
+  profile?: {
+    id: string;
+    slug: string;
+    views: number;
+  };
   qrCodes?: Array<{
     id: string;
     slug: string;
@@ -46,11 +51,11 @@ export function SubscriptionWithOneTapSeal() {
       try {
         setIsLoading(true);
 
-        // ユーザー情報を取得
-        const userResponse = await fetch('/api/dashboard-info');
+        // プロファイル情報を含むユーザー情報を取得
+        const userResponse = await fetch('/api/profile');
         if (userResponse.ok) {
-          const userData = await userResponse.json();
-          setUserData(userData.user);
+          const profileData = await userResponse.json();
+          setUserData(profileData.user);
         }
 
         // ワンタップシール注文履歴を取得
@@ -99,7 +104,7 @@ export function SubscriptionWithOneTapSeal() {
   const canOrderOneTapSeal = hasActivePlan && !isCorporateMember;
 
   // ユーザーのQRスラッグを取得
-  const userQrSlug = userData?.qrCodes?.[0]?.slug;
+  const userProfileSlug = userData?.profile?.slug;
 
   if (isLoading) {
     return (
@@ -128,7 +133,7 @@ export function SubscriptionWithOneTapSeal() {
         </div>
 
         <OneTapSealOrderForm
-          userQrSlug={userQrSlug}
+          userProfileSlug={userProfileSlug}
           userName={userData?.name}
           onOrderComplete={handleOrderComplete}
           onCancel={() => setShowOrderForm(false)}
@@ -286,7 +291,7 @@ export function SubscriptionWithOneTapSeal() {
       )}
 
       {/* 現在のQRコード表示 */}
-      {canOrderOneTapSeal && userQrSlug && (
+      {canOrderOneTapSeal && userProfileSlug && (
         <Card className="p-6">
           <div className="flex items-center mb-4">
             <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
@@ -295,7 +300,7 @@ export function SubscriptionWithOneTapSeal() {
 
           <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
             <div>
-              <p className="font-medium">app.sns-share.com/qr/{userQrSlug}</p>
+              <p className="font-medium">app.sns-share.com/qr/{userProfileSlug}</p>
               <p className="text-sm text-gray-600">
                 閲覧数: {userData?.qrCodes?.[0]?.views || 0} 回
               </p>
@@ -303,7 +308,7 @@ export function SubscriptionWithOneTapSeal() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => window.open(`https://app.sns-share.com/qr/${userQrSlug}`, '_blank')}
+              onClick={() => window.open(`https://app.sns-share.com/${userProfileSlug}`, '_blank')}
             >
               <ExternalLink className="h-4 w-4 mr-1" />
               プレビュー

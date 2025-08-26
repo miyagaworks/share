@@ -63,17 +63,28 @@ export interface OneTapSealItem {
   color: OneTapSealColor;
   quantity: number;
   unitPrice: number;
-  qrSlug: string;
+  profileSlug: string; // 新規追加: NFCタグ書き込み用
+  qrSlug?: string; // 後方互換性のため保持（QRコード表示用）
   createdAt: string;
   memberName?: string | null;
   memberEmail?: string | null;
+}
+
+// プロフィールスラッグ情報（新規追加）
+export interface ProfileSlugInfo {
+  slug: string;
+  isExisting: boolean;
+  isAvailable: boolean;
+  userId?: string;
+  userName?: string;
+  profileUrl: string; // 完全なプロフィールURL
 }
 
 // 注文作成用のアイテム型（idやorderId、createdAtなし）
 export interface CreateOneTapSealItem {
   color: OneTapSealColor;
   quantity: number;
-  qrSlug: string;
+  profileSlug: string; // qrSlug → profileSlug に変更
   memberUserId?: string;
 }
 
