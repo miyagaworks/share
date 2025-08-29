@@ -498,6 +498,18 @@ export default function AdminDashboardPage() {
             />
 
             <AdminMenuCard
+              title="ワンタップシール管理"
+              icon={<HiLightningBolt className="h-8 w-8 text-blue-600" />}
+              description={
+                isSuperAdmin
+                  ? 'ワンタップシール注文の管理・発送処理'
+                  : 'ワンタップシール注文の確認（閲覧のみ）'
+              }
+              onClick={() => router.push('/dashboard/admin/one-tap-seal-orders')}
+              badge={!isSuperAdmin ? '閲覧のみ' : undefined}
+            />
+
+            <AdminMenuCard
               title="解約申請管理"
               icon={<HiExclamationCircle className="h-8 w-8 text-red-600" />}
               description={

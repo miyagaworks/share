@@ -142,6 +142,11 @@ function generateNavigationEnhanced(
         icon: 'HiCreditCard',
       },
       {
+        title: 'ワンタップシール管理',
+        href: '/dashboard/admin/one-tap-seal-orders',
+        icon: 'HiLightningBolt',
+      },
+      {
         title: '解約申請管理',
         href: '/dashboard/admin/cancel-requests',
         icon: 'HiExclamationCircle',
@@ -157,7 +162,7 @@ function generateNavigationEnhanced(
       { title: 'メール配信管理', href: '/dashboard/admin/email', icon: 'HiOutlineMail' },
     ],
 
-    // 🆕 財務管理者専用メニュー（完全版）
+    // 財務管理者専用メニュー（完全版）
     'financial-admin': [
       { title: '管理者ダッシュボード', href: '/dashboard/admin', icon: 'HiShieldCheck' },
       { title: '財務管理', href: '#financial-divider', icon: '', isDivider: true },
@@ -187,6 +192,12 @@ function generateNavigationEnhanced(
         title: 'サブスクリプション管理',
         href: '/dashboard/admin/subscriptions',
         icon: 'HiCreditCard',
+        readOnly: true,
+      },
+      {
+        title: 'ワンタップシール管理',
+        href: '/dashboard/admin/one-tap-seal-orders',
+        icon: 'HiLightningBolt',
         readOnly: true,
       },
       {
