@@ -262,6 +262,8 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   └── route.ts
 │   │   ├── one-tap-seal
+│   │   │   ├── create-checkout-session
+│   │   │   │   └── route.ts
 │   │   │   ├── create-payment-intent
 │   │   │   │   └── route.ts
 │   │   │   ├── order
@@ -523,7 +525,10 @@ share/
 ├── backup_before_migration_20250816.sql
 ├── components
 │   ├── admin
-│   │   └── GrantPermanentAccess.tsx
+│   │   ├── AdminNfcUrlManager.tsx
+│   │   ├── AdminShippingManagementPanel.tsx
+│   │   ├── GrantPermanentAccess.tsx
+│   │   └── OneTapSealOrderDetailModal.tsx
 │   ├── corporate
 │   │   ├── ActivityFeed.tsx
 │   │   ├── BrandingPreview.tsx
@@ -682,6 +687,7 @@ share/
 │   │       ├── expense-approval.ts
 │   │       ├── grace-period-expired.ts
 │   │       ├── invite-email.ts
+│   │       ├── shipping-notification.ts
 │   │       └── trial-ending.ts
 │   ├── email.ts
 │   ├── errorHandler.ts

@@ -1,4 +1,4 @@
-// lib/email/index.ts - 本番対応完全版
+// lib/email/index.ts - 開発環境メール送信対応版
 import { Resend } from 'resend';
 import { logger } from '@/lib/utils/logger';
 
@@ -31,9 +31,9 @@ function getResendClient(): Resend {
 export async function sendEmail(data: EmailData): Promise<EmailResult> {
   const { to, subject, text, html } = data;
 
-  // 開発環境での詳細ログ出力（既存機能を維持）
+  // 開発環境でも実際にメール送信を行う
   if (process.env.NODE_ENV === 'development') {
-    logger.info('==================== メール送信テスト ====================');
+    logger.info('==================== メール送信開始（開発環境） ====================');
     logger.info(`宛先: ${to}`);
     logger.info(`件名: ${subject}`);
     logger.info('メール本文:');
@@ -46,13 +46,20 @@ export async function sendEmail(data: EmailData): Promise<EmailResult> {
       await saveEmailToFile(subject, html, to);
     }
 
-    logger.info('メール送信成功（開発環境テスト）');
-    logger.info('==================== メール送信完了 ====================');
-
-    return {
-      messageId: `dev-test-${Date.now()}`,
-      success: true,
-    };
+    // 開発環境でも実際のメール送信を実行
+    try {
+      const result = await sendProductionEmail(data);
+      logger.info('開発環境メール送信成功:', result);
+      logger.info('==================== メール送信完了（開発環境） ====================');
+      return result;
+    } catch (error) {
+      logger.error('開発環境メール送信エラー:', error);
+      // エラーの詳細を表示
+      if (error instanceof Error) {
+        logger.error('エラー詳細:', error.message);
+      }
+      throw error; // エラーを再スローして問題を明確にする
+    }
   }
 
   // 本番環境では実際のメール送信
@@ -67,7 +74,7 @@ async function sendProductionEmail(data: EmailData): Promise<EmailResult> {
     const fromEmail = process.env.FROM_EMAIL || 'noreply@sns-share.com';
     const fromName = process.env.FROM_NAME || 'Share';
 
-    logger.info('本番メール送信開始:', {
+    logger.info('メール送信開始:', {
       to: data.to,
       subject: data.subject,
       from: `${fromName} <${fromEmail}>`,
@@ -88,7 +95,7 @@ async function sendProductionEmail(data: EmailData): Promise<EmailResult> {
       success: true,
     };
   } catch (error: any) {
-    logger.error('本番メール送信エラー:', error);
+    logger.error('メール送信エラー:', error);
 
     // エラーの詳細をログに出力
     if (error.message) {
@@ -102,6 +109,44 @@ async function sendProductionEmail(data: EmailData): Promise<EmailResult> {
 
     throw new Error(`メール送信に失敗しました: ${error.message}`);
   }
+}
+
+// 発送完了メール送信関数（新規追加）
+export async function sendShippingNotificationEmail(params: {
+  customerName: string;
+  customerEmail: string;
+  orderId: string;
+  trackingNumber: string;
+  items: {
+    color: string;
+    quantity: number;
+    profileSlug: string;
+  }[];
+  shippingAddress: {
+    postalCode: string;
+    address: string;
+    building?: string;
+    recipientName: string;
+  };
+  orderDate: string;
+  totalAmount: number;
+}): Promise<EmailResult> {
+  const { getShippingNotificationTemplate } = await import('./templates/shipping-notification');
+
+  const template = getShippingNotificationTemplate({
+    ...params,
+    items: params.items.map((item) => ({
+      ...item,
+      color: item.color as any,
+    })),
+  });
+
+  return await sendEmail({
+    to: params.customerEmail,
+    subject: template.subject,
+    text: template.text,
+    html: template.html,
+  });
 }
 
 // 経費申請メール送信関数

@@ -13,13 +13,21 @@ export async function GET() {
       return NextResponse.json({ error: '認証が必要です' }, { status: 401 });
     }
 
-    // 管理者権限チェック
+    // 管理者権限チェック（修正版）
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { isFinancialAdmin: true, email: true },
+      select: {
+        isFinancialAdmin: true,
+        email: true,
+      },
     });
 
-    if (!user || !user.isFinancialAdmin) {
+    // スーパー管理者または財務管理者のチェック
+    const isAdmin =
+      user &&
+      (user.email.toLowerCase() === 'admin@sns-share.com' || user.isFinancialAdmin === true);
+
+    if (!isAdmin) {
       logger.warn('管理者以外のワンタップシール注文アクセス試行', {
         userId: session.user.id,
         email: user?.email,
