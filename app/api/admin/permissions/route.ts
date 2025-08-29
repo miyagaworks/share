@@ -9,10 +9,31 @@ import { addDays } from 'date-fns';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 
-// 🔥 統一されたトライアル期間定数（7日間）
+// 統一されたトライアル期間定数（7日間）
 const TRIAL_PERIOD_DAYS = 7;
 
-// 🔥 トライアル期間中またはpermanentユーザーかどうかを判定する統一関数
+// 永久利用権付与対象かどうかを判定する関数（修正版）
+function isEligibleForPermanentAccess(
+  user: {
+    trialEndsAt: Date | null;
+    subscriptionStatus: string | null;
+  },
+  currentTime: Date = new Date(),
+): boolean {
+  // 既に永久利用権を持っている場合は対象外
+  if (user.subscriptionStatus === 'permanent') {
+    return false;
+  }
+
+  // トライアル期間が設定されていて、まだ期限内の場合のみ対象
+  if (user.trialEndsAt && new Date(user.trialEndsAt) > currentTime) {
+    return true;
+  }
+
+  return false;
+}
+
+// トライアル期間中またはpermanentユーザーかどうかを判定する統一関数（表示用）
 function isTrialOrPermanentUser(
   user: {
     trialEndsAt: Date | null;
@@ -48,7 +69,7 @@ export async function GET() {
 
     const now = new Date();
 
-    // 🔥 シンプルな条件でトライアル期間中 + 永久利用権ユーザーを取得
+    // シンプルな条件でトライアル期間中 + 永久利用権ユーザーを取得
     const users = await prisma.user.findMany({
       where: {
         OR: [
@@ -174,8 +195,16 @@ export async function POST(request: Request) {
     const now = new Date();
 
     if (isPermanent) {
-      // 🔥 永久利用権付与時: 統一判定関数を使用
-      if (!isTrialOrPermanentUser(user, now)) {
+      // 既に永久利用権を持っているかチェック（最初に実行）
+      if (user.subscriptionStatus === 'permanent') {
+        return NextResponse.json(
+          { error: 'このユーザーは既に永久利用権を持っています' },
+          { status: 400 },
+        );
+      }
+
+      // 永久利用権付与対象かチェック（修正された関数を使用）
+      if (!isEligibleForPermanentAccess(user, now)) {
         return NextResponse.json(
           {
             error: 'トライアル期間中のユーザーのみに永久利用権を付与できます',
@@ -186,16 +215,8 @@ export async function POST(request: Request) {
           { status: 400 },
         );
       }
-
-      // 既に永久利用権を持っているかチェック
-      if (user.subscriptionStatus === 'permanent') {
-        return NextResponse.json(
-          { error: 'このユーザーは既に永久利用権を持っています' },
-          { status: 400 },
-        );
-      }
     } else {
-      // 🔥 永久利用権解除時: 永久利用権を持っているかチェック
+      // 永久利用権解除時: 永久利用権を持っているかチェック
       if (user.subscriptionStatus !== 'permanent') {
         return NextResponse.json(
           { error: 'このユーザーは永久利用権を持っていません' },
@@ -207,7 +228,7 @@ export async function POST(request: Request) {
     // トランザクションで永久利用権を付与または解除
     const result = await prisma.$transaction(async (tx) => {
       if (isPermanent) {
-        // 🔥 永久利用権付与
+        // 永久利用権付与
         const updatedUser = await tx.user.update({
           where: { id: userId },
           data: {
@@ -248,10 +269,10 @@ export async function POST(request: Request) {
         logger.info('永久利用権付与（管理画面）', { userId, email: user.email });
         return { user: updatedUser, action: 'granted' };
       } else {
-        // 🔥 永久利用権解除（修正版）
-        // 🔥 統一されたトライアル期間（7日間）でtrialEndsAtを計算
+        // 永久利用権解除（修正版）
+        // 統一されたトライアル期間（7日間）でtrialEndsAtを計算
         const userCreatedAt = new Date(user.createdAt);
-        const originalTrialEnd = addDays(userCreatedAt, TRIAL_PERIOD_DAYS); // 🔥 7日間に統一
+        const originalTrialEnd = addDays(userCreatedAt, TRIAL_PERIOD_DAYS); // 7日間に統一
         const isTrialExpired = originalTrialEnd < now;
 
         let newTrialEndsAt = null;
@@ -263,7 +284,7 @@ export async function POST(request: Request) {
           newTrialEndsAt = originalTrialEnd;
         }
 
-        // 🔥 Step 1: 法人テナントの管理者の場合の詳細なクリーンアップ
+        // Step 1: 法人テナントの管理者の場合の詳細なクリーンアップ
         if (user.adminOfTenant) {
           const tenantId = user.adminOfTenant.id;
 
@@ -311,11 +332,11 @@ export async function POST(request: Request) {
           });
         }
 
-        // 🔥 Step 2: ユーザーのテナント関連付けを解除
+        // Step 2: ユーザーのテナント関連付けを解除
         const updatedUser = await tx.user.update({
           where: { id: userId },
           data: {
-            subscriptionStatus: 'trialing', // 🔥 trialingステータスに戻す
+            subscriptionStatus: 'trialing', // trialingステータスに戻す
             trialEndsAt: newTrialEndsAt,
             corporateRole: null,
             departmentId: null,
@@ -323,7 +344,7 @@ export async function POST(request: Request) {
           },
         });
 
-        // 🔥 Step 3: サブスクリプション情報を削除
+        // Step 3: サブスクリプション情報を削除
         if (user.subscription) {
           await tx.subscription.delete({
             where: { userId },
