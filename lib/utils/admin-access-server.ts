@@ -21,7 +21,6 @@ export async function getAdminLevel(userId: string | undefined | null): Promise<
       select: {
         email: true,
         subscriptionStatus: true,
-        isFinancialAdmin: true,
         financialAdminRecord: {
           select: {
             isActive: true,
@@ -46,13 +45,11 @@ export async function getAdminLevel(userId: string | undefined | null): Promise<
 
     // 🔒 修正: 財務管理者は明示的な設定のみで判定
     // ドメインベースの自動権限付与は廃止
-    const hasExplicitFinancialAdmin =
-      user.isFinancialAdmin && user.financialAdminRecord?.isActive === true;
+    const hasExplicitFinancialAdmin = user.financialAdminRecord?.isActive === true;
 
     if (hasExplicitFinancialAdmin) {
       logger.debug('財務管理者権限確認（明示的設定）:', {
         userEmail,
-        isFinancialAdmin: user.isFinancialAdmin,
         hasActiveRecord: user.financialAdminRecord?.isActive,
       });
       return 'financial';
@@ -159,7 +156,6 @@ export async function addFinancialAdmin(
       select: {
         id: true,
         email: true,
-        isFinancialAdmin: true,
         subscriptionStatus: true,
         financialAdminRecord: {
           select: {
@@ -184,7 +180,7 @@ export async function addFinancialAdmin(
     }
 
     // 既に財務管理者の場合
-    if (targetUser.isFinancialAdmin && targetUser.financialAdminRecord?.isActive) {
+    if (targetUser.financialAdminRecord?.isActive) {
       return { success: false, message: '既に財務管理者に設定されています' };
     }
 
@@ -195,12 +191,11 @@ export async function addFinancialAdmin(
         where: { userId: targetUserId },
       });
 
-      // 🔧 修正: ユーザーテーブルのフラグとsubscriptionStatusを更新
+      // 🔧 修正: subscriptionStatusのみ更新
       await tx.user.update({
         where: { id: targetUserId },
         data: {
-          isFinancialAdmin: true,
-          subscriptionStatus: 'active', // ← この行を追加
+          subscriptionStatus: 'active',
         },
       });
 
@@ -249,7 +244,6 @@ export async function removeFinancialAdmin(
       select: {
         id: true,
         email: true,
-        isFinancialAdmin: true,
         subscriptionStatus: true,
         subscription: {
           select: {
@@ -263,7 +257,12 @@ export async function removeFinancialAdmin(
       return { success: false, message: '対象ユーザーが見つかりません' };
     }
 
-    if (!targetUser.isFinancialAdmin) {
+    // 財務管理者レコードが存在するかチェック
+    const financialAdminRecord = await prisma.financialAdmin.findUnique({
+      where: { userId: targetUserId },
+    });
+
+    if (!financialAdminRecord) {
       return { success: false, message: '対象ユーザーは財務管理者ではありません' };
     }
 
@@ -280,12 +279,11 @@ export async function removeFinancialAdmin(
 
     // トランザクションで財務管理者を削除
     await prisma.$transaction(async (tx: any) => {
-      // 🔧 修正: ユーザーテーブルのフラグとsubscriptionStatusを更新
+      // 🔧 修正: subscriptionStatusのみ更新
       await tx.user.update({
         where: { id: targetUserId },
         data: {
-          isFinancialAdmin: false,
-          subscriptionStatus: newSubscriptionStatus, // ← 適切な状態に戻す
+          subscriptionStatus: newSubscriptionStatus,
         },
       });
 

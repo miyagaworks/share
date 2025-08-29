@@ -1,4 +1,4 @@
-// middleware.ts (財務管理者リダイレクト追加版) - console.log修正版
+// middleware.ts (財務管理者リダイレクト修正版) - 無限ループ解決
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
@@ -58,35 +58,50 @@ export async function middleware(request: NextRequest) {
           }
           return NextResponse.redirect(new URL('/dashboard/admin', request.url));
         }
+        // 既に管理画面にいる場合はそのまま通す
+        return NextResponse.next();
       }
-      // 🆕 財務管理者の処理
+
+      // 🆕 財務管理者の処理（修正版）
       else if (userRole === 'financial-admin') {
-        if (pathname === '/dashboard' && !pathname.startsWith('/dashboard/admin')) {
+        // /dashboard のルートアクセス時のリダイレクト
+        if (pathname === '/dashboard') {
           if (process.env.NODE_ENV === 'development') {
             console.log('🔄 Middleware: Redirecting financial admin to /dashboard/admin');
           }
           return NextResponse.redirect(new URL('/dashboard/admin', request.url));
         }
-        // 財務管理者の場合、財務関連ページのみアクセス許可
-        if (userRole === 'financial-admin' && pathname.startsWith('/dashboard/admin')) {
+
+        // 管理画面内でのアクセス制御
+        if (pathname.startsWith('/dashboard/admin')) {
           const allowedPaths = [
             '/dashboard/admin',
             '/dashboard/admin/financial',
             '/dashboard/admin/company-expenses',
             '/dashboard/admin/stripe/revenue',
           ];
-          const isAllowed = allowedPaths.some((path) => pathname.startsWith(path));
 
-          if (!isAllowed) {
+          // 許可されたパスの場合はアクセスを許可
+          const isAllowed = allowedPaths.some((path) => pathname.startsWith(path));
+          if (isAllowed) {
+            if (process.env.NODE_ENV === 'development') {
+              console.log('✅ Middleware: Financial admin access allowed to', pathname);
+            }
+            return NextResponse.next();
+          } else {
+            // 許可されていないパスは管理トップにリダイレクト
             if (process.env.NODE_ENV === 'development') {
               console.log(
-                '🔒 Middleware: Financial admin access denied, redirecting to allowed page',
+                '🔄 Middleware: Financial admin redirected from',
+                pathname,
+                'to /dashboard/admin',
               );
             }
             return NextResponse.redirect(new URL('/dashboard/admin', request.url));
           }
         }
-        // 財務管理者が個人機能や法人機能にアクセスしようとした場合
+
+        // 個人機能や法人機能へのアクセス拒否
         if (
           pathname.startsWith('/dashboard/corporate') ||
           (pathname.startsWith('/dashboard') &&
@@ -94,11 +109,15 @@ export async function middleware(request: NextRequest) {
             pathname !== '/dashboard')
         ) {
           if (process.env.NODE_ENV === 'development') {
-            console.log('🔒 Middleware: Financial admin accessing restricted area, redirecting');
+            console.log('🚫 Middleware: Financial admin blocked from', pathname);
           }
           return NextResponse.redirect(new URL('/dashboard/admin', request.url));
         }
+
+        // その他の場合はアクセスを許可
+        return NextResponse.next();
       }
+
       // 永久利用権法人プランユーザーの処理
       else if (userRole === 'permanent-admin') {
         if (pathname === '/dashboard') {
