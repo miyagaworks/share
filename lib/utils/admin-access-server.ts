@@ -136,7 +136,7 @@ export async function getAdminInfo(userId: string | undefined | null): Promise<{
 
 /**
  * 財務管理者を追加する（スーパー管理者のみ実行可能）
- * 🔒 セキュリティ強化版
+ * 🔒 セキュリティ強化版 - 修正済み
  */
 export async function addFinancialAdmin(
   executorUserId: string,
@@ -174,11 +174,10 @@ export async function addFinancialAdmin(
       return { success: false, message: 'スーパー管理者は財務管理者に設定できません' };
     }
 
-    // 永久利用権ユーザーは財務管理者にできない
-    if (targetUser.subscriptionStatus === 'permanent') {
-      return { success: false, message: '永久利用権ユーザーは財務管理者に設定できません' };
-    }
-
+    // 🔧 修正: 永久利用権ユーザーのチェックを削除または条件緩和
+    // 現在の財務管理者（kensei, yoshitsune）は実質的に長期サブスクリプション管理されているため
+    // subscriptionStatus は 'active' で管理する
+    
     // 既に財務管理者の場合
     if (targetUser.financialAdminRecord?.isActive) {
       return { success: false, message: '既に財務管理者に設定されています' };
@@ -191,13 +190,19 @@ export async function addFinancialAdmin(
         where: { userId: targetUserId },
       });
 
-      // 🔧 修正: subscriptionStatusのみ更新
-      await tx.user.update({
-        where: { id: targetUserId },
-        data: {
-          subscriptionStatus: 'active',
-        },
-      });
+      // 🔧 修正: ユーザーのsubscriptionStatusを適切に設定
+      // 既にactiveまたは有効なサブスクリプションがある場合はそのまま維持
+      let newSubscriptionStatus = 'active';
+      
+      // 現在trialingの場合のみactiveに変更
+      if (targetUser.subscriptionStatus === 'trialing' || !targetUser.subscriptionStatus) {
+        await tx.user.update({
+          where: { id: targetUserId },
+          data: {
+            subscriptionStatus: newSubscriptionStatus,
+          },
+        });
+      }
 
       // 新しい財務管理者レコードを作成
       await tx.financialAdmin.create({
@@ -214,7 +219,7 @@ export async function addFinancialAdmin(
       targetUserId,
       targetEmail: targetUser.email,
       executorUserId,
-      subscriptionStatusUpdated: 'active',
+      originalSubscriptionStatus: targetUser.subscriptionStatus,
     });
 
     return { success: true, message: '財務管理者を追加しました' };
