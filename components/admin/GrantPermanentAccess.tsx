@@ -41,10 +41,25 @@ export default function GrantPermanentAccess() {
 
     setIsSearching(true);
     try {
-      const response = await fetch(`/api/admin/users/search?query=${encodeURIComponent(query)}`);
+      const response = await fetch('/api/admin/permissions');
       if (response.ok) {
         const data = await response.json();
-        setSearchResults(data.users || []);
+        const users = data.users || [];
+
+        // トライアル期間中のユーザーのみをフィルタリング
+        const trialUsers = users.filter((user: any) => !user.isPermanentUser);
+
+        // 検索クエリでさらにフィルタリング
+        const filteredUsers = trialUsers.filter((user: any) => {
+          const searchTerm = query.toLowerCase();
+          return (
+            (user.name && user.name.toLowerCase().includes(searchTerm)) ||
+            (user.nameKana && user.nameKana.toLowerCase().includes(searchTerm)) ||
+            user.email.toLowerCase().includes(searchTerm)
+          );
+        });
+
+        setSearchResults(filteredUsers);
       } else {
         console.error('ユーザー検索エラー');
         setSearchResults([]);

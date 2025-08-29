@@ -76,29 +76,30 @@ export async function POST() {
           let planType = 'personal';
           let subscriptionPlan = 'permanent_personal';
 
-          // 🔥 新しいプラン構成に合わせた判定
+          // 新しいプラン構成に合わせた判定
           if (user.adminOfTenant) {
             const maxUsers = user.adminOfTenant.maxUsers;
             if (maxUsers >= 50) {
               planType = 'enterprise';
               subscriptionPlan = 'permanent_enterprise';
             } else if (maxUsers >= 30) {
-              planType = 'business'; // 🔥 business_plus → business
+              planType = 'business';
               subscriptionPlan = 'permanent_business';
             } else {
-              planType = 'starter'; // 🔥 business → starter
+              planType = 'starter';
               subscriptionPlan = 'permanent_starter';
             }
           } else if (user.tenant) {
             // メンバーの場合はスタータープランとして設定
-            planType = 'starter'; // 🔥 business → starter
+            planType = 'starter';
             subscriptionPlan = 'permanent_starter';
           }
 
-          // 🔥 サブスクリプション情報を修正
+          // サブスクリプション情報を修正
+          let subscription;
           if (user.subscription) {
             if (user.subscription.plan !== subscriptionPlan) {
-              await tx.subscription.update({
+              subscription = await tx.subscription.update({
                 where: { userId: user.id },
                 data: {
                   plan: subscriptionPlan,
@@ -109,13 +110,15 @@ export async function POST() {
                 },
               });
               actions.push(`サブスクリプションプランを${subscriptionPlan}に更新`);
+            } else {
+              subscription = user.subscription;
             }
           } else {
             const now = new Date();
             const endDate = new Date();
             endDate.setFullYear(endDate.getFullYear() + 100);
 
-            await tx.subscription.create({
+            subscription = await tx.subscription.create({
               data: {
                 userId: user.id,
                 status: 'active',
@@ -131,16 +134,13 @@ export async function POST() {
             actions.push('サブスクリプション情報を作成');
           }
 
-          // 🔥 テナントのオンボーディング完了とsubscriptionId設定
-          if (user.adminOfTenant) {
-            const subscriptionId =
-              user.subscription?.subscriptionId || `permanent_${user.id}_${Date.now()}`;
-
+          // テナントのオンボーディング完了とsubscriptionId設定
+          if (user.adminOfTenant && subscription) {
             await tx.corporateTenant.update({
               where: { id: user.adminOfTenant.id },
               data: {
                 onboardingCompleted: true,
-                subscriptionId: subscriptionId,
+                subscriptionId: subscription.id, // 修正: subscription.idを使用
               },
             });
             actions.push('テナントのオンボーディング完了とsubscriptionId設定');

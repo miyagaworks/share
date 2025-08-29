@@ -42,8 +42,9 @@ export default function FixPermanentUsersButton() {
       setIsLoading(true);
       setResult(null);
 
-      // 🔥 API URLの修正（末尾のスラッシュを追加）
-      const response = await fetch('/api/admin/fix-permanent-users/');
+      const response = await fetch('/api/admin/fix-permanent-users', {
+        method: 'POST',
+      });
 
       // responseが正常なJSONかをチェック
       const contentType = response.headers.get('content-type');

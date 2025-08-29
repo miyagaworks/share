@@ -47,7 +47,10 @@ export interface RevenueSummary {
 }
 
 /**
- * 指定期間のStripe決済データを取得する
+ * 指定期間のStripe決済データを取得する（修正版）
+ * - 返金処理を除外
+ * - ワンタップシール売上を除外
+ * - サブスクリプション取引のみを抽出
  */
 export async function fetchStripeRevenue(dateRange: DateRange): Promise<RevenueData[]> {
   try {
@@ -69,19 +72,70 @@ export async function fetchStripeRevenue(dateRange: DateRange): Promise<RevenueD
     });
 
     const revenueData: RevenueData[] = [];
+    const excludedTransactions: string[] = []; // 除外した取引のログ
 
     for (const paymentIntent of paymentIntents.data) {
       // 成功した決済のみ処理
       if (paymentIntent.status !== 'succeeded') continue;
 
-      // Charge情報を取得（手数料計算のため）
+      // Charge情報を取得（手数料計算と返金チェックのため）
       const charges = await stripe.charges.list({
         payment_intent: paymentIntent.id,
-        limit: 1,
+        limit: 10,
       });
 
       const charge = charges.data[0];
       if (!charge) continue;
+
+      // 🔥 返金処理の除外
+      if (charge.refunded || (charge.amount_refunded && charge.amount_refunded > 0)) {
+        excludedTransactions.push(`${paymentIntent.id}: 返金済み`);
+        continue;
+      }
+
+      // 🔥 ワンタップシール関連取引の除外
+      const metadata = paymentIntent.metadata || {};
+      const description = paymentIntent.description || '';
+
+      // ワンタップシール関連の識別
+      const isOneTapSeal =
+        metadata.product_type === 'one_tap_seal' ||
+        metadata.order_type === 'one_tap_seal' ||
+        description.toLowerCase().includes('ワンタップシール') ||
+        description.toLowerCase().includes('one tap seal') ||
+        description.toLowerCase().includes('touch seal') ||
+        description.toLowerCase().includes('タッチシール') ||
+        metadata.shipping_fee || // 送料が含まれている場合
+        metadata.seal_quantity; // シール枚数が指定されている場合
+
+      if (isOneTapSeal) {
+        excludedTransactions.push(`${paymentIntent.id}: ワンタップシール関連`);
+        continue;
+      }
+
+      // 🔥 サブスクリプション取引のみを抽出
+      const subscriptionType = metadata.plan_id || metadata.subscription_type || 'unknown';
+
+      // サブスクリプション関連のキーワードチェック
+      const isSubscription =
+        subscriptionType !== 'unknown' ||
+        metadata.subscription_id ||
+        description.toLowerCase().includes('月額') ||
+        description.toLowerCase().includes('年額') ||
+        description.toLowerCase().includes('プラン') ||
+        description.toLowerCase().includes('subscription') ||
+        description.toLowerCase().includes('monthly') ||
+        description.toLowerCase().includes('yearly') ||
+        description.toLowerCase().includes('個人プラン') ||
+        description.toLowerCase().includes('法人') ||
+        description.toLowerCase().includes('スタータープラン') ||
+        description.toLowerCase().includes('ビジネスプラン') ||
+        description.toLowerCase().includes('エンタープライズプラン');
+
+      if (!isSubscription) {
+        excludedTransactions.push(`${paymentIntent.id}: サブスクリプション以外の取引`);
+        continue;
+      }
 
       // 手数料計算
       const amount = paymentIntent.amount; // セント単位
@@ -93,8 +147,6 @@ export async function fetchStripeRevenue(dateRange: DateRange): Promise<RevenueD
       const netAmount = amountInYen - stripeFeeAmount;
 
       // プラン情報の取得（メタデータから）
-      const metadata = paymentIntent.metadata || {};
-      const subscriptionType = metadata.plan_id || 'unknown';
       const planName = metadata.plan_name || getSubscriptionTypeName(subscriptionType);
 
       const revenueItem: RevenueData = {
@@ -123,9 +175,16 @@ export async function fetchStripeRevenue(dateRange: DateRange): Promise<RevenueD
     }
 
     logger.info('Stripe売上データ取得完了:', {
-      transactionCount: revenueData.length,
+      totalFetched: paymentIntents.data.length,
+      validTransactions: revenueData.length,
+      excludedCount: excludedTransactions.length,
       totalAmount: revenueData.reduce((sum, item) => sum + item.amount, 0),
     });
+
+    // 除外した取引の詳細ログ（開発環境のみ）
+    if (process.env.NODE_ENV === 'development' && excludedTransactions.length > 0) {
+      logger.info('除外した取引:', { excludedTransactions: excludedTransactions.slice(0, 10) });
+    }
 
     return revenueData;
   } catch (error) {
@@ -263,12 +322,20 @@ function getSubscriptionTypeName(subscriptionType: string): string {
   const typeMap: Record<string, string> = {
     monthly: '個人プラン（月額）',
     yearly: '個人プラン（年額）',
+    personal_monthly: '個人プラン（月額）',
+    personal_yearly: '個人プラン（年額）',
     starter: '法人スタータープラン',
+    starter_monthly: '法人スタータープラン（月額）',
+    starter_yearly: '法人スタータープラン（年額）',
     business: '法人ビジネスプラン',
+    business_monthly: '法人ビジネスプラン（月額）',
+    business_yearly: '法人ビジネスプラン（年額）',
     enterprise: '法人エンタープライズプラン',
+    enterprise_monthly: '法人エンタープライズプラン（月額）',
+    enterprise_yearly: '法人エンタープライズプラン（年額）',
   };
 
-  return typeMap[subscriptionType] || `プラン（${subscriptionType}）`;
+  return typeMap[subscriptionType] || `サブスクリプションプラン（${subscriptionType}）`;
 }
 
 /**
