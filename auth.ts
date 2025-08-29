@@ -260,7 +260,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               email: true,
               subscriptionStatus: true,
               corporateRole: true,
-              isFinancialAdmin: true, // 🆕 追加
+              financialAdminRecord: {
+                // ✅ 正しいリレーション
+                select: {
+                  isActive: true,
+                },
+              },
               adminOfTenant: { select: { id: true } },
               tenant: { select: { id: true } },
             },
@@ -271,8 +276,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             if (userEmail === 'admin@sns-share.com') {
               token.role = 'super-admin';
-            } else if (userEmail.endsWith('@sns-share.com') && dbUser.isFinancialAdmin) {
-              token.role = 'financial-admin'; // 🆕 財務管理者ロール
+            } else if (
+              userEmail.endsWith('@sns-share.com') &&
+              dbUser.financialAdminRecord?.isActive === true
+            ) {
+              token.role = 'financial-admin'; // ✅ 正しく判定される
             } else if (dbUser.subscriptionStatus === 'permanent') {
               token.role = 'permanent-admin';
             } else if (dbUser.adminOfTenant) {
@@ -287,7 +295,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               console.log('✅ JWT: Role assigned', {
                 email: userEmail,
                 role: token.role,
-                isFinancialAdmin: dbUser.isFinancialAdmin,
+                financialAdminRecord: dbUser.financialAdminRecord,
               });
             }
           }
