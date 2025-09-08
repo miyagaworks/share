@@ -35,7 +35,7 @@ export async function GET() {
     }
 
     // 永久利用権ユーザーの場合、Userテーブルから直接ブランディング情報を返す
-    if (user.subscriptionStatus === 'permanent') {
+    if (user.subscriptionStatus === 'permanent' && !user.tenant && !user.adminOfTenant) {
       logger.debug('永久利用権ユーザーのブランディング情報を取得:', user.id);
 
       return NextResponse.json({
@@ -95,7 +95,33 @@ export async function PUT(req: Request) {
       select: {
         id: true,
         subscriptionStatus: true,
-        adminOfTenant: true,
+        adminOfTenant: {
+          select: {
+            id: true,
+            name: true,
+            logoUrl: true,
+            logoWidth: true,
+            logoHeight: true,
+            primaryColor: true,
+            secondaryColor: true,
+            headerText: true,
+            textColor: true,
+          },
+        },
+        tenantId: true,
+        tenant: {
+          select: {
+            id: true,
+            name: true,
+            logoUrl: true,
+            logoWidth: true,
+            logoHeight: true,
+            primaryColor: true,
+            secondaryColor: true,
+            headerText: true,
+            textColor: true,
+          },
+        },
       },
     });
 
@@ -103,9 +129,9 @@ export async function PUT(req: Request) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
 
-    // 永久利用権ユーザーの場合、Userテーブルに直接保存
-    if (user.subscriptionStatus === 'permanent') {
-      logger.debug('永久利用権ユーザーのブランディング設定を更新:', user.id);
+    // 永久利用権ユーザーでかつテナントIDがない場合のみ、Userテーブルに直接保存
+    if (user.subscriptionStatus === 'permanent' && !user.tenantId) {
+      logger.debug('永久利用権ユーザー（テナントなし）のブランディング設定を更新:', user.id);
 
       try {
         // Userテーブルに直接保存
@@ -149,8 +175,18 @@ export async function PUT(req: Request) {
       }
     }
 
-    // 管理者権限の確認
-    if (!user.adminOfTenant) {
+    // テナントを特定（管理者またはメンバー、または永久利用権でテナントがある場合）
+    const targetTenant = user.adminOfTenant || user.tenant;
+
+    if (!targetTenant) {
+      return NextResponse.json({ error: 'テナント情報が見つかりません' }, { status: 404 });
+    }
+
+    // 永久利用権ユーザーでテナントがある場合、または通常の管理者の場合の権限確認
+    const isAuthorized =
+      (user.subscriptionStatus === 'permanent' && user.tenantId) || user.adminOfTenant;
+
+    if (!isAuthorized) {
       return NextResponse.json(
         { error: 'ブランディング設定の変更には管理者権限が必要です' },
         { status: 403 },
@@ -194,26 +230,26 @@ export async function PUT(req: Request) {
 
     // テナント情報を更新
     const updatedTenant = await prisma.corporateTenant.update({
-      where: { id: user.adminOfTenant.id },
+      where: { id: targetTenant.id },
       data: updateData,
     });
 
     // ブランディング更新後のアクティビティログ
     await logCorporateActivity({
-      tenantId: user.adminOfTenant.id,
+      tenantId: targetTenant.id,
       userId: session.user.id,
       action: 'update_branding',
       entityType: 'tenant',
-      entityId: user.adminOfTenant.id,
+      entityId: targetTenant.id,
       description: 'ブランディング設定を更新しました',
       metadata: {
         updatedFields: Object.keys(updateData),
         previousValues: {
-          logoUrl: user.adminOfTenant.logoUrl,
-          primaryColor: user.adminOfTenant.primaryColor,
-          secondaryColor: user.adminOfTenant.secondaryColor,
-          headerText: user.adminOfTenant.headerText,
-          textColor: user.adminOfTenant.textColor,
+          logoUrl: targetTenant.logoUrl,
+          primaryColor: targetTenant.primaryColor,
+          secondaryColor: targetTenant.secondaryColor,
+          headerText: targetTenant.headerText,
+          textColor: targetTenant.textColor,
         },
         newValues: {
           primaryColor: updateData.primaryColor,
