@@ -285,6 +285,21 @@ export default function ImprovedCorporateBrandingPage() {
       const logoWidth = Number(logoSize.width);
       const logoHeight = Number(logoSize.height);
 
+      // 🔥 デバッグコード追加（ここから）
+      console.log('=== 保存前のデバッグ情報 ===');
+      console.log('1. 現在のlogoSize state:', logoSize);
+      console.log('2. 数値変換後:', { logoWidth, logoHeight });
+      console.log('3. 送信するデータ全体:', {
+        primaryColor,
+        secondaryColor,
+        logoUrl: logoUrl ? 'あり（長いので省略）' : 'なし',
+        logoWidth,
+        logoHeight,
+        headerText,
+        textColor,
+      });
+      // 🔥 デバッグコード追加（ここまで）
+
       // ブランディング設定更新API
       const response = await fetch('/api/corporate/branding', {
         method: 'PUT',
@@ -295,8 +310,8 @@ export default function ImprovedCorporateBrandingPage() {
           logoUrl,
           logoWidth,
           logoHeight,
-          headerText, // 追加
-          textColor, // 追加
+          headerText,
+          textColor,
         }),
       });
 
@@ -306,6 +321,16 @@ export default function ImprovedCorporateBrandingPage() {
       }
 
       const data = await response.json();
+
+      // 🔥 デバッグコード追加（ここから）
+      console.log('=== APIレスポンス ===');
+      console.log('4. 完全なレスポンス:', data);
+      console.log('5. 保存されたロゴサイズ:', {
+        width: data.tenant?.logoWidth,
+        height: data.tenant?.logoHeight,
+      });
+      // 🔥 デバッグコード追加（ここまで）
+
       toast.success('ブランディング設定を保存しました');
 
       // テナントデータを更新
@@ -410,13 +435,6 @@ export default function ImprovedCorporateBrandingPage() {
           <p className="text-gray-500 mt-1 text-justify">
             会社のロゴとカラーを設定して、統一感のあるプロフィールを作成します
           </p>
-          {/* 管理者ステータスの表示（デバッグ用） */}
-          {process.env.NODE_ENV === 'development' && (
-            <p className="text-xs text-gray-400 mt-1">
-              管理者権限: {isAdmin ? 'あり' : 'なし'}
-              (グローバル状態: {corporateAccessState.isAdmin ? 'あり' : 'なし'})
-            </p>
-          )}
         </div>
         {isAdmin && (
           <Button

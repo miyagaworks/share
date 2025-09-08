@@ -20,9 +20,9 @@ const CURRENT_LOG_LEVEL =
  * 環境に応じて適切なログレベルで出力する
  */
 export const logger = {
-  debug: (message: string, ...data: LogData) => {
-    if (LogLevelEnum.debug >= CURRENT_LOG_LEVEL) {
-      console.debug(`[DEBUG] ${message}`, ...data);
+  debug: (...args: any[]) => {
+    if (process.env.NODE_ENV === 'development' || process.env.ENABLE_DEBUG_LOG === 'true') {
+      console.log('[DEBUG]', ...args);
     }
   },
 

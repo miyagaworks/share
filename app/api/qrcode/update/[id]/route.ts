@@ -18,7 +18,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
 
     // リクエストボディを取得
     const body = await request.json();
-    logger.debug('Update request body:', body); // デバッグ用
 
     // 既存のQRコードページを検索
     const existingQrCode = await prisma.qrCodePage.findUnique({

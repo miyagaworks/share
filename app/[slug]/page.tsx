@@ -191,6 +191,21 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   // テナント情報の取得
   const tenant = user.tenant || user.adminOfTenant;
 
+  // 🔥 デバッグコード追加
+  if (tenant) {
+    console.log('=== プロフィールページのテナント情報 ===');
+    console.log('テナントID:', tenant.id);
+    console.log('ロゴURL:', tenant.logoUrl ? 'あり' : 'なし');
+    console.log('ロゴサイズ:', {
+      logoWidth: tenant.logoWidth,
+      logoHeight: tenant.logoHeight,
+      型: {
+        width: typeof tenant.logoWidth,
+        height: typeof tenant.logoHeight,
+      },
+    });
+  }
+
   // 色設定
   const mainColor = tenant?.primaryColor || user.mainColor || '#A88C3D';
   const secondaryColor = tenant?.secondaryColor || '#333333';
@@ -252,7 +267,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         </div>
 
         <div style={{ padding: '1.5rem', paddingBottom: '120px' }}>
-          {/* 法人ロゴ */}
+          {/* 法人ロゴ - サイズ制限を緩和 */}
           {tenant?.logoUrl && (
             <div
               style={{
@@ -267,7 +282,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                   width: tenant.logoWidth ? `${tenant.logoWidth}px` : 'auto',
                   height: tenant.logoHeight ? `${tenant.logoHeight}px` : 'auto',
                   maxWidth: '100%',
-                  maxHeight: '120px',
+                  maxHeight: '200px', // 120pxから200pxに拡大
                   display: 'flex',
                   justifyContent: 'center',
                   alignItems: 'center',
@@ -279,10 +294,11 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                   width={tenant.logoWidth || 200}
                   height={tenant.logoHeight || 100}
                   style={{
-                    width: 'auto',
-                    height: 'auto',
+                    width: tenant.logoWidth ? `${tenant.logoWidth}px` : 'auto',
+                    height: tenant.logoHeight ? `${tenant.logoHeight}px` : 'auto',
                     maxWidth: '100%',
                     maxHeight: '100%',
+                    objectFit: 'contain',
                   }}
                 />
               </div>

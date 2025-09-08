@@ -139,15 +139,15 @@ export function BrandingPreview({
         </div>
       </div>
       <div className="p-5">
-        {/* 法人ロゴと名前 */}
+        {/* 法人ロゴと名前 - サイズ制限を調整 */}
         {logoUrl && (
           <div className="flex justify-center mt-2 mb-4">
             <div
               style={{
-                width: `${logoWidth}px`,
-                height: `${logoHeight}px`,
+                width: logoWidth && logoWidth > 0 ? `${logoWidth}px` : 'auto',
+                height: logoHeight && logoHeight > 0 ? `${logoHeight}px` : 'auto',
                 maxWidth: '100%',
-                maxHeight: '80px',
+                maxHeight: '150px', // 80pxから150pxに拡大（プレビュー用）
                 display: 'flex',
                 justifyContent: 'center',
                 alignItems: 'center',
@@ -157,14 +157,15 @@ export function BrandingPreview({
               <Image
                 src={logoUrl}
                 alt={`${tenantName}のロゴ`}
-                width={logoWidth}
-                height={logoHeight}
+                width={logoWidth || 200}
+                height={logoHeight || 100}
                 className="object-contain"
                 style={{
-                  width: logoWidth ? `${logoWidth}px` : 'auto', // 実際のサイズを指定
-                  height: logoHeight ? `${logoHeight}px` : 'auto', // 実際のサイズを指定
+                  width: logoWidth && logoWidth > 0 ? `${logoWidth}px` : 'auto',
+                  height: logoHeight && logoHeight > 0 ? `${logoHeight}px` : 'auto',
                   maxWidth: '100%',
-                  maxHeight: '80px', // コンテナの高さに合わせて調整
+                  maxHeight: '100%',
+                  objectFit: 'contain',
                 }}
                 priority
               />

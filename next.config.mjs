@@ -89,14 +89,14 @@ const nextConfig = {
     ];
   },
 
-  async rewrites() {
-    return [
-      {
-        source: '/qr/:slug',
-        destination: '/profile/:slug',
-      },
-    ];
-  },
+  // async rewrites() {
+  //   return [
+  //     {
+  //       source: '/qr/:slug',
+  //       destination: '/profile/:slug',
+  //     },
+  //   ];
+  // },
 
   // 新しい形式に修正
   devIndicators: {

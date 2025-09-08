@@ -13,8 +13,6 @@ export async function POST(request: Request) {
     }
     // リクエストボディを取得
     const body = await request.json();
-    logger.debug('QRコードデータ受信:', body); // デバッグ用
-    logger.debug('textColor値:', body.textColor); // 特にtextColorをチェック
     const { slug, template, primaryColor, secondaryColor, accentColor, userName, profileUrl } =
       body;
     // 必須フィールドのバリデーション
@@ -43,8 +41,7 @@ export async function POST(request: Request) {
             profileUrl,
           },
         });
-        logger.debug('Updated existing QR code:', updatedQrCode);
-        return NextResponse.json({
+          return NextResponse.json({
           success: true,
           qrCode: updatedQrCode,
           url: `/qr/${slug}`,
@@ -77,7 +74,6 @@ export async function POST(request: Request) {
             profileUrl,
           },
         });
-        logger.debug('Updated user QR code:', updatedQrCode);
         return NextResponse.json({
           success: true,
           qrCode: updatedQrCode,
@@ -103,13 +99,11 @@ export async function POST(request: Request) {
       accentColor: accentColor || '#FFFFFF',
       textColor: body.textColor || '#FFFFFF',
     };
-    logger.debug('Creating new QR code with data:', createData);
     try {
       // 新しいQRコードを作成
       const newQrCode = await prisma.qrCodePage.create({
         data: createData,
       });
-      logger.debug('Created new QR code:', newQrCode);
       return NextResponse.json({
         success: true,
         qrCode: newQrCode,

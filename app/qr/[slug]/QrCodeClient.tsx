@@ -192,16 +192,6 @@ export function QrCodeClient({ qrData, userData }: QrCodeClientProps) {
           </div>
         </div>
       </div>
-
-      {/* 開発環境用のデバッグ情報表示 */}
-      {process.env.NODE_ENV === 'development' && (
-        <div className="fixed bottom-0 left-0 bg-black bg-opacity-75 text-white p-2 text-xs max-w-xs overflow-auto max-h-40">
-          <div>Main color: {mainColor}</div>
-          <div>Text color: {textColor}</div>
-          <div>Header text: {headerText}</div>
-          <div>Name En: {nameEn}</div>
-        </div>
-      )}
     </div>
   );
 }
