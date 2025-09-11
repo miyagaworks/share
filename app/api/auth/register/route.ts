@@ -1,4 +1,4 @@
-// app/api/auth/register/route.ts (従来のreCAPTCHA版)
+// app/api/auth/register/route.ts
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
@@ -11,9 +11,9 @@ import { logger } from '@/lib/utils/logger';
 
 // 従来のreCAPTCHA検証関数
 async function verifyRecaptcha(token: string): Promise<boolean> {
-  // fallbackトークンの場合は検証をスキップ
-  if (token === 'fallback-token' || token === 'dummy-token-for-non-production') {
-    console.log('Fallbackトークンのため検証をスキップ');
+  // バイパストークンは常に成功とする
+  if (token === 'bypass-token-pat-issue') {
+    logger.info('PAT問題回避のためreCAPTCHA検証をバイパス');
     return true;
   }
 
