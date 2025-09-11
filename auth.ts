@@ -4,6 +4,7 @@ import authConfig from './auth.config';
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import type { DefaultSession } from 'next-auth';
+import { cookies } from 'next/headers';
 
 // 型定義の拡張
 declare module 'next-auth' {
@@ -65,6 +66,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async signIn({ user, account, profile }) {
+      // 開発環境でのみログ出力（本番環境では出力されない）
       if (process.env.NODE_ENV === 'development') {
         console.log('🚀 SignIn callback started', {
           provider: account?.provider,
@@ -73,22 +75,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       }
 
       try {
-        // Credentials認証の場合は常に許可
         if (account?.provider === 'credentials') {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ Credentials authentication successful for:', user?.email);
-          }
           return true;
         }
 
-        // Google認証の場合の処理
         if (account?.provider === 'google' && user?.email) {
           const email = user.email.toLowerCase();
 
-          if (process.env.NODE_ENV === 'development') {
-            console.log('📧 Processing Google login for:', email);
-          }
-
+          // 既存ユーザーチェック
           const existingUser = await prisma.user.findUnique({
             where: { email },
             select: {
@@ -107,40 +101,30 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           if (existingUser) {
             // 既存ユーザーの処理
-            if (process.env.NODE_ENV === 'development') {
-              console.log('👤 既存ユーザー発見:', {
-                id: existingUser.id,
-                hasPassword: !!existingUser.password,
-                accountProviders: existingUser.accounts.map(
-                  (a: { provider: string }) => a.provider,
-                ),
-              });
-            }
-
             const hasGoogleAccount = existingUser.accounts.some(
               (acc: { provider: string }) => acc.provider === 'google',
             );
 
             if (!hasGoogleAccount) {
               try {
+                // Google連携を自動追加
                 await prisma.account.create({
                   data: {
                     userId: existingUser.id,
                     type: 'oauth',
                     provider: 'google',
                     providerAccountId: profile?.sub || user.id,
-                    access_token: '',
-                    token_type: 'bearer',
+                    access_token: account.access_token || '',
+                    token_type: account.token_type || 'bearer',
+                    id_token: account.id_token || undefined,
+                    scope: account.scope || undefined,
+                    expires_at: account.expires_at || undefined,
+                    refresh_token: account.refresh_token || undefined,
                   },
                 });
-
-                if (process.env.NODE_ENV === 'development') {
-                  console.log('🔗 Google連携を自動追加しました');
-                }
               } catch (accountError) {
-                if (process.env.NODE_ENV === 'development') {
-                  console.log('⚠️ Google連携追加でエラーが発生しましたが、ログインは許可します');
-                }
+                // アカウント連携エラーは無視してログインを継続
+                console.error('Account linking error:', accountError);
               }
             }
 
@@ -150,30 +134,24 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
           }
 
-          // 管理者の場合は常に許可
-          if (email === 'admin@sns-share.com') {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('👑 Admin user detected');
-            }
-            return true;
-          }
+          // 🆕 新規ユーザーの場合：Cookieで判定
+          const cookieStore = await cookies(); // Next.js 15ではawaitが必要
+          const signupCookie = cookieStore.get('is_signup_flow');
+          const isSignupFlow = signupCookie?.value === 'true';
 
-          // 🆕 新規ユーザーの場合：新規登録ページからのみ許可
+          // 管理者メールは常に許可
+          const isAdminEmail = email === 'admin@sns-share.com';
+
           if (process.env.NODE_ENV === 'development') {
-            console.log('🆕 未登録のGoogleユーザー検出');
+            console.log('🍪 Cookie check:', {
+              hasSignupCookie: isSignupFlow,
+              cookieValue: signupCookie,
+              email: email,
+              willCreateUser: isSignupFlow || isAdminEmail,
+            });
           }
 
-          // セッションストレージから新規登録フローかどうか確認
-          const isFromSignup =
-            typeof window !== 'undefined' && sessionStorage.getItem('isSignupFlow') === 'true';
-
-          // フラグをクリア（確認後すぐにクリア）
-          if (typeof window !== 'undefined') {
-            sessionStorage.removeItem('isSignupFlow');
-          }
-
-          // 新規登録ページからの場合、または管理者の場合のみアカウント作成を許可
-          if (isFromSignup || email === 'admin@sns-share.com') {
+          if (isSignupFlow || isAdminEmail) {
             try {
               // 7日間の無料トライアル期間を設定
               const now = new Date();
@@ -195,7 +173,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   mainColor: '#3B82F6',
                   trialEndsAt,
                   subscriptionStatus: 'trialing',
-                  emailVerified: new Date(), // Google認証済みなので即座に認証済み
+                  emailVerified: new Date(),
                 },
               });
 
@@ -206,14 +184,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   type: 'oauth',
                   provider: 'google',
                   providerAccountId: profile?.sub || user.id,
-                  access_token: '',
-                  token_type: 'bearer',
+                  access_token: account.access_token || '',
+                  token_type: account.token_type || 'bearer',
+                  id_token: account.id_token || undefined,
+                  scope: account.scope || undefined,
+                  expires_at: account.expires_at || undefined,
+                  refresh_token: account.refresh_token || undefined,
                 },
               });
-
-              if (process.env.NODE_ENV === 'development') {
-                console.log('✅ 新規Googleユーザー作成完了:', newUser.id);
-              }
 
               // NextAuth用にユーザー情報を設定
               user.id = newUser.id;
@@ -226,17 +204,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               throw new Error('アカウントの作成中にエラーが発生しました。もう一度お試しください。');
             }
           } else {
-            // サインインページからの場合：エラーを返す
-            throw new Error('このメールアドレスは登録されていません。新規登録を行ってください。');
+            // サインインページからの場合
+            throw new Error(
+              'このメールアドレスは登録されていません。新規登録ページから登録してください。',
+            );
           }
         }
 
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Other provider authentication successful');
-        }
         return true;
       } catch (error) {
-        console.error('💥 SignIn callback error:', error);
+        console.error('SignIn callback error:', error);
         throw error;
       }
     },

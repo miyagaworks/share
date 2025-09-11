@@ -49,24 +49,17 @@ export default function SignupPage() {
 
   // Google認証を開始する関数
   const handleGoogleSignIn = () => {
-    // 利用規約の同意確認
     if (!termsAccepted) {
       setError('Googleで登録する場合も利用規約に同意していただく必要があります');
       return;
     }
-    // reCAPTCHA確認
     if (!recaptchaToken) {
       setError('Googleで登録する場合もreCAPTCHAを完了してください');
       return;
     }
 
-    // 新規登録フローであることを記録
-    if (typeof window !== 'undefined') {
-      sessionStorage.setItem('isSignupFlow', 'true');
-    }
-
-    // 同意している場合のみGoogleログインを実行
-    signIn('google', { callbackUrl: '/dashboard' });
+    // 専用エンドポイント経由でGoogle認証（新規登録フロー）
+    window.location.href = '/api/auth/google-signup';
   };
 
   const {
