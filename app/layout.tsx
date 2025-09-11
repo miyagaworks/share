@@ -61,12 +61,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
 
-        {/* 🔒 reCAPTCHA v3スクリプト */}
-        <script
-          src={`https://www.google.com/recaptcha/api.js?render=${process.env.NEXT_PUBLIC_RECAPTCHA_SITE_KEY}`}
-          async
-          defer
-        />
+        {/* reCAPTCHA削除済み - PAT問題回避のため */}
 
         {/* 🚀 JavaScript による拡大防止（passive最適化版） */}
         <script
