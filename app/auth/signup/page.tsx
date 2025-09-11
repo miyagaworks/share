@@ -59,6 +59,12 @@ export default function SignupPage() {
       setError('Googleで登録する場合もreCAPTCHAを完了してください');
       return;
     }
+
+    // 新規登録フローであることを記録
+    if (typeof window !== 'undefined') {
+      sessionStorage.setItem('isSignupFlow', 'true');
+    }
+
     // 同意している場合のみGoogleログインを実行
     signIn('google', { callbackUrl: '/dashboard' });
   };

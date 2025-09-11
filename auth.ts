@@ -158,61 +158,76 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             return true;
           }
 
-          // 🆕 新規ユーザーの場合：自動でアカウントを作成
+          // 🆕 新規ユーザーの場合：新規登録ページからのみ許可
           if (process.env.NODE_ENV === 'development') {
-            console.log('🆕 新規Googleユーザーのアカウント作成を開始');
+            console.log('🆕 未登録のGoogleユーザー検出');
           }
 
-          try {
-            // 7日間の無料トライアル期間を設定
-            const now = new Date();
-            const trialEndsAt = new Date(now);
-            trialEndsAt.setDate(trialEndsAt.getDate() + 7);
+          // セッションストレージから新規登録フローかどうか確認
+          const isFromSignup =
+            typeof window !== 'undefined' && sessionStorage.getItem('isSignupFlow') === 'true';
 
-            // 新規ユーザーを作成
-            const newUser = await prisma.user.create({
-              data: {
-                name: user.name || email.split('@')[0],
-                nameEn: '',
-                nameKana: '',
-                lastName: '',
-                firstName: '',
-                lastNameKana: '',
-                firstNameKana: '',
-                email: email,
-                password: null, // Google認証のためパスワードは不要
-                mainColor: '#3B82F6',
-                trialEndsAt,
-                subscriptionStatus: 'trialing',
-                emailVerified: new Date(), // Google認証済みなので即座に認証済み
-              },
-            });
+          // フラグをクリア（確認後すぐにクリア）
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('isSignupFlow');
+          }
 
-            // Google アカウント連携を作成
-            await prisma.account.create({
-              data: {
-                userId: newUser.id,
-                type: 'oauth',
-                provider: 'google',
-                providerAccountId: profile?.sub || user.id,
-                access_token: '',
-                token_type: 'bearer',
-              },
-            });
+          // 新規登録ページからの場合、または管理者の場合のみアカウント作成を許可
+          if (isFromSignup || email === 'admin@sns-share.com') {
+            try {
+              // 7日間の無料トライアル期間を設定
+              const now = new Date();
+              const trialEndsAt = new Date(now);
+              trialEndsAt.setDate(trialEndsAt.getDate() + 7);
 
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✅ 新規Googleユーザー作成完了:', newUser.id);
+              // 新規ユーザーを作成
+              const newUser = await prisma.user.create({
+                data: {
+                  name: user.name || email.split('@')[0],
+                  nameEn: '',
+                  nameKana: '',
+                  lastName: '',
+                  firstName: '',
+                  lastNameKana: '',
+                  firstNameKana: '',
+                  email: email,
+                  password: null, // Google認証のためパスワードは不要
+                  mainColor: '#3B82F6',
+                  trialEndsAt,
+                  subscriptionStatus: 'trialing',
+                  emailVerified: new Date(), // Google認証済みなので即座に認証済み
+                },
+              });
+
+              // Google アカウント連携を作成
+              await prisma.account.create({
+                data: {
+                  userId: newUser.id,
+                  type: 'oauth',
+                  provider: 'google',
+                  providerAccountId: profile?.sub || user.id,
+                  access_token: '',
+                  token_type: 'bearer',
+                },
+              });
+
+              if (process.env.NODE_ENV === 'development') {
+                console.log('✅ 新規Googleユーザー作成完了:', newUser.id);
+              }
+
+              // NextAuth用にユーザー情報を設定
+              user.id = newUser.id;
+              user.name = newUser.name;
+              user.email = newUser.email;
+
+              return true;
+            } catch (createError) {
+              console.error('💥 新規Googleユーザー作成エラー:', createError);
+              throw new Error('アカウントの作成中にエラーが発生しました。もう一度お試しください。');
             }
-
-            // NextAuth用にユーザー情報を設定
-            user.id = newUser.id;
-            user.name = newUser.name;
-            user.email = newUser.email;
-
-            return true;
-          } catch (createError) {
-            console.error('💥 新規Googleユーザー作成エラー:', createError);
-            throw new Error('アカウントの作成中にエラーが発生しました。もう一度お試しください。');
+          } else {
+            // サインインページからの場合：エラーを返す
+            throw new Error('このメールアドレスは登録されていません。新規登録を行ってください。');
           }
         }
 
