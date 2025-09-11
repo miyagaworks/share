@@ -48,7 +48,7 @@ export default function SignupPage() {
   const [isEmailFormExpanded, setIsEmailFormExpanded] = useState(false);
 
   // Google認証を開始する関数
-  const handleGoogleSignIn = () => {
+  const handleGoogleSignIn = async () => {
     if (!termsAccepted) {
       setError('Googleで登録する場合も利用規約に同意していただく必要があります');
       return;
@@ -58,8 +58,42 @@ export default function SignupPage() {
       return;
     }
 
-    // 専用エンドポイント経由でGoogle認証（新規登録フロー）
-    window.location.href = '/api/auth/google-signup';
+    try {
+      setError(null);
+      setIsPending(true);
+
+      // Step 1: Cookieを設定
+      const cookieResponse = await fetch('/api/auth/google-signup', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ recaptchaToken }),
+      });
+
+      if (!cookieResponse.ok) {
+        const data = await cookieResponse.json();
+        setError(data.error || 'エラーが発生しました');
+        setIsPending(false);
+        return;
+      }
+
+      // Step 2: Google認証を開始
+      const result = await signIn('google', {
+        callbackUrl: '/dashboard',
+        redirect: false, // まずは結果を確認
+      });
+
+      if (result?.error) {
+        setError('Google認証でエラーが発生しました');
+        setIsPending(false);
+      } else if (result?.url) {
+        // 成功したらリダイレクト
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      console.error('Google signup error:', error);
+      setError('Google登録でエラーが発生しました');
+      setIsPending(false);
+    }
   };
 
   const {

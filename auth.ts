@@ -1,7 +1,6 @@
 // auth.ts (本番用・console.log削除版)
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
-import { PrismaAdapter } from '@auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import type { DefaultSession } from 'next-auth';
 import { cookies } from 'next/headers';

@@ -2,24 +2,28 @@
 export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 
-export async function GET() {
-  // 本番環境のURL
-  const baseUrl = process.env.NEXTAUTH_URL || 'https://app.sns-share.com';
+export async function POST(req: Request) {
+  try {
+    const body = await req.json();
+    const { recaptchaToken } = body;
 
-  // 新規登録フラグをCookieに設定してGoogleログインへリダイレクト
-  const response = NextResponse.redirect(
-    `${baseUrl}/api/auth/signin/google?callbackUrl=${encodeURIComponent('/dashboard')}`,
-  );
+    if (!recaptchaToken) {
+      return NextResponse.json({ error: 'reCAPTCHA認証が必要です' }, { status: 400 });
+    }
 
-  // 重要: このCookieをauth.tsで読み取る
-  response.cookies.set('is_signup_flow', 'true', {
-    httpOnly: true,
-    secure: true, // 本番環境では必須
-    sameSite: 'lax',
-    maxAge: 300, // 5分間有効
-    path: '/',
-    // domainは設定しない（同一ドメインで十分）
-  });
+    // Cookieを設定してレスポンスを返す（リダイレクトしない）
+    const response = NextResponse.json({ success: true });
+    response.cookies.set('is_signup_flow', 'true', {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      sameSite: 'lax',
+      maxAge: 300, // 5分間有効
+      path: '/',
+    });
 
-  return response;
+    return response;
+  } catch (error) {
+    console.error('Google signup route error:', error);
+    return NextResponse.json({ error: 'エラーが発生しました' }, { status: 500 });
+  }
 }
