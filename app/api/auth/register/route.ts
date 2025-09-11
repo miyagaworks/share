@@ -11,45 +11,19 @@ import { logger } from '@/lib/utils/logger';
 
 // 従来のreCAPTCHA検証関数
 async function verifyRecaptcha(token: string): Promise<boolean> {
+  // 本番環境（app.sns-share.com）でのみreCAPTCHA検証を行う
+  if (!process.env.NEXT_PUBLIC_APP_URL?.includes('app.sns-share.com')) {
+    console.log('本番環境以外のためreCAPTCHA検証をスキップ');
+    return true;
+  }
+
   try {
-    // Vercel環境の判定を強化
-    const isVercel = process.env.VERCEL === '1';
-    const isProduction = process.env.VERCEL_ENV === 'production';
-    const currentUrl = process.env.VERCEL_URL || '';
-
-    // デバッグ情報をログ出力
-    logger.info('環境情報:', {
-      VERCEL: process.env.VERCEL,
-      VERCEL_ENV: process.env.VERCEL_ENV,
-      VERCEL_URL: currentUrl,
-      NODE_ENV: process.env.NODE_ENV,
-    });
-
-    // Vercelのプレビュー環境や開発環境では検証をスキップ
-    if (isVercel && !isProduction) {
-      logger.info('Vercel非本番環境のためreCAPTCHA検証をスキップ');
-      return true;
-    }
-
-    // ローカル開発環境でもスキップ
-    if (process.env.NODE_ENV === 'development' || currentUrl.includes('localhost')) {
-      logger.info('開発環境のためreCAPTCHA検証をスキップ');
-      return true;
-    }
-
-    // Vercelプレビューデプロイメント（URLパターンマッチング）
-    if (currentUrl.includes('-shares-projects-') || currentUrl.includes('.vercel.app')) {
-      logger.info('VercelプレビューデプロイのためreCAPTCHA検証をスキップ');
-      return true;
-    }
-
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
     if (!secretKey) {
-      logger.error('RECAPTCHA_SECRET_KEY が設定されていません');
+      console.error('RECAPTCHA_SECRET_KEY が設定されていません');
       return false;
     }
 
-    // 本番環境のみreCAPTCHA検証を実行
     const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
       method: 'POST',
       headers: {
@@ -59,11 +33,9 @@ async function verifyRecaptcha(token: string): Promise<boolean> {
     });
 
     const data = await response.json();
-    logger.info('reCAPTCHA検証結果:', { success: data.success, score: data.score });
-
     return data.success && (data.score === undefined || data.score > 0.5);
   } catch (error) {
-    logger.error('reCAPTCHA検証エラー:', error);
+    console.error('reCAPTCHA検証エラー:', error);
     return false;
   }
 }
