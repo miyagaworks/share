@@ -14,11 +14,22 @@ async function verifyRecaptcha(token: string): Promise<boolean> {
   try {
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
 
+    // Vercelプレビュー環境の自動検出
+    const isVercelPreview =
+      process.env.VERCEL_ENV === 'preview' ||
+      (process.env.VERCEL_URL && process.env.VERCEL_URL.includes('vercel.app'));
+
+    if (isVercelPreview && process.env.NODE_ENV !== 'production') {
+      logger.info('Vercelプレビュー環境のためreCAPTCHA検証をスキップ');
+      return true;
+    }
+
     if (!secretKey) {
       logger.error('RECAPTCHA_SECRET_KEY が設定されていません');
       return false;
     }
 
+    // 既存の検証コード...
     const response = await fetch('https://www.google.com/recaptcha/api/siteverify', {
       method: 'POST',
       headers: {
@@ -28,9 +39,6 @@ async function verifyRecaptcha(token: string): Promise<boolean> {
     });
 
     const data = await response.json();
-    logger.info('reCAPTCHA検証結果:', { success: data.success, score: data.score });
-
-    // v3の場合はスコアもチェック、v2の場合はsuccessのみ
     return data.success && (data.score === undefined || data.score > 0.5);
   } catch (error) {
     logger.error('reCAPTCHA検証エラー:', error);
