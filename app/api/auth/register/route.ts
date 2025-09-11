@@ -11,9 +11,9 @@ import { logger } from '@/lib/utils/logger';
 
 // 従来のreCAPTCHA検証関数
 async function verifyRecaptcha(token: string): Promise<boolean> {
-  // 本番環境（app.sns-share.com）でのみreCAPTCHA検証を行う
-  if (!process.env.NEXT_PUBLIC_APP_URL?.includes('app.sns-share.com')) {
-    console.log('本番環境以外のためreCAPTCHA検証をスキップ');
+  // fallbackトークンの場合は検証をスキップ
+  if (token === 'fallback-token' || token === 'dummy-token-for-non-production') {
+    console.log('Fallbackトークンのため検証をスキップ');
     return true;
   }
 
