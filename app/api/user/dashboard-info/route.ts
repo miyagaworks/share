@@ -1,4 +1,4 @@
-// app/api/user/dashboard-info/route.ts (接続エラー修正版)
+// app/api/user/dashboard-info/route.ts
 export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
@@ -264,6 +264,8 @@ function generateNavigationEnhanced(
       { title: 'SNS・リンク管理', href: '/dashboard/links', icon: 'HiLink' },
       { title: 'デザイン設定', href: '/dashboard/design', icon: 'HiColorSwatch' },
       { title: '共有設定', href: '/dashboard/share', icon: 'HiShare' },
+      { title: '使い方動画', href: '/dashboard/tutorial', icon: 'HiPlay' },
+      { title: 'セキュリティ設定', href: '/dashboard/security', icon: 'HiShieldCheck' },
       { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
     ],
 
@@ -281,6 +283,8 @@ function generateNavigationEnhanced(
         { title: 'SNS・リンク管理', href: '/dashboard/links', icon: 'HiLink' },
         { title: 'デザイン設定', href: '/dashboard/design', icon: 'HiColorSwatch' },
         { title: '共有設定', href: '/dashboard/share', icon: 'HiShare' },
+        { title: '使い方動画', href: '/dashboard/tutorial', icon: 'HiPlay' },
+        { title: 'セキュリティ設定', href: '/dashboard/security', icon: 'HiShieldCheck' },
         { title: 'ご利用プラン', href: '/dashboard/subscription', icon: 'HiCreditCard' },
       ];
     } else {

@@ -201,7 +201,7 @@ export default function ChangePasswordPage() {
                       className="absolute right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
                       onClick={() => setShowCurrentPassword(!showCurrentPassword)}
                       tabIndex={-1}
-                      style={{ top: 'calc(50% + 12px)', transform: 'translateY(-50%)' }}
+                      style={{ top: '50%', transform: 'translateY(-50%)' }}
                     >
                       {showCurrentPassword ? (
                         // 目を閉じるアイコン (パスワードが表示されている状態)
@@ -261,7 +261,7 @@ export default function ChangePasswordPage() {
                     className="absolute right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
                     onClick={() => setShowNewPassword(!showNewPassword)}
                     tabIndex={-1}
-                    style={{ top: 'calc(50% + 12px)', transform: 'translateY(-50%)' }}
+                    style={{ top: '50%', transform: 'translateY(-50%)' }}
                   >
                     {showNewPassword ? (
                       // 目を閉じるアイコン (パスワードが表示されている状態)
@@ -321,7 +321,7 @@ export default function ChangePasswordPage() {
                     className="absolute right-3 text-gray-500 hover:text-gray-700 focus:outline-none"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                     tabIndex={-1}
-                    style={{ top: 'calc(50% + 12px)', transform: 'translateY(-50%)' }}
+                    style={{ top: '50%', transform: 'translateY(-50%)' }}
                   >
                     {showConfirmPassword ? (
                       // 目を閉じるアイコン (パスワードが表示されている状態)

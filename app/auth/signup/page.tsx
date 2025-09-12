@@ -590,7 +590,7 @@ export default function SignupPage() {
                         onClick={togglePasswordVisibility}
                         tabIndex={-1}
                         style={{
-                          top: 'calc(50% + 3px)',
+                          top: '50%',
                           transform: 'translateY(-50%)',
                         }}
                       >

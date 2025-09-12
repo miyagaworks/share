@@ -152,6 +152,8 @@ share/
 │   │   │   │   └── route.ts
 │   │   │   ├── forgot-password
 │   │   │   │   └── route.ts
+│   │   │   ├── google-signup
+│   │   │   │   └── route.ts
 │   │   │   ├── providers
 │   │   │   │   └── route.ts
 │   │   │   ├── register
@@ -321,6 +323,8 @@ share/
 │   │   │   ├── [userId]
 │   │   │   │   └── profile
 │   │   │   │       └── route.ts
+│   │   │   ├── auth-methods
+│   │   │   │   └── route.ts
 │   │   │   ├── check-email-verification
 │   │   │   │   └── route.ts
 │   │   │   ├── check-password
@@ -458,12 +462,16 @@ share/
 │   │   ├── page.tsx
 │   │   ├── profile
 │   │   │   └── page.tsx
+│   │   ├── security
+│   │   │   └── page.tsx
 │   │   ├── share
 │   │   │   └── page.tsx
-│   │   └── subscription
-│   │       ├── page.tsx
-│   │       └── success
-│   │           └── page.tsx
+│   │   ├── subscription
+│   │   │   ├── page.tsx
+│   │   │   └── success
+│   │   │       └── page.tsx
+│   │   └── tutorial
+│   │       └── page.tsx
 │   ├── error.tsx
 │   ├── favicon.ico
 │   ├── globals.css
@@ -620,21 +628,22 @@ share/
 │   │   ├── SubscriptionStatus.tsx
 │   │   ├── SubscriptionWithOneTapSeal.tsx
 │   │   └── TrialBanner.tsx
-│   └── ui
-│       ├── Button.tsx
-│       ├── Card.tsx
-│       ├── CorporateBranding.tsx
-│       ├── DashboardCard.tsx
-│       ├── DepartmentBadge.tsx
-│       ├── Dialog.tsx
-│       ├── EnhancedColorPicker.tsx
-│       ├── ImageUpload.tsx
-│       ├── Input.tsx
-│       ├── OptimizedMenuCard.tsx
-│       ├── QuickIntroButton.tsx
-│       ├── SimpleFooter.tsx
-│       ├── Spinner.tsx
-│       └── Tabs.tsx
+│   ├── ui
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   ├── CorporateBranding.tsx
+│   │   ├── DashboardCard.tsx
+│   │   ├── DepartmentBadge.tsx
+│   │   ├── Dialog.tsx
+│   │   ├── EnhancedColorPicker.tsx
+│   │   ├── ImageUpload.tsx
+│   │   ├── Input.tsx
+│   │   ├── OptimizedMenuCard.tsx
+│   │   ├── QuickIntroButton.tsx
+│   │   ├── SimpleFooter.tsx
+│   │   ├── Spinner.tsx
+│   │   └── Tabs.tsx
+│   └── YouTubeGuideCard.tsx
 ├── docs
 │   ├── corporate-member-dashboard-plan.md
 │   ├── corporate-plan.md

@@ -1,4 +1,4 @@
-// app/dashboard/layout.tsx (永久利用権個人プラン無限ループ修正版) - console.log修正版
+// app/dashboard/layout.tsx
 'use client';
 import React, { ReactNode, useEffect, useMemo, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
@@ -13,6 +13,7 @@ import {
   HiUser,
   HiLink,
   HiColorSwatch,
+  HiPlay,
   HiShare,
   HiCreditCard,
   HiOfficeBuilding,
@@ -38,6 +39,7 @@ const iconMap: Record<string, React.ReactNode> = {
   HiUser: <HiUser className="h-5 w-5" />,
   HiLink: <HiLink className="h-5 w-5" />,
   HiColorSwatch: <HiColorSwatch className="h-5 w-5" />,
+  HiPlay: <HiPlay className="h-5 w-5" />,
   HiShare: <HiShare className="h-5 w-5" />,
   HiCreditCard: <HiCreditCard className="h-5 w-5" />,
   HiOfficeBuilding: <HiOfficeBuilding className="h-5 w-5" />,
