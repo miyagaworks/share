@@ -1,10 +1,11 @@
-// app/dashboard/page.tsx (完全修正版) - console.log修正版
+// app/dashboard/page.tsx
 'use client';
 import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Spinner } from '@/components/ui/Spinner';
 import { PasswordSetupBanner } from '@/components/PasswordSetupBanner';
+import { YouTubeGuideCard } from '@/components/YouTubeGuideCard';
 import Image from 'next/image';
 import { HiUser, HiLink, HiColorSwatch, HiShare, HiQrcode } from 'react-icons/hi';
 
@@ -199,6 +200,8 @@ export default function DashboardPage() {
       </div>
 
       <PasswordSetupBanner />
+      {/* YouTube動画ガイド */}
+      <YouTubeGuideCard />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         {/* プロフィールカード */}
