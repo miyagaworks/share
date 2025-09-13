@@ -442,7 +442,6 @@ export default function ProfilePage() {
           </Button>
         </div>
       </form>
-      <SecuritySettingsSection />
     </motion.div>
   );
 }
