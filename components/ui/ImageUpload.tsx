@@ -1,4 +1,4 @@
-// components/ui/ImageUpload.tsx - プルトゥリフレッシュ防止版（エラー修正済み）
+// components/ui/ImageUpload.tsx
 'use client';
 import { useState, useRef, useCallback, useEffect } from 'react';
 import Image from 'next/image';
@@ -20,7 +20,134 @@ interface CropArea {
   height: number;
 }
 
-// react-easy-cropがない場合のフォールバック用簡易クロッパー
+// 画像リサイズユーティリティ関数
+const resizeImage = (
+  file: File,
+  maxWidth: number,
+  maxHeight: number,
+  quality: number = 0.8,
+): Promise<{ blob: Blob; dataUrl: string }> => {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new window.Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+
+        if (!ctx) {
+          reject(new Error('Canvas context not available'));
+          return;
+        }
+
+        // アスペクト比を保持しながらリサイズ
+        let { width, height } = img;
+
+        if (width > maxWidth || height > maxHeight) {
+          const aspectRatio = width / height;
+          if (width > height) {
+            width = maxWidth;
+            height = width / aspectRatio;
+          } else {
+            height = maxHeight;
+            width = height * aspectRatio;
+          }
+        }
+
+        canvas.width = width;
+        canvas.height = height;
+
+        // 高品質なリサイズのための設定
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = 'high';
+        ctx.drawImage(img, 0, 0, width, height);
+
+        canvas.toBlob(
+          (blob) => {
+            if (blob) {
+              const dataUrl = canvas.toDataURL('image/jpeg', quality);
+              resolve({ blob, dataUrl });
+            } else {
+              reject(new Error('Failed to create blob'));
+            }
+          },
+          'image/jpeg',
+          quality,
+        );
+      };
+      img.onerror = () => reject(new Error('Failed to load image'));
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => reject(new Error('Failed to read file'));
+    reader.readAsDataURL(file);
+  });
+};
+
+// HEIC検出とサポートチェック
+const isHeicFile = (file: File): boolean => {
+  return file.type === 'image/heic' || 
+         file.type === 'image/heif' ||
+         file.name.toLowerCase().endsWith('.heic') ||
+         file.name.toLowerCase().endsWith('.heif');
+};
+
+// HEIC変換の試行（ブラウザサポートがある場合のみ動作）
+const tryConvertHeic = async (file: File): Promise<File | null> => {
+  try {
+    // まず、ブラウザがHEICを直接処理できるか試す
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+    
+    if (!ctx) return null;
+    
+    return new Promise((resolve) => {
+      const img = new window.Image();
+      const url = URL.createObjectURL(file);
+      
+      img.onload = () => {
+        // 成功した場合、画像を変換
+        canvas.width = img.width;
+        canvas.height = img.height;
+        ctx.drawImage(img, 0, 0);
+        
+        canvas.toBlob(
+          (blob) => {
+            URL.revokeObjectURL(url);
+            if (blob) {
+              const convertedFile = new File(
+                [blob], 
+                file.name.replace(/\.(heic|heif)$/i, '.jpg'),
+                { type: 'image/jpeg' }
+              );
+              resolve(convertedFile);
+            } else {
+              resolve(null);
+            }
+          },
+          'image/jpeg',
+          0.9
+        );
+      };
+      
+      img.onerror = () => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      };
+      
+      // タイムアウト設定（3秒）
+      setTimeout(() => {
+        URL.revokeObjectURL(url);
+        resolve(null);
+      }, 3000);
+      
+      img.src = url;
+    });
+  } catch {
+    return null;
+  }
+};
+
+// 改良版クロッパーコンポーネント
 const SimpleCropper = ({
   image,
   onComplete,
@@ -39,16 +166,27 @@ const SimpleCropper = ({
   const [isMobile, setIsMobile] = useState(false);
   const [initialTouchDistance, setInitialTouchDistance] = useState<number | null>(null);
   const [initialZoom, setInitialZoom] = useState(1);
+
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const imageRef = useRef<HTMLImageElement>(null);
   const containerRef = useRef<HTMLDivElement>(null);
 
-  // 🚀 プルトゥリフレッシュ防止のためのエフェクト（修正版）
+  // モバイル判定
   useEffect(() => {
-    // モバイルの場合のみリフレッシュ防止を適用
+    const checkMobile = () => {
+      setIsMobile(window.innerWidth <= 768 || 'ontouchstart' in window);
+    };
+
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  // プルトゥリフレッシュ防止（モバイルのみ）
+  useEffect(() => {
     if (!isMobile) return;
 
-    // モーダル表示時にbodyのスクロールとリフレッシュを防ぐ（モバイルのみ）
     const originalStyle = {
       overflow: document.body.style.overflow,
       touchAction: document.body.style.touchAction,
@@ -56,38 +194,31 @@ const SimpleCropper = ({
       height: document.body.style.height,
     };
 
-    // bodyを固定してリフレッシュを防ぐ（モバイルのみ）
     document.body.style.overflow = 'hidden';
     document.body.style.touchAction = 'none';
     document.body.style.position = 'fixed';
     document.body.style.height = '100%';
     document.body.style.width = '100%';
 
-    // スクロール位置を保存
     const scrollY = window.scrollY;
     document.body.style.top = `-${scrollY}px`;
 
-    // 🚀 修正：より確実なプルトゥリフレッシュ防止（エラーなし）
     const preventRefresh = (e: TouchEvent) => {
-      // タッチが2本以上の場合（ピンチ操作）は許可
       if (e.touches.length > 1) return;
 
-      // ページが最上部にある場合のみ処理
       if (window.scrollY === 0) {
         const touch = e.touches[0];
-        let startY = touch.clientY;
+        const startY = touch.clientY;
 
         const handleTouchMove = (moveEvent: TouchEvent) => {
           const currentTouch = moveEvent.touches[0];
           const deltaY = currentTouch.clientY - startY;
 
-          // 下向きのドラッグを検出したら防ぐ
           if (deltaY > 0) {
-            // ここでpreventDefaultを安全に呼び出す
             try {
               moveEvent.preventDefault();
             } catch (error) {
-              // エラーが発生しても無視（機能は維持される）
+              // エラーを無視
             }
           }
         };
@@ -97,18 +228,14 @@ const SimpleCropper = ({
           document.removeEventListener('touchend', handleTouchEnd);
         };
 
-        // 🚀 修正：passive: falseを明示的に指定してpreventDefaultを有効化
         document.addEventListener('touchmove', handleTouchMove, { passive: false });
         document.addEventListener('touchend', handleTouchEnd, { passive: true });
       }
     };
 
-    // 🚀 修正：passive: falseを明示的に指定
     document.addEventListener('touchstart', preventRefresh, { passive: false });
 
-    // クリーンアップ関数
     return () => {
-      // 元のスタイルを復元
       document.body.style.overflow = originalStyle.overflow;
       document.body.style.touchAction = originalStyle.touchAction;
       document.body.style.position = originalStyle.position;
@@ -116,20 +243,12 @@ const SimpleCropper = ({
       document.body.style.width = '';
       document.body.style.top = '';
 
-      // スクロール位置を復元
       window.scrollTo(0, scrollY);
-
-      // イベントリスナーを削除
       document.removeEventListener('touchstart', preventRefresh);
     };
   }, [isMobile]);
 
-  // モバイル判定と初期化
-  useEffect(() => {
-    setIsMobile('ontouchstart' in window || navigator.maxTouchPoints > 0);
-  }, []);
-
-  // 画像ロード時の処理（中央配置と縦横比設定）
+  // 画像ロード時の処理（長方形対応）
   const handleImageLoad = () => {
     if (!imageRef.current) return;
 
@@ -137,18 +256,34 @@ const SimpleCropper = ({
     const aspectRatio = img.naturalWidth / img.naturalHeight;
     setImageAspectRatio(aspectRatio);
 
-    // 画像を中央に配置
     const containerSize = 300;
-    const initialImageSize = containerSize; // 初期サイズは300px
-    const imageWidth = initialImageSize;
-    const imageHeight = initialImageSize / aspectRatio;
 
-    // 中央配置のための座標計算
+    // 初期ズームを計算（円形クロップエリアに収まるように）
+    const cropSize = 200;
+    let initialZoomValue = 1;
+
+    // 画像が横長の場合
+    if (aspectRatio > 1) {
+      // 高さを基準にズーム
+      initialZoomValue = cropSize / (containerSize / aspectRatio);
+    } else {
+      // 縦長または正方形の場合、幅を基準にズーム
+      initialZoomValue = cropSize / containerSize;
+    }
+
+    // 最小ズームは0.7に設定（画像全体が見えるように）
+    initialZoomValue = Math.max(0.7, initialZoomValue);
+
+    setZoom(initialZoomValue);
+
+    // 画像を中央に配置
+    const imageWidth = containerSize * initialZoomValue;
+    const imageHeight = imageWidth / aspectRatio;
+
     const centerX = (containerSize - imageWidth) / 2;
     const centerY = (containerSize - imageHeight) / 2;
 
     setCrop({ x: centerX, y: centerY });
-    setZoom(1);
     setImageLoaded(true);
   };
 
@@ -178,12 +313,14 @@ const SimpleCropper = ({
   // マウスイベント（PC用）
   const handleMouseDown = (e: React.MouseEvent) => {
     if (isMobile) return;
+    e.preventDefault();
     setIsDragging(true);
     setLastPosition({ x: e.clientX, y: e.clientY });
   };
 
   const handleMouseMove = (e: React.MouseEvent) => {
     if (!isDragging || isMobile) return;
+    e.preventDefault();
 
     const deltaX = e.clientX - lastPosition.x;
     const deltaY = e.clientY - lastPosition.y;
@@ -196,7 +333,8 @@ const SimpleCropper = ({
     setLastPosition({ x: e.clientX, y: e.clientY });
   };
 
-  const handleMouseUp = () => {
+  const handleMouseUp = (e: React.MouseEvent) => {
+    e.preventDefault();
     setIsDragging(false);
   };
 
@@ -206,62 +344,43 @@ const SimpleCropper = ({
     e.preventDefault();
 
     const delta = e.deltaY > 0 ? 0.9 : 1.1;
-    const newZoom = Math.max(0.1, zoom * delta);
+    const newZoom = Math.min(50, Math.max(0.1, zoom * delta));
 
-    // 🚀 青い円の中心基準でズーム調整
     adjustZoomFromCenter(newZoom);
   };
 
-  // 🚀 青い円（切り抜き範囲）の中心を基準にズームを調整する関数
+  // 青い円の中心基準でズーム調整
   const adjustZoomFromCenter = (newZoom: number) => {
     const containerSize = 300;
-    const cropRadius = 100; // 切り抜き範囲の半径（200px / 2）
-    const cropCenterX = containerSize / 2; // 青い円の中心X座標（150px）
-    const cropCenterY = containerSize / 2; // 青い円の中心Y座標（150px）
+    const cropCenterX = containerSize / 2;
+    const cropCenterY = containerSize / 2;
 
-    // 現在の画像サイズ
     const currentWidth = containerSize * zoom;
     const currentHeight = currentWidth / imageAspectRatio;
 
-    // 新しい画像サイズ
     const newWidth = containerSize * newZoom;
     const newHeight = newWidth / imageAspectRatio;
 
-    // 🚀 青い円の中心から見た、現在の画像上の対応点を計算
-    // 切り抜き範囲の中心が画像上のどの位置に対応するかを求める
     const currentRelativeX = (cropCenterX - crop.x) / currentWidth;
     const currentRelativeY = (cropCenterY - crop.y) / currentHeight;
 
-    // 🚀 新しいズームレベルでも同じ相対位置が青い円の中心に来るように調整
     const newX = cropCenterX - currentRelativeX * newWidth;
     const newY = cropCenterY - currentRelativeY * newHeight;
 
-    setCrop({
-      x: newX,
-      y: newY,
-    });
-
+    setCrop({ x: newX, y: newY });
     setZoom(newZoom);
   };
 
-  // 🚀 修正：タッチイベント（モバイル用） - エラー防止版
+  // タッチイベント（モバイル用）
   const handleTouchStart = (e: React.TouchEvent) => {
-    // 🚀 安全にpreventDefaultを呼び出す
-    try {
-      e.preventDefault();
-    } catch (error) {
-      // エラーが発生しても処理を続行
-    }
-
+    // preventDefaultは呼び出さない（passive対応）
     const touches = e.touches;
 
     if (touches.length === 1) {
-      // 単一タッチ - ドラッグ開始
       setIsDragging(true);
       const center = getTouchCenter(touches);
       setLastPosition({ x: center.x, y: center.y });
     } else if (touches.length === 2) {
-      // 2本指 - ピンチズーム開始
       setIsDragging(false);
       const distance = getTouchDistance(touches);
       setInitialTouchDistance(distance);
@@ -270,17 +389,10 @@ const SimpleCropper = ({
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
-    // 🚀 安全にpreventDefaultを呼び出す
-    try {
-      e.preventDefault();
-    } catch (error) {
-      // エラーが発生しても処理を続行
-    }
-
+    // preventDefaultは呼び出さない（passive対応）
     const touches = e.touches;
 
     if (touches.length === 1 && isDragging) {
-      // 単一タッチ - ドラッグ
       const center = getTouchCenter(touches);
       const deltaX = center.x - lastPosition.x;
       const deltaY = center.y - lastPosition.y;
@@ -292,28 +404,27 @@ const SimpleCropper = ({
 
       setLastPosition({ x: center.x, y: center.y });
     } else if (touches.length === 2 && initialTouchDistance) {
-      // 🚀 2本指 - ピンチズーム（青い円の中心基準）
       const distance = getTouchDistance(touches);
       const scaleChange = distance / initialTouchDistance;
-      const newZoom = Math.max(0.1, initialZoom * scaleChange);
+      const newZoom = Math.min(50, Math.max(0.1, initialZoom * scaleChange));
 
-      // 青い円の中心基準でズーム調整
       adjustZoomFromCenter(newZoom);
     }
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    // 🚀 安全にpreventDefaultを呼び出す
-    try {
-      e.preventDefault();
-    } catch (error) {
-      // エラーが発生しても処理を続行
-    }
-
+    // preventDefaultは呼び出さない（passive対応）
     setIsDragging(false);
     setInitialTouchDistance(null);
   };
 
+  // スライダー変更ハンドラー
+  const handleSliderChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const newZoom = Number(e.target.value);
+    adjustZoomFromCenter(newZoom);
+  };
+
+  // クロップ処理（長方形対応）
   const handleCrop = useCallback(() => {
     if (!canvasRef.current || !imageRef.current || !imageLoaded) return;
 
@@ -323,13 +434,11 @@ const SimpleCropper = ({
 
     if (!ctx) return;
 
-    // 300x300の容器で200x200の円形切り抜き
     const containerSize = 300;
     const cropSize = 200;
     const cropRadius = cropSize / 2;
     const containerCenter = containerSize / 2;
 
-    // 出力キャンバスを200x200に設定
     canvas.width = cropSize;
     canvas.height = cropSize;
 
@@ -343,24 +452,22 @@ const SimpleCropper = ({
     ctx.arc(cropRadius, cropRadius, cropRadius, 0, Math.PI * 2);
     ctx.clip();
 
-    // 画像の実際の表示サイズを計算（縦横比固定）
-    // 幅を基準にして高さを計算（これにより縦横比が保持される）
     const imgDisplayWidth = containerSize * zoom;
     const imgDisplayHeight = imgDisplayWidth / imageAspectRatio;
 
-    // 元画像のピクセル比率を計算
     const scaleX = img.naturalWidth / imgDisplayWidth;
     const scaleY = img.naturalHeight / imgDisplayHeight;
 
-    // 切り抜き範囲の左上座標を計算
     const sourceX = (containerCenter - cropRadius - crop.x) * scaleX;
     const sourceY = (containerCenter - cropRadius - crop.y) * scaleY;
 
-    // 正方形の切り抜きサイズ
     const sourceSizeX = cropSize * scaleX;
     const sourceSizeY = cropSize * scaleY;
 
-    // 画像を描画（元画像の縦横比を維持しながら正方形に切り抜き）
+    // アンチエイリアシング改善
+    ctx.imageSmoothingEnabled = true;
+    ctx.imageSmoothingQuality = 'high';
+
     ctx.drawImage(img, sourceX, sourceY, sourceSizeX, sourceSizeY, 0, 0, cropSize, cropSize);
 
     ctx.restore();
@@ -387,7 +494,11 @@ const SimpleCropper = ({
               onTouchStart={handleTouchStart}
               onTouchMove={handleTouchMove}
               onTouchEnd={handleTouchEnd}
-              style={{ touchAction: 'none' }}
+              style={{
+                touchAction: 'none',
+                WebkitUserSelect: 'none',
+                userSelect: 'none',
+              }}
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -397,11 +508,11 @@ const SimpleCropper = ({
                 className="absolute select-none pointer-events-none"
                 style={{
                   width: `${300 * zoom}px`,
-                  height: `${(300 * zoom) / imageAspectRatio}px`, // 縦横比完全固定
+                  height: `${(300 * zoom) / imageAspectRatio}px`,
                   left: `${crop.x}px`,
                   top: `${crop.y}px`,
-                  maxWidth: 'none', // 最大幅制限を解除
-                  maxHeight: 'none', // 最大高さ制限を解除
+                  maxWidth: 'none',
+                  maxHeight: 'none',
                 }}
                 onLoad={handleImageLoad}
                 draggable={false}
@@ -428,34 +539,29 @@ const SimpleCropper = ({
 
             <p className="text-sm text-gray-600 mt-2 text-center">
               {isMobile
-                ? 'ドラッグで移動、2本指でピンチズーム（無制限）'
-                : 'ドラッグで移動、ホイールまたはスライダーで拡大縮小（無制限）'}
+                ? 'ドラッグで移動、2本指でピンチズーム'
+                : 'ドラッグで移動、ホイールまたはスライダーで拡大縮小'}
             </p>
           </div>
 
-          {/* PC用スライダー */}
-          {!isMobile && (
-            <div className="mb-4">
-              <label className="block text-sm font-medium mb-2">拡大・縮小</label>
-              <input
-                type="range"
-                min="0.1"
-                max="50"
-                step="0.1"
-                value={zoom}
-                onChange={(e) => {
-                  const newZoom = Number(e.target.value);
-                  adjustZoomFromCenter(newZoom);
-                }}
-                className="w-full"
-              />
-              <div className="flex justify-between text-xs text-gray-500 mt-1">
-                <span>0.1x</span>
-                <span>現在: {zoom.toFixed(1)}x</span>
-                <span>50x+</span>
-              </div>
+          {/* ズームスライダー（PC・モバイル両方表示） */}
+          <div className="mb-4">
+            <label className="block text-sm font-medium mb-2">拡大・縮小</label>
+            <input
+              type="range"
+              min="0.1"
+              max="10"
+              step="0.1"
+              value={zoom}
+              onChange={handleSliderChange}
+              className="w-full"
+            />
+            <div className="flex justify-between text-xs text-gray-500 mt-1">
+              <span>0.1x</span>
+              <span>現在: {zoom.toFixed(1)}x</span>
+              <span>10x</span>
             </div>
-          )}
+          </div>
 
           <div className="flex gap-3">
             <button
@@ -484,7 +590,7 @@ export function ImageUpload({
   onChange,
   disabled = false,
   className,
-  maxSizeKB = 1024,
+  maxSizeKB = 5120, // 5MBに増加
 }: ImageUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [showEditor, setShowEditor] = useState(false);
@@ -500,35 +606,80 @@ export function ImageUpload({
   const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     if (disabled || !e.target.files || e.target.files.length === 0) return;
 
-    const file = e.target.files[0];
-
-    if (file.size > maxSizeKB * 1024) {
-      toast.error(`ファイルサイズは${maxSizeKB / 1024}MB以下にしてください`);
-      return;
-    }
-
-    if (!/^image\/(jpeg|png|jpg)$/.test(file.type)) {
-      toast.error('JPGまたはPNG形式の画像をアップロードしてください');
-      return;
-    }
-
+    let file = e.target.files[0];
     setIsUploading(true);
 
     try {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        if (typeof event.target?.result === 'string') {
-          setOriginalImage(event.target.result);
-          setShowEditor(true);
+      // HEICファイルの検出と処理
+      if (isHeicFile(file)) {
+        // まずブラウザでの変換を試みる
+        const convertedFile = await tryConvertHeic(file);
+
+        if (convertedFile) {
+          file = convertedFile;
+          toast.success('HEIC形式をJPEGに変換しました');
+        } else {
+          // ブラウザで変換できない場合の処理
+          toast.error(
+            'お使いのブラウザではHEIC形式をサポートしていません。\n' +
+              '画像を事前にJPGまたはPNG形式に変換してからアップロードしてください。\n\n' +
+              '【変換方法】\n' +
+              '• iPhone/iPad: 画像を「写真」アプリで開き...',
+            { duration: 10000 },
+          );
+          setIsUploading(false);
+
+          // ファイル入力をリセット
+          if (fileInputRef.current) {
+            fileInputRef.current.value = '';
+          }
+          return;
         }
+      }
+
+      // サポートされているフォーマットチェック
+      if (!/^image\/(jpeg|png|jpg)$/.test(file.type)) {
+        toast.error('JPGまたはPNG形式の画像をアップロードしてください');
         setIsUploading(false);
-      };
-      reader.onerror = () => {
-        toast.error('画像の読み込みに失敗しました');
-        setIsUploading(false);
-      };
-      reader.readAsDataURL(file);
-    } catch {
+        return;
+      }
+
+      // 大きい画像の自動リサイズ
+      let processedImage: string;
+
+      if (file.size > maxSizeKB * 1024) {
+        toast.loading('画像をリサイズしています...', { id: 'resize' });
+
+        try {
+          // 最大2000x2000にリサイズ、品質80%
+          const { dataUrl } = await resizeImage(file, 2000, 2000, 0.8);
+          processedImage = dataUrl;
+          toast.success('画像をリサイズしました', { id: 'resize' });
+        } catch (error) {
+          toast.error('画像のリサイズに失敗しました', { id: 'resize' });
+          setIsUploading(false);
+          return;
+        }
+      } else {
+        // そのまま読み込み
+        const reader = new FileReader();
+        processedImage = await new Promise<string>((resolve, reject) => {
+          reader.onload = (event) => {
+            if (typeof event.target?.result === 'string') {
+              resolve(event.target.result);
+            } else {
+              reject(new Error('Failed to read file'));
+            }
+          };
+          reader.onerror = () => reject(new Error('Failed to read file'));
+          reader.readAsDataURL(file);
+        });
+      }
+
+      setOriginalImage(processedImage);
+      setShowEditor(true);
+      setIsUploading(false);
+    } catch (error) {
       toast.error('画像処理に失敗しました');
       setIsUploading(false);
     }
@@ -538,6 +689,7 @@ export function ImageUpload({
     onChange(croppedImage);
     setShowEditor(false);
     setOriginalImage(null);
+    toast.success('画像を設定しました');
   };
 
   const handleCropCancel = () => {
@@ -549,6 +701,7 @@ export function ImageUpload({
     e.stopPropagation();
     if (disabled) return;
     onChange(null);
+    toast.success('画像を削除しました');
   };
 
   if (showEditor && originalImage) {
@@ -565,7 +718,7 @@ export function ImageUpload({
     <div
       onClick={handleClick}
       className={cn(
-        'relative w-18 h-18 rounded-full border border-input bg-background flex items-center justify-center cursor-pointer overflow-hidden transition-all',
+        'relative w-32 h-32 rounded-full border-2 border-input bg-background flex items-center justify-center cursor-pointer overflow-hidden transition-all hover:border-primary',
         disabled && 'opacity-50 cursor-not-allowed',
         value ? 'bg-transparent' : 'bg-muted',
         className,
@@ -574,7 +727,7 @@ export function ImageUpload({
       <input
         type="file"
         ref={fileInputRef}
-        accept="image/jpeg,image/png"
+        accept="image/jpeg,image/png,image/jpg"
         onChange={handleFileChange}
         disabled={disabled || isUploading}
         className="hidden"
@@ -589,36 +742,38 @@ export function ImageUpload({
             alt="プロフィール画像"
             fill
             className="object-cover"
-            sizes="(max-width: 768px) 100vw, 120px"
+            sizes="(max-width: 768px) 100vw, 128px"
             loading="lazy"
           />
           <div className="absolute inset-0 bg-black/40 opacity-0 hover:opacity-100 flex items-center justify-center transition-opacity">
             <button
               type="button"
               onClick={handleRemove}
-              className="text-white text-xs bg-red-500 hover:bg-red-600 rounded-full p-1 px-2"
+              className="text-white text-xs bg-red-500 hover:bg-red-600 rounded-full px-3 py-1"
             >
               削除
             </button>
           </div>
         </>
       ) : (
-        <div className="text-3xl font-semibold text-muted-foreground">
+        <div className="text-center">
           <svg
             xmlns="http://www.w3.org/2000/svg"
-            width="36"
-            height="36"
+            width="40"
+            height="40"
             viewBox="0 0 24 24"
             fill="none"
             stroke="currentColor"
             strokeWidth="2"
             strokeLinecap="round"
             strokeLinejoin="round"
+            className="mx-auto text-muted-foreground"
           >
             <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
             <circle cx="8.5" cy="8.5" r="1.5" />
             <polyline points="21 15 16 10 5 21" />
           </svg>
+          <p className="text-xs text-muted-foreground mt-2">クリックして選択</p>
         </div>
       )}
     </div>

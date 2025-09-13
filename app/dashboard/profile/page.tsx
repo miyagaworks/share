@@ -240,7 +240,7 @@ export default function ProfilePage() {
                 disabled={isSaving}
               />
               <p className="text-sm text-gray-500 text-justify">
-                クリックして画像をアップロード（JPG, PNG, 最大1MB）
+                クリックして画像をアップロード（JPG, PNG, 最大5MB）
               </p>
             </div>
             {/* 姓名分割フィールド */}
