@@ -54,7 +54,10 @@ export default function SmartContactButton({
     try {
       // vCardを取得
       const response = await fetch(`/api/vcard/${userId}`);
-      if (!response.ok) return false;
+      if (!response.ok) {
+        console.error('vCard API error:', response.status, await response.text());
+        return false;
+      }
 
       const vcardText = await response.text();
       const file = new File([vcardText], `${userName}.vcf`, {
@@ -86,7 +89,10 @@ export default function SmartContactButton({
   const tryDataURL = async (): Promise<boolean> => {
     try {
       const response = await fetch(`/api/vcard/${userId}`);
-      if (!response.ok) return false;
+      if (!response.ok) {
+        console.error('vCard API error:', response.status, await response.text());
+        return false;
+      }
 
       const vcardText = await response.text();
       const dataUrl = `data:text/vcard;charset=utf-8,${encodeURIComponent(vcardText)}`;
@@ -115,7 +121,10 @@ export default function SmartContactButton({
   const tryBlobDownload = async (): Promise<boolean> => {
     try {
       const response = await fetch(`/api/vcard/${userId}`);
-      if (!response.ok) return false;
+      if (!response.ok) {
+        console.error('vCard API error:', response.status, await response.text());
+        return false;
+      }
 
       const vcardText = await response.text();
       const blob = new Blob([vcardText], { type: 'text/vcard;charset=utf-8' });
