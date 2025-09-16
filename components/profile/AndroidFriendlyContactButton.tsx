@@ -24,7 +24,6 @@ export default function AndroidFriendlyContactButton({
 }: ContactButtonProps) {
   const [showOptions, setShowOptions] = useState(false);
   const [deviceType, setDeviceType] = useState<'ios' | 'android' | 'other'>('other');
-  const [showManualAdd, setShowManualAdd] = useState(false);
   const [canShare, setCanShare] = useState(false);
 
   useEffect(() => {
@@ -98,57 +97,6 @@ export default function AndroidFriendlyContactButton({
       console.error('Share error:', error);
       downloadVCard();
     }
-  };
-
-  // QRコードとして表示（代替手段）
-  const showQRCode = () => {
-    const contactInfo = `BEGIN:VCARD
-VERSION:3.0
-FN:${userName}
-${userPhone ? `TEL:${userPhone}` : ''}
-${userEmail ? `EMAIL:${userEmail}` : ''}
-${userCompany ? `ORG:${userCompany}` : ''}
-END:VCARD`;
-
-    // QRコード生成サービスを使用
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(contactInfo)}`;
-
-    // 新しいウィンドウでQRコードを表示
-    const qrWindow = window.open('', '_blank', 'width=350,height=400');
-    if (qrWindow) {
-      qrWindow.document.write(`
-        <html>
-          <head><title>連絡先QRコード</title></head>
-          <body style="text-align:center; padding:20px;">
-            <h3>${userName}の連絡先</h3>
-            <img src="${qrUrl}" alt="QRコード" />
-            <p>このQRコードをスキャンして連絡先を追加</p>
-          </body>
-        </html>
-      `);
-    }
-  };
-
-  // 手動コピー用のテキスト
-  const copyContactInfo = () => {
-    const info = [
-      `名前: ${userName}`,
-      userPhone ? `電話: ${userPhone}` : '',
-      userEmail ? `メール: ${userEmail}` : '',
-      userCompany ? `会社: ${userCompany}` : '',
-    ]
-      .filter(Boolean)
-      .join('\n');
-
-    navigator.clipboard
-      .writeText(info)
-      .then(() => {
-        alert('連絡先情報をコピーしました！\n連絡先アプリに貼り付けてください。');
-      })
-      .catch(() => {
-        // フォールバック
-        setShowManualAdd(true);
-      });
   };
 
   return (
@@ -257,7 +205,7 @@ END:VCARD`;
                 }}
               >
                 <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                  📥 ファイルをダウンロード
+                  📥 ファイルをダウンロード（iPhoneはこちら）
                 </div>
                 <div style={{ fontSize: '0.875rem', color: '#666' }}>
                   .vcfファイルをダウンロードして連絡先に追加
@@ -288,50 +236,6 @@ END:VCARD`;
                   </div>
                 </button>
               )}
-
-              {/* 方法3: 情報をコピー */}
-              <button
-                onClick={() => {
-                  copyContactInfo();
-                  setShowOptions(false);
-                }}
-                style={{
-                  padding: '1rem',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '0.375rem',
-                  background: '#fff',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>
-                  📋 連絡先情報をコピー
-                </div>
-                <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                  テキストをコピーして手動で追加
-                </div>
-              </button>
-
-              {/* 方法4: QRコード表示 */}
-              <button
-                onClick={() => {
-                  showQRCode();
-                  setShowOptions(false);
-                }}
-                style={{
-                  padding: '1rem',
-                  border: '1px solid #e5e5e5',
-                  borderRadius: '0.375rem',
-                  background: '#fff',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                }}
-              >
-                <div style={{ fontWeight: 'bold', marginBottom: '0.25rem' }}>🔲 QRコードで表示</div>
-                <div style={{ fontSize: '0.875rem', color: '#666' }}>
-                  別の端末からスキャンして追加
-                </div>
-              </button>
             </div>
 
             {deviceType === 'android' && (
@@ -352,66 +256,7 @@ END:VCARD`;
         </div>
       )}
 
-      {/* 手動追加用の情報表示 */}
-      {showManualAdd && (
-        <div
-          style={{
-            position: 'fixed',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'rgba(0,0,0,0.5)',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            zIndex: 9999,
-            padding: '1rem',
-          }}
-        >
-          <div
-            style={{
-              background: 'white',
-              borderRadius: '0.5rem',
-              padding: '1.5rem',
-              maxWidth: '400px',
-              width: '100%',
-            }}
-          >
-            <h3>連絡先情報</h3>
-            <div
-              style={{
-                background: '#f5f5f5',
-                padding: '1rem',
-                borderRadius: '0.375rem',
-                fontFamily: 'monospace',
-                fontSize: '0.875rem',
-                marginBottom: '1rem',
-              }}
-            >
-              名前: {userName}
-              <br />
-              {userPhone && `電話: ${userPhone}\n`}
-              {userEmail && `メール: ${userEmail}\n`}
-              {userCompany && `会社: ${userCompany}\n`}
-            </div>
-            <button
-              onClick={() => setShowManualAdd(false)}
-              style={{
-                width: '100%',
-                padding: '0.75rem',
-                background: mainColor,
-                color: 'white',
-                border: 'none',
-                borderRadius: '0.375rem',
-                cursor: 'pointer',
-              }}
-            >
-              閉じる
-            </button>
-          </div>
-        </div>
-      )}
+      {/* 手動追加用の情報表示は削除 */}
     </>
   );
 }
