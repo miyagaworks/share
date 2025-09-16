@@ -66,8 +66,16 @@ export default function SmartContactButton({
 
       // ファイル共有可能かチェック
       if (deviceInfo.canShareFiles) {
-        const canShare = await navigator.canShare({ files: [file] });
-        if (!canShare) return false;
+        try {
+          const canShare = await navigator.canShare({ files: [file] });
+          if (!canShare) {
+            console.log('Cannot share files');
+            return false;
+          }
+        } catch (e) {
+          console.log('canShare check failed:', e);
+          return false;
+        }
       }
 
       // 共有実行
@@ -151,27 +159,10 @@ export default function SmartContactButton({
     }
   };
 
-  // Android Intent URL方法
+  // Android Intent URL方法（削除 - 動作しないため）
   const tryAndroidIntent = (): boolean => {
-    if (!deviceInfo?.isAndroid) return false;
-
-    try {
-      // 連絡先追加のIntentを起動
-      const intentUrl =
-        `intent://contacts#Intent;` +
-        `action=android.intent.action.INSERT;` +
-        `type=vnd.android.cursor.dir/contact;` +
-        `S.name=${encodeURIComponent(userName)};` +
-        (userPhone ? `S.phone=${encodeURIComponent(userPhone)};` : '') +
-        `end`;
-
-      window.location.href = intentUrl;
-      setStatus('success');
-      return true;
-    } catch (error) {
-      console.log('Android Intent failed:', error);
-      return false;
-    }
+    // Android Intentは実際には動作しないケースが多いので無効化
+    return false;
   };
 
   // メイン処理
@@ -180,6 +171,10 @@ export default function SmartContactButton({
 
     setIsProcessing(true);
     setStatus('idle');
+
+    // デバッグログ
+    console.log('Device Info:', deviceInfo);
+    console.log('User ID:', userId);
 
     // アプリ内ブラウザの警告
     if (deviceInfo?.isInAppBrowser) {
@@ -191,34 +186,38 @@ export default function SmartContactButton({
 
     // 1. Web Share API（最優先）
     if (deviceInfo?.canUseWebShare && !deviceInfo?.isInAppBrowser) {
+      console.log('Trying Web Share API...');
       methods.push(tryWebShareAPI);
     }
 
     // 2. iOS Safari用のデータURL
     if (deviceInfo?.isIOS && deviceInfo?.isSafari) {
+      console.log('Trying iOS Safari Data URL...');
       methods.push(tryDataURL);
     }
 
-    // 3. Android Intent
-    if (deviceInfo?.isAndroid && !deviceInfo?.isInAppBrowser) {
-      methods.push(tryAndroidIntent);
-    }
-
-    // 4. Blobダウンロード（フォールバック）
+    // 3. Blobダウンロード（全デバイス対応）
+    console.log('Adding Blob Download as fallback...');
     methods.push(tryBlobDownload);
 
     // 順番に試行
     let success = false;
     for (const method of methods) {
-      const result = await method();
-      if (result) {
-        success = true;
-        break;
+      try {
+        const result = await method();
+        console.log('Method result:', result);
+        if (result) {
+          success = true;
+          break;
+        }
+      } catch (error) {
+        console.error('Method error:', error);
       }
     }
 
     // すべて失敗した場合
     if (!success) {
+      console.error('All methods failed, falling back to direct download');
       setStatus('error');
       // 従来のダウンロード方法にフォールバック
       window.location.href = `/api/vcard/${userId}`;
@@ -226,7 +225,9 @@ export default function SmartContactButton({
 
     // ダウンロードの場合は手順を表示
     if (status === 'downloading') {
-      setShowInstructions(true);
+      setTimeout(() => {
+        setShowInstructions(true);
+      }, 500);
     }
 
     setIsProcessing(false);
