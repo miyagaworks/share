@@ -22,6 +22,13 @@ import { toast } from 'react-hot-toast';
 import { getPagePermissions, ReadOnlyBanner } from '@/lib/utils/admin-permissions';
 import FixPermanentUsersButton from './fix-permanent-button';
 import GrantPermanentAccess from '@/components/admin/GrantPermanentAccess';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from '@/components/ui/Dialog';
 
 // AdminAccess型定義
 interface AdminAccess {
@@ -74,6 +81,9 @@ export default function AdminPermissionsPage() {
     trialUsersCount: 0,
     permanentUsersCount: 0,
   });
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
+  const [selectedUserForRevoke, setSelectedUserForRevoke] = useState<UserData | null>(null);
+  const [revoking, setRevoking] = useState(false);
 
   // 🔧 修正: 財務管理者も許可する権限チェック
   useEffect(() => {
@@ -143,6 +153,80 @@ export default function AdminPermissionsPage() {
   // fetchUsersを呼び出すための統合された関数（将来的にコンポーネント側で呼び出される場合に備えて）
   const handleRefresh = () => {
     fetchUsers();
+  };
+
+  // 永久利用権を取り消す関数
+  const handleRevokePermanentAccess = async (user: UserData) => {
+    setSelectedUserForRevoke(user);
+    setRevokeDialogOpen(true);
+  };
+
+  // 取り消し実行
+  const confirmRevokePermanentAccess = async () => {
+    if (!selectedUserForRevoke) return;
+
+    try {
+      setRevoking(true);
+
+      const response = await fetch('/api/admin/permissions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: selectedUserForRevoke.id,
+          isPermanent: false, // falseで取り消し
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '永久利用権の取り消しに失敗しました');
+      }
+
+      toast.success('永久利用権を取り消しました');
+      if (data.warning) {
+        toast.success(data.warning, { duration: 5000 });
+      }
+
+      fetchUsers(); // ユーザーリストを再取得
+      setRevokeDialogOpen(false);
+      setSelectedUserForRevoke(null);
+    } catch (error) {
+      console.error('永久利用権取り消しエラー:', error);
+      toast.error(error instanceof Error ? error.message : '永久利用権の取り消しに失敗しました');
+    } finally {
+      setRevoking(false);
+    }
+  };
+
+  // 永久利用権を付与する関数（インライン用）
+  const handleGrantPermanentAccess = async (userId: string) => {
+    try {
+      const response = await fetch('/api/admin/permissions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: userId,
+          isPermanent: true,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || '永久利用権の付与に失敗しました');
+      }
+
+      toast.success('永久利用権を付与しました');
+      fetchUsers(); // ユーザーリストを再取得
+    } catch (error) {
+      console.error('永久利用権付与エラー:', error);
+      toast.error(error instanceof Error ? error.message : '永久利用権の付与に失敗しました');
+    }
   };
 
   // 検索とフィルタリング
@@ -384,68 +468,160 @@ export default function AdminPermissionsPage() {
       {/* ユーザー一覧テーブル */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm">
         <div className="overflow-x-auto">
-          <table className="w-full table-auto">
+          <table className="min-w-full divide-y divide-gray-200">
             <thead className="bg-gray-50">
               <tr>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  ユーザー情報
+                  名前
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  メールアドレス
+                  メール
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   ステータス
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  トライアル期限
+                  残り日数
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   登録日
                 </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  操作
+                </th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-gray-200">
-              {sortedUsers.map((user) => (
-                <tr key={user.id} className="hover:bg-gray-50">
+              {filteredUsers.map((user) => (
+                <tr key={user.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">
-                      {user.name || '名前未設定'}
-                    </div>
-                    <div className="text-sm text-gray-500">{user.nameKana || 'フリガナ未設定'}</div>
+                    <div className="text-sm font-medium text-gray-900">{user.name || '未設定'}</div>
+                    {user.nameKana && <div className="text-sm text-gray-500">{user.nameKana}</div>}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">{user.email}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">{getTrialStatusDisplay(user)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      {user.isPermanentUser ? '永久利用権' : formatDate(user.trialEndsAt)}
-                    </div>
-                    {!user.isPermanentUser && user.trialDaysRemaining !== undefined && (
-                      <div className="text-xs text-gray-500">残り{user.trialDaysRemaining}日</div>
+                    {user.isPermanentUser ? (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                        <HiKey className="mr-1 h-3 w-3" />
+                        永久利用権
+                      </span>
+                    ) : (
+                      <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+                        <HiClock className="mr-1 h-3 w-3" />
+                        トライアル
+                      </span>
+                    )}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                    {user.isPermanentUser ? (
+                      <span className="text-green-600">無制限</span>
+                    ) : user.trialDaysRemaining > 0 ? (
+                      <span className="font-medium">{user.trialDaysRemaining}日</span>
+                    ) : (
+                      <span className="text-red-600">期限切れ</span>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {formatDate(user.createdAt)}
+                    {new Date(user.createdAt).toLocaleDateString('ja-JP')}
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium">
+                    {user.isPermanentUser ? (
+                      permissions.canEdit ? (
+                        <Button
+                          onClick={() => handleRevokePermanentAccess(user)}
+                          variant="outline"
+                          size="sm"
+                          className="text-red-600 hover:text-red-700 border-red-300 hover:border-red-400"
+                        >
+                          <HiX className="mr-1 h-4 w-4" />
+                          取り消し
+                        </Button>
+                      ) : (
+                        <span className="text-gray-400 text-xs">操作不可</span>
+                      )
+                    ) : user.trialDaysRemaining > 0 && permissions.canCreate ? (
+                      <Button
+                        onClick={() => handleGrantPermanentAccess(user.id)}
+                        variant="default"
+                        size="sm"
+                      >
+                        <HiKey className="mr-1 h-4 w-4" />
+                        永久利用権付与
+                      </Button>
+                    ) : (
+                      <span className="text-gray-400">-</span>
+                    )}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
-
-        {filteredUsers.length === 0 && (
-          <div className="text-center py-12">
-            <HiExclamationCircle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
-              {searchTerm ? '検索結果がありません' : 'ユーザーが見つかりません'}
-            </h3>
-            <p className="text-gray-500">
-              {searchTerm ? '検索条件を変更してお試しください' : 'まだユーザーが登録されていません'}
-            </p>
-          </div>
-        )}
       </div>
+
+      {/* 取り消し確認ダイアログ */}
+      <Dialog open={revokeDialogOpen} onOpenChange={setRevokeDialogOpen}>
+        <DialogContent className="bg-white rounded-lg shadow-lg p-6">
+          <DialogHeader>
+            <DialogTitle>永久利用権の取り消し</DialogTitle>
+            <DialogDescription asChild>
+              <div className="space-y-2">
+                <p>以下のユーザーの永久利用権を取り消しますか？</p>
+                {selectedUserForRevoke && (
+                  <>
+                    <div className="bg-gray-50 p-3 rounded-lg mt-3">
+                      <p className="font-medium">{selectedUserForRevoke.name || '名前未設定'}</p>
+                      <p className="text-sm text-gray-600">{selectedUserForRevoke.email}</p>
+                    </div>
+                    <div className="bg-amber-50 border border-amber-200 rounded-lg p-3 mt-3">
+                      <div className="text-sm text-amber-800">
+                        <HiExclamationCircle className="inline mr-1 h-4 w-4" />
+                        取り消し後の動作：
+                      </div>
+                      <ul className="text-sm text-amber-700 mt-1 ml-5 list-disc">
+                        <li>元のトライアル期間が残っている場合は、その期間まで利用可能</li>
+                        <li>トライアル期間が終了している場合は、7日間の猶予期間を設定</li>
+                        <li>法人管理者の場合、テナント情報が削除されます</li>
+                      </ul>
+                    </div>
+                  </>
+                )}
+              </div>
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-3 mt-6">
+            <Button
+              variant="outline"
+              onClick={() => {
+                setRevokeDialogOpen(false);
+                setSelectedUserForRevoke(null);
+              }}
+              disabled={revoking}
+            >
+              キャンセル
+            </Button>
+            <Button
+              variant="destructive"
+              onClick={confirmRevokePermanentAccess}
+              disabled={revoking}
+            >
+              {revoking ? (
+                <>
+                  <Spinner size="sm" className="mr-2" />
+                  取り消し中...
+                </>
+              ) : (
+                <>
+                  <HiX className="mr-2 h-4 w-4" />
+                  取り消す
+                </>
+              )}
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
