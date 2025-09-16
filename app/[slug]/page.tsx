@@ -7,7 +7,7 @@ import { ProfileCustomLink } from '@/components/profile/ProfileCustomLink';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { addDays } from 'date-fns';
-import SmartContactButton from '@/components/profile/SmartContactButton';
+import AndroidFriendlyContactButton from '@/components/profile/AndroidFriendlyContactButton';
 
 // 🔥 修正: Prismaスキーマに基づく正しい型定義
 type ExtendedUser = {
@@ -600,10 +600,12 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 電話をかける
               </a>
             )}
-            <SmartContactButton
+            <AndroidFriendlyContactButton
               userId={profile.userId}
               userName={user.name || 'ユーザー'}
               userPhone={user.phone}
+              userEmail={user.email}
+              userCompany={user.company}
               mainColor={mainColor}
               textColor="#333"
             />
