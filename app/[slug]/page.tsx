@@ -600,9 +600,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 電話をかける
               </a>
             )}
-            console.log('Profile userId:', profile.userId);
-            console.log('Profile:', profile);
-            
             <SmartContactButton
               userId={profile.userId}
               userName={user.name || 'ユーザー'}
