@@ -109,5 +109,17 @@
             "prisma": "*",
             "sharp": "*"
         }
-    }
+    },
+    "cspell": {
+    "words": [
+      "FBAV",
+      "FBAN",
+      "vcard",
+      "IRMC",
+      "qrcode",
+      "usecase",
+      "NEXTAUTH",
+      "pangea"
+    ]
+  }
 }

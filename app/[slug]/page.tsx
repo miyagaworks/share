@@ -1,4 +1,4 @@
-// app/[slug]/page.tsx (型定義修正版)
+// app/[slug]/page.tsx
 import Image from 'next/image';
 import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
@@ -7,6 +7,7 @@ import { ProfileCustomLink } from '@/components/profile/ProfileCustomLink';
 import { Metadata } from 'next';
 import Link from 'next/link';
 import { addDays } from 'date-fns';
+import SmartContactButton from '@/components/profile/SmartContactButton';
 
 // 🔥 修正: Prismaスキーマに基づく正しい型定義
 type ExtendedUser = {
@@ -599,42 +600,13 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
                 電話をかける
               </a>
             )}
-            <a
-              href={`/api/vcard/${profile.userId}`}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                width: '100%',
-                padding: '0.75rem',
-                borderRadius: '0.375rem',
-                fontWeight: '500',
-                color: '#333',
-                border: `1px solid ${secondaryColor}`,
-                boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06)',
-                background: '#fff',
-              }}
-              className="profile-text"
-            >
-              <svg
-                xmlns="http://www.w3.org/2000/svg"
-                width="18"
-                height="18"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{ marginRight: '0.5rem' }}
-              >
-                <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" />
-                <circle cx="8.5" cy="7" r="4" />
-                <line x1="20" y1="8" x2="20" y2="14" />
-                <line x1="23" y1="11" x2="17" y2="11" />
-              </svg>
-              連絡先に追加
-            </a>
+            <SmartContactButton
+              userId={profile.userId}
+              userName={user.name || 'ユーザー'}
+              userPhone={user.phone}
+              mainColor={mainColor}
+              textColor="#333"
+            />
           </div>
 
           {/* フッター */}

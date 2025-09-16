@@ -26,26 +26,30 @@ self.addEventListener('install', (event) => {
 self.addEventListener('fetch', (event) => {
   const requestUrl = new URL(event.request.url);
 
-  // ホーム画面から開いた場合の処理
-  if (
-    requestUrl.origin === self.location.origin &&
-    requestUrl.pathname === '/' &&
-    event.request.mode === 'navigate'
-  ) {
+  // vCard APIのキャッシュ処理
+  if (requestUrl.pathname.includes('/api/vcard/')) {
     event.respondWith(
-      clients.matchAll().then(function (clientList) {
-        // クライアントにユーザーのQRコードパスの取得を要求
-        if (clientList.length > 0) {
-          clientList[0].postMessage({
-            type: 'GET_USER_QR_PATH',
+      caches.open('vcard-cache-v1').then((cache) => {
+        return fetch(event.request)
+          .then((response) => {
+            // 成功レスポンスのみ短時間キャッシュ
+            if (response.status === 200) {
+              const responseToCache = response.clone();
+              cache.put(event.request, responseToCache);
+              // 5分後に自動削除
+              setTimeout(
+                () => {
+                  cache.delete(event.request);
+                },
+                5 * 60 * 1000,
+              );
+            }
+            return response;
+          })
+          .catch(() => {
+            // オフライン時はキャッシュから返す
+            return cache.match(event.request);
           });
-
-          // 特定のパスが見つからない場合は /qr にリダイレクト（変更点）
-          return Response.redirect('/qr', 302);
-        } else {
-          // クライアントがない場合は /qr にリダイレクト（変更点）
-          return Response.redirect('/qr', 302);
-        }
       }),
     );
     return;
