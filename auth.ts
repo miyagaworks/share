@@ -1,4 +1,4 @@
-// auth.ts (本番用・console.log削除版)
+// auth.ts
 import NextAuth from 'next-auth';
 import authConfig from './auth.config';
 import { prisma } from '@/lib/prisma';
@@ -65,14 +65,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async signIn({ user, account, profile }) {
-      // 開発環境でのみログ出力（本番環境では出力されない）
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🚀 SignIn callback started', {
-          provider: account?.provider,
-          userEmail: user?.email,
-        });
-      }
-
       try {
         if (account?.provider === 'credentials') {
           return true;
@@ -140,15 +132,6 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
           // 管理者メールは常に許可
           const isAdminEmail = email === 'admin@sns-share.com';
-
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🍪 Cookie check:', {
-              hasSignupCookie: isSignupFlow,
-              cookieValue: signupCookie,
-              email: email,
-              willCreateUser: isSignupFlow || isAdminEmail,
-            });
-          }
 
           if (isSignupFlow || isAdminEmail) {
             try {
@@ -218,28 +201,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async jwt({ token, user, account }) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔑 JWT callback', {
-          hasUser: !!user,
-          hasToken: !!token,
-          provider: account?.provider,
-          tokenSub: token?.sub,
-          userEmail: user?.email || token?.email,
-        });
-      }
 
       // 🔧 ログイン時にユーザー情報をトークンに保存
       if (user) {
         token.sub = user.id;
         token.name = user.name;
         token.email = user.email;
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ JWT: User info saved to token', {
-            sub: token.sub,
-            email: token.email,
-          });
-        }
       }
 
       // 🔧 ロール情報の取得（初回またはロールがない場合）
@@ -273,21 +240,25 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             ) {
               token.role = 'financial-admin'; // ✅ 正しく判定される
             } else if (dbUser.subscriptionStatus === 'permanent') {
+            // 永久利用権ユーザーの場合、プラン種別を確認
+            const subscription = await prisma.subscription.findFirst({
+              where: { userId: token.sub },
+              select: { plan: true }
+            });
+            
+            // permanent_personalプランの場合は個人ユーザーとして扱う
+            if (subscription?.plan === 'permanent_personal') {
+              token.role = 'personal';
+            } else {
+              // permanent_starter, permanent_business, permanent_enterpriseの場合
               token.role = 'permanent-admin';
+            }
             } else if (dbUser.adminOfTenant) {
               token.role = 'admin';
             } else if (dbUser.corporateRole === 'member' && dbUser.tenant) {
               token.role = 'member';
             } else {
               token.role = 'personal';
-            }
-
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✅ JWT: Role assigned', {
-                email: userEmail,
-                role: token.role,
-                financialAdminRecord: dbUser.financialAdminRecord,
-              });
             }
           }
         } catch (error) {
@@ -301,29 +272,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
 
     async session({ session, token }) {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('📋 Session callback', {
-          hasToken: !!token,
-          tokenSub: token?.sub,
-          tokenEmail: token?.email,
-          tokenRole: token?.role,
-        });
-      }
-
       // 🔧 セッションにトークン情報を設定
       if (token && session.user) {
         session.user.id = token.sub as string;
         session.user.role = token.role as string;
         session.user.name = token.name as string;
         session.user.email = token.email as string;
-
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Session: User info set', {
-            id: session.user.id,
-            email: session.user.email,
-            role: session.user.role,
-          });
-        }
       }
 
       return session;

@@ -25,21 +25,8 @@ export async function middleware(request: NextRequest) {
         raw: false,
       });
 
-      // 開発環境でのみログ出力
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔒 Middleware: Token check', {
-          pathname,
-          hasToken: !!token,
-          tokenEmail: token?.email,
-          tokenRole: token?.role, // 🆕 ロール情報も表示
-        });
-      }
-
       // 未認証ユーザーはログインページへリダイレクト
       if (!token) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('❌ Middleware: No token, redirecting to signin');
-        }
         const response = NextResponse.redirect(new URL('/auth/signin', request.url));
         response.headers.delete('x-middleware-cache');
         response.headers.delete('x-middleware-prefetch');
@@ -53,9 +40,6 @@ export async function middleware(request: NextRequest) {
       // スーパー管理者の処理
       if (userEmail === 'admin@sns-share.com' || userRole === 'super-admin') {
         if (pathname === '/dashboard' && !pathname.startsWith('/dashboard/admin')) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🔄 Middleware: Redirecting super admin to /dashboard/admin');
-          }
           return NextResponse.redirect(new URL('/dashboard/admin', request.url));
         }
         // 既に管理画面にいる場合はそのまま通す
@@ -66,9 +50,6 @@ export async function middleware(request: NextRequest) {
       else if (userRole === 'financial-admin') {
         // /dashboard のルートアクセス時のリダイレクト
         if (pathname === '/dashboard') {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🔄 Middleware: Redirecting financial admin to /dashboard/admin');
-          }
           return NextResponse.redirect(new URL('/dashboard/admin', request.url));
         }
 
@@ -84,19 +65,8 @@ export async function middleware(request: NextRequest) {
           // 許可されたパスの場合はアクセスを許可
           const isAllowed = allowedPaths.some((path) => pathname.startsWith(path));
           if (isAllowed) {
-            if (process.env.NODE_ENV === 'development') {
-              console.log('✅ Middleware: Financial admin access allowed to', pathname);
-            }
             return NextResponse.next();
           } else {
-            // 許可されていないパスは管理トップにリダイレクト
-            if (process.env.NODE_ENV === 'development') {
-              console.log(
-                '🔄 Middleware: Financial admin redirected from',
-                pathname,
-                'to /dashboard/admin',
-              );
-            }
             return NextResponse.redirect(new URL('/dashboard/admin', request.url));
           }
         }
@@ -108,9 +78,6 @@ export async function middleware(request: NextRequest) {
             !pathname.startsWith('/dashboard/admin') &&
             pathname !== '/dashboard')
         ) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('🚫 Middleware: Financial admin blocked from', pathname);
-          }
           return NextResponse.redirect(new URL('/dashboard/admin', request.url));
         }
 
@@ -152,15 +119,6 @@ export async function middleware(request: NextRequest) {
         ) {
           return NextResponse.redirect(new URL('/dashboard', request.url));
         }
-      }
-
-      // 開発環境でのみログ出力
-      if (process.env.NODE_ENV === 'development') {
-        console.log('✅ Middleware: Access allowed', {
-          pathname,
-          userRole,
-          userEmail,
-        });
       }
       return NextResponse.next();
     } catch (error) {
