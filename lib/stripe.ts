@@ -130,26 +130,21 @@ export const PLAN_CONFIGS: Record<string, PlanInfo> = {
 
 // 🔧 プラン情報取得（デバッグログ付き）
 export function getPaymentLinkByPlan(planId: string, interval: string = 'month'): PlanInfo | null {
-  console.log('🔍 getPaymentLinkByPlan called:', { planId, interval });
 
   // 個人プランの処理
   if (planId === 'monthly' || (planId === 'individual' && interval === 'month')) {
     const config = PLAN_CONFIGS['monthly'];
-    console.log('📋 Monthly plan config:', config);
     return config || null;
   }
 
   if (planId === 'yearly' || (planId === 'individual' && interval === 'year')) {
     const config = PLAN_CONFIGS['yearly'];
-    console.log('📋 Yearly plan config:', config);
     return config || null;
   }
 
   // 法人プランの処理
   const key = interval === 'year' ? `${planId}_yearly` : planId;
   const config = PLAN_CONFIGS[key];
-  console.log('📋 Corporate plan config:', { key, config });
-
   return config || null;
 }
 

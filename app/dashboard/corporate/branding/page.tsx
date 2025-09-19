@@ -285,21 +285,6 @@ export default function ImprovedCorporateBrandingPage() {
       const logoWidth = Number(logoSize.width);
       const logoHeight = Number(logoSize.height);
 
-      // 🔥 デバッグコード追加（ここから）
-      console.log('=== 保存前のデバッグ情報 ===');
-      console.log('1. 現在のlogoSize state:', logoSize);
-      console.log('2. 数値変換後:', { logoWidth, logoHeight });
-      console.log('3. 送信するデータ全体:', {
-        primaryColor,
-        secondaryColor,
-        logoUrl: logoUrl ? 'あり（長いので省略）' : 'なし',
-        logoWidth,
-        logoHeight,
-        headerText,
-        textColor,
-      });
-      // 🔥 デバッグコード追加（ここまで）
-
       // ブランディング設定更新API
       const response = await fetch('/api/corporate/branding', {
         method: 'PUT',
@@ -321,15 +306,6 @@ export default function ImprovedCorporateBrandingPage() {
       }
 
       const data = await response.json();
-
-      // 🔥 デバッグコード追加（ここから）
-      console.log('=== APIレスポンス ===');
-      console.log('4. 完全なレスポンス:', data);
-      console.log('5. 保存されたロゴサイズ:', {
-        width: data.tenant?.logoWidth,
-        height: data.tenant?.logoHeight,
-      });
-      // 🔥 デバッグコード追加（ここまで）
 
       toast.success('ブランディング設定を保存しました');
 

@@ -69,11 +69,9 @@ export default function SmartContactButton({
         try {
           const canShare = await navigator.canShare({ files: [file] });
           if (!canShare) {
-            console.log('Cannot share files');
             return false;
           }
         } catch (e) {
-          console.log('canShare check failed:', e);
           return false;
         }
       }
@@ -88,7 +86,6 @@ export default function SmartContactButton({
       setStatus('success');
       return true;
     } catch (error) {
-      console.log('Web Share API failed:', error);
       return false;
     }
   };
@@ -120,7 +117,6 @@ export default function SmartContactButton({
         return true;
       }
     } catch (error) {
-      console.log('Data URL method failed:', error);
       return false;
     }
   };
@@ -154,7 +150,6 @@ export default function SmartContactButton({
       setStatus('downloading');
       return true;
     } catch (error) {
-      console.log('Blob download failed:', error);
       return false;
     }
   };
@@ -172,10 +167,6 @@ export default function SmartContactButton({
     setIsProcessing(true);
     setStatus('idle');
 
-    // デバッグログ
-    console.log('Device Info:', deviceInfo);
-    console.log('User ID:', userId);
-
     // アプリ内ブラウザの警告
     if (deviceInfo?.isInAppBrowser) {
       alert('アプリ内ブラウザでは制限があります。SafariやChromeで開くことをおすすめします。');
@@ -186,18 +177,15 @@ export default function SmartContactButton({
 
     // 1. Web Share API（最優先）
     if (deviceInfo?.canUseWebShare && !deviceInfo?.isInAppBrowser) {
-      console.log('Trying Web Share API...');
       methods.push(tryWebShareAPI);
     }
 
     // 2. iOS Safari用のデータURL
     if (deviceInfo?.isIOS && deviceInfo?.isSafari) {
-      console.log('Trying iOS Safari Data URL...');
       methods.push(tryDataURL);
     }
 
     // 3. Blobダウンロード（全デバイス対応）
-    console.log('Adding Blob Download as fallback...');
     methods.push(tryBlobDownload);
 
     // 順番に試行
@@ -205,7 +193,6 @@ export default function SmartContactButton({
     for (const method of methods) {
       try {
         const result = await method();
-        console.log('Method result:', result);
         if (result) {
           success = true;
           break;

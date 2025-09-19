@@ -1,4 +1,4 @@
-// app/dashboard/admin/stripe/revenue/page.tsx - console.log修正版
+// app/dashboard/admin/stripe/revenue/page.tsx
 'use client';
 import { useState, useEffect, useCallback } from 'react';
 import { useRouter } from 'next/navigation';
@@ -127,10 +127,6 @@ export default function StripeRevenueManagementPage() {
       // 🔧 修正: 正しいAPIパスとレスポンス形式を使用
       const response = await fetch('/api/admin/access');
       const data = await response.json();
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('権限チェック結果:', data); // デバッグ用
-      }
 
       // スーパー管理者または財務管理者の場合アクセス許可
       if (data.isSuperAdmin || data.isFinancialAdmin || data.permissions?.canViewFinancialData) {

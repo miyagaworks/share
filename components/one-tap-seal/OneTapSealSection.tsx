@@ -84,7 +84,6 @@ export function OneTapSealSection() {
             }
           }
         } catch (error) {
-          console.log('dashboard-info API使用不可、profileを試行');
         }
 
         try {
@@ -100,7 +99,6 @@ export function OneTapSealSection() {
             }
           }
         } catch (error) {
-          console.log('profile API使用不可');
         }
 
         // QRコード情報を取得
@@ -113,7 +111,6 @@ export function OneTapSealSection() {
             }
           }
         } catch (error) {
-          console.log('qrcode API使用不可');
         }
 
         setUserInfo(basicUserInfo);
@@ -126,7 +123,6 @@ export function OneTapSealSection() {
             setOneTapSealOrders(ordersData.orders || []);
           }
         } catch (error) {
-          console.log('one-tap-seal orders API未実装またはエラー');
         }
       } catch (error) {
         console.error('ユーザー情報取得エラー:', error);

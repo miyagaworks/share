@@ -212,6 +212,29 @@ div[contenteditable],
     transition: var(--transition) !important;
 }
 
+/* ===== 認証ボタンのホバー時角丸維持 ===== */
+.auth-button {
+    border-radius: 0.375rem !important;
+    /* rounded-md相当 */
+    overflow: hidden !important;
+    transform-style: preserve-3d !important;
+    backface-visibility: hidden !important;
+    -webkit-backface-visibility: hidden !important;
+    will-change: transform !important;
+}
+
+.auth-button:hover {
+    border-radius: 0.375rem !important;
+}
+
+/* transformを使用するボタンの角丸を確実に維持 */
+.button-preserve-radius {
+    border-radius: 0.375rem !important;
+    overflow: hidden !important;
+    transform-origin: center !important;
+    will-change: transform, background-color !important;
+}
+
 /* ===== アニメーション定義 ===== */
 @keyframes fadeIn {
     from {

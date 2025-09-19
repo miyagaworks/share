@@ -40,14 +40,6 @@ export function CorporateAdminGuard({
 
         // 管理者権限がない場合は即座にリダイレクト
         if (!isAdmin && !['admin', 'super-admin', 'permanent-admin'].includes(userRole || '')) {
-          // 開発環境でのみデバッグログ出力
-          if (process.env.NODE_ENV === 'development') {
-            console.log('法人管理者権限なし: フォールバックページにリダイレクト', {
-              userRole,
-              isAdmin,
-              fallbackPath,
-            });
-          }
           setError('法人管理者権限がありません');
           setTimeout(() => router.push(fallbackPath), 1500);
           return;
@@ -66,13 +58,6 @@ export function CorporateAdminGuard({
 
           if (data.isAdmin && data.hasCorporateAccess) {
             setHasAccess(true);
-            // 開発環境でのみデバッグログ出力
-            if (process.env.NODE_ENV === 'development') {
-              console.log('法人管理者権限確認: アクセス許可', {
-                userRole,
-                tenantId: data.tenantId,
-              });
-            }
           } else {
             setError('法人管理者権限が確認できませんでした');
             setTimeout(() => router.push(fallbackPath), 1500);

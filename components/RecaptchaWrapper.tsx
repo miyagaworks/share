@@ -1,6 +1,7 @@
 // components/RecaptchaWrapper.tsx
 'use client';
 import { useEffect } from 'react';
+import { logger } from '@/lib/utils/logger';
 
 interface RecaptchaWrapperProps {
   onVerify: (token: string | null) => void;
@@ -15,7 +16,7 @@ export default function RecaptchaWrapper({
 }: RecaptchaWrapperProps) {
   useEffect(() => {
     // 即座にダミートークンを返す
-    console.log('reCAPTCHA をバイパス（Private Access Token問題回避）');
+    logger.info('reCAPTCHA をバイパス（Private Access Token問題回避）');
     onVerify('bypass-token-pat-issue');
   }, [onVerify]);
 

@@ -192,21 +192,6 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
   // テナント情報の取得
   const tenant = user.tenant || user.adminOfTenant;
 
-  // 🔥 デバッグコード追加
-  if (tenant) {
-    console.log('=== プロフィールページのテナント情報 ===');
-    console.log('テナントID:', tenant.id);
-    console.log('ロゴURL:', tenant.logoUrl ? 'あり' : 'なし');
-    console.log('ロゴサイズ:', {
-      logoWidth: tenant.logoWidth,
-      logoHeight: tenant.logoHeight,
-      型: {
-        width: typeof tenant.logoWidth,
-        height: typeof tenant.logoHeight,
-      },
-    });
-  }
-
   // 色設定
   const mainColor = tenant?.primaryColor || user.mainColor || '#A88C3D';
   const secondaryColor = tenant?.secondaryColor || '#333333';

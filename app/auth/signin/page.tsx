@@ -1,4 +1,4 @@
-// app/auth/signin/page.tsx (UIレイアウト改善版 - 利用規約チェック削除)
+// app/auth/signin/page.tsx
 'use client';
 import { useState, useEffect, Suspense } from 'react';
 import Link from 'next/link';
@@ -291,18 +291,10 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🚀 Google signin started');
-      }
-
       const result = await signIn('google', {
         redirect: false,
         callbackUrl: '/dashboard',
       });
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('Google signin result:', result);
-      }
 
       if (result?.error) {
         console.error('Google signin error:', result.error);
@@ -325,9 +317,6 @@ export default function SigninPage() {
       }
 
       if (result?.ok && result?.url) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ Google signin successful, redirecting...');
-        }
         window.location.href = result.url;
       } else if (result?.ok) {
         window.location.href = '/dashboard';
@@ -381,9 +370,6 @@ export default function SigninPage() {
 
   // reCAPTCHA確認時の処理
   const handleRecaptchaChange = (token: string | null) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🔒 reCAPTCHA Token changed:', token ? 'Token received' : 'Token cleared');
-    }
     setRecaptchaToken(token);
     setRecaptchaLoaded(true);
 
@@ -406,10 +392,6 @@ export default function SigninPage() {
       setError(null);
       setIsPending(true);
 
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🚀 Credentials signin started');
-      }
-
       const result = await signIn('credentials', {
         email: data.email.toLowerCase(),
         password: data.password,
@@ -417,10 +399,6 @@ export default function SigninPage() {
         redirect: false,
         callbackUrl: '/dashboard',
       });
-
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🔍 Credentials signin result:', result);
-      }
 
       if (result?.error) {
         if (result.error === 'CredentialsSignin') {
@@ -434,14 +412,8 @@ export default function SigninPage() {
         setRecaptchaLoaded(false);
       } else if (result?.ok) {
         const session = await getSession();
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔍 Session after credentials signin:', session);
-        }
 
         if (session?.user) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log('✅ Session confirmed, redirecting to dashboard');
-          }
           window.location.href = '/dashboard';
         } else {
           if (process.env.NODE_ENV === 'development') {
@@ -696,43 +668,45 @@ export default function SigninPage() {
 
                   {/* メール/パスワードログインボタン */}
                   <div>
-                    <Button
-                      type="submit"
-                      className={`w-full text-white transition-colors shadow-md min-h-[48px] md:min-h-0 ${
-                        isFormValid
-                          ? 'bg-blue-600 hover:bg-blue-800 transform hover:-translate-y-0.5'
-                          : 'bg-blue-300 hover:bg-blue-400'
-                      }`}
-                      disabled={isPending || !isFormValid}
-                    >
-                      {isPending ? (
-                        <span className="flex items-center justify-center">
-                          <svg
-                            className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
-                            xmlns="http://www.w3.org/2000/svg"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                          >
-                            <circle
-                              className="opacity-25"
-                              cx="12"
-                              cy="12"
-                              r="10"
-                              stroke="currentColor"
-                              strokeWidth="4"
-                            ></circle>
-                            <path
-                              className="opacity-75"
-                              fill="currentColor"
-                              d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
-                            ></path>
-                          </svg>
-                          ログイン中...
-                        </span>
-                      ) : (
-                        'ログイン'
-                      )}
-                    </Button>
+                    <div className="rounded-md overflow-hidden">
+                      <Button
+                        type="submit"
+                        className={`w-full text-white transition-all duration-200 shadow-md min-h-[48px] md:min-h-0 ${
+                          isFormValid
+                            ? 'bg-blue-600 hover:bg-blue-800 transform hover:-translate-y-0.5'
+                            : 'bg-blue-300 hover:bg-blue-400'
+                        }`}
+                        disabled={isPending || !isFormValid}
+                      >
+                        {isPending ? (
+                          <span className="flex items-center justify-center">
+                            <svg
+                              className="animate-spin -ml-1 mr-2 h-4 w-4 text-white"
+                              xmlns="http://www.w3.org/2000/svg"
+                              fill="none"
+                              viewBox="0 0 24 24"
+                            >
+                              <circle
+                                className="opacity-25"
+                                cx="12"
+                                cy="12"
+                                r="10"
+                                stroke="currentColor"
+                                strokeWidth="4"
+                              ></circle>
+                              <path
+                                className="opacity-75"
+                                fill="currentColor"
+                                d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"
+                              ></path>
+                            </svg>
+                            ログイン中...
+                          </span>
+                        ) : (
+                          'ログイン'
+                        )}
+                      </Button>
+                    </div>
                   </div>
                 </form>
               </div>

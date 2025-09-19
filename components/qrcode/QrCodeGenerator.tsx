@@ -86,11 +86,6 @@ export function QrCodeGenerator({
     // デバイス判定を修正
     const userAgent = navigator.userAgent.toLowerCase();
 
-    // 開発環境でのみデバッグログ出力
-    if (process.env.NODE_ENV === 'development') {
-      console.log('User Agent:', userAgent);
-    }
-
     // より正確なiOS判定
     const isIOSDevice =
       /iphone|ipad|ipod/.test(userAgent) ||
@@ -98,12 +93,6 @@ export function QrCodeGenerator({
 
     // より正確なAndroid判定
     const isAndroidDevice = /android/.test(userAgent);
-
-    // 開発環境でのみデバッグログ出力
-    if (process.env.NODE_ENV === 'development') {
-      console.log('iOS detected:', isIOSDevice);
-      console.log('Android detected:', isAndroidDevice);
-    }
 
     setIsIOS(isIOSDevice);
     setIsAndroid(isAndroidDevice);

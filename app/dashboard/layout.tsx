@@ -92,9 +92,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
 
     // 🚀 最優先: 永久利用権個人プランユーザーの処理
     if (permissions.isPermanentUser && permissions.permanentPlanType === 'personal') {
-      if (process.env.NODE_ENV === 'development') {
-        console.log('🌟 永久利用権個人プランユーザーの処理開始');
-      }
 
       // 法人関連ページへのアクセスは拒否
       if (pathname.startsWith('/dashboard/corporate')) {
@@ -116,9 +113,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       ];
 
       if (allowedPersonalPages.some((page) => pathname.startsWith(page))) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('✅ 永久利用権個人プランユーザー: アクセス許可', pathname);
-        }
         return { hasAccess: true };
       }
 
@@ -295,14 +289,6 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
     // アクセス権チェックによるリダイレクト
     if (!accessCheck.hasAccess && accessCheck.redirectTo) {
       if (pathname !== accessCheck.redirectTo) {
-        if (process.env.NODE_ENV === 'development') {
-          console.log(
-            '🔄 アクセス権チェックによるリダイレクト:',
-            accessCheck.redirectTo,
-            '理由:',
-            accessCheck.reason,
-          );
-        }
         setIsRedirecting(true);
         setRedirectReason(accessCheck.reason || 'リダイレクト中');
         window.location.href = accessCheck.redirectTo;

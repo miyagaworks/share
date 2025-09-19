@@ -14,10 +14,6 @@ export function SigninDebugOverlay() {
       .then((res) => res.json())
       .then((data) => {
         setSessionApi(data);
-        // 開発環境でのみログ出力
-        if (process.env.NODE_ENV === 'development') {
-          console.log('🔍 Direct session API result:', data);
-        }
       })
       .catch((err) => {
         // 開発環境でのみエラーログ出力
@@ -34,12 +30,6 @@ export function SigninDebugOverlay() {
 
   // 開発環境でのみログ出力
   useEffect(() => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('🎯 useSession hook status:', status);
-      console.log('🎯 useSession hook data:', session);
-      console.log('🎯 Direct API call result:', sessionApi);
-      console.log('🎯 Document cookies:', cookies);
-    }
   }, [status, session, sessionApi, cookies]);
 
   // 本番環境でのみ表示（一時的） - 開発環境でも表示するよう変更

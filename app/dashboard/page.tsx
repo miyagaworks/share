@@ -33,9 +33,6 @@ export default function DashboardPage() {
 
   // ナビゲーション関数
   const handleNavigation = (path: string) => {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Navigation clicked:', path);
-    }
     try {
       router.push(path);
     } catch (error) {
