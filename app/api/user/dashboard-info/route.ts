@@ -3,7 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
-import { prisma, safeQuery } from '@/lib/prisma'; // 🔧 修正: ensurePrismaConnectionを削除
+import { prisma, safeQuery } from '@/lib/prisma';
 
 // 🔧 設定: 財務管理者ドメイン（売却時に変更するだけ）
 const FINANCIAL_ADMIN_DOMAIN = '@sns-share.com';
@@ -344,6 +344,15 @@ function generateNavigationEnhanced(
     currentPath?.startsWith('/dashboard/corporate') &&
     !currentPath.startsWith('/dashboard/corporate-member')
   ) {
+    // 🔧 永久利用権個人プランは法人管理ページにアクセスできない
+    if (permissions.userType === 'permanent' && permissions.permanentPlanType === 'personal') {
+      return {
+        shouldRedirect: true,
+        redirectPath: '/dashboard',
+        menuItems,
+      };
+    }
+
     if (!permissions.isAdmin && !permissions.isSuperAdmin) {
       return {
         shouldRedirect: true,
