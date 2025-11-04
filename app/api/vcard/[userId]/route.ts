@@ -319,9 +319,14 @@ export async function GET(
     // 標準的なvCardの行区切りはCRLF
     const vcardContent = vcard.join(lineBreak);
 
-    // ファイル名を安全に生成
+    // UTF-8 BOM（Byte Order Mark）を追加
+    // Android端末の一部で日本語の文字化けを防ぐために必要
+    const BOM = '\uFEFF';
+    const vcardWithBOM = BOM + vcardContent;
+
+    // ファイル名を安全に生成（ASCII文字のみ）
     const safeName = (user.name || 'contact')
-      .replace(/[^a-zA-Z0-9\u3040-\u309F\u30A0-\u30FF\u4E00-\u9FAF]/g, '_')
+      .replace(/[^a-zA-Z0-9]/g, '_')
       .substring(0, 50);
     const safeFilename = `${safeName}.vcf`;
 
@@ -339,7 +344,7 @@ export async function GET(
       headers.set('Content-Disposition', `inline; filename="${safeFilename}"`);
     }
 
-    return new NextResponse(vcardContent, { headers });
+    return new NextResponse(vcardWithBOM, { headers });
   } catch (error) {
     logger.error('vCard generation error:', error);
     return NextResponse.json({ error: 'Failed to generate vCard' }, { status: 500 });

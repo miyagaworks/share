@@ -314,7 +314,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           )}
 
           {/* 部署情報 */}
-          {user.department && (
+          {user.department && user.department.name !== '全社' && (
             <div style={{ textAlign: 'center', marginBottom: '0.1rem' }}>
               <p style={{ fontSize: '0.875rem', color: '#4B5563' }} className="profile-text">
                 {user.department.name}
