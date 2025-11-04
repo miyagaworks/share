@@ -205,11 +205,10 @@ export async function GET(
 
     vcard.push(`REV:${now}`);
 
-    // 電話番号（複数形式で記載）
+    // 電話番号
     if (user.phone) {
       const normalizedPhone = normalizePhoneNumber(user.phone);
       vcard.push(`TEL;TYPE=CELL:${escapeVCardValue(normalizedPhone)}`);
-      vcard.push(`TEL;TYPE=WORK:${escapeVCardValue(user.phone)}`); // 元の形式も保持
     }
 
     // メールアドレス
@@ -262,7 +261,8 @@ export async function GET(
         where: { id: user.departmentId },
         select: { name: true },
       });
-      if (department) {
+      // 部署名が存在し、かつ「全社」でない場合のみ追加
+      if (department && department.name && department.name !== '全社') {
         // ORG-UNITは認識されない場合があるので、ORGに含める
         const orgString = user.company
           ? `${escapeVCardValue(user.company)};${escapeVCardValue(department.name)}`
