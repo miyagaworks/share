@@ -180,14 +180,14 @@ export default function SmartContactButton({
     // 優先順位に従って試行
     const methods: Array<() => Promise<boolean> | boolean> = [];
 
-    // 1. Web Share API（最優先）
-    if (deviceInfo?.canUseWebShare && !deviceInfo?.isInAppBrowser) {
-      methods.push(tryWebShareAPI);
+    // 1. iOS端末ではData URLを最優先（直接連絡先追加のため）
+    if (deviceInfo?.isIOS) {
+      methods.push(tryDataURL);
     }
 
-    // 2. iOS Safari用のデータURL
-    if (deviceInfo?.isIOS && deviceInfo?.isSafari) {
-      methods.push(tryDataURL);
+    // 2. Web Share API
+    if (deviceInfo?.canUseWebShare && !deviceInfo?.isInAppBrowser && !deviceInfo?.isIOS) {
+      methods.push(tryWebShareAPI);
     }
 
     // 3. Android Intent
