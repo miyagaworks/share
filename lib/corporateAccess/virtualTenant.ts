@@ -60,7 +60,7 @@ export function generateVirtualTenantData(
     id: `virtual-tenant-${userId}`,
     name: tenantName, // 🔥 実際の名前を使用
     users: [{ id: userId, role: 'admin', name: userName || '永久利用権ユーザー' }],
-    departments: [{ id: 'default-dept', name: '全社', description: 'デフォルト部署' }],
+    departments: [], // 部署は空（オプション）
     snsLinks: [
       {
         id: 'vs-1',

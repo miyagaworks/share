@@ -15,11 +15,7 @@ function generateVirtualTenantData(userId: string, userName: string | null) {
       primaryColor: '#3B82F6',
       secondaryColor: '#1E40AF',
     },
-    departments: [
-      { id: 'default', name: '全社' },
-      { id: 'sales', name: '営業部' },
-      { id: 'dev', name: '開発部' },
-    ],
+    departments: [], // 部署は空（オプション）
   };
 }
 
@@ -134,9 +130,9 @@ export async function GET() {
               accountStatus: actualTenant.accountStatus,
               onboardingCompleted: actualTenant.onboardingCompleted || true,
               userCount: actualTenant._count?.users ?? 1,
-              departmentCount: actualTenant._count?.departments ?? 1,
+              departmentCount: actualTenant._count?.departments ?? 0,
               users: [{ id: userId, name: user.name, role: 'admin' }],
-              departments: [{ id: 'default', name: '全社' }],
+              departments: [], // 部署は空（オプション）
               subscriptionPlan: user.subscription?.plan || 'permanent',
             },
             isAdmin: true,

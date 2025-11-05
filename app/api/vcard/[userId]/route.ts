@@ -205,16 +205,14 @@ export async function GET(
 
     vcard.push(`REV:${now}`);
 
-    // 電話番号
+    // 電話番号（元の形式のまま）
     if (user.phone) {
-      const normalizedPhone = normalizePhoneNumber(user.phone);
-      vcard.push(`TEL;TYPE=CELL:${escapeVCardValue(normalizedPhone)}`);
+      vcard.push(`TEL;TYPE=CELL:${escapeVCardValue(user.phone)}`);
     }
 
-    // メールアドレス
+    // メールアドレス（1つだけ）
     if (user.email) {
-      vcard.push(`EMAIL;TYPE=WORK:${escapeVCardValue(user.email)}`);
-      vcard.push(`EMAIL;TYPE=INTERNET:${escapeVCardValue(user.email)}`);
+      vcard.push(`EMAIL:${escapeVCardValue(user.email)}`);
     }
 
     // 会社情報
@@ -307,10 +305,15 @@ export async function GET(
       });
     }
 
-    // カスタムリンク（最初の1つだけ）
+    // カスタムリンク（登録した名前を使用）
     if (user.customLinks && user.customLinks.length > 0) {
-      const firstLink = user.customLinks[0];
-      vcard.push(`URL;TYPE=WORK:${escapeVCardValue(firstLink.url)}`);
+      user.customLinks.forEach((link) => {
+        // リンク名がある場合はそれを使用、ない場合は「Website」
+        const linkLabel = link.name || 'Website';
+        vcard.push(`URL:${escapeVCardValue(link.url)}`);
+        // ノートにリンク名を追加（一部のアプリで表示される）
+        vcard.push(`X-ABLabel:${escapeVCardValue(linkLabel)}`);
+      });
     }
 
     // vCardの終了
