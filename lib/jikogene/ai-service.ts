@@ -40,7 +40,7 @@ export async function generateIntroduction(prompt: string): Promise<string> {
         // より保守的な設定に変更
         generationConfig: {
           temperature: 0.6, // 低めの温度
-          maxOutputTokens: 800, // 出力トークン数を制限
+          maxOutputTokens: 2048, // 自己紹介文に十分なトークン数
           topK: 40,
           topP: 0.95,
         },

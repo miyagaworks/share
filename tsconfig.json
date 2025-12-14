@@ -26,21 +26,26 @@
       }
     ],
     "paths": {
-      "@/*": ["./*"]
+      "@/*": [
+        "./*"
+      ]
     },
     "typeRoots": [
       "./node_modules/@types",
       "./types"
     ],
-    "types": ["node"] // Nodeの型を明示的に追加
+    "types": [
+      "node"
+    ] // Nodeの型を明示的に追加
   },
   "include": [
     "next-env.d.ts",
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "next.config.mjs"
-, "scripts/check-database.mjs"  ],
+    "next.config.mjs",
+    "scripts/check-database.mjs"
+  ],
   "exclude": [
     "node_modules",
     "backup_financial_features/**/*"
