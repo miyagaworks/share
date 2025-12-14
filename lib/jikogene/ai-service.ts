@@ -4,7 +4,7 @@ import { GoogleGenerativeAI } from '@google/generative-ai';
 // 環境変数からAPIキーを取得
 const apiKey = process.env.GEMINI_API_KEY;
 // モデルIDを最新バージョンに更新
-const modelId = process.env.GEMINI_MODEL_ID || 'gemini-2.0-flash'; // 更新：gemini-1.5-proから変更
+const modelId = process.env.GEMINI_MODEL_ID || 'gemini-2.5-flash';
 if (!apiKey) {
   throw new Error('Missing GEMINI_API_KEY environment variable');
 }
