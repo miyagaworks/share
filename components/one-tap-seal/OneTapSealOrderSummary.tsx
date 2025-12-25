@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
+import { GoogleMap } from '@/components/ui/GoogleMap';
 import { CreditCard, Edit, MapPin, Package, Link, Loader2, X } from 'lucide-react';
 import {
   ONE_TAP_SEAL_COLOR_NAMES,
@@ -52,24 +53,14 @@ export function OneTapSealOrderSummary({
     return fullAddress;
   };
 
-  // Googleマップ用のURLを生成（本番環境対応版）
-  const getGoogleMapsUrl = () => {
-    const fullAddress = `〒${shippingAddress.postalCode} ${formatFullAddress()}`;
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
-
-    // APIキーが設定されていない場合の処理
-    if (!apiKey) {
-      console.error('Google Maps API key is not set');
-      return null;
-    }
-
-    // searchモードを使用してマーカーを表示
-    return `https://www.google.com/maps/embed/v1/search?key=${apiKey}&q=${encodeURIComponent(fullAddress)}&language=ja&region=JP&zoom=16`;
+  // 地図表示用の住所を生成
+  const getMapAddress = () => {
+    return `〒${shippingAddress.postalCode} ${formatFullAddress()}`;
   };
 
-  // 住所確認モーダル（エラーハンドリング対応版）
+  // 住所確認モーダル
   const AddressConfirmationModal = () => {
-    const mapUrl = getGoogleMapsUrl();
+    const mapAddress = getMapAddress();
 
     return (
       <div
@@ -84,38 +75,11 @@ export function OneTapSealOrderSummary({
             </Button>
           </div>
           <div className="p-4">
-            {mapUrl ? (
-              <iframe
-                src={mapUrl}
-                width="100%"
-                height="400"
-                style={{ border: 0 }}
-                allowFullScreen
-                loading="lazy"
-                referrerPolicy="no-referrer-when-downgrade"
-                className="rounded-lg"
-                onError={(e) => {
-                  console.error('Google Maps iframe error:', e);
-                }}
-              />
-            ) : (
-              <div className="w-full h-[400px] flex items-center justify-center bg-gray-100 rounded-lg">
-                <div className="text-center">
-                  <MapPin className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 mb-2">地図を読み込めませんでした</p>
-                  <Button
-                    onClick={() => {
-                      const searchUrl = `https://www.google.com/maps/search/${encodeURIComponent(`〒${shippingAddress.postalCode} ${formatFullAddress()}`)}`;
-                      window.open(searchUrl, '_blank', 'noopener,noreferrer');
-                    }}
-                    variant="outline"
-                    size="sm"
-                  >
-                    Googleマップで開く
-                  </Button>
-                </div>
-              </div>
-            )}
+            <GoogleMap
+              address={mapAddress}
+              height={400}
+              className="rounded-lg"
+            />
             <div className="mt-4 p-3 bg-gray-50 rounded-lg">
               <p className="text-sm text-gray-700">
                 上記の地図で正しい住所が表示されているかご確認ください。
