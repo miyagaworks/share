@@ -259,6 +259,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               },
               adminOfTenant: { select: { id: true } },
               tenant: { select: { id: true } },
+              // 🆕 サブスクリプション情報を取得（永久利用権の種類判定用）
+              subscription: {
+                select: {
+                  plan: true,
+                },
+              },
             },
           });
 
@@ -273,7 +279,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             ) {
               token.role = 'financial-admin'; // ✅ 正しく判定される
             } else if (dbUser.subscriptionStatus === 'permanent') {
-              token.role = 'permanent-admin';
+              // 🆕 永久利用権の種類を判定（個人プランと法人プランを区別）
+              const subscriptionPlan = dbUser.subscription?.plan || '';
+              if (subscriptionPlan.includes('personal')) {
+                // 永久利用権個人プランは 'personal' ロールを使用
+                token.role = 'personal';
+                if (process.env.NODE_ENV === 'development') {
+                  console.log('✅ JWT: Permanent personal plan user assigned personal role');
+                }
+              } else {
+                // 永久利用権法人プラン（starter, business, enterprise）は 'permanent-admin' ロール
+                token.role = 'permanent-admin';
+              }
             } else if (dbUser.adminOfTenant) {
               token.role = 'admin';
             } else if (dbUser.corporateRole === 'member' && dbUser.tenant) {
@@ -286,6 +303,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               console.log('✅ JWT: Role assigned', {
                 email: userEmail,
                 role: token.role,
+                subscriptionStatus: dbUser.subscriptionStatus,
+                subscriptionPlan: dbUser.subscription?.plan,
                 financialAdminRecord: dbUser.financialAdminRecord,
               });
             }
