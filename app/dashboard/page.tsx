@@ -100,8 +100,14 @@ export default function DashboardPage() {
             return;
           }
 
-          // 永久利用権ユーザーの場合
-          if (corporateData.tenantId && corporateData.tenantId.startsWith('virtual-tenant-')) {
+          // 永久利用権法人プランユーザーの場合のみ法人ダッシュボードにリダイレクト
+          // 個人プラン（userRole === 'personal'）は除外
+          if (
+            corporateData.tenantId &&
+            corporateData.tenantId.startsWith('virtual-tenant-') &&
+            corporateData.hasCorporateAccess &&
+            corporateData.userRole !== 'personal'
+          ) {
             setIsRedirecting(true);
             router.push('/dashboard/corporate');
             return;
