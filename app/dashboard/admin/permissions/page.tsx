@@ -257,6 +257,52 @@ export default function AdminPermissionsPage() {
     return new Date(dateString).toLocaleDateString('ja-JP');
   };
 
+  // プラン種別の表示名を取得
+  const getPlanTypeDisplay = (user: UserData) => {
+    if (!user.isPermanentUser) {
+      return '-';
+    }
+
+    const plan = user.subscription?.plan || '';
+
+    // permanent_xxx 形式からプラン種別を抽出
+    if (plan.includes('enterprise')) {
+      return (
+        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-indigo-100 text-indigo-800">
+          エンタープライズ (50名)
+        </span>
+      );
+    }
+    if (plan.includes('business')) {
+      return (
+        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-blue-100 text-blue-800">
+          ビジネス (30名)
+        </span>
+      );
+    }
+    if (plan.includes('starter')) {
+      return (
+        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-teal-100 text-teal-800">
+          スターター (10名)
+        </span>
+      );
+    }
+    if (plan.includes('personal')) {
+      return (
+        <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-gray-100 text-gray-800">
+          個人
+        </span>
+      );
+    }
+
+    // プラン情報がない場合（古いデータなど）
+    return (
+      <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-yellow-100 text-yellow-800">
+        不明
+      </span>
+    );
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center min-h-[300px]">
@@ -397,6 +443,9 @@ export default function AdminPermissionsPage() {
                   ステータス
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  プラン種別
+                </th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   トライアル期限
                 </th>
                 <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -417,6 +466,7 @@ export default function AdminPermissionsPage() {
                     <div className="text-sm text-gray-900">{user.email}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">{getTrialStatusDisplay(user)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">{getPlanTypeDisplay(user)}</td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900">
                       {user.isPermanentUser ? '永久利用権' : formatDate(user.trialEndsAt)}
