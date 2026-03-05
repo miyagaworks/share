@@ -7,6 +7,7 @@ interface EmailData {
   subject: string;
   text: string;
   html?: string;
+  replyTo?: string;
 }
 
 interface EmailResult {
@@ -86,6 +87,7 @@ async function sendProductionEmail(data: EmailData): Promise<EmailResult> {
       subject: data.subject,
       text: data.text,
       html: data.html || undefined,
+      replyTo: data.replyTo || undefined,
     });
 
     logger.info('メール送信成功:', response);
