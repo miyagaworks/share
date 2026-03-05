@@ -136,6 +136,7 @@ export default function AffinitySection() {
               width={80}
               height={80}
               className="h-20 w-20 shrink-0 rounded-full object-cover"
+              unoptimized
             />
             <div>
               <p className="mb-1 text-sm text-[#5A6577]">株式会社Senrigan 代表</p>

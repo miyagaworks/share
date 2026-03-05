@@ -96,13 +96,15 @@ export async function submitPartnerInquiry(
     });
     await sendEmail({
       to: data.email,
+      from: 'Share <noreply@sns-share.com>',
       subject: autoReply.subject,
       text: autoReply.text,
       html: autoReply.html,
+      replyTo: 'support@sns-share.com',
     });
 
     // 2. 管理者への通知メール
-    const adminEmail = process.env.ADMIN_EMAIL || 'info@sns-share.com';
+    const adminEmail = process.env.ADMIN_EMAIL || 'support@sns-share.com';
     const adminNotify = getPartnerAdminNotifyTemplate({
       name: data.name,
       companyName: data.companyName,
@@ -118,6 +120,7 @@ export async function submitPartnerInquiry(
     });
     await sendEmail({
       to: adminEmail,
+      from: 'Share <noreply@sns-share.com>',
       subject: adminNotify.subject,
       text: adminNotify.text,
       html: adminNotify.html,

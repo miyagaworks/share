@@ -29,6 +29,7 @@ export default function PostScript() {
               width={600}
               height={900}
               className="w-full sm:max-w-lg"
+              unoptimized
             />
           </div>
 
@@ -51,6 +52,7 @@ export default function PostScript() {
                 alt="宮川のデジタル名刺 QRコード"
                 width={160}
                 height={160}
+                unoptimized
               />
               <p className="text-sm text-[#5A6577]">
                 スマホで読み取ってください
@@ -75,6 +77,7 @@ export default function PostScript() {
               width={80}
               height={80}
               className="h-20 w-20 shrink-0 rounded-full object-cover"
+              unoptimized
             />
             <div>
               <a

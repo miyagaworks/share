@@ -19,7 +19,7 @@ export default function PartnerHeader() {
     <header className="fixed left-0 right-0 top-0 z-40 border-b border-[#E8E6E1] bg-white/95 backdrop-blur-sm">
       <div className="mx-auto flex max-w-6xl items-center justify-between px-2 py-3 sm:px-4">
         <a href="#" onClick={scrollToTop} className="block">
-          <Image src="/logo.svg" alt="Share" width={120} height={38} priority />
+          <Image src="/logo.svg" alt="Share" width={120} height={38} priority unoptimized />
         </a>
 
         <nav className="hidden items-center gap-6 md:flex">

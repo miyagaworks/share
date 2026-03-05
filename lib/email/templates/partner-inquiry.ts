@@ -17,6 +17,8 @@ interface PartnerAdminNotifyParams {
   question?: string;
 }
 
+const logoUrl = 'https://app.sns-share.com/images/partner/logo_white.png';
+
 export function getPartnerAutoReplyTemplate(params: PartnerAutoReplyParams) {
   const { name, companyName, preferences } = params;
   const siteUrl = process.env.NEXTAUTH_URL || 'https://sns-share.com';
@@ -33,60 +35,69 @@ export function getPartnerAutoReplyTemplate(params: PartnerAutoReplyParams) {
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
       <title>${subject}</title>
     </head>
-    <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: Arial, sans-serif;">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc;">
+    <body style="margin: 0; padding: 0; background-color: #F5F3EF; font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif; -webkit-font-smoothing: antialiased;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F5F3EF;">
         <tr>
-          <td align="center" style="padding: 20px 0;">
-            <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);">
+          <td align="center" style="padding: 40px 16px;">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; width: 100%;">
 
               <!-- Header -->
               <tr>
-                <td style="background-color: #1B2A4A; padding: 40px 20px; text-align: center;">
-                  <div style="background-color: #ffffff; display: inline-block; padding: 12px 24px; border-radius: 8px; margin-bottom: 20px;">
-                    <h1 style="color: #1B2A4A; margin: 0; font-size: 28px; font-weight: bold;">Share</h1>
-                  </div>
-                  <p style="color: #ffffff; margin: 0; font-size: 16px;">パートナープログラム</p>
+                <td style="background: linear-gradient(135deg, #1B2A4A 0%, #2D4A7A 100%); padding: 36px 40px; border-radius: 12px 12px 0 0; text-align: center;">
+                  <img src="${logoUrl}" alt="Share" width="150" height="45" style="display: inline-block; max-width: 150px; height: auto;" />
+                  <p style="color: rgba(255,255,255,0.7); margin: 12px 0 0; font-size: 13px; letter-spacing: 2px; font-weight: 300;">PARTNER PROGRAM</p>
                 </td>
               </tr>
 
               <!-- Body -->
               <tr>
-                <td style="padding: 40px 30px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
+                <td style="background-color: #ffffff; padding: 0;">
+                  <!-- Accent line -->
+                  <div style="height: 3px; background: linear-gradient(90deg, #B8860B 0%, #D4A832 50%, #B8860B 100%);"></div>
+
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="padding: 40px 36px;">
+                    <!-- Greeting -->
                     <tr>
-                      <td style="padding-bottom: 20px;">
-                        <p style="color: #374151; margin: 0; font-size: 16px;">
-                          ${companyName}<br>${name} 様
+                      <td style="padding-bottom: 24px;">
+                        <p style="color: #2D3748; margin: 0; font-size: 15px; line-height: 1.8;">
+                          ${companyName}<br>
+                          <strong>${name}</strong> 様
                         </p>
                       </td>
                     </tr>
                     <tr>
-                      <td style="padding-bottom: 20px;">
-                        <p style="color: #374151; margin: 0; font-size: 16px; line-height: 1.8;">
-                          この度はShareパートナープログラムにご興味をお持ちいただき、<br>
-                          誠にありがとうございます。
+                      <td style="padding-bottom: 32px;">
+                        <p style="color: #4A5568; margin: 0; font-size: 15px; line-height: 2;">
+                          この度はShareパートナープログラムに<br>
+                          ご興味をお持ちいただき、誠にありがとうございます。
                         </p>
                       </td>
                     </tr>
 
-                    <!-- Download button -->
+                    <!-- Download CTA -->
                     <tr>
-                      <td align="center" style="padding: 30px 0;">
-                        <table cellpadding="0" cellspacing="0" border="0">
+                      <td style="padding-bottom: 36px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #FAFAF8; border-radius: 12px; border: 1px solid #E8E6E1;">
                           <tr>
-                            <td style="background-color: #B8860B; border-radius: 8px;">
-                              <a href="${downloadUrl}"
-                                 style="background-color: #B8860B;
-                                        color: #ffffff;
-                                        text-decoration: none;
-                                        padding: 14px 32px;
-                                        border-radius: 8px;
-                                        font-weight: bold;
-                                        display: block;
-                                        text-align: center;
-                                        font-size: 16px;">
-                                パートナー資料をダウンロード
-                              </a>
+                            <td style="padding: 32px 28px; text-align: center;">
+                              <p style="color: #2D3748; margin: 0 0 6px; font-size: 13px; font-weight: 600; letter-spacing: 1px; text-transform: uppercase;">DOWNLOAD</p>
+                              <p style="color: #5A6577; margin: 0 0 20px; font-size: 14px;">パートナー資料をご用意しました</p>
+                              <table cellpadding="0" cellspacing="0" border="0" style="margin: 0 auto;">
+                                <tr>
+                                  <td style="border-radius: 8px; background: linear-gradient(135deg, #B8860B 0%, #D4A832 100%); box-shadow: 0 4px 12px rgba(184, 134, 11, 0.3);">
+                                    <a href="${downloadUrl}"
+                                       style="color: #ffffff;
+                                              text-decoration: none;
+                                              padding: 14px 36px;
+                                              display: inline-block;
+                                              font-weight: 600;
+                                              font-size: 15px;
+                                              letter-spacing: 0.5px;">
+                                      資料をダウンロード
+                                    </a>
+                                  </td>
+                                </tr>
+                              </table>
                             </td>
                           </tr>
                         </table>
@@ -95,18 +106,33 @@ export function getPartnerAutoReplyTemplate(params: PartnerAutoReplyParams) {
 
                     <!-- Preferences -->
                     <tr>
-                      <td style="background-color: #f3f4f6; border-radius: 12px; padding: 20px;">
-                        <p style="color: #374151; margin: 0 0 10px; font-size: 14px; font-weight: bold;">ご希望内容：</p>
-                        <p style="color: #374151; margin: 0; font-size: 14px; line-height: 1.8;">
-                          ${preferences.map((p) => `・${p}`).join('<br>')}
-                        </p>
+                      <td style="padding-bottom: 32px;">
+                        <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border-left: 3px solid #B8860B; padding-left: 0;">
+                          <tr>
+                            <td style="padding-left: 16px;">
+                              <p style="color: #2D3748; margin: 0 0 8px; font-size: 13px; font-weight: 600; letter-spacing: 0.5px;">ご希望内容</p>
+                              <p style="color: #5A6577; margin: 0; font-size: 14px; line-height: 2;">
+                                ${preferences.map((p) => `${p}`).join('<br>')}
+                              </p>
+                            </td>
+                          </tr>
+                        </table>
                       </td>
                     </tr>
 
+                    <!-- Divider -->
                     <tr>
-                      <td style="padding-top: 24px;">
-                        <p style="color: #374151; margin: 0; font-size: 14px; line-height: 1.8;">
-                          ご不明な点がございましたら、お気軽にご返信ください。<br>
+                      <td style="padding-bottom: 28px;">
+                        <div style="height: 1px; background-color: #E8E6E1;"></div>
+                      </td>
+                    </tr>
+
+                    <!-- Next steps -->
+                    <tr>
+                      <td style="padding-bottom: 12px;">
+                        <p style="color: #4A5568; margin: 0; font-size: 14px; line-height: 2;">
+                          ご不明な点がございましたら、<br>
+                          お気軽にこのメールへご返信ください。<br>
                           担当者よりご連絡させていただきます。
                         </p>
                       </td>
@@ -117,29 +143,34 @@ export function getPartnerAutoReplyTemplate(params: PartnerAutoReplyParams) {
 
               <!-- Footer -->
               <tr>
-                <td style="background-color: #f9fafb; padding: 30px; border-top: 1px solid #e5e7eb; border-radius: 0 0 8px 8px;">
+                <td style="background-color: #1B2A4A; padding: 32px 36px; border-radius: 0 0 12px 12px;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
-                      <td align="center" style="padding-bottom: 20px;">
-                        <p style="color: #6b7280; margin: 0 0 10px; font-size: 14px;">Share パートナー担当</p>
-                        <a href="mailto:info@sns-share.com" style="color: #1B2A4A; text-decoration: none; font-weight: 600;">
-                          info@sns-share.com
+                      <td align="center" style="padding-bottom: 16px;">
+                        <p style="color: rgba(255,255,255,0.6); margin: 0; font-size: 13px;">Share パートナー担当</p>
+                      </td>
+                    </tr>
+                    <tr>
+                      <td align="center" style="padding-bottom: 16px;">
+                        <a href="mailto:support@sns-share.com" style="color: #D4A832; text-decoration: none; font-size: 14px; font-weight: 500;">
+                          support@sns-share.com
                         </a>
                       </td>
                     </tr>
                     <tr>
-                      <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
-                        <p style="color: #9ca3af; margin: 0 0 5px; font-size: 12px;">
-                          〒731-0137 広島県広島市安佐南区山本2-3-35
-                        </p>
-                        <p style="color: #9ca3af; margin: 0; font-size: 12px;">
+                      <td align="center" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
+                        <p style="color: rgba(255,255,255,0.4); margin: 0 0 4px; font-size: 11px;">
                           株式会社Senrigan
+                        </p>
+                        <p style="color: rgba(255,255,255,0.3); margin: 0; font-size: 11px;">
+                          〒731-0137 広島県広島市安佐南区山本2-3-35
                         </p>
                       </td>
                     </tr>
                   </table>
                 </td>
               </tr>
+
             </table>
           </td>
         </tr>
@@ -172,7 +203,7 @@ ${preferencesText}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Share パートナー担当
-info@sns-share.com
+support@sns-share.com
 株式会社Senrigan
 〒731-0137 広島県広島市安佐南区山本2-3-35`;
 
@@ -185,16 +216,16 @@ export function getPartnerAdminNotifyTemplate(params: PartnerAdminNotifyParams) 
   const subject = `【パートナー問い合わせ】${companyName} - ${name} 様`;
 
   const consultationHtml = consultationDates?.filter(Boolean).length
-    ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
-        <strong>相談希望日時：</strong><br>
-        ${consultationDates.filter(Boolean).map((d, i) => `第${i + 1}候補: ${d.replace('T', ' ')}`).join('<br>')}
+    ? `<tr><td style="padding: 12px 16px; border-bottom: 1px solid #E8E6E1;">
+        <strong style="color: #2D3748; font-size: 13px;">相談希望日時</strong><br>
+        <span style="color: #4A5568; font-size: 14px;">${consultationDates.filter(Boolean).map((d, i) => `第${i + 1}候補: ${d.replace('T', ' ')}`).join('<br>')}</span>
       </td></tr>`
     : '';
 
   const questionHtml = question
-    ? `<tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;">
-        <strong>ご質問：</strong><br>
-        <div style="white-space: pre-line; margin-top: 4px;">${question}</div>
+    ? `<tr><td style="padding: 12px 16px; border-bottom: 1px solid #E8E6E1;">
+        <strong style="color: #2D3748; font-size: 13px;">ご質問</strong><br>
+        <div style="white-space: pre-line; margin-top: 4px; color: #4A5568; font-size: 14px;">${question}</div>
       </td></tr>`
     : '';
 
@@ -202,24 +233,24 @@ export function getPartnerAdminNotifyTemplate(params: PartnerAdminNotifyParams) 
     <!DOCTYPE html>
     <html lang="ja">
     <head><meta charset="UTF-8"><title>${subject}</title></head>
-    <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: Arial, sans-serif;">
-      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc;">
+    <body style="margin: 0; padding: 0; background-color: #F5F3EF; font-family: 'Helvetica Neue', Arial, sans-serif;">
+      <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #F5F3EF;">
         <tr>
           <td align="center" style="padding: 20px 0;">
-            <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 8px;">
+            <table width="600" cellpadding="0" cellspacing="0" border="0" style="max-width: 600px; background-color: #ffffff; border-radius: 12px; overflow: hidden;">
               <tr>
-                <td style="background-color: #B8860B; padding: 20px; text-align: center;">
-                  <h2 style="color: #ffffff; margin: 0; font-size: 18px;">パートナー資料請求</h2>
+                <td style="background: linear-gradient(135deg, #B8860B 0%, #D4A832 100%); padding: 20px; text-align: center;">
+                  <h2 style="color: #ffffff; margin: 0; font-size: 16px; font-weight: 600; letter-spacing: 1px;">パートナー資料請求</h2>
                 </td>
               </tr>
               <tr>
-                <td style="padding: 30px;">
-                  <table width="100%" cellpadding="0" cellspacing="0" border="0">
-                    <tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>会社名：</strong>${companyName}</td></tr>
-                    <tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>お名前：</strong>${name}</td></tr>
-                    <tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>メール：</strong><a href="mailto:${email}">${email}</a></td></tr>
-                    <tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>電話番号：</strong>${phone || '未入力'}</td></tr>
-                    <tr><td style="padding: 8px 0; border-bottom: 1px solid #e5e7eb;"><strong>ご希望：</strong><br>${preferences.map((p) => `・${p}`).join('<br>')}</td></tr>
+                <td style="padding: 24px;">
+                  <table width="100%" cellpadding="0" cellspacing="0" border="0" style="border: 1px solid #E8E6E1; border-radius: 8px; overflow: hidden;">
+                    <tr><td style="padding: 12px 16px; border-bottom: 1px solid #E8E6E1; background-color: #FAFAF8;"><strong style="color: #2D3748; font-size: 13px;">会社名</strong><br><span style="color: #4A5568; font-size: 14px;">${companyName}</span></td></tr>
+                    <tr><td style="padding: 12px 16px; border-bottom: 1px solid #E8E6E1;"><strong style="color: #2D3748; font-size: 13px;">お名前</strong><br><span style="color: #4A5568; font-size: 14px;">${name}</span></td></tr>
+                    <tr><td style="padding: 12px 16px; border-bottom: 1px solid #E8E6E1; background-color: #FAFAF8;"><strong style="color: #2D3748; font-size: 13px;">メール</strong><br><a href="mailto:${email}" style="color: #4A6FA5; font-size: 14px;">${email}</a></td></tr>
+                    <tr><td style="padding: 12px 16px; border-bottom: 1px solid #E8E6E1;"><strong style="color: #2D3748; font-size: 13px;">電話番号</strong><br><span style="color: #4A5568; font-size: 14px;">${phone || '未入力'}</span></td></tr>
+                    <tr><td style="padding: 12px 16px; border-bottom: 1px solid #E8E6E1; background-color: #FAFAF8;"><strong style="color: #2D3748; font-size: 13px;">ご希望</strong><br><span style="color: #4A5568; font-size: 14px;">${preferences.map((p) => `${p}`).join('<br>')}</span></td></tr>
                     ${consultationHtml}
                     ${questionHtml}
                   </table>

@@ -83,6 +83,7 @@ export default function ScarcitySection() {
               width={400}
               height={500}
               className="mx-auto h-auto w-full max-w-md"
+              unoptimized
             />
 
             {/* 凡例 */}

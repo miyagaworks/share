@@ -8,6 +8,7 @@ interface EmailOptions {
   text: string;
   html?: string;
   from?: string;
+  replyTo?: string;
 }
 
 const resend = new Resend(process.env.RESEND_API_KEY);
@@ -37,6 +38,7 @@ export async function sendEmail(options: EmailOptions) {
       subject: options.subject,
       text: options.text,
       html: options.html,
+      replyTo: options.replyTo || undefined,
     });
 
     if (result?.error) {
