@@ -1,5 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // 本番環境では絶対URLでアセットを配信（sns-share.com/partner リライト対応）
+  assetPrefix:
+    process.env.NODE_ENV === 'production'
+      ? 'https://app.sns-share.com'
+      : undefined,
+
   experimental: {
     optimizePackageImports: ['@heroicons/react'],
   },
@@ -49,12 +55,12 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com",
-              "script-src-elem 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com",
+              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com https://static.cloudflareinsights.com",
+              "script-src-elem 'self' 'unsafe-inline' https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com https://static.cloudflareinsights.com",
               "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com",
               "font-src 'self' https://fonts.gstatic.com",
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://api.stripe.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://maps.googleapis.com",
+              "connect-src 'self' https://api.stripe.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://maps.googleapis.com https://cloudflareinsights.com",
               "frame-src 'self' https://www.google.com https://www.recaptcha.net https://js.stripe.com https://www.google.com/maps/embed",
               "worker-src 'self' blob:",
               "object-src 'none'",
