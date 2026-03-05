@@ -6,9 +6,42 @@
 @import "./styles/base/variables.css";
 @import "./styles/components/buttons.css";
 
+/* ===== パートナーLP カラーパレット ===== */
+:root {
+  /* パートナーLP: プライマリー */
+  --plp-primary: #1B2A4A;
+  --plp-primary-light: #243556;
+  --plp-primary-dark: #131E36;
+
+  /* パートナーLP: セカンダリー */
+  --plp-secondary: #4A6FA5;
+  --plp-secondary-light: #5A7FB5;
+  --plp-secondary-muted: #6B87A8;
+
+  /* パートナーLP: アクセント */
+  --plp-accent: #B8860B;
+  --plp-accent-hover: #A0750A;
+  --plp-accent-light: #C8913A;
+
+  /* パートナーLP: 状態色 */
+  --plp-positive: #2D8659;
+  --plp-negative: #9B4D3A;
+  --plp-warm-brown: #8B7355;
+
+  /* パートナーLP: テキスト */
+  --plp-text: #2D3748;
+  --plp-text-sub: #5A6577;
+  --plp-text-caption: #7B8794;
+  --plp-text-on-dark: #F5F3EF;
+
+  /* パートナーLP: ボーダー */
+  --plp-border: #E8E6E1;
+  --plp-border-medium: #D5D2CC;
+}
+
 /* ===== 基本設定 ===== */
 html {
-    color-scheme: light dark;
+    color-scheme: light;
     /* 🚀 強化されたピンチアウト防止 */
     touch-action: pan-x pan-y !important;
     -webkit-touch-callout: none !important;
@@ -61,7 +94,6 @@ body {
 *:not(button):not(a):not(input):not(textarea):not(select):not([role="button"]):not(.interactive)::after {
     touch-action: pan-x pan-y !important;
     -webkit-touch-callout: none !important;
-    -webkit-user-select: none !important;
     -webkit-text-size-adjust: none !important;
     -ms-touch-action: pan-x pan-y !important;
     -ms-text-size-adjust: none !important;
@@ -134,6 +166,17 @@ button {
 /* テキスト選択可能な要素 */
 p,
 span,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+li,
+td,
+th,
+blockquote,
+label,
 div[contenteditable],
 .selectable-text,
 .allow-select {
@@ -301,8 +344,8 @@ div[contenteditable],
         display: none !important;
     }
 
-    /* メインコンテンツを全幅で表示 */
-    main,
+    /* メインコンテンツを全幅で表示（パートナーLPは除外） */
+    main:not(.partner-main),
     .main-content,
     .dashboard-content {
         padding-left: 1rem !important;

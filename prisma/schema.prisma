@@ -195,6 +195,23 @@ model Contact {
   user        User?    @relation(fields: [userId], references: [id])
 }
 
+model PartnerInquiry {
+  id                String   @id @default(cuid())
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  companyName       String
+  name              String
+  email             String
+  phone             String?
+  preferences       String[]
+  consultationDate1 String?
+  consultationDate2 String?
+  consultationDate3 String?
+  question          String?
+  status            String   @default("new")
+  notes             String?
+}
+
 model CorporateTenant {
   id                   String                 @id @default(cuid())
   name                 String
