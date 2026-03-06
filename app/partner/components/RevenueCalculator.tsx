@@ -178,6 +178,7 @@ export default function RevenueCalculator() {
             href="#cta"
             onClick={(e) => {
               e.preventDefault();
+              window.dispatchEvent(new CustomEvent('partner-preference', { detail: '資料をダウンロードしたい' }));
               document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' });
               PartnerEvents.ctaClick('calculator', 'download');
             }}

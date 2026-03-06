@@ -44,6 +44,7 @@ export default function FloatingCta() {
                 href="#cta"
                 onClick={(e) => {
                   e.preventDefault();
+                  window.dispatchEvent(new CustomEvent('partner-preference', { detail: '資料をダウンロードしたい' }));
                   document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' });
                   PartnerEvents.ctaClick('floating', 'download');
                 }}

@@ -66,6 +66,7 @@ export default function HeroSection() {
               href="#cta"
               onClick={(e) => {
                 e.preventDefault();
+                window.dispatchEvent(new CustomEvent('partner-preference', { detail: '資料をダウンロードしたい' }));
                 document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' });
                 PartnerEvents.ctaClick('hero', 'download');
               }}
@@ -79,6 +80,7 @@ export default function HeroSection() {
               href="#cta"
               onClick={(e) => {
                 e.preventDefault();
+                window.dispatchEvent(new CustomEvent('partner-preference', { detail: 'オンライン相談を希望（30分・無料）' }));
                 document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' });
                 PartnerEvents.ctaClick('hero', 'consultation');
               }}

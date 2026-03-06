@@ -10,6 +10,7 @@ function scrollToTop(e: React.MouseEvent<HTMLAnchorElement>) {
 
 function scrollToCta(e: React.MouseEvent<HTMLAnchorElement>) {
   e.preventDefault();
+  window.dispatchEvent(new CustomEvent('partner-preference', { detail: '資料をダウンロードしたい' }));
   document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' });
   PartnerEvents.ctaClick('header', 'download');
 }

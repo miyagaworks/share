@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -63,6 +63,8 @@ export default function PartnerForm() {
     register,
     handleSubmit,
     control,
+    setValue,
+    getValues,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -78,6 +80,18 @@ export default function PartnerForm() {
       question: '',
     },
   });
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      const preference = (e as CustomEvent<string>).detail;
+      const current = getValues('preferences');
+      if (!current.includes(preference)) {
+        setValue('preferences', [...current, preference], { shouldValidate: true });
+      }
+    };
+    window.addEventListener('partner-preference', handler);
+    return () => window.removeEventListener('partner-preference', handler);
+  }, [setValue, getValues]);
 
   const preferences = useWatch({ control, name: 'preferences' });
   const showConsultation = preferences?.includes('オンライン相談を希望（30分・無料）');
