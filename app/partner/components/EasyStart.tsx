@@ -129,43 +129,49 @@ export default function EasyStart() {
           initial="hidden"
           animate={stepInView ? 'visible' : 'hidden'}
           variants={staggerContainer}
-          className="mx-auto mb-20 grid max-w-5xl gap-10 sm:grid-cols-3"
+          className="mx-auto mb-20 max-w-4xl"
         >
-          {steps.map((step, i) => (
-            <motion.div key={step.title} variants={fadeUpVariants} className="flex flex-col items-center">
-              <div className="relative flex w-full flex-col items-center">
-                {/* 矢印（モバイルは下向き、PCは右向き） */}
-                {i < steps.length - 1 && (
-                  <>
-                    <div className="absolute -bottom-7 left-1/2 -translate-x-1/2 sm:hidden">
-                      <ArrowRight className="h-5 w-5 rotate-90 text-[#7B8794]" />
-                    </div>
-                    <div className="absolute -right-8 top-1/2 hidden -translate-y-1/2 sm:block">
-                      <ArrowRight className="h-6 w-6 text-[#7B8794]" />
-                    </div>
-                  </>
-                )}
+          <div className="relative">
+            {/* 接続線（PC） */}
+            <div className="absolute left-0 right-0 top-10 hidden h-px bg-gradient-to-r from-transparent via-[#D5D2CC] to-transparent sm:block" />
 
-                <div className="w-full rounded-xl border border-[#E8E6E1] bg-white p-6 text-center shadow-sm">
-                  <div className="mb-1 text-xs font-semibold tracking-wider text-[#4A6FA5]">
-                    STEP {i + 1}
+            <div className="grid gap-8 sm:grid-cols-3 sm:gap-6">
+              {steps.map((step, i) => (
+                <motion.div key={step.title} variants={fadeUpVariants} className="relative flex flex-col items-center">
+                  {/* ステップ番号 */}
+                  <div className="relative z-10 mb-5 flex h-20 w-20 items-center justify-center rounded-full border-2 border-[#1B2A4A] bg-white">
+                    <div className="text-center">
+                      <span className="block text-[10px] font-bold tracking-widest text-[#5A6577]">STEP</span>
+                      <span className="block font-[Inter] text-2xl font-bold leading-none text-[#1B2A4A]">{i + 1}</span>
+                    </div>
                   </div>
-                  <div className="mx-auto mb-3 inline-flex rounded-lg bg-[#4A6FA5]/10 p-3">
-                    <step.icon className="h-6 w-6 text-[#4A6FA5]" />
+
+                  {/* 矢印（モバイルのみ） */}
+                  {i < steps.length - 1 && (
+                    <div className="mb-4 sm:hidden">
+                      <ArrowRight className="h-4 w-4 rotate-90 text-[#D5D2CC]" />
+                    </div>
+                  )}
+
+                  {/* コンテンツ */}
+                  <div className="text-center">
+                    <div className="mx-auto mb-3 inline-flex rounded-full bg-[#1B2A4A]/[0.04] p-3">
+                      <step.icon className="h-5 w-5 text-[#1B2A4A]" />
+                    </div>
+                    <h3 className="mb-2 text-lg font-bold text-[#1B2A4A] lg:text-xl">
+                      {step.title}
+                    </h3>
+                    <p className="mx-auto mb-3 max-w-[240px] text-sm leading-relaxed text-[#5A6577] lg:text-base">
+                      {step.desc}
+                    </p>
+                    <span className="inline-block rounded-full border border-[#1B2A4A]/15 px-4 py-1 text-xs font-medium text-[#1B2A4A]">
+                      {step.duration}
+                    </span>
                   </div>
-                  <h3 className="mb-2 text-lg font-bold text-[#2D3748] lg:text-xl">
-                    {step.title}
-                  </h3>
-                  <p className="mb-3 text-justify text-sm leading-relaxed text-[#5A6577] lg:text-base">
-                    {step.desc}
-                  </p>
-                  <span className="inline-block rounded-full bg-[#4A6FA5]/10 px-3 py-1 text-xs font-medium text-[#4A6FA5]">
-                    {step.duration}
-                  </span>
-                </div>
-              </div>
-            </motion.div>
-          ))}
+                </motion.div>
+              ))}
+            </div>
+          </div>
         </motion.div>
 
         {/* Q&A */}
@@ -176,30 +182,33 @@ export default function EasyStart() {
           variants={fadeUpVariants}
           className="mx-auto max-w-3xl"
         >
-          <h3 className="mb-6 text-center text-xl font-bold text-[#2D3748] lg:text-2xl">
-            よくある不安にお答えします
-          </h3>
-          <div className="space-y-3">
+          <div className="mb-8 text-center">
+            <span className="mb-2 inline-block text-xs font-bold tracking-widest text-[#5A6577]">FAQ</span>
+            <h3 className="text-xl font-bold text-[#1B2A4A] lg:text-2xl">
+              よくある不安にお答えします
+            </h3>
+          </div>
+          <div className="divide-y divide-[#E8E6E1] rounded-2xl border border-[#E8E6E1] bg-white">
             {faqs.map((faq, i) => {
               const isOpen = openIndexes.has(i);
               return (
-                <div
-                  key={i}
-                  className="rounded-xl border border-[#E8E6E1] bg-white shadow-sm"
-                >
+                <div key={i}>
                   <button
                     onClick={() => toggleFaq(i)}
-                    className="flex w-full items-center justify-between px-5 py-4 text-left"
+                    className="flex w-full items-center gap-4 px-6 py-5 text-left transition-colors hover:bg-[#FAFAF8]"
                   >
-                    <span className="pr-4 font-medium text-[#2D3748] lg:text-lg">
-                      Q. {faq.q}
+                    <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[#1B2A4A] text-xs font-bold text-white">
+                      Q
+                    </span>
+                    <span className="flex-1 text-sm font-medium text-[#2D3748] lg:text-base">
+                      {faq.q}
                     </span>
                     <motion.div
                       animate={{ rotate: isOpen ? 180 : 0 }}
                       transition={{ duration: 0.25 }}
                       className="shrink-0"
                     >
-                      <ChevronDown className="h-5 w-5 text-[#5A6577]" />
+                      <ChevronDown className="h-4 w-4 text-[#7B8794]" />
                     </motion.div>
                   </button>
                   <AnimatePresence initial={false}>
@@ -211,8 +220,11 @@ export default function EasyStart() {
                         transition={{ duration: 0.25, ease: 'easeOut' }}
                         className="overflow-hidden"
                       >
-                        <div className="border-t border-[#E8E6E1] px-5 py-4">
-                          <p className="text-justify text-sm leading-relaxed text-[#5A6577] lg:text-base">
+                        <div className="flex gap-4 px-6 pb-5">
+                          <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full border border-[#B8860B]/30 text-xs font-bold text-[#B8860B]">
+                            A
+                          </span>
+                          <p className="flex-1 text-justify text-sm leading-relaxed text-[#5A6577] lg:text-base">
                             {faq.a}
                           </p>
                         </div>

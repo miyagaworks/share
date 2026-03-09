@@ -64,10 +64,10 @@ export default function ScarcitySection() {
           className="mb-14 text-center"
         >
           <h2 className="mb-4 text-3xl font-bold leading-tight text-[#2D3748] lg:text-4xl">
-            各エリア先着5社限定の、地域パートナー制度。
+            各エリア限定の、地域パートナー制度。
           </h2>
           <p className="mx-auto max-w-2xl text-left text-[#5A6577] lg:text-center lg:text-lg">
-            各都道府県ごとに、パートナー企業数を限定しています。
+            エリアごとにパートナー企業数を制限しています。
             これは、同じエリアで御社の競合が同じサービスを展開することを防ぐため。
             先にパートナーになった企業が、そのエリアでの優先権を得られます。
           </p>
