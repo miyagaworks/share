@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { TrendingUp, Briefcase, Monitor } from 'lucide-react';
 import {
@@ -39,8 +40,20 @@ export default function IndustrySection() {
   const { ref: msgRef, inView: msgInView } = useScrollInView();
 
   return (
-    <section id="industry" className="bg-white py-20 lg:py-28">
-      <div className="mx-auto max-w-6xl px-4">
+    <section id="industry" className="bg-white">
+      {/* フルワイド画像 */}
+      <div className="relative h-[200px] sm:h-[280px] lg:h-[360px] overflow-hidden">
+        <Image
+          src="/images/partner/cont_img2.png"
+          alt="名刺業界の変化"
+          fill
+          className="object-cover"
+          unoptimized
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white" />
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 pb-20 pt-8 lg:pb-28 lg:pt-12">
         {/* 見出し */}
         <motion.div
           ref={headRef}

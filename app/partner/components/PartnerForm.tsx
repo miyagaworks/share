@@ -41,7 +41,7 @@ const schema = z.object({
 type FormData = z.infer<typeof schema>;
 
 const preferenceOptions = [
-  '資料をダウンロードしたい',
+  '補助金活用ガイドを受け取りたい',
   'オンライン相談を希望（30分・無料）',
   'まずは質問だけしたい',
 ];
@@ -152,7 +152,7 @@ export default function PartnerForm() {
           ありがとうございます。
         </h3>
         <p className="text-[#5A6577]">
-          資料をメールでお送りしました。
+          補助金活用ガイドをメールでお送りしました。
           <br />
           ご確認をお願いいたします。
         </p>
@@ -310,7 +310,7 @@ export default function PartnerForm() {
             送信中...
           </>
         ) : (
-          'パートナー資料を受け取る（無料）'
+          '補助金活用ガイドを受け取る（無料）'
         )}
       </motion.button>
 
@@ -326,7 +326,7 @@ export default function PartnerForm() {
         </span>
         <span className="flex items-center gap-1">
           <Mail className="h-3.5 w-3.5" />
-          資料はメールで即時お届けします
+          補助金ガイドはメールで即時お届けします
         </span>
       </div>
     </form>

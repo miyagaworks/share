@@ -15,8 +15,8 @@ const benefits = [
     free: '0円',
   },
   {
-    title: 'NFCシール サンプル20枚を無償提供',
-    original: '通常 1枚550円 × 20枚 = 11,000円相当',
+    title: 'NFCシール サンプル10枚を無償提供',
+    original: '通常 1枚550円 × 10枚 = 5,500円相当',
     free: '0円',
   },
   {
@@ -114,7 +114,7 @@ export default function OfferSection() {
               <div className="mt-8 rounded-xl p-5 text-center" style={{ background: 'rgba(27, 42, 74, 0.04)' }}>
                 <p className="mb-1 text-sm text-[#5A6577]">特典合計</p>
                 <p className="text-[#2D3748]">
-                  <span className="text-lg line-through lg:text-xl">201,000円相当</span>
+                  <span className="text-lg line-through lg:text-xl">195,500円相当</span>
                   <span className="mx-2 text-2xl lg:text-3xl">→</span>
                   <span className="text-3xl font-bold text-[#B8860B] lg:text-4xl">無料</span>
                 </p>

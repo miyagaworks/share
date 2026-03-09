@@ -10,7 +10,7 @@ function scrollToTop(e: React.MouseEvent<HTMLAnchorElement>) {
 
 function scrollToCta(e: React.MouseEvent<HTMLAnchorElement>) {
   e.preventDefault();
-  window.dispatchEvent(new CustomEvent('partner-preference', { detail: '資料をダウンロードしたい' }));
+  window.dispatchEvent(new CustomEvent('partner-preference', { detail: '補助金活用ガイドを受け取りたい' }));
   document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' });
   PartnerEvents.ctaClick('header', 'download');
 }
@@ -45,7 +45,7 @@ export default function PartnerHeader() {
             onClick={scrollToCta}
             className="rounded-lg bg-[#B8860B] px-5 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-[#A0750A]"
           >
-            資料請求
+            補助金ガイド
           </a>
         </nav>
 
@@ -55,7 +55,7 @@ export default function PartnerHeader() {
           onClick={scrollToCta}
           className="rounded-lg bg-[#B8860B] px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-[#A0750A] md:hidden"
         >
-          資料請求
+          補助金ガイド
         </a>
       </div>
     </header>

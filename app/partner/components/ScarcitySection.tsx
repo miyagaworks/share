@@ -41,8 +41,20 @@ export default function ScarcitySection() {
   const { ref: reasonRef, inView: reasonInView } = useScrollInView();
 
   return (
-    <section id="scarcity" className="bg-white py-20 lg:py-28">
-      <div className="mx-auto max-w-6xl px-4">
+    <section id="scarcity" className="bg-white">
+      {/* フルワイド画像 */}
+      <div className="relative h-[200px] sm:h-[280px] lg:h-[360px] overflow-hidden">
+        <Image
+          src="/images/partner/cont_img7.png"
+          alt="地域パートナー制度"
+          fill
+          className="object-cover"
+          unoptimized
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white" />
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 pb-20 pt-8 lg:pb-28 lg:pt-12">
         {/* 見出し */}
         <motion.div
           ref={headRef}
@@ -101,33 +113,33 @@ export default function ScarcitySection() {
           </div>
 
           {/* 今すぐ動くべき理由 */}
-          <div>
-            <div className="mb-4 flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-[#1B2A4A]" />
-              <h3 className="font-semibold text-[#2D3748] lg:text-lg">
-                今すぐ動くべき3つの理由
-              </h3>
-            </div>
+          <div className="rounded-xl border border-[#1B2A4A]/10 bg-[#1B2A4A]/[0.02] p-6 lg:p-8">
+            <h3 className="mb-6 text-center text-lg font-bold text-[#1B2A4A] lg:text-xl">
+              今すぐ動くべき3つの理由
+            </h3>
             <motion.div
               ref={reasonRef}
               initial="hidden"
               animate={reasonInView ? 'visible' : 'hidden'}
               variants={staggerContainer}
-              className="space-y-4"
+              className="space-y-5"
             >
               {reasons.map((r, i) => (
                 <motion.div
                   key={r.title}
                   variants={fadeUpVariants}
-                  className="flex gap-4 rounded-xl border border-[#E8E6E1] bg-white p-5 shadow-sm"
+                  className="flex gap-4"
                 >
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#1B2A4A]/10 text-sm font-bold text-[#1B2A4A]">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#1B2A4A] text-sm font-bold text-white">
                     {i + 1}
                   </div>
-                  <div>
-                    <h4 className="mb-1 font-semibold text-[#2D3748] lg:text-lg">
-                      {r.title}
-                    </h4>
+                  <div className="flex-1 border-b border-[#E8E6E1] pb-5 last:border-0 last:pb-0">
+                    <div className="mb-1 flex items-center gap-2">
+                      <r.icon className="h-4 w-4 text-[#B8860B]" />
+                      <h4 className="font-bold text-[#1B2A4A] lg:text-lg">
+                        {r.title}
+                      </h4>
+                    </div>
                     <p className="text-justify text-sm leading-relaxed text-[#5A6577] lg:text-base">
                       {r.desc}
                     </p>

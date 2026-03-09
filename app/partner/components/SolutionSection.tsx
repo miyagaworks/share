@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import {
   Server,
@@ -79,19 +80,19 @@ const userExperience = [
     icon: CreditCard,
     step: '01',
     title: '名刺を渡す',
-    desc: 'いつも通りの名刺交換。紙の名刺に小さなNFCシールが添えられています。',
+    desc: 'いつも通りの名刺交換。まずは紙の名刺を渡すところから始まります。',
   },
   {
     icon: Smartphone,
     step: '02',
-    title: 'スマホをかざす',
-    desc: '「よかったらスマホをかざしてみてください」——それだけ。',
+    title: 'スマホをかざしてもらう',
+    desc: 'スマホケースに貼ったNFCシールを見せて「かざしてみてください」——それだけ。',
   },
   {
     icon: Eye,
     step: '03',
     title: 'デジタル名刺が開く',
-    desc: '顔写真、SNS、自己紹介、連絡先——紙では伝えきれなかったすべてが届きます。',
+    desc: 'SNS、連絡先、自己紹介、顔写真——紙では伝えきれなかったすべてが届きます。',
   },
   {
     icon: BookmarkCheck,
@@ -109,8 +110,20 @@ export default function SolutionSection() {
   const { ref: uxRef, inView: uxInView } = useScrollInView();
 
   return (
-    <section id="solution" className="bg-[#F5F3EF] py-20 lg:py-28">
-      <div className="mx-auto max-w-6xl px-4">
+    <section id="solution" className="bg-[#F5F3EF]">
+      {/* フルワイド画像 */}
+      <div className="relative h-[200px] sm:h-[280px] lg:h-[360px] overflow-hidden">
+        <Image
+          src="/images/partner/cont_img3.png"
+          alt="御社のブランドで展開"
+          fill
+          className="object-cover"
+          unoptimized
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#F5F3EF]" />
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 pb-20 pt-8 lg:pb-28 lg:pt-12">
         {/* 見出し */}
         <motion.div
           ref={headRef}

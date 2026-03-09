@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import Image from 'next/image';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Phone,
@@ -92,8 +93,20 @@ export default function EasyStart() {
   };
 
   return (
-    <section id="easy-start" className="bg-white py-20 lg:py-28">
-      <div className="mx-auto max-w-6xl px-4">
+    <section id="easy-start" className="bg-white">
+      {/* フルワイド画像 */}
+      <div className="relative h-[200px] sm:h-[280px] lg:h-[360px] overflow-hidden">
+        <Image
+          src="/images/partner/cont_img6.png"
+          alt="簡単スタート"
+          fill
+          className="object-cover"
+          unoptimized
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white" />
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 pb-20 pt-8 lg:pb-28 lg:pt-12">
         {/* 見出し */}
         <motion.div
           ref={headRef}

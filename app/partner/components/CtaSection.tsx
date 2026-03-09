@@ -25,7 +25,7 @@ export default function CtaSection() {
             変えるかもしれません。
           </h2>
           <p className="text-left lg:text-center lg:text-lg" style={{ color: 'rgba(245, 243, 239, 0.8)' }}>
-            まずは資料だけでも、お気軽にご請求ください。
+            補助金活用ガイド（無料）もこちらからお受け取りいただけます。
           </p>
         </motion.div>
 

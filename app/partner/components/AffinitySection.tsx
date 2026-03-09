@@ -30,8 +30,20 @@ export default function AffinitySection() {
   const { ref: repRef, inView: repInView } = useScrollInView();
 
   return (
-    <section id="affinity" className="bg-[#F5F3EF] py-20 lg:py-28">
-      <div className="mx-auto max-w-6xl px-4">
+    <section id="affinity" className="bg-[#F5F3EF]">
+      {/* フルワイド画像 */}
+      <div className="relative h-[200px] sm:h-[280px] lg:h-[360px] overflow-hidden">
+        <Image
+          src="/images/partner/cont_img1.png"
+          alt="印刷の現場"
+          fill
+          className="object-cover"
+          unoptimized
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-[#F5F3EF]" />
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 pb-20 pt-8 lg:pb-28 lg:pt-12">
         {/* 見出し */}
         <motion.div
           ref={headRef}
@@ -80,13 +92,13 @@ export default function AffinitySection() {
             <p className="mb-5 text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg">
               名刺を渡した後、スマホをかざしてもらう。
               <br />
-              すると——顔写真、SNS、自己紹介、連絡先。
+              すると——SNS、連絡先、自己紹介、顔写真。
               <br />
               名刺では書ききれなかったすべてが、相手のスマホに届きます。
               <br />
               連絡先の保存はワンタップ。もう手打ちする必要はありません。
             </p>
-            <p className="text-justify text-base leading-[1.9] text-[#5A6577] lg:text-lg">
+            <p className="text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg">
               駅の改札やタッチ決済と同じ「かざす」技術。
               <br />
               12年にわたるICカード印刷の経験から、この技術を名刺に応用しました。

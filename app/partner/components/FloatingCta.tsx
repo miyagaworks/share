@@ -44,7 +44,7 @@ export default function FloatingCta() {
                 href="#cta"
                 onClick={(e) => {
                   e.preventDefault();
-                  window.dispatchEvent(new CustomEvent('partner-preference', { detail: '資料をダウンロードしたい' }));
+                  window.dispatchEvent(new CustomEvent('partner-preference', { detail: '補助金活用ガイドを受け取りたい' }));
                   document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' });
                   PartnerEvents.ctaClick('floating', 'download');
                 }}
@@ -52,7 +52,7 @@ export default function FloatingCta() {
                 whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
                 className="flex min-h-[44px] flex-1 items-center justify-center rounded-lg bg-[#B8860B] px-6 py-2.5 text-sm font-bold text-white shadow-md lg:text-base transition-colors hover:bg-[#A0750A] sm:flex-none"
               >
-                無料で資料をダウンロード
+                補助金ガイドを無料で入手
               </motion.a>
             </div>
           </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { motion } from 'framer-motion';
 import { Repeat, CreditCard } from 'lucide-react';
 import {
@@ -16,8 +17,20 @@ export default function BusinessModel() {
   const { ref: planRef, inView: planInView } = useScrollInView();
 
   return (
-    <section id="business-model" className="bg-white py-20 lg:py-28">
-      <div className="mx-auto max-w-6xl px-4">
+    <section id="business-model" className="bg-white">
+      {/* フルワイド画像 */}
+      <div className="relative h-[200px] sm:h-[280px] lg:h-[360px] overflow-hidden">
+        <Image
+          src="/images/partner/cont_img4.png"
+          alt="収益モデル"
+          fill
+          className="object-cover"
+          unoptimized
+        />
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-transparent to-white" />
+      </div>
+
+      <div className="mx-auto max-w-6xl px-4 pb-20 pt-8 lg:pb-28 lg:pt-12">
         {/* 見出し */}
         <motion.div
           ref={headRef}
@@ -130,44 +143,90 @@ export default function BusinessModel() {
         >
           <motion.h3
             variants={fadeUpVariants}
-            className="mb-6 text-center text-xl font-bold text-[#2D3748] lg:text-2xl"
+            className="mb-2 text-center text-xl font-bold text-[#2D3748] lg:text-2xl"
           >
             2つの料金モデルをご用意
           </motion.h3>
-          <div className="mx-auto grid max-w-2xl gap-4 sm:grid-cols-2">
-            <motion.div
-              variants={fadeUpVariants}
-              className="rounded-xl border border-[#E8E6E1] bg-white p-6 text-center sm:text-left"
-            >
-              <div className="mb-3 inline-flex rounded-lg bg-[#4A6FA5]/10 p-2.5">
-                <Repeat className="h-5 w-5 text-[#4A6FA5]" />
-              </div>
-              <h4 className="mb-2 text-lg font-bold text-[#2D3748] lg:text-xl">月額型</h4>
-              <p className="mb-3 text-justify text-sm text-[#5A6577] lg:text-base">
-                初期費用を抑えて始められる。ユーザー数に応じたプラン制。
-              </p>
-              <p className="text-xs text-[#4A6FA5]">小規模スタートに最適</p>
-            </motion.div>
-
-            <motion.div
-              variants={fadeUpVariants}
-              className="rounded-xl border border-[#E8E6E1] bg-white p-6 text-center sm:text-left"
-            >
-              <div className="mb-3 inline-flex rounded-lg bg-[#4A6FA5]/10 p-2.5">
-                <CreditCard className="h-5 w-5 text-[#4A6FA5]" />
-              </div>
-              <h4 className="mb-2 text-lg font-bold text-[#2D3748] lg:text-xl">買取型</h4>
-              <p className="mb-3 text-sm text-[#5A6577] lg:text-base">
-                システムを完全に自社所有。大規模展開向け。
-              </p>
-              <p className="text-xs text-[#4A6FA5]">大規模展開に最適</p>
-            </motion.div>
-          </div>
           <motion.p
             variants={fadeUpVariants}
-            className="mt-4 text-center text-sm text-[#5A6577]"
+            className="mb-8 text-center text-sm text-[#5A6577] lg:text-base"
           >
-            ※ 詳細な料金表は資料に記載しています
+            御社の事業規模に合わせてお選びいただけます
+          </motion.p>
+
+          <div className="mx-auto grid max-w-3xl gap-5 sm:grid-cols-2">
+            {/* 月額型 */}
+            <motion.div
+              variants={fadeUpVariants}
+              className="relative overflow-hidden rounded-xl border-2 border-[#1B2A4A] bg-white"
+            >
+              <div className="bg-[#1B2A4A] px-6 py-3 text-center">
+                <span className="text-sm font-bold text-white">月額プラン</span>
+              </div>
+              <div className="p-6">
+                <div className="mb-4 flex items-baseline justify-center gap-1">
+                  <span className="font-[Inter] text-3xl font-bold text-[#1B2A4A]">¥30,000</span>
+                  <span className="text-sm text-[#5A6577]">〜/月</span>
+                </div>
+                <ul className="mb-5 space-y-2.5 text-sm text-[#2D3748]">
+                  <li className="flex items-start gap-2">
+                    <Repeat className="mt-0.5 h-4 w-4 shrink-0 text-[#1B2A4A]" />
+                    <span>初期費用ゼロで始められる</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Repeat className="mt-0.5 h-4 w-4 shrink-0 text-[#1B2A4A]" />
+                    <span>3つのプランから選択<br /><span className="text-xs text-[#5A6577]">ベーシック / プロ / プレミアム</span></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <Repeat className="mt-0.5 h-4 w-4 shrink-0 text-[#1B2A4A]" />
+                    <span>いつでもプラン変更可能</span>
+                  </li>
+                </ul>
+                <p className="rounded-lg bg-[#1B2A4A]/5 px-3 py-2 text-center text-xs font-semibold text-[#1B2A4A]">
+                  まずは小さく始めたい方に
+                </p>
+              </div>
+            </motion.div>
+
+            {/* 買取型 */}
+            <motion.div
+              variants={fadeUpVariants}
+              className="relative overflow-hidden rounded-xl border-2 border-[#B8860B] bg-white"
+            >
+              <div className="bg-[#B8860B] px-6 py-3 text-center">
+                <span className="text-sm font-bold text-white">買取プラン</span>
+              </div>
+              <div className="p-6">
+                <div className="mb-4 flex items-baseline justify-center gap-1">
+                  <span className="font-[Inter] text-3xl font-bold text-[#1B2A4A]">¥600,000</span>
+                  <span className="text-sm text-[#5A6577]">一括</span>
+                </div>
+                <ul className="mb-5 space-y-2.5 text-sm text-[#2D3748]">
+                  <li className="flex items-start gap-2">
+                    <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#B8860B]" />
+                    <span>アカウント数の上限なし</span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#B8860B]" />
+                    <span>月額保守費 ¥10,000のみ<br /><span className="text-xs text-[#5A6577]">アップデート・サポート込み</span></span>
+                  </li>
+                  <li className="flex items-start gap-2">
+                    <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#B8860B]" />
+                    <span>長期運用ほどコストメリット大</span>
+                  </li>
+                </ul>
+                <p className="rounded-lg bg-[#B8860B]/8 px-3 py-2 text-center text-xs font-semibold text-[#B8860B]">
+                  本格的に展開したい方に
+                </p>
+              </div>
+            </motion.div>
+          </div>
+
+          <motion.p
+            variants={fadeUpVariants}
+            className="mt-6 text-center text-sm text-[#5A6577]"
+          >
+            ※ 詳しい料金・プラン詳細は資料をご覧ください
           </motion.p>
         </motion.div>
       </div>

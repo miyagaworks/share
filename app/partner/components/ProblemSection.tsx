@@ -138,7 +138,7 @@ export default function ProblemSection() {
           initial="hidden"
           animate={checkInView ? 'visible' : 'hidden'}
           variants={fadeUpVariants}
-          className="mx-auto mb-16 max-w-2xl"
+          className="mx-auto mb-10 max-w-2xl lg:mb-16"
         >
           <h3 className="mb-6 text-center text-xl font-bold text-[#2D3748] lg:text-2xl">
             こんなこと、感じていませんか？
@@ -197,33 +197,73 @@ export default function ProblemSection() {
           ref={storyRef}
           initial="hidden"
           animate={storyInView ? 'visible' : 'hidden'}
-          variants={fadeUpVariants}
-          className="mx-auto max-w-2xl rounded-xl border-l-4 border-[#8B7355] bg-[#FAF8F3] px-6 py-8 sm:px-8"
+          variants={staggerContainer}
+          className="mx-auto max-w-2xl"
         >
-          <p className="mb-4 text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg">
-            ある地方の名刺印刷会社。創業40年、地元では知らない人はいない老舗だった。
-          </p>
-          <p className="mb-4 text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg">
-            社長の田中さん（仮名・62歳）のもとに、20年来の取引先から電話が入った。
-            <br />
-            「田中さん、長い間お世話になりました。来期から名刺はネット印刷に切り替えることになりまして…」
-          </p>
-          <p className="mb-4 text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg">
-            受話器を置いた田中さんは、しばらく動けなかった。
-            <br />
-            その取引先だけで、年間30万円の売上があった。
-          </p>
-          <p className="mb-4 text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg">
-            翌週、もう1社から同じ連絡が入った。
-          </p>
-          <p className="mb-4 text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg">
-            「価格じゃ勝てない。でも、うちには40年の信頼がある。
-            <br />
-            この信頼を活かせる<em className="not-italic font-semibold">"何か"</em>はないだろうか——」
-          </p>
-          <p className="text-base font-semibold leading-[1.9] text-[#2D3748]">
-            田中さんが見つけた答えは、意外にもシンプルなものだった。
-          </p>
+          {/* 本文エリア — 薄暗い背景で不安感 */}
+          <div className="border border-[#D5D2CC] bg-gradient-to-b from-[#EDEBE6] to-[#F5F3EF] px-6 py-8 sm:px-8 rounded-xl">
+            <motion.p
+              variants={fadeUpVariants}
+              className="mb-5 text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg"
+            >
+              ある広島の印刷会社。創業40年、地元では知らない人はいない老舗だった。
+            </motion.p>
+            <motion.p
+              variants={fadeUpVariants}
+              className="mb-5 text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg"
+            >
+              社長の田中さん（仮名・62歳）のもとに、20年来の取引先から電話が入った。
+            </motion.p>
+            <motion.div
+              variants={fadeUpVariants}
+              className="my-6 rounded-lg border-l-4 border-[#9B4D3A]/40 bg-white/60 px-5 py-4"
+            >
+              <p className="text-justify text-base italic leading-[1.9] text-[#5A6577] lg:text-lg">
+                「田中さん、長い間お世話になりました。<br className="hidden sm:block" />
+                来期から名刺はネット印刷に切り替えることになりまして…」
+              </p>
+            </motion.div>
+            <motion.p
+              variants={fadeUpVariants}
+              className="mb-2 text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg"
+            >
+              受話器を置いた田中さんは、しばらく動けなかった。
+            </motion.p>
+            <motion.p
+              variants={fadeUpVariants}
+              className="mb-5 text-justify text-sm text-[#5A6577] lg:text-base"
+            >
+              その取引先だけで、年間30万円の売上があった。
+            </motion.p>
+            <motion.p
+              variants={fadeUpVariants}
+              className="mb-5 text-justify text-base font-medium leading-[1.9] text-[#9B4D3A]/80 lg:text-lg"
+            >
+              翌週、もう1社から同じ連絡が入った。
+            </motion.p>
+
+            {/* 区切り線 */}
+            <div className="my-6 flex items-center justify-center gap-2">
+              <span className="h-px w-8 bg-[#D5D2CC]" />
+              <span className="h-px w-8 bg-[#D5D2CC]" />
+              <span className="h-px w-8 bg-[#D5D2CC]" />
+            </div>
+
+            <motion.p
+              variants={fadeUpVariants}
+              className="mb-5 text-justify text-base leading-[1.9] text-[#2D3748] lg:text-lg"
+            >
+              「価格じゃ勝てない。でも、うちには40年の信頼がある。
+              <br />
+              この信頼を活かせる<em className="not-italic font-semibold">&ldquo;何か&rdquo;</em>はないだろうか——」
+            </motion.p>
+            <motion.p
+              variants={fadeUpVariants}
+              className="text-center text-base font-semibold leading-[1.9] text-[#1B2A4A] lg:text-lg"
+            >
+              田中さんが見つけた答えは、意外にもシンプルなものだった。
+            </motion.p>
+          </div>
         </motion.div>
       </div>
     </section>

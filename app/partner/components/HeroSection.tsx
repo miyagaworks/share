@@ -15,7 +15,7 @@ export default function HeroSection() {
 
   return (
     <section id="hero" className="relative overflow-hidden bg-gradient-to-b from-[#F5F3EF] to-white">
-      <div className="relative mx-auto grid max-w-6xl gap-10 px-2 py-16 sm:px-4 sm:py-20 lg:grid-cols-2 lg:items-center lg:gap-16 lg:py-28">
+      <div className="relative mx-auto grid max-w-6xl gap-10 px-5 py-16 sm:px-6 sm:py-20 lg:grid-cols-2 lg:items-center lg:gap-6 lg:py-28">
         {/* 左カラム：コピー */}
         <motion.div
           initial="hidden"
@@ -23,11 +23,11 @@ export default function HeroSection() {
           variants={staggerContainer}
         >
           {/* バッジ */}
-          <motion.div variants={fadeUpVariants} className="mb-6 flex flex-wrap gap-2">
+          <motion.div variants={fadeUpVariants} className="mb-6 flex flex-wrap justify-center gap-2 lg:justify-start">
             {badges.map((b) => (
               <span
                 key={b.label}
-                className="rounded-full border border-[#B8860B]/30 bg-[#B8860B]/10 px-3 py-1 text-xs font-semibold text-[#B8860B]"
+                className="rounded-full border border-[#B8860B]/30 bg-[#B8860B]/10 px-4 py-1.5 text-sm font-semibold text-[#B8860B]"
               >
                 {b.label}
               </span>
@@ -37,7 +37,7 @@ export default function HeroSection() {
           {/* メインキャッチ */}
           <motion.h1
             variants={fadeUpVariants}
-            className="mb-4 text-3xl font-bold leading-tight text-[#1B2A4A] sm:text-4xl lg:text-5xl lg:leading-tight"
+            className="mb-4 text-3xl font-bold leading-tight text-[#1B2A4A] sm:text-4xl lg:text-[3.3rem] lg:leading-tight"
           >
             御社のブランドで、
             <br />
@@ -47,7 +47,7 @@ export default function HeroSection() {
           {/* サブキャッチ */}
           <motion.p
             variants={fadeUpVariants}
-            className="mb-4 text-lg font-semibold text-[#8B7355] lg:text-xl"
+            className="mb-4 text-xl font-semibold text-[#8B7355] lg:text-2xl"
           >
             開発費ゼロ、最短30日でスタート。
           </motion.p>
@@ -66,7 +66,7 @@ export default function HeroSection() {
               href="#cta"
               onClick={(e) => {
                 e.preventDefault();
-                window.dispatchEvent(new CustomEvent('partner-preference', { detail: '資料をダウンロードしたい' }));
+                window.dispatchEvent(new CustomEvent('partner-preference', { detail: '補助金活用ガイドを受け取りたい' }));
                 document.getElementById('cta')?.scrollIntoView({ behavior: 'smooth' });
                 PartnerEvents.ctaClick('hero', 'download');
               }}
@@ -74,7 +74,7 @@ export default function HeroSection() {
               whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
               className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-[#B8860B] px-8 py-3 text-base font-bold text-white shadow-md transition-colors hover:bg-[#A0750A]"
             >
-              無料で資料をダウンロード
+              補助金活用ガイドを無料で入手
             </motion.a>
             <motion.a
               href="#cta"
