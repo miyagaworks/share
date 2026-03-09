@@ -79,7 +79,7 @@ export default function ScarcitySection() {
           initial="hidden"
           animate={bodyInView ? 'visible' : 'hidden'}
           variants={fadeUpVariants}
-          className="mx-auto mb-16 grid max-w-5xl items-start gap-10 lg:grid-cols-2"
+          className="mx-auto grid max-w-5xl items-start gap-10 lg:grid-cols-2"
         >
           {/* 地図 */}
           <div className="rounded-xl border border-[#E8E6E1] bg-white p-6 shadow-sm">
