@@ -159,7 +159,7 @@ export default function SolutionSection() {
           variants={staggerContainer}
           className="mb-16"
         >
-          <div className="mx-auto flex max-w-4xl flex-col items-center gap-0 lg:flex-row lg:items-stretch">
+          <div className="mx-auto flex flex-col items-stretch gap-0 lg:max-w-4xl lg:flex-row">
             {flowSteps.map((step, i) => (
               <motion.div
                 key={step.title}

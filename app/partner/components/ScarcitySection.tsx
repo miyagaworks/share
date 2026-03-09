@@ -133,7 +133,7 @@ export default function ScarcitySection() {
                   <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#1B2A4A] text-sm font-bold text-white">
                     {i + 1}
                   </div>
-                  <div className="flex-1 border-b border-[#E8E6E1] pb-5 last:border-0 last:pb-0">
+                  <div className={`flex-1 ${i < reasons.length - 1 ? 'border-b border-[#E8E6E1] pb-5' : ''}`}>
                     <div className="mb-1 flex items-center gap-2">
                       <r.icon className="h-4 w-4 text-[#B8860B]" />
                       <h4 className="font-bold text-[#1B2A4A] lg:text-lg">

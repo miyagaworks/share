@@ -116,8 +116,8 @@ export default function ProblemSection() {
                 key={s.label}
                 variants={fadeUpVariants}
                 className={`relative px-5 py-6 text-center ${
-                  i < stats.length - 1 ? 'border-r border-[#E8E6E1]' : ''
-                } ${i < 2 ? 'border-b border-[#E8E6E1] lg:border-b-0' : ''}`}
+                  i % 2 === 0 ? 'border-r border-[#E8E6E1]' : 'lg:border-r lg:border-[#E8E6E1]'
+                } ${i === stats.length - 1 ? 'lg:border-r-0' : ''} ${i < 2 ? 'border-b border-[#E8E6E1] lg:border-b-0' : ''}`}
               >
                 <div className="mb-2">
                   <CountUpNumber
