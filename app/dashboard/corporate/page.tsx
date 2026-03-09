@@ -42,22 +42,6 @@ const getMaxUsersByPlan = (planId: string | undefined): number => {
   return 0;
 };
 // デバッグ情報のプロパティ型定義
-interface DebugInfoProps {
-  data:
-    | {
-        tenant?: {
-          id: string;
-          name: string;
-          accountStatus?: string;
-        };
-        isAdmin?: boolean;
-        userRole?: string;
-      }
-    | null
-    | undefined;
-  isLoading: boolean;
-  error: Error | null;
-}
 // スケルトンUIコンポーネント
 const TenantSkeleton = memo(() => (
   <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mb-4 sm:mb-5 mx-1 sm:mx-2 animate-pulse">
@@ -89,30 +73,6 @@ const MenuSkeleton = memo(() => (
   </div>
 ));
 MenuSkeleton.displayName = 'MenuSkeleton';
-// デバッグ情報表示コンポーネント（開発環境のみ）
-const DebugInfo = memo<DebugInfoProps>(({ data, isLoading, error }) => {
-  if (process.env.NODE_ENV !== 'development') return null;
-  return (
-    <div className="mx-1 sm:mx-2 mb-4 p-3 bg-gray-100 rounded-lg text-xs">
-      <h3 className="font-semibold mb-2">デバッグ情報:</h3>
-      <div className="space-y-1">
-        <div>Loading: {isLoading ? 'true' : 'false'}</div>
-        <div>Error: {error ? error.message : 'none'}</div>
-        <div>Data: {data ? 'available' : 'none'}</div>
-        {data?.tenant && (
-          <div className="mt-2">
-            <div>Tenant ID: {data.tenant.id}</div>
-            <div>Tenant Name: {data.tenant.name}</div>
-            <div>Account Status: {data.tenant.accountStatus || 'unknown'}</div>
-            <div>User Role: {data.userRole || 'unknown'}</div>
-            <div>Is Admin: {data.isAdmin ? 'true' : 'false'}</div>
-          </div>
-        )}
-      </div>
-    </div>
-  );
-});
-DebugInfo.displayName = 'DebugInfo';
 // 警告バナーコンポーネント
 const RetryableWarningBanner = memo<{
   message: string;
@@ -181,7 +141,7 @@ export default function OptimizedCorporateDashboardPage() {
   if (isLoading) {
     return (
       <div className="max-w-full px-1 sm:px-0">
-        <DebugInfo data={tenantResponse || null} isLoading={isLoading} error={error} />
+
         <TenantSkeleton />
         <MenuSkeleton />
       </div>
@@ -191,7 +151,7 @@ export default function OptimizedCorporateDashboardPage() {
   if (error || !tenant) {
     return (
       <div className="max-w-full px-1 sm:px-0">
-        <DebugInfo data={tenantResponse || null} isLoading={isLoading} error={error} />
+
         <ErrorMessage
           message={error?.message || 'テナント情報を取得できませんでした。'}
           details={error ? `エラーの詳細: ${error.message}` : undefined}
@@ -204,7 +164,6 @@ export default function OptimizedCorporateDashboardPage() {
   }
   return (
     <div className="max-w-full px-1 sm:px-0">
-      <DebugInfo data={tenantResponse || null} isLoading={isLoading} error={error} />
       {/* テナント概要 */}
       <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-3 sm:p-4 mb-4 sm:mb-5 mx-1 sm:mx-2">
         <CorporateBranding

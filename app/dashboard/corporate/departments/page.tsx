@@ -405,7 +405,7 @@ export default function DepartmentsPage() {
                   </div>
                 </div>
                 <div className="flex flex-col gap-3 mt-6">
-                  <Button variant="corporate" type="button" disabled={isSaving}>
+                  <Button variant="corporate" type="submit" disabled={isSaving}>
                     {isSaving ? (
                       <>
                         <Spinner size="sm" className="mr-2" />
