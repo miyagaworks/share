@@ -112,7 +112,7 @@ export default function AffinitySection() {
           initial="hidden"
           animate={cardsInView ? 'visible' : 'hidden'}
           variants={staggerContainer}
-          className="mx-auto flex max-w-3xl flex-col items-center gap-2 sm:flex-row sm:gap-3"
+          className="mx-auto flex max-w-4xl flex-col items-center gap-2 sm:flex-row sm:gap-3"
         >
           {valueCards.map((card, i) => (
             <motion.div key={card.title} variants={fadeUpVariants} className="flex w-full flex-col items-center sm:w-auto sm:flex-row sm:gap-3">

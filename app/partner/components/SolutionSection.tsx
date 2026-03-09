@@ -81,24 +81,28 @@ const userExperience = [
     step: '01',
     title: '名刺を渡す',
     desc: 'いつも通りの名刺交換。まずは紙の名刺を渡すところから始まります。',
+    image: '/images/partner/step01.png',
   },
   {
     icon: Smartphone,
     step: '02',
     title: 'スマホをかざしてもらう',
     desc: 'スマホケースに貼ったNFCシールを見せて「かざしてみてください」——それだけ。',
+    image: null,
   },
   {
     icon: Eye,
     step: '03',
     title: 'デジタル名刺が開く',
     desc: 'SNS、連絡先、自己紹介、顔写真——紙では伝えきれなかったすべてが届きます。',
+    image: null,
   },
   {
     icon: BookmarkCheck,
     step: '04',
     title: 'ワンタップで保存',
     desc: '電話番号を手打ちする必要なし。連絡先をワンタップでスマホに保存。',
+    image: null,
   },
 ];
 
@@ -153,40 +157,40 @@ export default function SolutionSection() {
           initial="hidden"
           animate={flowInView ? 'visible' : 'hidden'}
           variants={staggerContainer}
-          className="mb-16 flex flex-col items-center gap-2 lg:flex-row lg:gap-0"
+          className="mb-16"
         >
-          {flowSteps.map((step, i) => (
-            <motion.div
-              key={step.title}
-              variants={fadeUpVariants}
-              className="flex w-full flex-col items-center lg:w-auto lg:flex-1 lg:flex-row lg:gap-0"
-            >
-              <div
-                className="w-full rounded-xl border-t-4 border-[#1B2A4A] bg-white p-6 text-center shadow-sm sm:text-left"
+          <div className="mx-auto flex max-w-4xl flex-col items-center gap-0 lg:flex-row lg:items-stretch">
+            {flowSteps.map((step, i) => (
+              <motion.div
+                key={step.title}
+                variants={fadeUpVariants}
+                className="flex flex-col items-center lg:flex-1 lg:flex-row"
               >
-                <div className="mb-3 inline-flex rounded-lg p-2.5 bg-[#4A6FA5]/10">
-                  <step.icon className="h-5 w-5 text-[#4A6FA5]" />
-                </div>
-                <h3 className="mb-0.5 text-lg font-bold text-[#2D3748] lg:text-xl">{step.title}</h3>
-                <p className="mb-3 text-xs text-[#5A6577] lg:text-sm">{step.subtitle}</p>
-                <ul className="space-y-1">
-                  {step.items.map((item) => (
-                    <li key={item} className="text-justify text-sm text-[#5A6577] lg:text-base">
-                      ・{item}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-              {i < flowSteps.length - 1 && (
-                <>
-                  <ArrowRight className="hidden h-6 w-6 flex-shrink-0 text-[#D5D2CC] lg:mx-4 lg:block" />
-                  <div className="py-1 lg:hidden">
-                    <ArrowRight className="h-5 w-5 rotate-90 text-[#D5D2CC]" />
+                <div className="flex w-full items-center gap-4 rounded-xl bg-white px-5 py-4 shadow-sm lg:flex-col lg:px-4 lg:py-5 lg:text-center">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#1B2A4A] lg:mx-auto">
+                    <step.icon className="h-5 w-5 text-white" />
                   </div>
-                </>
-              )}
-            </motion.div>
-          ))}
+                  <div className="flex-1 lg:mt-3">
+                    <h3 className="text-base font-bold text-[#1B2A4A] lg:text-lg">
+                      {step.title}
+                      <span className="ml-1 text-xs font-normal text-[#7B8794] lg:ml-0 lg:block">{step.subtitle}</span>
+                    </h3>
+                    <p className="mt-1 text-xs leading-relaxed text-[#5A6577] lg:text-sm">
+                      {step.items.join(' / ')}
+                    </p>
+                  </div>
+                </div>
+                {i < flowSteps.length - 1 && (
+                  <>
+                    <ArrowRight className="hidden h-5 w-5 shrink-0 text-[#D5D2CC] lg:mx-3 lg:block" />
+                    <div className="py-1.5 lg:hidden">
+                      <ArrowRight className="h-4 w-4 rotate-90 text-[#D5D2CC]" />
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
 
         {/* 強調ポイント */}
@@ -287,21 +291,39 @@ export default function SolutionSection() {
             お客様にはこう届きます
           </h3>
 
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4 lg:gap-6">
+          <div className="grid grid-cols-2 gap-4 lg:grid-cols-4 lg:gap-5">
             {userExperience.map((ux) => (
               <motion.div
                 key={ux.step}
                 variants={fadeUpVariants}
-                className="flex flex-col items-center px-4 py-6 text-center"
+                className="overflow-hidden rounded-xl bg-white shadow-sm"
               >
-                <div className="mb-3 inline-flex rounded-lg bg-[#4A6FA5]/10 p-3">
-                  <ux.icon className="h-6 w-6 text-[#4A6FA5]" />
+                {/* ステップ画像 */}
+                <div className="relative aspect-square bg-gradient-to-br from-[#E8E6E1] to-[#D5D2CC]">
+                  {ux.image ? (
+                    <Image
+                      src={ux.image}
+                      alt={ux.title}
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                  ) : (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <ux.icon className="h-10 w-10 text-white/50 lg:h-12 lg:w-12" />
+                    </div>
+                  )}
+                  <div className="absolute left-3 top-3">
+                    <span className="inline-block rounded-full bg-[#1B2A4A] px-2.5 py-1 text-[10px] font-bold tracking-wider text-white">
+                      {ux.step}
+                    </span>
+                  </div>
                 </div>
-                <span className="mb-1 text-xs font-semibold tracking-wider text-[#4A6FA5]">
-                  STEP {ux.step}
-                </span>
-                <h4 className="mb-2 text-lg font-bold text-[#2D3748]">{ux.title}</h4>
-                <p className="text-sm leading-relaxed text-[#5A6577]">{ux.desc}</p>
+                {/* テキスト */}
+                <div className="px-4 py-4">
+                  <h4 className="mb-1 text-sm font-bold text-[#1B2A4A] lg:text-base">{ux.title}</h4>
+                  <p className="text-xs leading-relaxed text-[#7B8794] lg:text-sm">{ux.desc}</p>
+                </div>
               </motion.div>
             ))}
           </div>

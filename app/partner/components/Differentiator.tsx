@@ -282,7 +282,7 @@ export default function Differentiator() {
                   <tr
                     key={row.label}
                     className={`border-b border-[#E8E6E1] ${
-                      i % 2 === 1 ? 'bg-[#F5F6F8]/50' : 'bg-white'
+                      i % 2 === 1 ? 'bg-[#FAFAFA]' : 'bg-white'
                     }`}
                   >
                     <td

@@ -108,28 +108,29 @@ export default function ProblemSection() {
           initial="hidden"
           animate={statsInView ? 'visible' : 'hidden'}
           variants={staggerContainer}
-          className="mb-16 grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
+          className="mb-16"
         >
-          {stats.map((s) => (
-            <motion.div
-              key={s.label}
-              variants={fadeUpVariants}
-              className="rounded-xl border border-[#E8E6E1] bg-white p-6 text-center shadow-sm sm:text-left"
-            >
-              <div className={`mb-3 inline-flex rounded-lg p-2.5 ${s.bg}`}>
-                <s.icon className={`h-5 w-5 ${s.color}`} />
-              </div>
-              <div className="mb-1">
-                <CountUpNumber
-                  end={s.value}
-                  className={`font-[Inter] text-4xl font-bold ${s.color}`}
-                />
-                <span className={`text-xl font-bold ${s.color}`}>{s.suffix}</span>
-              </div>
-              <p className="mb-1 text-sm font-semibold text-[#2D3748] lg:text-lg">{s.label}</p>
-              <p className="text-justify text-xs text-[#5A6577] lg:text-sm">{s.desc}</p>
-            </motion.div>
-          ))}
+          <div className="grid grid-cols-2 lg:grid-cols-4">
+            {stats.map((s, i) => (
+              <motion.div
+                key={s.label}
+                variants={fadeUpVariants}
+                className={`relative px-5 py-6 text-center ${
+                  i < stats.length - 1 ? 'border-r border-[#E8E6E1]' : ''
+                } ${i < 2 ? 'border-b border-[#E8E6E1] lg:border-b-0' : ''}`}
+              >
+                <div className="mb-2">
+                  <CountUpNumber
+                    end={s.value}
+                    className={`font-[Inter] text-4xl font-bold lg:text-5xl ${s.color}`}
+                  />
+                  <span className={`text-lg font-bold lg:text-xl ${s.color}`}>{s.suffix}</span>
+                </div>
+                <p className="text-sm font-semibold text-[#2D3748]">{s.label}</p>
+                <p className="mt-0.5 text-xs text-[#7B8794]">{s.desc}</p>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
 
         {/* チェックリスト */}
@@ -140,29 +141,28 @@ export default function ProblemSection() {
           variants={fadeUpVariants}
           className="mx-auto mb-10 max-w-2xl lg:mb-16"
         >
-          <h3 className="mb-6 text-center text-xl font-bold text-[#2D3748] lg:text-2xl">
-            こんなこと、感じていませんか？
-          </h3>
-          <ul className="space-y-3">
+          <div className="mb-8 text-center">
+            <span className="mb-2 inline-block text-xs font-bold tracking-widest text-[#7B8794]">CHECKLIST</span>
+            <h3 className="text-xl font-bold text-[#1B2A4A] lg:text-2xl">
+              こんなこと、感じていませんか？
+            </h3>
+          </div>
+          <div className="divide-y divide-[#E8E6E1] rounded-2xl border border-[#E8E6E1] bg-white">
             {checklistItems.map((item, i) => (
-              <motion.li
+              <motion.div
                 key={i}
                 variants={fadeUpVariants}
                 onClick={() => toggle(i)}
-                className={`flex cursor-pointer items-start gap-3 rounded-lg border px-4 py-3 transition-all ${
-                  checked[i]
-                    ? 'border-[#4A6FA5]/30 bg-[#4A6FA5]/5'
-                    : 'border-[#E8E6E1] bg-white hover:border-[#D5D2CC]'
-                }`}
+                className="flex cursor-pointer items-center gap-4 px-5 py-4 transition-colors hover:bg-[#FAFAF8]"
               >
-                <span className="mt-0.5 flex-shrink-0">
+                <span className="shrink-0">
                   {checked[i] ? (
                     <motion.span
                       initial={prefersReducedMotion ? false : { scale: 0.5 }}
                       animate={{ scale: 1 }}
                       transition={{ type: 'spring', stiffness: 400, damping: 15 }}
                     >
-                      <Check className="h-5 w-5 text-[#4A6FA5]" />
+                      <Check className="h-5 w-5 text-[#1B2A4A]" />
                     </motion.span>
                   ) : (
                     <Square className="h-5 w-5 text-[#D5D2CC]" />
@@ -170,21 +170,21 @@ export default function ProblemSection() {
                 </span>
                 <span
                   className={`text-sm leading-relaxed lg:text-base ${
-                    checked[i] ? 'text-[#2D3748]' : 'text-[#5A6577]'
+                    checked[i] ? 'font-medium text-[#1B2A4A]' : 'text-[#5A6577]'
                   }`}
                 >
                   {item}
                 </span>
-              </motion.li>
+              </motion.div>
             ))}
-          </ul>
+          </div>
 
           {/* ブリッジテキスト */}
           <motion.p
             initial="hidden"
             animate={checkedCount >= 3 ? 'visible' : 'hidden'}
             variants={fadeUpVariants}
-            className="mt-6 text-center text-sm font-semibold text-[#4A6FA5] lg:text-base"
+            className="mt-6 text-center text-sm font-semibold text-[#1B2A4A] lg:text-base"
           >
             {checkedCount >= 3
               ? '3つ以上当てはまった方へ——続きをお読みください。'

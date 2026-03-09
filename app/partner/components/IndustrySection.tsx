@@ -76,28 +76,29 @@ export default function IndustrySection() {
           initial="hidden"
           animate={cardsInView ? 'visible' : 'hidden'}
           variants={staggerContainer}
-          className="mx-auto mb-16 grid max-w-5xl gap-6 sm:grid-cols-3"
+          className="mx-auto mb-16 max-w-4xl"
         >
-          {dataPoints.map((d) => (
-            <motion.div
-              key={d.label}
-              variants={fadeUpVariants}
-              className="rounded-xl border border-[#E8E6E1] bg-white p-6 text-center sm:text-left"
-            >
-              <div className="mb-3 inline-flex rounded-lg p-2.5 bg-[#4A6FA5]/10">
-                <d.icon className="h-5 w-5 text-[#4A6FA5]" />
-              </div>
-              <div className="mb-1">
-                <CountUpNumber
-                  end={d.value}
-                  className="font-[Inter] text-4xl font-bold text-[#1B2A4A]"
-                />
-                <span className="text-xl font-bold text-[#1B2A4A]">{d.suffix}</span>
-              </div>
-              <p className="mb-1 text-sm font-semibold text-[#2D3748] lg:text-lg">{d.label}</p>
-              <p className="text-justify text-xs text-[#5A6577] lg:text-sm">{d.desc}</p>
-            </motion.div>
-          ))}
+          <div className="divide-y divide-[#E8E6E1] rounded-2xl border border-[#E8E6E1] bg-white sm:flex sm:divide-x sm:divide-y-0">
+            {dataPoints.map((d) => (
+              <motion.div
+                key={d.label}
+                variants={fadeUpVariants}
+                className="flex items-center gap-5 px-6 py-5 sm:flex-1 sm:flex-col sm:items-start sm:gap-0 sm:px-7 sm:py-6"
+              >
+                <div className="shrink-0 sm:mb-3">
+                  <CountUpNumber
+                    end={d.value}
+                    className="font-[Inter] text-4xl font-bold text-[#1B2A4A] sm:text-5xl"
+                  />
+                  <span className="text-lg font-bold text-[#1B2A4A] sm:text-xl">{d.suffix}</span>
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-[#2D3748] lg:text-base">{d.label}</p>
+                  <p className="mt-0.5 text-xs text-[#7B8794] lg:text-sm">{d.desc}</p>
+                </div>
+              </motion.div>
+            ))}
+          </div>
         </motion.div>
 
         {/* 転換メッセージ */}
