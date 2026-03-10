@@ -1,6 +1,7 @@
 // lib/email/templates/grace-period-expired.ts (Yahooメール対応版)
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { getBrandConfig } from '@/lib/brand/config';
 
 interface GracePeriodExpiredEmailParams {
   expiredUsers: {
@@ -14,7 +15,8 @@ interface GracePeriodExpiredEmailParams {
 
 export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEmailParams) {
   const { expiredUsers } = params;
-  const siteName = 'Share';
+  const brand = getBrandConfig();
+  const siteName = brand.name;
   const today = format(new Date(), 'yyyy年MM月dd日', { locale: ja });
   const subject = `【管理者通知】${siteName} トライアル猶予期間終了ユーザー一覧（${today}）`;
 
@@ -25,7 +27,7 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
       const gracePeriodEndDate = format(new Date(user.gracePeriodEndDate), 'yyyy年MM月dd日', {
         locale: ja,
       });
-      const deleteUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/dashboard/admin/users?action=delete&userId=${user.id}`;
+      const deleteUrl = `${brand.appUrl}/dashboard/admin/users?action=delete&userId=${user.id}`;
 
       return `
       <tr>
@@ -67,12 +69,12 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
               
               <!-- ヘッダー -->
               <tr>
-                <td style="background-color: #3B82F6; padding: 40px 20px; text-align: center;">
+                <td style="background-color: ${brand.primaryColor}; padding: 40px 20px; text-align: center;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="center">
                         <div style="background-color: #ffffff; display: inline-block; padding: 12px 24px; border-radius: 8px; margin-bottom: 20px;">
-                          <h1 style="color: #3B82F6; margin: 0; font-size: 28px; font-weight: bold;">Share</h1>
+                          <h1 style="color: ${brand.primaryColor}; margin: 0; font-size: 28px; font-weight: bold;">${brand.name}</h1>
                         </div>
                         <p style="color: #ffffff; margin: 0; font-size: 16px;">管理者通知システム</p>
                       </td>
@@ -141,7 +143,7 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
                         <div style="overflow-x: auto;">
                           <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #ffffff; border-radius: 8px; overflow: hidden; box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);">
                             <!-- テーブルヘッダー -->
-                            <tr style="background-color: #3B82F6;">
+                            <tr style="background-color: ${brand.primaryColor};">
                               <td style="padding: 16px 12px; color: white; font-weight: bold; font-size: 14px;">ユーザー名</td>
                               <td style="padding: 16px 12px; color: white; font-weight: bold; font-size: 14px;">メールアドレス</td>
                               <td style="padding: 16px 12px; color: white; font-weight: bold; font-size: 14px;">トライアル終了日</td>
@@ -157,7 +159,7 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
 
                     <!-- 管理者ダッシュボード案内 -->
                     <tr>
-                      <td style="background-color: #eff6ff; border-left: 4px solid #3B82F6; padding: 16px 20px; border-radius: 8px;">
+                      <td style="background-color: #eff6ff; border-left: 4px solid ${brand.primaryColor}; padding: 16px 20px; border-radius: 8px;">
                         <p style="color: #1e40af; margin: 0; font-size: 16px; line-height: 1.6;">
                           管理者ダッシュボードからすべてのユーザーを一括で確認・管理することも可能です：
                         </p>
@@ -169,9 +171,9 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
                       <td align="center" style="padding: 40px 0;">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td style="background-color: #3B82F6; border-radius: 8px;">
-                              <a href="${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/dashboard/admin/users" 
-                                 style="background-color: #3B82F6; 
+                            <td style="background-color: ${brand.primaryColor}; border-radius: 8px;">
+                              <a href="${brand.appUrl}/dashboard/admin/users" 
+                                 style="background-color: ${brand.primaryColor}; 
                                         color: #ffffff; 
                                         text-decoration: none; 
                                         padding: 16px 32px; 
@@ -206,10 +208,10 @@ export function getGracePeriodExpiredEmailTemplate(params: GracePeriodExpiredEma
                     <tr>
                       <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
                         <p style="color: #9ca3af; margin: 0 0 5px; font-size: 12px;">
-                          〒731-0137 広島県広島市安佐南区山本2-3-35
+                          ${brand.companyAddress}
                         </p>
                         <p style="color: #9ca3af; margin: 0 0 15px; font-size: 12px;">
-                          運営: 株式会社Senrigan
+                          運営: ${brand.companyName}
                         </p>
                       </td>
                     </tr>
@@ -257,7 +259,7 @@ ${expiredUsers
 
 管理者ダッシュボードからユーザーを管理するには以下のURLにアクセスしてください：
 
-${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/dashboard/admin/users
+${brand.appUrl}/dashboard/admin/users
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏢 運営会社情報
@@ -266,9 +268,9 @@ ${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/dashboard/admi
 ${siteName} システム通知
 本メールは自動送信されています。返信されても対応できませんのでご了承ください。
 
-〒731-0137 広島県広島市安佐南区山本2-3-35
-運営: 株式会社Senrigan
-すべてのSNS、ワンタップでShare`;
+${brand.companyAddress}
+運営: ${brand.companyName}
+${brand.tagline}${brand.name}`;
 
   return { subject, html, text };
 }

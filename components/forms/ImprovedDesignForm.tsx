@@ -10,6 +10,7 @@ import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker';
 import { toast } from 'react-hot-toast';
 import { updateProfile } from '@/actions/profile';
 import type { User } from '@prisma/client';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 import tinycolor from 'tinycolor2';
 // 型拡張
 interface ExtendedUser extends User {
@@ -51,7 +52,7 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
   } = useForm<FormData>({
     resolver: zodResolver(DesignSchema),
     defaultValues: {
-      mainColor: user.mainColor || '#3B82F6',
+      mainColor: user.mainColor || DEFAULT_PRIMARY_COLOR,
       snsIconColor: extendedUser.snsIconColor || '#333333',
       headerText: extendedUser.headerText || 'シンプルにつながる、スマートにシェア。',
       textColor: extendedUser.textColor || '#FFFFFF',
@@ -142,7 +143,7 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
             プロフィールページのアクセントカラーとして使用されます
           </p>
           <EnhancedColorPicker
-            color={watchedMainColor || '#3B82F6'}
+            color={watchedMainColor || DEFAULT_PRIMARY_COLOR}
             onChange={handleMainColorChange}
             disabled={isPending}
           />

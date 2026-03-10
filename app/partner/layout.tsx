@@ -1,6 +1,9 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { notFound } from 'next/navigation';
 import PartnerHeader from './components/PartnerHeader';
+import { features } from '@/lib/features';
+import { getBrandConfig } from '@/lib/brand/config';
 
 export const metadata: Metadata = {
   title: 'パートナー募集 | デジタル名刺を自社ブランドで提供 - Share',
@@ -36,7 +39,7 @@ function PartnerFooter() {
             </Link>
           </div>
           <p className="text-sm text-[#7B8794]">
-            &copy; {new Date().getFullYear()} Senrigan. All rights reserved.
+            &copy; {new Date().getFullYear()} {getBrandConfig().companyName}. All rights reserved.
           </p>
         </div>
       </div>
@@ -45,6 +48,11 @@ function PartnerFooter() {
 }
 
 export default function PartnerLayout({ children }: { children: React.ReactNode }) {
+  // パートナーモジュールが無効化されている場合は404
+  if (!features.partnerModule) {
+    notFound();
+  }
+
   return (
     <>
       <PartnerHeader />

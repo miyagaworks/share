@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import { useEffect, useState } from 'react';
+import { DEFAULT_BRAND_NAME, DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 export default function NotFound() {
   const [mounted, setMounted] = useState(false);
   useEffect(() => {
@@ -76,7 +77,7 @@ export default function NotFound() {
                 animate={{ pathLength: 1 }}
                 transition={{ duration: 1.5, delay: 1 }}
                 d="M65 90C65 77.2975 75.2975 67 88 67H112C124.703 67 135 77.2975 135 90V110C135 122.703 124.703 133 112 133H88C75.2975 133 65 122.703 65 110V90Z"
-                stroke="#3B82F6"
+                stroke={DEFAULT_PRIMARY_COLOR}
                 strokeWidth="5"
                 strokeLinecap="round"
               />
@@ -85,7 +86,7 @@ export default function NotFound() {
                 animate={{ pathLength: 1 }}
                 transition={{ duration: 1.2, delay: 1.3 }}
                 d="M65 105C78 115 109 125 135 105"
-                stroke="#3B82F6"
+                stroke={DEFAULT_PRIMARY_COLOR}
                 strokeWidth="5"
                 strokeLinecap="round"
               />
@@ -94,14 +95,14 @@ export default function NotFound() {
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 1.6 }}
                 d="M78 85C78 87.7614 75.7614 90 73 90C70.2386 90 68 87.7614 68 85C68 82.2386 70.2386 80 73 80C75.7614 80 78 82.2386 78 85Z"
-                fill="#3B82F6"
+                fill={DEFAULT_PRIMARY_COLOR}
               />
               <motion.path
                 initial={{ pathLength: 0, opacity: 0 }}
                 animate={{ pathLength: 1, opacity: 1 }}
                 transition={{ duration: 0.8, delay: 1.6 }}
                 d="M132 85C132 87.7614 129.761 90 127 90C124.239 90 122 87.7614 122 85C122 82.2386 124.239 80 127 80C129.761 80 132 82.2386 132 85Z"
-                fill="#3B82F6"
+                fill={DEFAULT_PRIMARY_COLOR}
               />
             </svg>
           </div>
@@ -114,7 +115,7 @@ export default function NotFound() {
         transition={{ delay: 1.5, duration: 1 }}
         className="mt-16 text-sm text-gray-500"
       >
-        <p>© {new Date().getFullYear()} Share. すべての権利を保有します。</p>
+        <p>© {new Date().getFullYear()} {DEFAULT_BRAND_NAME}. すべての権利を保有します。</p>
       </motion.div>
     </div>
   );

@@ -1,4 +1,6 @@
 // lib/email/templates/admin-notification.ts (Yahooメール対応版)
+import { getBrandConfig } from '@/lib/brand/config';
+
 interface AdminNotificationEmailParams {
   subject: string;
   title: string;
@@ -10,7 +12,8 @@ interface AdminNotificationEmailParams {
 
 export function getAdminNotificationEmailTemplate(params: AdminNotificationEmailParams) {
   const { subject, title, message, userName, ctaText, ctaUrl } = params;
-  const siteName = 'Share';
+  const brand = getBrandConfig();
+  const siteName = brand.name;
 
   const ctaButtonHTML =
     ctaText && ctaUrl
@@ -18,9 +21,9 @@ export function getAdminNotificationEmailTemplate(params: AdminNotificationEmail
          <td align="center" style="padding: 30px 0;">
            <table cellpadding="0" cellspacing="0" border="0">
              <tr>
-               <td style="background-color: #3B82F6; border-radius: 8px;">
-                 <a href="${ctaUrl}" 
-                    style="background-color: #3B82F6; 
+               <td style="background-color: ${brand.primaryColor}; border-radius: 8px;">
+                 <a href="${ctaUrl}"
+                    style="background-color: ${brand.primaryColor}; 
                            color: #ffffff; 
                            text-decoration: none; 
                            padding: 12px 24px; 
@@ -55,12 +58,12 @@ export function getAdminNotificationEmailTemplate(params: AdminNotificationEmail
               
               <!-- ヘッダー -->
               <tr>
-                <td style="background-color: #3B82F6; padding: 40px 20px; text-align: center;">
+                <td style="background-color: ${brand.primaryColor}; padding: 40px 20px; text-align: center;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="center">
                         <div style="background-color: #ffffff; display: inline-block; padding: 12px 24px; border-radius: 8px; margin-bottom: 20px;">
-                          <h1 style="color: #3B82F6; margin: 0; font-size: 28px; font-weight: bold;">Share</h1>
+                          <h1 style="color: ${brand.primaryColor}; margin: 0; font-size: 28px; font-weight: bold;">${brand.name}</h1>
                         </div>
                         <p style="color: #ffffff; margin: 0; font-size: 16px;">管理者通知</p>
                       </td>
@@ -111,27 +114,27 @@ export function getAdminNotificationEmailTemplate(params: AdminNotificationEmail
                     <tr>
                       <td align="center" style="padding-bottom: 20px;">
                         <p style="color: #6b7280; margin: 0 0 10px; font-size: 14px;">${siteName} サポートチーム</p>
-                        <a href="mailto:support@sns-share.com" 
-                           style="color: #3B82F6; text-decoration: none; font-weight: 600;">
-                          support@sns-share.com
+                        <a href="mailto:${brand.supportEmail}"
+                           style="color: ${brand.primaryColor}; text-decoration: none; font-weight: 600;">
+                          ${brand.supportEmail}
                         </a>
                       </td>
                     </tr>
                     <tr>
                       <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
                         <p style="color: #9ca3af; margin: 0 0 5px; font-size: 12px;">
-                          〒731-0137 広島県広島市安佐南区山本2-3-35
+                          ${brand.companyAddress}
                         </p>
                         <p style="color: #9ca3af; margin: 0 0 15px; font-size: 12px;">
-                          運営: 株式会社Senrigan
+                          運営: ${brand.companyName}
                         </p>
                         <div style="margin-top: 15px;">
-                          <a href="https://app.sns-share.com/legal/privacy" 
+                          <a href="${brand.appUrl}${brand.privacyUrl}"
                              style="color: #9ca3af; text-decoration: none; font-size: 11px; margin: 0 10px;">
                             プライバシーポリシー
                           </a>
                           <span style="color: #d1d5db;">|</span>
-                          <a href="https://app.sns-share.com/legal/terms" 
+                          <a href="${brand.appUrl}${brand.termsUrl}"
                              style="color: #9ca3af; text-decoration: none; font-size: 11px; margin: 0 10px;">
                             利用規約
                           </a>
@@ -162,19 +165,19 @@ ${ctaText ? `${ctaText}: ${ctaUrl}` : ''}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 ${siteName} サポートチーム
-✉️ メール: support@sns-share.com
-🌐 ウェブサイト: https://app.sns-share.com
+✉️ メール: ${brand.supportEmail}
+🌐 ウェブサイト: ${brand.appUrl}
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏢 運営会社情報
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-〒731-0137 広島県広島市安佐南区山本2-3-35
-運営: 株式会社Senrigan
-すべてのSNS、ワンタップでShare
+${brand.companyAddress}
+運営: ${brand.companyName}
+${brand.tagline}${brand.name}
 
-📋 プライバシーポリシー: https://app.sns-share.com/legal/privacy
-📋 利用規約: https://app.sns-share.com/legal/terms`;
+📋 プライバシーポリシー: ${brand.appUrl}${brand.privacyUrl}
+📋 利用規約: ${brand.appUrl}${brand.termsUrl}`;
 
   return { subject, html, text };
 }

@@ -6,6 +6,7 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { addDays } from 'date-fns';
 import { logger } from '@/lib/utils/logger';
+import { SUPER_ADMIN_EMAIL, isSuperAdmin as isSuperAdminEmail, isAdminEmailDomain } from '@/lib/auth/constants';
 
 interface ExportFilters {
   planStatus?: string[];
@@ -36,11 +37,11 @@ async function checkAdminAccess(userId: string): Promise<boolean> {
 
     // スーパー管理者チェック
     const isSuperAdmin =
-      user.email === process.env.ADMIN_EMAIL || user.email === 'admin@sns-share.com';
+      user.email === process.env.ADMIN_EMAIL || isSuperAdminEmail(user.email);
 
-    // 財務管理者チェック（@sns-share.comドメインかつ有効な財務管理者レコードを持つ）
+    // 財務管理者チェック（管理者ドメインかつ有効な財務管理者レコードを持つ）
     const isFinancialAdmin =
-      user.email.includes('@sns-share.com') && user.financialAdminRecord?.isActive === true;
+      isAdminEmailDomain(user.email) && user.financialAdminRecord?.isActive === true;
 
     return isSuperAdmin || isFinancialAdmin;
   } catch (error) {
@@ -184,10 +185,10 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    const isSuperAdmin =
-      user?.email === process.env.ADMIN_EMAIL || user?.email === 'admin@sns-share.com';
+    const isSuperAdminUser =
+      user?.email === process.env.ADMIN_EMAIL || isSuperAdminEmail(user?.email);
 
-    if (!isSuperAdmin) {
+    if (!isSuperAdminUser) {
       return NextResponse.json(
         {
           error: 'エクスポート実行権限がありません。閲覧のみ可能です。',

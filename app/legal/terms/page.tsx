@@ -1,9 +1,13 @@
 // app/legal/terms/page.tsx
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
+import { getBrandConfig } from '@/lib/brand/config';
+
+const brand = getBrandConfig();
+
 export const metadata: Metadata = {
-  title: '利用規約 | Share',
-  description: 'Shareサービスの利用規約です。',
+  title: `利用規約 | ${brand.name}`,
+  description: `${brand.name}サービスの利用規約です。`,
 };
 export default function TermsPage() {
   return (
@@ -18,7 +22,7 @@ export default function TermsPage() {
         <section>
           <h2 className="text-xl font-semibold mb-3">1. はじめに</h2>
           <p className="text-justify">
-            この利用規約（以下「本規約」）は、株式会社Senrigan（以下「当社」）が提供するサービス「Share」（以下「本サービス」）の利用条件を定めるものです。本サービスをご利用いただく際には、本規約に同意したものとみなされます。
+            この利用規約（以下「本規約」）は、{brand.companyName}（以下「当社」）が提供するサービス「{brand.name}」（以下「本サービス」）の利用条件を定めるものです。本サービスをご利用いただく際には、本規約に同意したものとみなされます。
           </p>
         </section>
         <section>
@@ -244,7 +248,7 @@ export default function TermsPage() {
         <div className="mt-8 text-right">
           <p>制定日: 2025年3月1日</p>
           <p>最終更新日: 2025年6月13日</p>
-          <p className="mt-4">株式会社Senrigan</p>
+          <p className="mt-4">{brand.companyName}</p>
         </div>
       </div>
     </PageLayout>

@@ -5,6 +5,8 @@ import { auth } from '@/auth';
 import { prisma, disconnectPrisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
 import { PermanentPlanType, PLAN_TYPE_DISPLAY_NAMES } from '@/lib/corporateAccess';
+import { isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
+import { getBrandConfig } from '@/lib/brand/config';
 
 export async function POST(request: Request) {
   try {
@@ -13,7 +15,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ success: false, error: 'Not authenticated' }, { status: 401 });
     }
 
-    if (session.user.email !== 'admin@sns-share.com') {
+    if (!isSuperAdminEmail(session.user.email)) {
       return NextResponse.json({ success: false, error: 'Not authorized' }, { status: 403 });
     }
 
@@ -153,7 +155,7 @@ export async function POST(request: Request) {
             data: {
               name: `${user.name || 'ユーザー'}の法人`,
               maxUsers: maxUsers,
-              primaryColor: '#3B82F6',
+              primaryColor: getBrandConfig().primaryColor,
               secondaryColor: '#60A5FA',
               onboardingCompleted: true,
               subscriptionId: subscription.id, // 🔥 修正: 作成されたサブスクリプションのIDを使用

@@ -155,8 +155,7 @@ export function OneTapSealOrderSummary({
               <div className="flex items-center space-x-2">
                 <Link className="h-4 w-4 text-blue-600" />
                 <span className="text-sm font-medium">設定URL:</span>
-                <span className="text-sm text-blue-700">app.sns-share.com/{profileSlug}</span>{' '}
-                {/* /qr/ を削除、qrSlug → profileSlug に変更 */}
+                <span className="text-sm text-blue-700">{new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com').host}/{profileSlug}</span>
               </div>
             </div>
           </div>

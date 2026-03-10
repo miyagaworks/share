@@ -3,17 +3,21 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
 import React from 'react';
 import Link from 'next/link';
+import { getBrandConfig } from '@/lib/brand/config';
+
+const brand = getBrandConfig();
+
 export const metadata: Metadata = {
-  title: '株式会社Senrigan | Share',
-  description: 'Shareを運営する株式会社Senriganについての情報です。',
+  title: `${brand.companyName} | ${brand.name}`,
+  description: `${brand.name}を運営する${brand.companyName}についての情報です。`,
 };
 export default function CompanyAboutPage() {
   return (
     <PageLayout
-      title="株式会社Senrigan"
+      title={brand.companyName}
       breadcrumbs={[
         { name: 'ホーム', href: '/' },
-        { name: '株式会社Senrigan', href: '/company/about' },
+        { name: brand.companyName, href: '/company/about' },
       ]}
     >
       <div className="space-y-8 text-justify">
@@ -25,12 +29,12 @@ export default function CompanyAboutPage() {
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50 w-1/3">社名</th>
                 <td className="py-4 px-4">
                   <Link
-                    href="https://senrigan.systems"
+                    href={brand.companyUrl}
                     className="text-blue-600 hover:text-blue-800 inline-flex items-center"
                     target="_blank"
                     rel="noopener noreferrer"
                   >
-                    株式会社Senrigan
+                    {brand.companyName}
                     <svg
                       xmlns="http://www.w3.org/2000/svg"
                       className="h-4 w-4 ml-1"
@@ -59,16 +63,14 @@ export default function CompanyAboutPage() {
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">所在地</th>
                 <td className="py-4 px-4">
-                  〒731-0137
-                  <br />
-                  広島県広島市安佐南区山本2-3-35
+                  {brand.companyAddress}
                 </td>
               </tr>
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">事業内容</th>
                 <td className="py-4 px-4">
                   <ul className="list-disc pl-5 space-y-1">
-                    <li>SNS連携サービス「Share」の企画・開発・運営</li>
+                    <li>SNS連携サービス「{brand.name}」の企画・開発・運営</li>
                     <li>ウェブアプリケーション開発</li>
                     <li>デジタルマーケティングソリューション提供</li>
                   </ul>
@@ -85,7 +87,7 @@ export default function CompanyAboutPage() {
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">問い合わせ</th>
                 <td className="py-4 px-4">
-                  メール: info@sns-share.com
+                  メール: {brand.supportEmail}
                   <br />
                   電話: 082-209-0181（平日10:00〜18:00）
                 </td>

@@ -1,0 +1,25 @@
+{
+  "$schema": "#partner-config",
+  "slug": "partner-slug",
+  "name": "パートナーブランド名",
+  "companyName": "パートナー会社名",
+  "companyUrl": "https://example.com",
+  "companyAddress": "〒000-0000 住所",
+  "domain": "card.example.com",
+  "supportEmail": "support@example.com",
+  "primaryColor": "#3B82F6",
+  "secondaryColor": "",
+  "logoUrl": "/logo.svg",
+  "faviconUrl": "/pwa/favicon.ico",
+  "tagline": "タグライン",
+  "features": {
+    "nfcSealOrder": true,
+    "stripePayment": false
+  },
+  "oauth": {
+    "provider": "shared",
+    "note": "shared = Share側GCPにリダイレクトURI追加, dedicated = パートナー独自GCP"
+  },
+  "createdAt": "2026-01-01",
+  "status": "active"
+}

@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { toast } from 'react-hot-toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import Link from 'next/link';
+import { DEFAULT_BRAND_NAME, DEFAULT_SUPPORT_EMAIL, DEFAULT_COMPANY_ADDRESS, DEFAULT_COMPANY_NAME } from '@/lib/brand/defaults';
 // お問い合わせの種類
 type ContactType =
   | 'account'
@@ -125,7 +126,7 @@ export default function ContactPageContent() {
     >
       <div className="space-y-6">
         <p className="mb-6 text-justify">
-          Shareに関するお問い合わせは、以下のフォームからお願いいたします。通常2営業日以内にご返信いたします。
+          {`${DEFAULT_BRAND_NAME}に関するお問い合わせは、以下のフォームからお願いいたします。`}通常2営業日以内にご返信いたします。
         </p>
         {success && contactType === 'corporate' ? (
           <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
@@ -308,7 +309,7 @@ export default function ContactPageContent() {
           <div className="space-y-4">
             <div>
               <h3 className="font-medium">メールでのお問い合わせ</h3>
-              <p className="mt-1">support@sns-share.com</p>
+              <p className="mt-1">{DEFAULT_SUPPORT_EMAIL}</p>
             </div>
             <div>
               <h3 className="font-medium">お電話でのお問い合わせ</h3>
@@ -317,11 +318,9 @@ export default function ContactPageContent() {
             <div>
               <h3 className="font-medium">郵送でのお問い合わせ</h3>
               <p className="mt-1 text-justify">
-                〒731-0137
+                {DEFAULT_COMPANY_ADDRESS}
                 <br />
-                広島県広島市安佐南区山本2-3-35
-                <br />
-                株式会社Senrigan Share運営事務局宛
+                {`${DEFAULT_COMPANY_NAME} ${DEFAULT_BRAND_NAME}運営事務局宛`}
               </p>
             </div>
           </div>

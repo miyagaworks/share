@@ -2,6 +2,7 @@
 'use client';
 import { useState } from 'react';
 import { HiPlay, HiClock, HiAcademicCap } from 'react-icons/hi';
+import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
 
 export default function TutorialPage() {
   const [expandedSection, setExpandedSection] = useState<string | null>('basic');
@@ -9,12 +10,12 @@ export default function TutorialPage() {
   const tutorials = [
     {
       id: 'basic',
-      title: '3分(早送り)でわかる！ Shareのプロフィール作成・共有ガイド',
+      title: `3分(早送り)でわかる！ ${DEFAULT_BRAND_NAME}のプロフィール作成・共有ガイド`,
       duration: '約9分',
       level: '初心者向け',
       videoUrl: 'https://youtu.be/gRWwERxK2n4',
       description:
-        '誰でも簡単に設定できるプロフィールの作成方法から、SNSリンクの追加、QRコードの生成、そして共有まで、Shareの便利な機能を詳しく解説します。',
+        `誰でも簡単に設定できるプロフィールの作成方法から、SNSリンクの追加、QRコードの生成、そして共有まで、${DEFAULT_BRAND_NAME}の便利な機能を詳しく解説します。`,
       topics: [
         {
           title: 'プロフィール設定',
@@ -44,7 +45,7 @@ export default function TutorialPage() {
       <div className="flex items-center mb-6">
         <div>
           <h1 className="text-3xl font-bold tracking-tight">使い方動画</h1>
-          <p className="text-muted-foreground">Shareの機能や使い方を動画で学びましょう</p>
+          <p className="text-muted-foreground">{`${DEFAULT_BRAND_NAME}の機能や使い方を動画で学びましょう`}</p>
         </div>
       </div>
 

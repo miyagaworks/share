@@ -36,6 +36,10 @@ yarn-error.log*
 # vercel
 .vercel
 
+# パートナー環境（機密情報を含む）- テンプレートは除外
+partners/*/
+!partners/_template/
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts

@@ -3,17 +3,21 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { FaqSection } from '@/components/shared/FaqSection';
 import { Metadata } from 'next';
 import Link from 'next/link';
+import { getBrandConfig } from '@/lib/brand/config';
+
+const brand = getBrandConfig();
+
 export const metadata: Metadata = {
-  title: 'よくある質問 | Share',
-  description: 'Shareサービスに関するよくある質問と回答です。',
+  title: `よくある質問 | ${brand.name}`,
+  description: `${brand.name}サービスに関するよくある質問と回答です。`,
 };
 // FAQ データの定義
 const generalFaqs = [
   {
-    question: 'Shareとは何ですか？',
+    question: `${brand.name}とは何ですか？`,
     answer: (
       <p className="text-justify">
-        Shareは、複数のSNSアカウントと連絡先情報を一つのデジタルプロフィールにまとめ、QRコードやNFCを通じて簡単に共有できるプラットフォームです。名刺交換のデジタル版として、ビジネスやプライベートでのコミュニケーションをスムーズにします。
+        {brand.name}は、複数のSNSアカウントと連絡先情報を一つのデジタルプロフィールにまとめ、QRコードやNFCを通じて簡単に共有できるプラットフォームです。名刺交換のデジタル版として、ビジネスやプライベートでのコミュニケーションをスムーズにします。
       </p>
     ),
   },
@@ -21,7 +25,7 @@ const generalFaqs = [
     question: '無料で利用できますか？',
     answer: (
       <p className="text-justify">
-        Shareには7日間の無料トライアル期間があります。その後は月額550円（税込）または年額5,500円（税込）の有料プランに移行していただく必要があります。有料プランでは、すべての機能を制限なくご利用いただけます。
+        {brand.name}には7日間の無料トライアル期間があります。その後は月額550円（税込）または年額5,500円（税込）の有料プランに移行していただく必要があります。有料プランでは、すべての機能を制限なくご利用いただけます。
       </p>
     ),
   },
@@ -29,7 +33,7 @@ const generalFaqs = [
     question: '対応しているSNSは何がありますか？',
     answer: (
       <div>
-        <p className="text-justify">Shareでは以下のSNSに対応しています：</p>
+        <p className="text-justify">{brand.name}では以下のSNSに対応しています：</p>
         <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-2 mt-2">
           <div className="flex items-center">
             <div className="w-2 h-2 rounded-full bg-blue-500 mr-2 flex-shrink-0"></div>
@@ -110,7 +114,7 @@ const billingFaqs = [
     question: '支払い方法は何がありますか？',
     answer: (
       <p className="text-justify">
-        Shareでは、クレジットカード決済（VISA、MasterCard、JCB、American Express、Diners
+        {brand.name}では、クレジットカード決済（VISA、MasterCard、JCB、American Express、Diners
         Club）に対応しています。銀行振込やコンビニ決済には現在対応しておりません。
       </p>
     ),
@@ -144,7 +148,7 @@ export default function FaqPage() {
     >
       <div className="space-y-8">
         <p className="text-lg text-gray-700 mb-8 text-justify">
-          Shareサービスに関するよくあるご質問をまとめました。お探しの情報が見つからない場合は、
+          {brand.name}サービスに関するよくあるご質問をまとめました。お探しの情報が見つからない場合は、
           <Link href="/support/contact" className="text-blue-600 hover:underline">
             お問い合わせフォーム
           </Link>

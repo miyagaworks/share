@@ -1,5 +1,6 @@
 // lib/utils/admin-access-api.ts
 import { prisma } from '@/lib/prisma';
+import { SUPER_ADMIN_EMAIL, isSuperAdmin as isSuperAdminEmail, isAdminEmailDomain } from '@/lib/auth/constants';
 
 /**
  * API用の管理者権限チェック
@@ -25,11 +26,11 @@ export async function checkAdminAccess(userId: string): Promise<boolean> {
 
     // スーパー管理者チェック
     const isSuperAdmin =
-      user.email === process.env.ADMIN_EMAIL || user.email === 'admin@sns-share.com';
+      user.email === process.env.ADMIN_EMAIL || isSuperAdminEmail(user.email);
 
-    // 財務管理者チェック（@sns-share.comドメインかつ有効な財務管理者レコードを持つ）
+    // 財務管理者チェック（管理者ドメインかつ有効な財務管理者レコードを持つ）
     const isFinancialAdmin =
-      user.email.includes('@sns-share.com') && user.financialAdminRecord?.isActive === true;
+      isAdminEmailDomain(user.email) && user.financialAdminRecord?.isActive === true;
 
     return isSuperAdmin || isFinancialAdmin;
   } catch (error) {
@@ -59,7 +60,7 @@ export async function checkFinancialAdminAccess(userId: string): Promise<boolean
       return false;
     }
 
-    return user.email.includes('@sns-share.com') && user.financialAdminRecord?.isActive === true;
+    return isAdminEmailDomain(user.email) && user.financialAdminRecord?.isActive === true;
   } catch (error) {
     console.error('財務管理者権限チェックエラー:', error);
     return false;
@@ -80,7 +81,7 @@ export async function checkSuperAdminAccess(userId: string): Promise<boolean> {
       return false;
     }
 
-    return user.email === process.env.ADMIN_EMAIL || user.email === 'admin@sns-share.com';
+    return user.email === process.env.ADMIN_EMAIL || isSuperAdminEmail(user.email);
   } catch (error) {
     console.error('スーパー管理者権限チェックエラー:', error);
     return false;

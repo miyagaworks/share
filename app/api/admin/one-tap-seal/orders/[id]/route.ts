@@ -9,6 +9,7 @@ import {
   type OneTapSealStatus,
   type OneTapSealColor,
 } from '@/types/one-tap-seal';
+import { isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
 
 interface RouteParams {
   params: Promise<{
@@ -39,7 +40,7 @@ export async function GET(request: NextRequest, { params }: RouteParams) {
     // スーパー管理者または財務管理者のチェック
     const isAdmin =
       user &&
-      (user.email.toLowerCase() === 'admin@sns-share.com' || user.isFinancialAdmin === true);
+      (isSuperAdminEmail(user.email) || user.isFinancialAdmin === true);
 
     if (!isAdmin) {
       logger.warn('管理者以外の注文詳細アクセス試行', {
@@ -177,7 +178,7 @@ export async function PUT(request: NextRequest, { params }: RouteParams) {
 
     const isAdmin =
       user &&
-      (user.email.toLowerCase() === 'admin@sns-share.com' || user.isFinancialAdmin === true);
+      (isSuperAdminEmail(user.email) || user.isFinancialAdmin === true);
 
     if (!isAdmin) {
       logger.warn('管理者以外の注文更新試行', {

@@ -3,6 +3,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
+import { isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
 
 // Webhookログ取得API（GET）
 export async function GET(request: NextRequest) {
@@ -202,7 +203,7 @@ async function checkAdminAccess(userId: string) {
     },
   });
 
-  const isAdmin = user?.email === 'admin@sns-share.com' || user?.subscriptionStatus === 'admin';
+  const isAdmin = isSuperAdminEmail(user?.email) || user?.subscriptionStatus === 'admin';
   const isFinancialAdmin = user?.isFinancialAdmin === true;
 
   return {

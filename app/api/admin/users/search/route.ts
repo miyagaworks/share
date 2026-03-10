@@ -5,6 +5,7 @@ import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { isSuperAdmin } from '@/lib/utils/admin-access-server';
+import { SUPER_ADMIN_EMAIL } from '@/lib/auth/constants';
 
 export async function GET(request: Request) {
   try {
@@ -53,7 +54,7 @@ export async function GET(request: Request) {
             id: { notIn: excludeIds },
           },
           {
-            email: { not: 'admin@sns-share.com' },
+            email: { not: SUPER_ADMIN_EMAIL },
           },
           {
             subscriptionStatus: { not: 'permanent' },

@@ -8,6 +8,7 @@ import { randomUUID } from 'crypto';
 import { sendEmail } from '@/lib/email';
 import { getEmailVerificationTemplate } from '@/lib/email/templates/email-verification';
 import { logger } from '@/lib/utils/logger';
+import { getBrandConfig } from '@/lib/brand/config';
 
 // 従来のreCAPTCHA検証関数
 async function verifyRecaptcha(token: string): Promise<boolean> {
@@ -117,7 +118,7 @@ export async function POST(req: NextRequest) {
         firstNameKana,
         email: normalizedEmail,
         password: hashedPassword,
-        mainColor: '#3B82F6',
+        mainColor: getBrandConfig().primaryColor,
         trialEndsAt,
         subscriptionStatus: 'trialing',
         emailVerified: null, // 未認証の状態

@@ -1,4 +1,5 @@
 // lib/email/templates/shipping-notification.ts
+import { getBrandConfig } from '@/lib/brand/config';
 import { ONE_TAP_SEAL_COLOR_NAMES, type OneTapSealColor } from '@/types/one-tap-seal';
 
 interface ShippingNotificationParams {
@@ -22,6 +23,7 @@ interface ShippingNotificationParams {
 }
 
 export function getShippingNotificationTemplate(params: ShippingNotificationParams) {
+  const brand = getBrandConfig();
   const { customerName, orderId, trackingNumber, items, shippingAddress, orderDate, totalAmount } =
     params;
 
@@ -29,7 +31,7 @@ export function getShippingNotificationTemplate(params: ShippingNotificationPara
   const itemsList = items
     .map(
       (item) =>
-        `　${ONE_TAP_SEAL_COLOR_NAMES[item.color]} × ${item.quantity}個 (URL: app.sns-share.com/${item.profileSlug})`,
+        `　${ONE_TAP_SEAL_COLOR_NAMES[item.color]} × ${item.quantity}個 (URL: ${brand.appUrl.replace(/^https?:\/\//, '')}/${item.profileSlug})`,
     )
     .join('\n');
 
@@ -38,11 +40,11 @@ export function getShippingNotificationTemplate(params: ShippingNotificationPara
     ? `${shippingAddress.address} ${shippingAddress.building}`
     : shippingAddress.address;
 
-  const subject = '【Share】ワンタップシール発送完了のお知らせ';
+  const subject = `【${brand.name}】ワンタップシール発送完了のお知らせ`;
 
   const text = `${customerName} 様
 
-いつもShareをご利用いただき、誠にありがとうございます。
+いつも${brand.name}をご利用いただき、誠にありがとうございます。
 この度は、ワンタップシールをご注文いただき、誠にありがとうございます。
 
 ご注文の商品を発送いたしましたのでお知らせいたします。
@@ -90,16 +92,16 @@ https://trackings.post.japanpost.jp/services/srv/search/direct?reqCodeNo1=${trac
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 サポートまでお気軽にお問い合わせください。
 
-📧 Email : support@sns-share.com
-🌐 Web   : https://app.sns-share.com
+📧 Email : ${brand.supportEmail}
+🌐 Web   : ${brand.appUrl}
 
 商品到着まで今しばらくお待ちください。
-今後ともShareをよろしくお願いいたします。
+今後とも${brand.name}をよろしくお願いいたします。
 
 ─────────────────────────────────────────────────────
-Share サポートチーム
-✉️ support@sns-share.com
-🌐 https://app.sns-share.com
+${brand.name} サポートチーム
+✉️ ${brand.supportEmail}
+🌐 ${brand.appUrl}
 ─────────────────────────────────────────────────────`;
 
   const html = `<!DOCTYPE html>
@@ -237,7 +239,7 @@ Share サポートチーム
     
     <div class="content">
       <p>こんにちは、<strong>${customerName}</strong> 様</p>
-      <p>いつもShareをご利用いただき、誠にありがとうございます。<br>
+      <p>いつも${brand.name}をご利用いただき、誠にありがとうございます。<br>
       この度は、ワンタップシールをご注文いただき、誠にありがとうございます。</p>
       
       <p><strong>ご注文の商品を発送いたしました</strong>ので、お知らせいたします。</p>
@@ -289,7 +291,7 @@ Share サポートチーム
               <span><strong>${ONE_TAP_SEAL_COLOR_NAMES[item.color]}</strong> × ${item.quantity}個</span>
             </div>
             <div style="font-size: 12px; color: #666;">
-              URL: app.sns-share.com/${item.profileSlug}
+              URL: ${brand.appUrl.replace(/^https?:\/\//, '')}/${item.profileSlug}
             </div>
           </div>
           `,
@@ -336,19 +338,19 @@ Share サポートチーム
         <h3 style="margin: 0 0 10px 0;">❓ ご不明点がございましたら</h3>
         <p style="margin: 0;">サポートまでお気軽にお問い合わせください。</p>
         <p style="margin: 5px 0 0 0; font-size: 14px;">
-          📧 <a href="mailto:support@sns-share.com" style="color: #667eea;">support@sns-share.com</a> |
-          🌐 <a href="https://app.sns-share.com" style="color: #667eea;">app.sns-share.com</a>
+          📧 <a href="mailto:${brand.supportEmail}" style="color: #667eea;">${brand.supportEmail}</a> |
+          🌐 <a href="${brand.appUrl}" style="color: #667eea;">${brand.appUrl.replace(/^https?:\/\//, '')}</a>
         </p>
       </div>
 
       <p style="margin-top: 30px;">商品到着まで今しばらくお待ちください。<br>
-      今後ともShareをよろしくお願いいたします。</p>
+      今後とも${brand.name}をよろしくお願いいたします。</p>
     </div>
 
     <div class="footer">
-      <strong>Share サポートチーム</strong><br>
-      📧 support@sns-share.com<br>
-      🌐 https://app.sns-share.com
+      <strong>${brand.name} サポートチーム</strong><br>
+      📧 ${brand.supportEmail}<br>
+      🌐 ${brand.appUrl}
     </div>
   </div>
 </body>

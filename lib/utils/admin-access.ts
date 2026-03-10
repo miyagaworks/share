@@ -1,8 +1,9 @@
 // lib/utils/admin-access.ts
 import { logger } from "@/lib/utils/logger";
 import { prisma } from '@/lib/prisma';
+import { SUPER_ADMIN_EMAIL } from '@/lib/auth/constants';
 // 管理者メールアドレスのリスト
-const ADMIN_EMAILS = ['admin@sns-share.com'];
+const ADMIN_EMAILS = [SUPER_ADMIN_EMAIL];
 /**
  * ユーザーが管理者かどうかをチェックする
  */

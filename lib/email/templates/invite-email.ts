@@ -1,4 +1,6 @@
 // lib/email/templates/invite-email.ts (Yahooメール対応版)
+import { getBrandConfig } from '@/lib/brand/config';
+
 interface InviteEmailParams {
   companyName: string;
   inviteUrl: string;
@@ -6,7 +8,8 @@ interface InviteEmailParams {
 
 export function getInviteEmailTemplate(params: InviteEmailParams) {
   const { companyName, inviteUrl } = params;
-  const siteName = 'Share';
+  const brand = getBrandConfig();
+  const siteName = brand.name;
 
   const html = `
     <!DOCTYPE html>
@@ -14,7 +17,7 @@ export function getInviteEmailTemplate(params: InviteEmailParams) {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>【Share】${companyName}からの招待</title>
+      <title>【${siteName}】${companyName}からの招待</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: Arial, sans-serif;">
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc;">
@@ -24,14 +27,14 @@ export function getInviteEmailTemplate(params: InviteEmailParams) {
               
               <!-- ヘッダー -->
               <tr>
-                <td style="background-color: #3B82F6; padding: 40px 20px; text-align: center;">
+                <td style="background-color: ${brand.primaryColor}; padding: 40px 20px; text-align: center;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="center">
                         <div style="background-color: #ffffff; display: inline-block; padding: 12px 24px; border-radius: 8px; margin-bottom: 20px;">
-                          <h1 style="color: #3B82F6; margin: 0; font-size: 28px; font-weight: bold;">Share</h1>
+                          <h1 style="color: ${brand.primaryColor}; margin: 0; font-size: 28px; font-weight: bold;">${brand.name}</h1>
                         </div>
-                        <p style="color: #ffffff; margin: 0; font-size: 16px;">すべてのSNS、ワンタップで</p>
+                        <p style="color: #ffffff; margin: 0; font-size: 16px;">${brand.tagline}</p>
                       </td>
                     </tr>
                   </table>
@@ -49,7 +52,7 @@ export function getInviteEmailTemplate(params: InviteEmailParams) {
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
                             <td align="center">
-                              <div style="background-color: #3B82F6; width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 20px; text-align: center; line-height: 60px;">
+                              <div style="background-color: ${brand.primaryColor}; width: 60px; height: 60px; border-radius: 50%; margin: 0 auto 20px; text-align: center; line-height: 60px;">
                                 <span style="color: white; font-size: 24px;">✉️</span>
                               </div>
                               <h2 style="color: #1f2937; margin: 0 0 10px; font-size: 24px; font-weight: 600;">${companyName}からの招待</h2>
@@ -62,7 +65,7 @@ export function getInviteEmailTemplate(params: InviteEmailParams) {
 
                     <!-- メッセージ -->
                     <tr>
-                      <td style="background-color: #f3f4f6; border-radius: 12px; padding: 25px; border-left: 4px solid #3B82F6;">
+                      <td style="background-color: #f3f4f6; border-radius: 12px; padding: 25px; border-left: 4px solid ${brand.primaryColor};">
                         <p style="color: #374151; margin: 0 0 15px; font-size: 16px; line-height: 1.6;">
                           <strong>${companyName}</strong>に招待されました。
                         </p>
@@ -77,9 +80,9 @@ export function getInviteEmailTemplate(params: InviteEmailParams) {
                       <td align="center" style="padding: 40px 0;">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td style="background-color: #3B82F6; border-radius: 8px;">
-                              <a href="${inviteUrl}" 
-                                 style="background-color: #3B82F6; 
+                            <td style="background-color: ${brand.primaryColor}; border-radius: 8px;">
+                              <a href="${inviteUrl}"
+                                 style="background-color: ${brand.primaryColor}; 
                                         color: #ffffff; 
                                         text-decoration: none; 
                                         padding: 16px 32px; 
@@ -128,27 +131,27 @@ export function getInviteEmailTemplate(params: InviteEmailParams) {
                     <tr>
                       <td align="center" style="padding-bottom: 20px;">
                         <p style="color: #6b7280; margin: 0 0 10px; font-size: 14px;">サポートが必要な場合は</p>
-                        <a href="mailto:support@sns-share.com" 
-                           style="color: #3B82F6; text-decoration: none; font-weight: 600;">
-                          support@sns-share.com
+                        <a href="mailto:${brand.supportEmail}"
+                           style="color: ${brand.primaryColor}; text-decoration: none; font-weight: 600;">
+                          ${brand.supportEmail}
                         </a>
                       </td>
                     </tr>
                     <tr>
                       <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
                         <p style="color: #9ca3af; margin: 0 0 5px; font-size: 12px;">
-                          〒731-0137 広島県広島市安佐南区山本2-3-35
+                          ${brand.companyAddress}
                         </p>
                         <p style="color: #9ca3af; margin: 0 0 15px; font-size: 12px;">
-                          運営: 株式会社Senrigan
+                          運営: ${brand.companyName}
                         </p>
                         <div style="margin-top: 15px;">
-                          <a href="https://app.sns-share.com/legal/privacy" 
+                          <a href="${brand.appUrl}${brand.privacyUrl}"
                              style="color: #9ca3af; text-decoration: none; font-size: 11px; margin: 0 10px;">
                             プライバシーポリシー
                           </a>
                           <span style="color: #d1d5db;">|</span>
-                          <a href="https://app.sns-share.com/legal/terms" 
+                          <a href="${brand.appUrl}${brand.termsUrl}"
                              style="color: #9ca3af; text-decoration: none; font-size: 11px; margin: 0 10px;">
                             利用規約
                           </a>
@@ -180,8 +183,8 @@ ${inviteUrl}
 📞 サポート情報
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-✉️ メール: support@sns-share.com
-🌐 ウェブサイト: https://app.sns-share.com
+✉️ メール: ${brand.supportEmail}
+🌐 ウェブサイト: ${brand.appUrl}
 
 ${siteName} サポートチーム
 
@@ -189,12 +192,12 @@ ${siteName} サポートチーム
 🏢 運営会社情報
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-〒731-0137 広島県広島市安佐南区山本2-3-35
-運営: 株式会社Senrigan
-すべてのSNS、ワンタップでShare
+${brand.companyAddress}
+運営: ${brand.companyName}
+${brand.tagline}${brand.name}
 
-📋 プライバシーポリシー: https://app.sns-share.com/legal/privacy
-📋 利用規約: https://app.sns-share.com/legal/terms`;
+📋 プライバシーポリシー: ${brand.appUrl}${brand.privacyUrl}
+📋 利用規約: ${brand.appUrl}${brand.termsUrl}`;
 
   return {
     subject: `【${siteName}】${companyName}からの招待`,

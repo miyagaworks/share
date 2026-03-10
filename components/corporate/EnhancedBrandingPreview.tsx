@@ -4,6 +4,7 @@ import Image from 'next/image';
 import { HiUser, HiGlobe, HiMail, HiPhone, HiPlus } from 'react-icons/hi';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
+import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
 // SNSリンクタイプ
 interface SnsLink {
   id: string;
@@ -250,7 +251,7 @@ export function EnhancedBrandingPreview({
           <a href="#" className="text-xs text-blue-600">
             このサービスを使ってみる
           </a>
-          <p className="text-xs text-gray-400 mt-2">Powered by Share</p>
+          <p className="text-xs text-gray-400 mt-2">{`Powered by ${DEFAULT_BRAND_NAME}`}</p>
         </div>
       </div>
     </div>

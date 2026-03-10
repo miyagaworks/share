@@ -5,6 +5,7 @@ import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { isAdminUser } from '@/lib/utils/admin-access-server';
+import { isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
 export const fetchCache = 'force-no-store';
 export const revalidate = 0;
 export async function POST(request: Request) {
@@ -52,7 +53,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
     // 管理者自身は削除不可
-    if (user.email === 'admin@sns-share.com') {
+    if (isSuperAdminEmail(user.email)) {
       return NextResponse.json({ error: '管理者アカウントは削除できません' }, { status: 403 });
     }
     // 法人テナント管理者かどうかチェック

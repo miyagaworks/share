@@ -31,7 +31,7 @@ export async function GET() {
     // 実際にテストメールを送信
     try {
       const result = await sendEmail({
-        to: process.env.EMAIL_SERVER_USER || 'support@sns-share.com', // 自分自身にテストメール
+        to: process.env.EMAIL_SERVER_USER || process.env.BRAND_SUPPORT_EMAIL || 'support@sns-share.com', // 自分自身にテストメール
         subject: 'テストメール',
         text: 'これはテストメールです。送信時刻: ' + new Date().toISOString(),
       });

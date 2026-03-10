@@ -7,12 +7,13 @@ import { prisma } from '@/lib/prisma';
 
 // generateVirtualTenantData関数を直接定義（依存関係を削減）
 function generateVirtualTenantData(userId: string, userName: string | null) {
+  const defaultColor = process.env.BRAND_PRIMARY_COLOR || '#3B82F6';
   return {
     id: `virtual-${userId}`,
     name: `${userName || 'ユーザー'}の法人`,
     settings: {
       logoUrl: null,
-      primaryColor: '#3B82F6',
+      primaryColor: defaultColor,
       secondaryColor: '#1E40AF',
     },
     departments: [], // 部署は空（オプション）

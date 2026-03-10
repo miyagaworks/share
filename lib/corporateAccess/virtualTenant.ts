@@ -88,7 +88,7 @@ export function generateVirtualTenantData(
       },
     ],
     settings: {
-      primaryColor: '#3B82F6',
+      primaryColor: process.env.BRAND_PRIMARY_COLOR || '#3B82F6',
       secondaryColor: '#60A5FA',
       logoUrl: null,
     },

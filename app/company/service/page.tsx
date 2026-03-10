@@ -1,9 +1,13 @@
 // app/company/service/page.tsx
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
+import { getBrandConfig } from '@/lib/brand/config';
+
+const brand = getBrandConfig();
+
 export const metadata: Metadata = {
-  title: 'サービスについて | Share',
-  description: 'Shareサービスの特徴や機能についての詳細情報です。',
+  title: `サービスについて | ${brand.name}`,
+  description: `${brand.name}サービスの特徴や機能についての詳細情報です。`,
 };
 export default function ServiceAboutPage() {
   return (
@@ -16,12 +20,12 @@ export default function ServiceAboutPage() {
     >
       <div className="space-y-8">
         <section>
-          <h2 className="text-xl font-semibold mb-4">Shareとは</h2>
+          <h2 className="text-xl font-semibold mb-4">{brand.name}とは</h2>
           <p className="mb-4 text-justify">
-            Shareは、複数のSNSアカウントと連絡先情報を一つのデジタルプロフィールにまとめ、QRコードやNFCを通じて簡単に共有できるプラットフォームです。
+            {brand.name}は、複数のSNSアカウントと連絡先情報を一つのデジタルプロフィールにまとめ、QRコードやNFCを通じて簡単に共有できるプラットフォームです。
           </p>
           <p className="text-justify">
-            現代社会では、人々は複数のSNSを使い分け、様々な連絡手段を持っています。それらをいちいち交換するのは手間がかかります。Shareはその問題を解決し、デジタル時代の新しい名刺として機能します。
+            現代社会では、人々は複数のSNSを使い分け、様々な連絡手段を持っています。それらをいちいち交換するのは手間がかかります。{brand.name}はその問題を解決し、デジタル時代の新しい名刺として機能します。
           </p>
         </section>
         <section>
@@ -77,7 +81,7 @@ export default function ServiceAboutPage() {
             <div>
               <h3 className="font-medium mb-2">日常のSNS共有</h3>
               <p className="text-justify">
-                友人や知人に「SNSのアカウント教えて」と言われたとき、一つ一つ教える手間が省けます。Shareプロフィールを共有するだけで完了です。
+                友人や知人に「SNSのアカウント教えて」と言われたとき、一つ一つ教える手間が省けます。{brand.name}プロフィールを共有するだけで完了です。
               </p>
             </div>
           </div>

@@ -10,6 +10,7 @@ import {
 } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
+import { getBrandConfig } from '@/lib/brand/config';
 
 // 🚀 Webhookハンドラー - 高速レスポンス + 財務管理 + ワンタップシール対応
 export async function POST(req: NextRequest) {
@@ -229,7 +230,7 @@ async function handleCorporateTenantCreation(
         adminId: userId,
         subscriptionId: subscriptionId,
         users: { connect: [{ id: userId }] },
-        primaryColor: '#3B82F6',
+        primaryColor: getBrandConfig().primaryColor,
         secondaryColor: 'var(--color-corporate-secondary)',
       },
     });

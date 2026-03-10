@@ -7,6 +7,7 @@ import { checkAdminPermission, isSuperAdmin } from '@/lib/utils/admin-access-ser
 import { sendExpenseApprovalEmail, sendExpenseApprovalResultEmail } from '@/lib/email/index';
 import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
+import { SUPER_ADMIN_EMAIL } from '@/lib/auth/constants';
 
 // 委託者経費一覧取得（財務管理者権限以上必要）
 export async function GET(request: NextRequest) {
@@ -307,7 +308,7 @@ export async function POST(request: NextRequest) {
       try {
         // 🔧 修正: スーパー管理者のメールアドレス取得
         const superAdmin = await prisma.user.findFirst({
-          where: { email: 'admin@sns-share.com' },
+          where: { email: SUPER_ADMIN_EMAIL },
           select: { email: true, name: true },
         });
 

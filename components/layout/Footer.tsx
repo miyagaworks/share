@@ -1,7 +1,10 @@
 // components/layout/Footer.tsx
 import React from 'react';
 import Link from 'next/link';
+import { getBrandConfig } from '@/lib/brand/config';
+
 export function Footer() {
+    const brand = getBrandConfig();
     const currentYear = new Date().getFullYear();
     return (
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
@@ -55,7 +58,7 @@ export function Footer() {
             <ul className="space-y-2">
               <li>
                 <Link href="/company/about" className="text-gray-600 hover:text-blue-600">
-                  株式会社Senrigan
+                  {brand.companyName}
                 </Link>
               </li>
               <li>
@@ -69,7 +72,7 @@ export function Footer() {
         {/* コピーライトの上の区切り線は維持 */}
         <div className="mt-8 border-t border-gray-200 pt-4">
           <p className="text-base text-gray-400 text-center">
-            &copy; {currentYear} Bialpha Inc. All rights reserved.
+            &copy; {currentYear} {brand.companyName}. All rights reserved.
           </p>
         </div>
       </div>

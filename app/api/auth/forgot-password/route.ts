@@ -5,6 +5,7 @@ import { logger } from "@/lib/utils/logger";
 import { prisma } from '@/lib/prisma';
 import { randomUUID } from 'crypto';
 import { Resend } from 'resend';
+import { getBrandConfig } from '@/lib/brand/config';
 // Resendインスタンスを初期化
 const resend = new Resend(process.env.RESEND_API_KEY);
 export async function POST(request: Request) {
@@ -53,17 +54,17 @@ export async function POST(request: Request) {
       },
     });
     logger.debug(`リセットトークンを生成しました: ${resetToken}`);
-    // 環境変数からベースURLを取得
-    const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
+    // ブランド設定を取得
+    const brand = getBrandConfig();
+    const baseUrl = brand.appUrl;
     // リセットリンクを生成
     const resetUrl = `${baseUrl}/auth/reset-password?token=${resetToken}`;
     logger.debug(`リセットリンク: ${resetUrl}`);
-    // サイト名を追加（スパムフィルター対策）
-    const siteName = 'Share';
+    const siteName = brand.name;
     try {
       // Resendを使用してメール送信
       const { error } = await resend.emails.send({
-        from: `${siteName} <noreply@sns-share.com>`, // 検証済みドメインのメールアドレス
+        from: `${brand.fromName} <${brand.fromEmail}>`, // 検証済みドメインのメールアドレス
         to: [user.email],
         subject: `【${siteName}】パスワードリセットのご案内`,
         html: `
@@ -72,21 +73,21 @@ export async function POST(request: Request) {
             <p>${siteName}をご利用いただきありがとうございます。</p>
             <p>パスワードリセットのリクエストを受け付けました。<br>以下のボタンをクリックして、新しいパスワードを設定してください。</p>
             <div style="text-align: center; margin: 30px 0;">
-              <a href="${resetUrl}" style="background-color: #4A89DC; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">パスワードをリセットする</a>
+              <a href="${resetUrl}" style="background-color: ${brand.primaryColor}; color: white; padding: 12px 20px; text-decoration: none; border-radius: 4px; font-weight: bold;">パスワードをリセットする</a>
             </div>
             <p>または、以下のURLをブラウザに貼り付けてアクセスしてください：</p>
             <p style="word-break: break-all; background-color: #f5f5f5; padding: 10px; border-radius: 4px;">${resetUrl}</p>
             <p>このリンクは<strong>1時間のみ有効</strong>です。<br>心当たりがない場合は、このメールを無視してください。</p>
             <div style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #e0e0e0; font-size: 12px; color: #666;">
               <p>${siteName}サポートチーム<br>
-              お問い合わせ: <a href="mailto:support@sns-share.com">support@sns-share.com</a></p>
+              お問い合わせ: <a href="mailto:${brand.supportEmail}">${brand.supportEmail}</a></p>
               <div style="margin-top: 10px; font-size: 11px; color: #999;">
-                <p>すべてのSNS、ワンタップでShare</p>
-                <p>〒731-0137 広島県広島市安佐南区山本2-3-35<br>
-                運営: 株式会社Senrigan</p>
+                <p>${brand.tagline}${brand.name}</p>
+                <p>${brand.companyAddress}<br>
+                運営: ${brand.companyName}</p>
                 <p>
-                  <a href="https://app.sns-share.com/legal/privacy" style="color: #4A89DC; text-decoration: none;">プライバシーポリシー</a> | 
-                  <a href="https://app.sns-share.com/legal/terms" style="color: #4A89DC; text-decoration: none;">利用規約</a>
+                  <a href="${brand.appUrl}${brand.privacyUrl}" style="color: ${brand.primaryColor}; text-decoration: none;">プライバシーポリシー</a> |
+                  <a href="${brand.appUrl}${brand.termsUrl}" style="color: ${brand.primaryColor}; text-decoration: none;">利用規約</a>
                 </p>
               </div>
             </div>

@@ -6,6 +6,8 @@ import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/utils/logger';
 import { sendEmail } from '@/lib/email';
 import { getAdminNotificationEmailTemplate } from '@/lib/email/templates/admin-notification';
+import { isSuperAdmin as isSuperAdminEmail, isAdminEmailDomain } from '@/lib/auth/constants';
+import { getBrandConfig } from '@/lib/brand/config';
 
 // 🔧 修正: 管理者権限チェック（処理権限も含む）
 async function checkCancelRequestProcessAccess(userId: string) {
@@ -27,11 +29,11 @@ async function checkCancelRequestProcessAccess(userId: string) {
 
   // スーパー管理者チェック
   const isSuperAdmin =
-    user.email === process.env.ADMIN_EMAIL || user.email === 'admin@sns-share.com';
+    user.email === process.env.ADMIN_EMAIL || isSuperAdminEmail(user.email);
 
   // 財務管理者チェック
   const isFinancialAdmin =
-    user.email.includes('@sns-share.com') && user.financialAdminRecord?.isActive === true;
+    isAdminEmailDomain(user.email) && user.financialAdminRecord?.isActive === true;
 
   return {
     canView: isSuperAdmin || isFinancialAdmin, // 両方とも閲覧可能
@@ -66,6 +68,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
       );
     }
 
+    const brand = getBrandConfig();
     const { action, adminNotes } = await req.json();
 
     if (!['approve', 'reject'].includes(action)) {
@@ -120,7 +123,7 @@ export async function PATCH(req: NextRequest, context: { params: Promise<{ id: s
     // ユーザーに結果通知メールを送信
     try {
       const emailTemplate = getAdminNotificationEmailTemplate({
-        subject: `【Share】解約申請${action === 'approve' ? '承認' : '却下'}のお知らせ`,
+        subject: `【${brand.name}】解約申請${action === 'approve' ? '承認' : '却下'}のお知らせ`,
         title: `解約申請が${action === 'approve' ? '承認' : '却下'}されました`,
         userName: cancelRequest.user.name || 'お客様',
         message:

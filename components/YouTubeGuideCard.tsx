@@ -2,6 +2,7 @@
 'use client';
 import React, { useState, useEffect } from 'react';
 import { HiPlay, HiAcademicCap, HiClock, HiX } from 'react-icons/hi';
+import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
 
 export function YouTubeGuideCard() {
   const [isExpanded, setIsExpanded] = useState(false);
@@ -34,7 +35,7 @@ export function YouTubeGuideCard() {
               </div>
               <div className="ml-3">
                 <h3 className="text-lg font-semibold text-gray-900 text-justify">
-                  3分(早送り)でわかる！ Shareのプロフィール作成・共有ガイド
+                  {`3分(早送り)でわかる！ ${DEFAULT_BRAND_NAME}のプロフィール作成・共有ガイド`}
                 </h3>
                 <div className="flex items-center mt-1 space-x-3">
                   <span className="inline-flex items-center text-sm text-gray-500">
@@ -61,7 +62,7 @@ export function YouTubeGuideCard() {
         {/* コンテンツ部分 */}
         <div className="px-6 py-4">
           <p className="text-gray-600 text-sm leading-relaxed text-justify">
-            この動画では、誰でも簡単に設定できるプロフィールの作成方法から、SNSリンクの追加、QRコードの生成、そして共有まで、Shareの便利な機能を詳しく解説します。
+            {`この動画では、誰でも簡単に設定できるプロフィールの作成方法から、SNSリンクの追加、QRコードの生成、そして共有まで、${DEFAULT_BRAND_NAME}の便利な機能を詳しく解説します。`}
           </p>
 
           {/* 展開可能なセクション */}

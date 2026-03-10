@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { Resend } from 'resend';
+import { getBrandConfig } from '@/lib/brand/config';
 // Resendインスタンスを初期化
 const resend = new Resend(process.env.RESEND_API_KEY);
 // お問い合わせのカテゴリを日本語に変換する関数
@@ -52,8 +53,9 @@ export async function POST(req: Request) {
       userId: userId || null, // 変数から取得
     });
     const contactTypeJapanese = getContactTypeJapanese(contactType);
-    // サイト名を追加（スパムフィルター対策）
-    const siteName = 'Share';
+    // ブランド設定を取得
+    const brand = getBrandConfig();
+    const siteName = brand.name;
     // 法人プランのお問い合わせの場合
     if (contactType === 'corporate') {
       // 管理者向けメール本文（HTML形式）
@@ -96,24 +98,23 @@ export async function POST(req: Request) {
     <p style="margin: 0; color: #b91c1c; font-weight: 500;">※このお問い合わせは優先対応が必要です。1営業日以内に返信してください。</p>
   </div>
   <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 550px; color: #333; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-    <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">Share サポートチーム</div>
-    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">株式会社Senrigan Share運営事務局</div>
-    <div style="border-top: 2px solid #3B82F6; margin: 12px 0; width: 100px;"></div>
+    <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">${brand.name} サポートチーム</div>
+    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">${brand.companyName} ${brand.name}運営事務局</div>
+    <div style="border-top: 2px solid ${brand.primaryColor}; margin: 12px 0; width: 100px;"></div>
     <div style="font-size: 13px; margin: 4px 0;">
-      メール: <a href="mailto:support@sns-share.com" style="color: #3B82F6; text-decoration: none;">support@sns-share.com</a><br>
-      電話: 082-209-0181（平日10:00〜18:00 土日祝日休業）<br>
-      ウェブ: <a href="https://app.sns-share.com" style="color: #3B82F6; text-decoration: none;">app.sns-share.com</a>
+      メール: <a href="mailto:${brand.supportEmail}" style="color: ${brand.primaryColor}; text-decoration: none;">${brand.supportEmail}</a><br>
+      ウェブ: <a href="${brand.appUrl}" style="color: ${brand.primaryColor}; text-decoration: none;">${brand.appUrl.replace('https://', '')}</a>
     </div>
-    <div style="margin: 12px 0; font-style: italic; color: #4B5563; font-size: 13px; border-left: 3px solid #3B82F6; padding-left: 10px;">
-      すべてのSNS、ワンタップでShare
+    <div style="margin: 12px 0; font-style: italic; color: #4B5563; font-size: 13px; border-left: 3px solid ${brand.primaryColor}; padding-left: 10px;">
+      ${brand.tagline}${brand.name}
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
-      〒731-0137 広島県広島市安佐南区山本2-3-35<br>
-      運営: <a href="https://senrigan.systems" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
+      ${brand.companyAddress}<br>
+      運営: <a href="${brand.companyUrl}" style="color: ${brand.primaryColor}; text-decoration: none; font-weight: 500;" target="_blank">${brand.companyName}</a>
     </div>
     <div style="margin-top: 10px;">
-      <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 
-      <a href="https://app.sns-share.com/legal/terms" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">利用規約</a>
+      <a href="${brand.appUrl}${brand.privacyUrl}" style="display: inline-block; margin-right: 8px; color: ${brand.primaryColor}; text-decoration: none;">プライバシーポリシー</a> |
+      <a href="${brand.appUrl}${brand.termsUrl}" style="display: inline-block; margin-right: 8px; color: ${brand.primaryColor}; text-decoration: none;">利用規約</a>
     </div>
   </div>
 </div>
@@ -148,24 +149,23 @@ export async function POST(req: Request) {
     ※このメールは自動送信されています。このメールには返信しないでください。
   </p>
   <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 550px; color: #333; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-    <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">Share サポートチーム</div>
-    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">株式会社Senrigan Share運営事務局</div>
-    <div style="border-top: 2px solid #3B82F6; margin: 12px 0; width: 100px;"></div>
+    <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">${brand.name} サポートチーム</div>
+    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">${brand.companyName} ${brand.name}運営事務局</div>
+    <div style="border-top: 2px solid ${brand.primaryColor}; margin: 12px 0; width: 100px;"></div>
     <div style="font-size: 13px; margin: 4px 0;">
-      メール: <a href="mailto:support@sns-share.com" style="color: #3B82F6; text-decoration: none;">support@sns-share.com</a><br>
-      電話: 082-209-0181（平日10:00〜18:00 土日祝日休業）<br>
-      ウェブ: <a href="https://app.sns-share.com" style="color: #3B82F6; text-decoration: none;">app.sns-share.com</a>
+      メール: <a href="mailto:${brand.supportEmail}" style="color: ${brand.primaryColor}; text-decoration: none;">${brand.supportEmail}</a><br>
+      ウェブ: <a href="${brand.appUrl}" style="color: ${brand.primaryColor}; text-decoration: none;">${brand.appUrl.replace('https://', '')}</a>
     </div>
-    <div style="margin: 12px 0; font-style: italic; color: #4B5563; font-size: 13px; border-left: 3px solid #3B82F6; padding-left: 10px;">
-      すべてのSNS、ワンタップでShare
+    <div style="margin: 12px 0; font-style: italic; color: #4B5563; font-size: 13px; border-left: 3px solid ${brand.primaryColor}; padding-left: 10px;">
+      ${brand.tagline}${brand.name}
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
-      〒731-0137 広島県広島市安佐南区山本2-3-35<br>
-      運営: <a href="https://senrigan.systems" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
+      ${brand.companyAddress}<br>
+      運営: <a href="${brand.companyUrl}" style="color: ${brand.primaryColor}; text-decoration: none; font-weight: 500;" target="_blank">${brand.companyName}</a>
     </div>
     <div style="margin-top: 10px;">
-      <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 
-      <a href="https://app.sns-share.com/legal/terms" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">利用規約</a>
+      <a href="${brand.appUrl}${brand.privacyUrl}" style="display: inline-block; margin-right: 8px; color: ${brand.primaryColor}; text-decoration: none;">プライバシーポリシー</a> |
+      <a href="${brand.appUrl}${brand.termsUrl}" style="display: inline-block; margin-right: 8px; color: ${brand.primaryColor}; text-decoration: none;">利用規約</a>
     </div>
   </div>
 </div>
@@ -173,8 +173,8 @@ export async function POST(req: Request) {
       try {
         // 管理者へのメール送信
         const { error: adminEmailError } = await resend.emails.send({
-          from: `${siteName} <noreply@sns-share.com>`,
-          to: [process.env.ADMIN_EMAIL || 'corporate@sns-share.com'],
+          from: `${brand.fromName} <${brand.fromEmail}>`,
+          to: [process.env.ADMIN_EMAIL || brand.supportEmail],
           subject: `【重要】法人プランのお問い合わせ: ${subject}`,
           html: adminHtmlContent,
         });
@@ -187,7 +187,7 @@ export async function POST(req: Request) {
         }
         // ユーザーへの自動返信メール送信
         const { error: userEmailError } = await resend.emails.send({
-          from: `${siteName} <noreply@sns-share.com>`,
+          from: `${brand.fromName} <${brand.fromEmail}>`,
           to: [email],
           subject: `【${siteName}】法人プランへのお問い合わせを受け付けました`,
           html: autoReplyHtmlContent,
@@ -256,24 +256,23 @@ export async function POST(req: Request) {
     <div style="background-color: #f8fafc; padding: 15px; border-radius: 4px; border: 1px solid #e2e8f0; white-space: pre-line; text-align: justify;">${message}</div>
   </div>
   <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 550px; color: #333; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-    <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">Share サポートチーム</div>
-    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">株式会社Senrigan Share運営事務局</div>
-    <div style="border-top: 2px solid #3B82F6; margin: 12px 0; width: 100px;"></div>
+    <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">${brand.name} サポートチーム</div>
+    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">${brand.companyName} ${brand.name}運営事務局</div>
+    <div style="border-top: 2px solid ${brand.primaryColor}; margin: 12px 0; width: 100px;"></div>
     <div style="font-size: 13px; margin: 4px 0;">
-      メール: <a href="mailto:support@sns-share.com" style="color: #3B82F6; text-decoration: none;">support@sns-share.com</a><br>
-      電話: 082-209-0181（平日10:00〜18:00 土日祝日休業）<br>
-      ウェブ: <a href="https://app.sns-share.com" style="color: #3B82F6; text-decoration: none;">app.sns-share.com</a>
+      メール: <a href="mailto:${brand.supportEmail}" style="color: ${brand.primaryColor}; text-decoration: none;">${brand.supportEmail}</a><br>
+      ウェブ: <a href="${brand.appUrl}" style="color: ${brand.primaryColor}; text-decoration: none;">${brand.appUrl.replace('https://', '')}</a>
     </div>
-    <div style="margin: 12px 0; font-style: italic; color: #4B5563; font-size: 13px; border-left: 3px solid #3B82F6; padding-left: 10px;">
-      すべてのSNS、ワンタップでShare
+    <div style="margin: 12px 0; font-style: italic; color: #4B5563; font-size: 13px; border-left: 3px solid ${brand.primaryColor}; padding-left: 10px;">
+      ${brand.tagline}${brand.name}
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
-      〒731-0137 広島県広島市安佐南区山本2-3-35<br>
-      運営: <a href="https://senrigan.systems" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
+      ${brand.companyAddress}<br>
+      運営: <a href="${brand.companyUrl}" style="color: ${brand.primaryColor}; text-decoration: none; font-weight: 500;" target="_blank">${brand.companyName}</a>
     </div>
     <div style="margin-top: 10px;">
-      <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 
-      <a href="https://app.sns-share.com/legal/terms" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">利用規約</a>
+      <a href="${brand.appUrl}${brand.privacyUrl}" style="display: inline-block; margin-right: 8px; color: ${brand.primaryColor}; text-decoration: none;">プライバシーポリシー</a> |
+      <a href="${brand.appUrl}${brand.termsUrl}" style="display: inline-block; margin-right: 8px; color: ${brand.primaryColor}; text-decoration: none;">利用規約</a>
     </div>
   </div>
 </div>
@@ -304,24 +303,23 @@ export async function POST(req: Request) {
     ※このメールは自動送信されています。このメールには返信しないでください。
   </p>
   <div style="font-family: 'Helvetica Neue', Arial, sans-serif; max-width: 550px; color: #333; margin-top: 30px; padding-top: 20px; border-top: 1px solid #e5e7eb;">
-    <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">Share サポートチーム</div>
-    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">株式会社Senrigan Share運営事務局</div>
-    <div style="border-top: 2px solid #3B82F6; margin: 12px 0; width: 100px;"></div>
+    <div style="font-size: 16px; font-weight: bold; margin: 0; color: #1E40AF;">${brand.name} サポートチーム</div>
+    <div style="font-size: 14px; margin: 2px 0 8px; color: #4B5563;">${brand.companyName} ${brand.name}運営事務局</div>
+    <div style="border-top: 2px solid ${brand.primaryColor}; margin: 12px 0; width: 100px;"></div>
     <div style="font-size: 13px; margin: 4px 0;">
-      メール: <a href="mailto:support@sns-share.com" style="color: #3B82F6; text-decoration: none;">support@sns-share.com</a><br>
-      電話: 082-209-0181（平日10:00〜18:00 土日祝日休業）<br>
-      ウェブ: <a href="https://app.sns-share.com" style="color: #3B82F6; text-decoration: none;">app.sns-share.com</a>
+      メール: <a href="mailto:${brand.supportEmail}" style="color: ${brand.primaryColor}; text-decoration: none;">${brand.supportEmail}</a><br>
+      ウェブ: <a href="${brand.appUrl}" style="color: ${brand.primaryColor}; text-decoration: none;">${brand.appUrl.replace('https://', '')}</a>
     </div>
-    <div style="margin: 12px 0; font-style: italic; color: #4B5563; font-size: 13px; border-left: 3px solid #3B82F6; padding-left: 10px;">
-      すべてのSNS、ワンタップでShare
+    <div style="margin: 12px 0; font-style: italic; color: #4B5563; font-size: 13px; border-left: 3px solid ${brand.primaryColor}; padding-left: 10px;">
+      ${brand.tagline}${brand.name}
     </div>
     <div style="font-size: 12px; color: #6B7280; margin-top: 8px;">
-      〒731-0137 広島県広島市安佐南区山本2-3-35<br>
-      運営: <a href="https://senrigan.systems" style="color: #3B82F6; text-decoration: none; font-weight: 500;" target="_blank">株式会社Senrigan</a>
+      ${brand.companyAddress}<br>
+      運営: <a href="${brand.companyUrl}" style="color: ${brand.primaryColor}; text-decoration: none; font-weight: 500;" target="_blank">${brand.companyName}</a>
     </div>
     <div style="margin-top: 10px;">
-      <a href="https://app.sns-share.com/legal/privacy" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">プライバシーポリシー</a> | 
-      <a href="https://app.sns-share.com/legal/terms" style="display: inline-block; margin-right: 8px; color: #3B82F6; text-decoration: none;">利用規約</a>
+      <a href="${brand.appUrl}${brand.privacyUrl}" style="display: inline-block; margin-right: 8px; color: ${brand.primaryColor}; text-decoration: none;">プライバシーポリシー</a> |
+      <a href="${brand.appUrl}${brand.termsUrl}" style="display: inline-block; margin-right: 8px; color: ${brand.primaryColor}; text-decoration: none;">利用規約</a>
     </div>
   </div>
 </div>
@@ -329,8 +327,8 @@ export async function POST(req: Request) {
       try {
         // 管理者へのメール送信
         const { error: adminEmailError } = await resend.emails.send({
-          from: `${siteName} <noreply@sns-share.com>`,
-          to: [process.env.SUPPORT_EMAIL || 'support@sns-share.com'],
+          from: `${brand.fromName} <${brand.fromEmail}>`,
+          to: [process.env.SUPPORT_EMAIL || brand.supportEmail],
           subject: `【${siteName}】お問い合わせ: ${subject}`,
           html: adminHtmlContent,
         });
@@ -343,7 +341,7 @@ export async function POST(req: Request) {
         }
         // ユーザーへの自動返信メール送信
         const { error: userEmailError } = await resend.emails.send({
-          from: `${siteName} <noreply@sns-share.com>`,
+          from: `${brand.fromName} <${brand.fromEmail}>`,
           to: [email],
           subject: `【${siteName}】お問い合わせを受け付けました`,
           html: autoReplyHtmlContent,

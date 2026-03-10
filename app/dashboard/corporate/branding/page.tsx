@@ -12,6 +12,7 @@ import { HiSave, HiRefresh, HiInformationCircle, HiUpload, HiX } from 'react-ico
 import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccess';
 import Image from 'next/image';
 import tinycolor from 'tinycolor2';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 
 // テナント情報の型定義
 interface TenantData {
@@ -39,7 +40,7 @@ export default function ImprovedCorporateBrandingPage() {
   const [maintainAspectRatio, setMaintainAspectRatio] = useState(true);
   const [sizeSlider, setSizeSlider] = useState(100);
   const originalLogoSize = useRef<{ width: number; height: number } | null>(null);
-  const [primaryColor, setPrimaryColor] = useState('#3B82F6');
+  const [primaryColor, setPrimaryColor] = useState(DEFAULT_PRIMARY_COLOR);
   const [secondaryColor, setSecondaryColor] = useState('#1E40AF');
   const [isAdmin, setIsAdmin] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -468,7 +469,7 @@ export default function ImprovedCorporateBrandingPage() {
                 <Button
                   variant="corporateOutline"
                   onClick={() => {
-                    setPrimaryColor('#3B82F6');
+                    setPrimaryColor(DEFAULT_PRIMARY_COLOR);
                     setSecondaryColor('#1E40AF');
                   }}
                   className="flex items-center"

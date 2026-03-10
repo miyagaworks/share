@@ -9,6 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
+import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
 // フォームのバリデーションスキーマ
 const ResetPasswordSchema = z
   .object({
@@ -155,7 +156,7 @@ function ResetPasswordContent() {
             <div className="mb-8">
               <Image
                 src="/logo_blue.svg"
-                alt="Share Logo"
+                alt={`${DEFAULT_BRAND_NAME} Logo`}
                 width={90}
                 height={90}
                 className="mx-auto"
@@ -185,12 +186,12 @@ function ResetPasswordContent() {
           <div className="absolute inset-0 bg-pattern opacity-10"></div>
         </div>
         <div className="z-10 max-w-md text-center">
-          <h1 className="text-4xl font-bold text-white mb-6">Share</h1>
+          <h1 className="text-4xl font-bold text-white mb-6">{DEFAULT_BRAND_NAME}</h1>
           <p className="text-xl text-white/90 mb-8">シンプルにつながる、スマートにシェア。</p>
           <div className="flex flex-col space-y-4 mt-12">
             <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
               <p className="text-white text-left mb-3">
-                「Share」を使えば、あなたのSNSアカウントと連絡先情報をひとつにまとめて、簡単に共有できます。
+                {`「${DEFAULT_BRAND_NAME}」を使えば、あなたのSNSアカウントと連絡先情報をひとつにまとめて、簡単に共有できます。`}
               </p>
               <p className="text-white/80 text-left">
                 QRコードでシェアして、ビジネスでもプライベートでも人とのつながりを簡単に。
@@ -204,7 +205,7 @@ function ResetPasswordContent() {
         <div className="w-full max-w-md">
           <div className="text-center mb-8">
             <div className="md:hidden flex justify-center mb-8">
-              <Image src="/logo_blue.svg" alt="Share Logo" width={90} height={90} priority />
+              <Image src="/logo_blue.svg" alt={`${DEFAULT_BRAND_NAME} Logo`} width={90} height={90} priority />
             </div>
             <h2 className="text-3xl font-bold text-gray-900">新しいパスワード設定</h2>
             <p className="mt-2 text-gray-600">新しいパスワードを入力してください。</p>

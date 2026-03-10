@@ -4,6 +4,7 @@ import { sendEmail } from '@/lib/email';
 import { getExpenseApprovalEmailTemplate } from '@/lib/email/templates/expense-approval';
 import { getExpenseApprovalResultEmailTemplate } from '@/lib/email/templates/expense-approval-result';
 import { logger } from '@/lib/utils/logger';
+import { SUPER_ADMIN_EMAIL } from '@/lib/auth/constants';
 
 export async function sendExpenseApprovalEmail(params: {
   expenseId: string;
@@ -16,7 +17,8 @@ export async function sendExpenseApprovalEmail(params: {
   expenseDate: string;
 }) {
   try {
-    const approvalUrl = `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/dashboard/admin/company-expenses?expenseId=${params.expenseId}`;
+    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
+    const approvalUrl = `${appUrl}/dashboard/admin/company-expenses?expenseId=${encodeURIComponent(params.expenseId)}`;
 
     const emailTemplate = getExpenseApprovalEmailTemplate({
       ...params,
@@ -24,7 +26,7 @@ export async function sendExpenseApprovalEmail(params: {
     });
 
     const result = await sendEmail({
-      to: 'admin@sns-share.com',
+      to: SUPER_ADMIN_EMAIL,
       subject: emailTemplate.subject,
       text: emailTemplate.text,
       html: emailTemplate.html,

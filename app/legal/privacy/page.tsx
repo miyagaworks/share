@@ -1,9 +1,13 @@
 // app/legal/privacy/page.tsx
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
+import { getBrandConfig } from '@/lib/brand/config';
+
+const brand = getBrandConfig();
+
 export const metadata: Metadata = {
-  title: 'プライバシーポリシー | Share',
-  description: 'Shareサービスのプライバシーポリシーです。',
+  title: `プライバシーポリシー | ${brand.name}`,
+  description: `${brand.name}サービスのプライバシーポリシーです。`,
 };
 export default function PrivacyPage() {
   return (
@@ -18,7 +22,7 @@ export default function PrivacyPage() {
         <section>
           <h2 className="text-xl font-semibold mb-3">1. はじめに</h2>
           <p className="text-justify">
-            株式会社Senrigan（以下「当社」）は、提供するサービス「Share」（以下「本サービス」）における個人情報の取り扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」）を定めます。
+            {brand.companyName}（以下「当社」）は、提供するサービス「{brand.name}」（以下「本サービス」）における個人情報の取り扱いについて、以下のとおりプライバシーポリシー（以下「本ポリシー」）を定めます。
           </p>
         </section>
         <section>
@@ -84,9 +88,9 @@ export default function PrivacyPage() {
           <h2 className="text-xl font-semibold mb-3">9. お問い合わせ</h2>
           <p className="text-justify">本ポリシーに関するお問い合わせは、下記の連絡先までお願いいたします。</p>
           <p className="mt-2">
-            株式会社Senrigan
+            {brand.companyName}
             <br />
-            メールアドレス: privacy@sns-share.com
+            メールアドレス: {brand.supportEmail}
           </p>
         </section>
       </div>

@@ -7,6 +7,7 @@ import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/Button';
 import { cn } from '@/lib/utils';
 import { DashboardHeader } from '@/components/layout/DashboardHeader';
+import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
 // 必要なアイコンのみをインポート
 import {
   HiOutlineInformationCircle,
@@ -55,7 +56,7 @@ export function Header({ className }: HeaderProps) {
             </svg>
           </button>
           <Link href="/dashboard" className="ml-4 flex items-center lg:ml-0">
-            <Image src="/logo.svg" alt="Share Logo" width={145} height={42} priority />
+            <Image src="/logo.svg" alt={`${DEFAULT_BRAND_NAME} Logo`} width={145} height={42} priority />
           </Link>
         </div>
         <div className="hidden md:flex md:items-center md:space-x-6">

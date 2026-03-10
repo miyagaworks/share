@@ -1,9 +1,13 @@
 // app/legal/transactions/page.tsx
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
+import { getBrandConfig } from '@/lib/brand/config';
+
+const brand = getBrandConfig();
+
 export const metadata: Metadata = {
-  title: '特定商取引法に基づく表記 | Share',
-  description: 'Shareサービスの特定商取引法に基づく表記です。',
+  title: `特定商取引法に基づく表記 | ${brand.name}`,
+  description: `${brand.name}サービスの特定商取引法に基づく表記です。`,
 };
 export default function TransactionsPage() {
   return (
@@ -20,7 +24,7 @@ export default function TransactionsPage() {
             <tbody>
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50 w-1/3">販売事業者</th>
-                <td className="py-4 px-4">株式会社Senrigan</td>
+                <td className="py-4 px-4">{brand.companyName}</td>
               </tr>
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">代表者名</th>
@@ -29,9 +33,7 @@ export default function TransactionsPage() {
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">所在地</th>
                 <td className="py-4 px-4">
-                  〒731-0137
-                  <br />
-                  広島県広島市安佐南区山本2-3-35
+                  {brand.companyAddress}
                 </td>
               </tr>
               <tr className="border-b">
@@ -44,11 +46,11 @@ export default function TransactionsPage() {
               </tr>
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">メールアドレス</th>
-                <td className="py-4 px-4">info@sns-share.com</td>
+                <td className="py-4 px-4">{brand.supportEmail}</td>
               </tr>
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">サービス名</th>
-                <td className="py-4 px-4">Share</td>
+                <td className="py-4 px-4">{brand.name}</td>
               </tr>
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">サービス価格</th>

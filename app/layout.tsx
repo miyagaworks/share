@@ -4,6 +4,7 @@ import { Inter, Roboto_Mono } from 'next/font/google';
 import { ToastProvider } from '@/components/providers/ToastProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
+import { getBrandConfig } from '@/lib/brand/config';
 import './globals.css';
 
 const inter = Inter({
@@ -18,12 +19,14 @@ const robotoMono = Roboto_Mono({
   display: 'swap',
 });
 
+const brand = getBrandConfig();
+
 export const metadata: Metadata = {
-  title: 'Share',
+  title: brand.name,
   description: 'デジタル名刺サービス',
   icons: {
-    icon: '/pwa/favicon.ico',
-    shortcut: '/pwa/favicon.ico',
+    icon: brand.faviconUrl,
+    shortcut: brand.faviconUrl,
     apple: '/pwa/apple-touch-icon.png',
   },
 };
@@ -35,6 +38,7 @@ export const viewport: Viewport = {
   maximumScale: 1,
   userScalable: false,
   viewportFit: 'cover',
+  themeColor: brand.primaryColor,
 };
 
 export default function RootLayout({
@@ -53,13 +57,16 @@ export default function RootLayout({
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="default" />
         <meta name="apple-touch-fullscreen" content="yes" />
-        <meta name="apple-mobile-web-app-title" content="Share" />
-        <meta name="theme-color" content="#3B82F6" />
+        <meta name="apple-mobile-web-app-title" content={brand.name} />
         {/* 🚀 iOS Safari専用のピンチ防止 */}
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
+        {/* ブランドカラーがデフォルトと異なる場合、CSS変数を上書き */}
+        {brand.primaryColor !== '#3B82F6' && (
+          <style dangerouslySetInnerHTML={{ __html: `:root { --individual-primary: ${brand.primaryColor}; --ring: ${brand.primaryColor}; }` }} />
+        )}
 
         {/* reCAPTCHA削除済み - PAT問題回避のため */}
 

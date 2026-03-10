@@ -7,6 +7,7 @@ import {
   getPartnerAdminNotifyTemplate,
 } from '@/lib/email/templates/partner-inquiry';
 import { logger } from '@/lib/utils/logger';
+import { getBrandConfig } from '@/lib/brand/config';
 import { prisma } from '@/lib/prisma';
 
 const partnerInquirySchema = z.object({
@@ -70,6 +71,7 @@ export async function submitPartnerInquiry(
   }
 
   const data = result.data;
+  const brand = getBrandConfig();
   logger.info('Partner inquiry received:', data);
 
   try {
@@ -96,15 +98,15 @@ export async function submitPartnerInquiry(
     });
     await sendEmail({
       to: data.email,
-      from: 'Share <noreply@sns-share.com>',
+      from: `${brand.fromName} <${brand.fromEmail}>`,
       subject: autoReply.subject,
       text: autoReply.text,
       html: autoReply.html,
-      replyTo: 'support@sns-share.com',
+      replyTo: brand.supportEmail,
     });
 
     // 2. 管理者への通知メール
-    const adminEmail = process.env.ADMIN_EMAIL || 'support@sns-share.com';
+    const adminEmail = process.env.ADMIN_EMAIL || brand.supportEmail;
     const adminNotify = getPartnerAdminNotifyTemplate({
       name: data.name,
       companyName: data.companyName,
@@ -120,7 +122,7 @@ export async function submitPartnerInquiry(
     });
     await sendEmail({
       to: adminEmail,
-      from: 'Share <noreply@sns-share.com>',
+      from: `${brand.fromName} <${brand.fromEmail}>`,
       subject: adminNotify.subject,
       text: adminNotify.text,
       html: adminNotify.html,

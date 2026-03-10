@@ -12,7 +12,8 @@ export function isValidProfileSlug(slug: string): boolean {
  * NFCタグ書き込み用URLを生成する
  */
 export function generateNfcTagUrl(profileSlug: string): string {
-  return `https://app.sns-share.com/${profileSlug}`;
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
+  return `${appUrl}/${profileSlug}`;
 }
 
 /**

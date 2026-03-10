@@ -7,6 +7,7 @@ import Image from 'next/image';
 import { useRouter } from 'next/navigation';
 import { useDashboardInfo } from '@/hooks/useDashboardInfo';
 import NotificationBell from './NotificationBell';
+import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
 
 export function DashboardHeader() {
   const { data: session } = useSession();
@@ -94,7 +95,7 @@ export function DashboardHeader() {
       <div className="mx-auto flex h-16 items-center justify-between px-2 sm:px-6 lg:px-8">
         <div className="flex items-center">
           <Link href="/dashboard" className="flex items-center px-2">
-            <Image src="/logo.svg" alt="Share Logo" width={145} height={42} priority />
+            <Image src="/logo.svg" alt={`${DEFAULT_BRAND_NAME} Logo`} width={145} height={42} priority />
           </Link>
         </div>
         <div className="flex items-center space-x-4 mt-1">

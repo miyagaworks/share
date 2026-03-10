@@ -5,6 +5,7 @@ import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { type OneTapSealOrder } from '@/types/one-tap-seal';
+import { isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
 
 export async function GET() {
   try {
@@ -25,7 +26,7 @@ export async function GET() {
     // スーパー管理者または財務管理者のチェック
     const isAdmin =
       user &&
-      (user.email.toLowerCase() === 'admin@sns-share.com' || user.isFinancialAdmin === true);
+      (isSuperAdminEmail(user.email) || user.isFinancialAdmin === true);
 
     if (!isAdmin) {
       logger.warn('管理者以外のワンタップシール注文アクセス試行', {

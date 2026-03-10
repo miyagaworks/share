@@ -17,6 +17,7 @@ import {
   HiSortDescending,
   HiShieldCheck,
 } from 'react-icons/hi';
+import { isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
 
 // ユーザー情報の型定義
 interface UserData {
@@ -537,7 +538,7 @@ export default function AdminUsersPage() {
                   </td>
                   {permissions.canDelete && (
                     <td className="py-4 px-4 whitespace-nowrap text-right text-sm font-medium">
-                      {user.email === 'admin@sns-share.com' ? (
+                      {isSuperAdminEmail(user.email) ? (
                         <span className="px-3 py-1 text-xs bg-blue-100 text-blue-800 rounded-full font-medium">
                           システム管理者
                         </span>

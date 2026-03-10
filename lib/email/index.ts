@@ -1,5 +1,6 @@
 // lib/email/index.ts - 開発環境メール送信対応版
 import { Resend } from 'resend';
+import { getBrandConfig } from '@/lib/brand/config';
 import { logger } from '@/lib/utils/logger';
 
 interface EmailData {
@@ -72,8 +73,9 @@ async function sendProductionEmail(data: EmailData): Promise<EmailResult> {
   try {
     const resendClient = getResendClient();
 
-    const fromEmail = process.env.FROM_EMAIL || 'noreply@sns-share.com';
-    const fromName = process.env.FROM_NAME || 'Share';
+    const brand = getBrandConfig();
+    const fromEmail = brand.fromEmail;
+    const fromName = brand.fromName;
 
     logger.info('メール送信開始:', {
       to: data.to,
@@ -306,7 +308,7 @@ export async function testEmailConnection(): Promise<boolean> {
 export async function sendTestEmail(): Promise<void> {
   const testEmail: EmailData = {
     to: 'test@example.com',
-    subject: '【Share】テストメール送信',
+    subject: `【${getBrandConfig().name}】テストメール送信`,
     text: 'これはメール送信機能のテストです。',
     html: `
       <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">

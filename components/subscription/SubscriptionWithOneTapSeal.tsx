@@ -300,7 +300,7 @@ export function SubscriptionWithOneTapSeal() {
 
           <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
             <div>
-              <p className="font-medium">app.sns-share.com/qr/{userProfileSlug}</p>
+              <p className="font-medium">{new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com').host}/qr/{userProfileSlug}</p>
               <p className="text-sm text-gray-600">
                 閲覧数: {userData?.qrCodes?.[0]?.views || 0} 回
               </p>
@@ -308,7 +308,7 @@ export function SubscriptionWithOneTapSeal() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => window.open(`https://app.sns-share.com/${userProfileSlug}`, '_blank')}
+              onClick={() => window.open(`${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/${userProfileSlug}`, '_blank')}
             >
               <ExternalLink className="h-4 w-4 mr-1" />
               プレビュー

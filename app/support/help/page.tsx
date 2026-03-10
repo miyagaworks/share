@@ -2,9 +2,13 @@
 import Link from 'next/link';
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
+import { getBrandConfig } from '@/lib/brand/config';
+
+const brand = getBrandConfig();
+
 export const metadata: Metadata = {
-  title: 'ヘルプセンター | Share',
-  description: 'Shareサービスのヘルプセンターです。よくある質問や使い方のガイドを提供しています。',
+  title: `ヘルプセンター | ${brand.name}`,
+  description: `${brand.name}サービスのヘルプセンターです。よくある質問や使い方のガイドを提供しています。`,
 };
 export default function HelpCenterPage() {
   return (

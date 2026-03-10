@@ -1,5 +1,6 @@
 // lib/utils/subscription-server.ts
 import { logger } from "@/lib/utils/logger";
+import { SUPER_ADMIN_EMAIL } from '@/lib/auth/constants';
 // サーバーサイド専用のサブスクリプション機能
 import { prisma } from '@/lib/prisma';
 import { addDays } from 'date-fns';
@@ -133,7 +134,7 @@ export async function checkExpiredGracePeriods() {
     };
   }
   // 管理者メールアドレス
-  const adminEmail = 'admin@sns-share.com';
+  const adminEmail = SUPER_ADMIN_EMAIL;
   // 猶予期間終了ユーザー情報を整形
   const expiredUsers = users.map((user) => ({
     id: user.id,

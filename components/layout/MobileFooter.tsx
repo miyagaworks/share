@@ -3,6 +3,7 @@
 import React from 'react';
 import Link from 'next/link';
 import { HiOutlineMail } from 'react-icons/hi';
+import { DEFAULT_COMPANY_NAME } from '@/lib/brand/defaults';
 
 export function MobileFooter() {
   const currentYear = new Date().getFullYear();
@@ -26,7 +27,7 @@ export function MobileFooter() {
             </Link>
 
             {/* 中央コピーライト */}
-            <div className="text-xs text-gray-500">&copy; {currentYear} B-alpha</div>
+            <div className="text-xs text-gray-500">&copy; {currentYear} {DEFAULT_COMPANY_NAME}</div>
 
             {/* 右側は空のスペース（バランス調整） */}
             <div className="w-20"></div>

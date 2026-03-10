@@ -1,9 +1,7 @@
 // lib/utils/admin-access-server.ts (セキュア版 - 明示的管理)
 import { logger } from '@/lib/utils/logger';
 import { prisma } from '@/lib/prisma';
-
-// 🔧 設定: スーパー管理者のみ固定
-const SUPER_ADMIN_EMAIL = 'admin@sns-share.com';
+import { SUPER_ADMIN_EMAIL } from '@/lib/auth/constants';
 
 // 管理者レベルの定義
 export type AdminLevel = 'super' | 'financial' | 'none';

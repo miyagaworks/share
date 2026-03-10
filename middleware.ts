@@ -2,6 +2,8 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
+import { isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
+import { features } from '@/lib/features';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
@@ -50,8 +52,8 @@ export async function middleware(request: NextRequest) {
       const userRole = token.role as string;
       const userEmail = token.email as string;
 
-      // スーパー管理者の処理
-      if (userEmail === 'admin@sns-share.com' || userRole === 'super-admin') {
+      // スーパー管理者の処理（機能フラグで無効化可能）
+      if (features.superAdmin && (isSuperAdminEmail(userEmail) || userRole === 'super-admin')) {
         if (pathname === '/dashboard' && !pathname.startsWith('/dashboard/admin')) {
           if (process.env.NODE_ENV === 'development') {
             console.log('🔄 Middleware: Redirecting super admin to /dashboard/admin');
@@ -62,8 +64,8 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
       }
 
-      // 🆕 財務管理者の処理（修正版）
-      else if (userRole === 'financial-admin') {
+      // 🆕 財務管理者の処理（修正版・機能フラグで無効化可能）
+      else if (features.financialAdmin && userRole === 'financial-admin') {
         // /dashboard のルートアクセス時のリダイレクト
         if (pathname === '/dashboard') {
           if (process.env.NODE_ENV === 'development') {

@@ -1,4 +1,5 @@
 // lib/email/templates/expense-approval.ts
+import { getBrandConfig } from '@/lib/brand/config';
 
 interface ExpenseApprovalEmailParams {
   expenseId: string;
@@ -13,6 +14,7 @@ interface ExpenseApprovalEmailParams {
 }
 
 export function getExpenseApprovalEmailTemplate(params: ExpenseApprovalEmailParams) {
+  const brand = getBrandConfig();
   const {
     expenseId,
     title,
@@ -38,7 +40,7 @@ export function getExpenseApprovalEmailTemplate(params: ExpenseApprovalEmailPara
 
   const categoryLabel = categoryLabels[category] || category;
   const formattedAmount = `¥${amount.toLocaleString()}`;
-  const subject = `【Share】経費承認が必要です - ${title}（${formattedAmount}）`;
+  const subject = `【${brand.name}】経費承認が必要です - ${title}（${formattedAmount}）`;
 
   const html = `
       <!DOCTYPE html>
@@ -61,7 +63,7 @@ export function getExpenseApprovalEmailTemplate(params: ExpenseApprovalEmailPara
                       <tr>
                         <td align="center">
                           <div style="background-color: #ffffff; display: inline-block; padding: 12px 24px; border-radius: 8px; margin-bottom: 20px;">
-                            <h1 style="color: #f59e0b; margin: 0; font-size: 28px; font-weight: bold;">Share</h1>
+                            <h1 style="color: #f59e0b; margin: 0; font-size: 28px; font-weight: bold;">${brand.name}</h1>
                           </div>
                           <p style="color: #ffffff; margin: 0; font-size: 16px;">経費承認通知</p>
                         </td>
@@ -203,9 +205,9 @@ export function getExpenseApprovalEmailTemplate(params: ExpenseApprovalEmailPara
                         <td align="center" style="padding: 20px 0;">
                           <table cellpadding="0" cellspacing="0" border="0">
                             <tr>
-                              <td style="background-color: #3B82F6; border-radius: 8px;">
-                                <a href="${approvalUrl}" 
-                                   style="background-color: #3B82F6; 
+                              <td style="background-color: ${brand.primaryColor}; border-radius: 8px;">
+                                <a href="${approvalUrl}"
+                                   style="background-color: ${brand.primaryColor};
                                           color: #ffffff; 
                                           text-decoration: none; 
                                           padding: 12px 24px; 
@@ -226,7 +228,7 @@ export function getExpenseApprovalEmailTemplate(params: ExpenseApprovalEmailPara
   
                       <!-- 注意事項 -->
                       <tr>
-                        <td style="background-color: #eff6ff; border-left: 4px solid #3B82F6; padding: 16px 20px; border-radius: 8px;">
+                        <td style="background-color: #eff6ff; border-left: 4px solid ${brand.primaryColor}; padding: 16px 20px; border-radius: 8px;">
                           <p style="color: #1e40af; margin: 0; font-size: 14px; line-height: 1.5;">
                             <strong>📌 承認ルール</strong><br>
                             • 5,000円以上の経費は委託者の承認が必要です<br>
@@ -245,17 +247,17 @@ export function getExpenseApprovalEmailTemplate(params: ExpenseApprovalEmailPara
                     <table width="100%" cellpadding="0" cellspacing="0" border="0">
                       <tr>
                         <td align="center" style="padding-bottom: 20px;">
-                          <p style="color: #6b7280; margin: 0 0 10px; font-size: 14px;">Share 経費管理システム</p>
+                          <p style="color: #6b7280; margin: 0 0 10px; font-size: 14px;">${brand.name} 経費管理システム</p>
                           <p style="color: #6b7280; margin: 0; font-size: 13px;">本メールは自動送信されています</p>
                         </td>
                       </tr>
                       <tr>
                         <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
                           <p style="color: #9ca3af; margin: 0 0 5px; font-size: 12px;">
-                            〒731-0137 広島県広島市安佐南区山本2-3-35
+                            ${brand.companyAddress}
                           </p>
                           <p style="color: #9ca3af; margin: 0 0 15px; font-size: 12px;">
-                            運営: 株式会社Senrigan
+                            運営: ${brand.companyName}
                           </p>
                         </td>
                       </tr>
@@ -307,11 +309,11 @@ export function getExpenseApprovalEmailTemplate(params: ExpenseApprovalEmailPara
   🏢 運営会社情報
   ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
   
-  Share 経費管理システム
+  ${brand.name} 経費管理システム
   本メールは自動送信されています
-  
-  〒731-0137 広島県広島市安佐南区山本2-3-35
-  運営: 株式会社Senrigan`;
+
+  ${brand.companyAddress}
+  運営: ${brand.companyName}`;
 
   return { subject, html, text };
 }

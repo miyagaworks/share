@@ -5,6 +5,9 @@ import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
+import { getBrandConfig } from '@/lib/brand/config';
+
+const DEFAULT_PRIMARY_COLOR = getBrandConfig().primaryColor;
 
 // ブランディング設定の取得（GET）
 export async function GET() {
@@ -44,8 +47,8 @@ export async function GET() {
           logoUrl: user.image || null,
           logoWidth: null,
           logoHeight: null,
-          primaryColor: user.mainColor || '#3B82F6',
-          secondaryColor: user.mainColor || '#3B82F6',
+          primaryColor: user.mainColor || DEFAULT_PRIMARY_COLOR,
+          secondaryColor: user.mainColor || DEFAULT_PRIMARY_COLOR,
           headerText: user.headerText || null,
           textColor: user.textColor || '#FFFFFF',
         },

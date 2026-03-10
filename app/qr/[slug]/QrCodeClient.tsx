@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import Image from 'next/image';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 
 // 🔥 修正: Prismaスキーマに合わせた型定義
 interface QrCodePageData {
@@ -43,7 +44,7 @@ export function QrCodeClient({ qrData, userData }: QrCodeClientProps) {
   const headerText = userData.headerText || 'シンプルにつながる、スマートにシェア。';
   const textColor = qrData.textColor || '#FFFFFF';
   const nameEn = userData.nameEn || 'Taro Yamada';
-  const mainColor = qrData.primaryColor || '#3b82f6';
+  const mainColor = qrData.primaryColor || DEFAULT_PRIMARY_COLOR;
   const secondaryColor = qrData.secondaryColor || '#333333';
   const accentColor = qrData.accentColor || '#FFFFFF';
 

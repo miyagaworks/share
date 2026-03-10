@@ -8,6 +8,7 @@ import { Metadata } from 'next';
 import Link from 'next/link';
 import { addDays } from 'date-fns';
 import SmartContactButton from '@/components/profile/SmartContactButton';
+import { getBrandConfig } from '@/lib/brand/config';
 
 // 🔥 修正: Prismaスキーマに基づく正しい型定義
 type ExtendedUser = {
@@ -103,6 +104,7 @@ type ProfilePageProps = {
 
 // generateMetadata関数
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
+  const brand = getBrandConfig();
   const resolvedParams = await params;
   const { slug } = resolvedParams;
 
@@ -121,8 +123,8 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
   }
 
   return {
-    title: `${profile.user.name || 'ユーザー'} | Share`,
-    description: profile.user.bio || 'Shareでプロフィールをチェックしましょう',
+    title: `${profile.user.name || 'ユーザー'} | ${brand.name}`,
+    description: profile.user.bio || `${brand.name}でプロフィールをチェックしましょう`,
     openGraph: {
       images: profile.user.image ? [profile.user.image] : [],
     },
@@ -131,6 +133,7 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
 
 // メイン関数
 export default async function ProfilePage({ params }: ProfilePageProps) {
+  const brand = getBrandConfig();
   const resolvedParams = await params;
   const { slug } = resolvedParams;
 
@@ -619,7 +622,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               }}
             >
               <p style={{ fontSize: '0.75rem', color: '#6B7280' }} className="profile-text">
-                Powered by Share
+                Powered by {brand.name}
               </p>
             </div>
           </div>
@@ -650,7 +653,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         }}
       >
         <Link
-          href="https://sns-share.com"
+          href={brand.appUrl}
           style={{
             display: 'flex',
             alignItems: 'center',

@@ -7,6 +7,8 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import { getCancelRequestEmailTemplate } from '@/lib/email/templates/cancel-request';
 import { getAdminNotificationEmailTemplate } from '@/lib/email/templates/admin-notification';
+import { SUPER_ADMIN_EMAIL } from '@/lib/auth/constants';
+import { getBrandConfig } from '@/lib/brand/config';
 
 interface CancelRequestBody {
   cancelDate: string;
@@ -71,6 +73,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
     }
 
+    const brand = getBrandConfig();
     const body: CancelRequestBody = await req.json();
     const { cancelDate, reason } = body;
 
@@ -179,7 +182,7 @@ export async function POST(req: NextRequest) {
     // 管理者に通知メールを送信
     try {
       const adminEmailTemplate = getAdminNotificationEmailTemplate({
-        subject: '【Share】新しい解約申請',
+        subject: `【${brand.name}】新しい解約申請`,
         title: '新しい解約申請が提出されました',
         message: `ユーザー: ${user.name || '未設定'} (${user.email})
 プラン: ${getPlanDisplayName(subscription.plan, subscription.interval || 'month')}
@@ -193,7 +196,7 @@ ${reason ? `理由: ${reason}` : ''}
       });
 
       await sendEmail({
-        to: process.env.ADMIN_EMAIL || 'admin@sns-share.com',
+        to: process.env.ADMIN_EMAIL || SUPER_ADMIN_EMAIL,
         subject: adminEmailTemplate.subject,
         html: adminEmailTemplate.html,
         text: adminEmailTemplate.text,

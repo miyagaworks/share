@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { prisma } from '@/lib/prisma';
 import { Metadata } from 'next';
 import { QrCodeClient } from './QrCodeClient';
+import { getBrandConfig } from '@/lib/brand/config';
 
 // 🔥 修正1: Next.js 15対応の型定義
 type QrPageProps = {
@@ -20,17 +21,19 @@ export async function generateMetadata({ params }: QrPageProps): Promise<Metadat
     include: { user: true },
   });
 
+  const brandName = getBrandConfig().name;
+
   if (!qrPage) {
     return {
-      title: 'QRコードページが見つかりません | Share',
+      title: `QRコードページが見つかりません | ${brandName}`,
     };
   }
 
   return {
-    title: `${qrPage.userName || qrPage.user.name} | Share QR`,
+    title: `${qrPage.userName || qrPage.user.name} | ${brandName} QR`,
     description: 'QRコードからアクセスされたプロフィールページです',
     openGraph: {
-      title: `${qrPage.userName || qrPage.user.name} | Share QR`,
+      title: `${qrPage.userName || qrPage.user.name} | ${brandName} QR`,
       description: 'QRコードからアクセスされたプロフィールページです',
     },
   };

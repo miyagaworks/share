@@ -8,6 +8,7 @@ import { PasswordSetupBanner } from '@/components/PasswordSetupBanner';
 import { YouTubeGuideCard } from '@/components/YouTubeGuideCard';
 import Image from 'next/image';
 import { HiUser, HiLink, HiColorSwatch, HiShare, HiQrcode } from 'react-icons/hi';
+import { isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
 
 export default function DashboardPage() {
   const { data: session, status } = useSession();
@@ -69,7 +70,7 @@ export default function DashboardPage() {
 
       try {
         // 特定の管理者メールアドレスは強制的に管理者ページへ
-        if (session.user?.email === 'admin@sns-share.com') {
+        if (isSuperAdminEmail(session.user?.email)) {
           setIsRedirecting(true);
           router.push('/dashboard/admin');
           return;

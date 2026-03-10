@@ -6,6 +6,7 @@ import { useSession } from 'next-auth/react';
 import Image from 'next/image'; // 追加
 import { Spinner } from '@/components/ui/Spinner';
 import { QrCodeGenerator } from '@/components/qrcode/QrCodeGenerator';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -133,7 +134,7 @@ export default function QrCodePage() {
             // setCorporateData関数自体を依存配列に入れるべき
             setCorporateData((prevState) => ({
               ...(prevState || {
-                primaryColor: '#3B82F6',
+                primaryColor: DEFAULT_PRIMARY_COLOR,
                 logoUrl: null,
                 textColor: '#FFFFFF',
                 headerText: 'シンプルにつながる、スマートにシェア。',

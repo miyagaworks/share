@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
+import { isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
 
 export async function GET(req: Request) {
   try {
@@ -17,7 +18,7 @@ export async function GET(req: Request) {
     logger.debug('ダッシュボードリダイレクト開始', { userId, email: session.user.email });
 
     // 特定の管理者メールアドレスは管理者ダッシュボードへ
-    if (session.user.email === 'admin@sns-share.com') {
+    if (isSuperAdminEmail(session.user.email)) {
       logger.debug('管理者ユーザー: /dashboard/admin にリダイレクト');
       return NextResponse.redirect(new URL('/dashboard/admin', req.url));
     }

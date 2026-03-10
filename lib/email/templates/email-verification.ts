@@ -1,4 +1,6 @@
 // lib/email/templates/email-verification.ts (Yahooメール対応版)
+import { getBrandConfig } from '@/lib/brand/config';
+
 interface EmailVerificationParams {
   userName: string;
   verificationUrl: string;
@@ -6,6 +8,7 @@ interface EmailVerificationParams {
 
 export function getEmailVerificationTemplate(params: EmailVerificationParams) {
   const { userName, verificationUrl } = params;
+  const brand = getBrandConfig();
 
   const html = `
     <!DOCTYPE html>
@@ -13,7 +16,7 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>【Share】アカウント登録完了・メールアドレス認証のお願い</title>
+      <title>【${brand.name}】アカウント登録完了・メールアドレス認証のお願い</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: Arial, sans-serif;">
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc;">
@@ -23,14 +26,14 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
               
               <!-- ヘッダー -->
               <tr>
-                <td style="background-color: #3B82F6; padding: 40px 20px; text-align: center;">
+                <td style="background-color: ${brand.primaryColor}; padding: 40px 20px; text-align: center;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="center">
                         <div style="background-color: #ffffff; display: inline-block; padding: 12px 24px; border-radius: 8px; margin-bottom: 20px;">
-                          <h1 style="color: #3B82F6; margin: 0; font-size: 28px; font-weight: bold;">Share</h1>
+                          <h1 style="color: ${brand.primaryColor}; margin: 0; font-size: 28px; font-weight: bold;">${brand.name}</h1>
                         </div>
-                        <p style="color: #ffffff; margin: 0; font-size: 16px;">すべてのSNS、ワンタップで</p>
+                        <p style="color: #ffffff; margin: 0; font-size: 16px;">${brand.tagline}</p>
                       </td>
                     </tr>
                   </table>
@@ -66,7 +69,7 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
                           <strong>${userName}</strong> 様
                         </p>
                         <p style="color: #374151; margin: 0 0 15px; font-size: 16px; line-height: 1.6;">
-                          この度は<strong>Share</strong>にご登録いただき、誠にありがとうございます。🎉
+                          この度は<strong>${brand.name}</strong>にご登録いただき、誠にありがとうございます。🎉
                         </p>
                         <p style="color: #374151; margin: 0; font-size: 16px; line-height: 1.6;">
                           メールアドレスの認証を完了して、すべての機能をお楽しみください。
@@ -79,9 +82,9 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
                       <td align="center" style="padding: 40px 0;">
                         <table cellpadding="0" cellspacing="0" border="0">
                           <tr>
-                            <td style="background-color: #3B82F6; border-radius: 8px;">
-                              <a href="${verificationUrl}" 
-                                 style="background-color: #3B82F6; 
+                            <td style="background-color: ${brand.primaryColor}; border-radius: 8px;">
+                              <a href="${verificationUrl}"
+                                 style="background-color: ${brand.primaryColor}; 
                                         color: #ffffff; 
                                         text-decoration: none; 
                                         padding: 16px 32px; 
@@ -123,7 +126,7 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
                     <!-- 機能紹介 -->
                     <tr>
                       <td style="padding: 40px 0 20px;">
-                        <h3 style="color: #1f2937; margin: 0 0 20px; font-size: 18px; font-weight: 600; text-align: center;">Shareでできること</h3>
+                        <h3 style="color: #1f2937; margin: 0 0 20px; font-size: 18px; font-weight: 600; text-align: center;">${brand.name}でできること</h3>
                         
                         <!-- 機能1 -->
                         <table width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-bottom: 15px;">
@@ -132,7 +135,7 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
                               <table cellpadding="0" cellspacing="0" border="0">
                                 <tr>
                                   <td style="width: 50px; vertical-align: top;">
-                                    <div style="background-color: #3B82F6; color: white; width: 32px; height: 32px; border-radius: 50%; text-align: center; line-height: 32px; font-size: 16px;">📱</div>
+                                    <div style="background-color: ${brand.primaryColor}; color: white; width: 32px; height: 32px; border-radius: 50%; text-align: center; line-height: 32px; font-size: 16px;">📱</div>
                                   </td>
                                   <td style="vertical-align: top; padding-left: 15px;">
                                     <strong style="color: #1f2937; font-size: 14px;">SNSを一括管理</strong><br>
@@ -194,27 +197,27 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
                     <tr>
                       <td align="center" style="padding-bottom: 20px;">
                         <p style="color: #6b7280; margin: 0 0 10px; font-size: 14px;">サポートが必要な場合は</p>
-                        <a href="mailto:support@sns-share.com" 
-                           style="color: #3B82F6; text-decoration: none; font-weight: 600;">
-                          support@sns-share.com
+                        <a href="mailto:${brand.supportEmail}"
+                           style="color: ${brand.primaryColor}; text-decoration: none; font-weight: 600;">
+                          ${brand.supportEmail}
                         </a>
                       </td>
                     </tr>
                     <tr>
                       <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
                         <p style="color: #9ca3af; margin: 0 0 5px; font-size: 12px;">
-                          〒731-0137 広島県広島市安佐南区山本2-3-35
+                          ${brand.companyAddress}
                         </p>
                         <p style="color: #9ca3af; margin: 0 0 15px; font-size: 12px;">
-                          運営: 株式会社Senrigan
+                          運営: ${brand.companyName}
                         </p>
                         <div style="margin-top: 15px;">
-                          <a href="https://app.sns-share.com/legal/privacy" 
+                          <a href="${brand.appUrl}${brand.privacyUrl}"
                              style="color: #9ca3af; text-decoration: none; font-size: 11px; margin: 0 10px;">
                             プライバシーポリシー
                           </a>
                           <span style="color: #d1d5db;">|</span>
-                          <a href="https://app.sns-share.com/legal/terms" 
+                          <a href="${brand.appUrl}${brand.termsUrl}"
                              style="color: #9ca3af; text-decoration: none; font-size: 11px; margin: 0 10px;">
                             利用規約
                           </a>
@@ -233,11 +236,11 @@ export function getEmailVerificationTemplate(params: EmailVerificationParams) {
   `;
 
   const text = `
-🎉 【Share】アカウント登録完了・メールアドレス認証のお願い
+🎉 【${brand.name}】アカウント登録完了・メールアドレス認証のお願い
 
 ${userName} 様
 
-この度はShareにご登録いただき、誠にありがとうございます！
+この度は${brand.name}にご登録いただき、誠にありがとうございます！
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 📧 メールアドレス認証のお願い
@@ -252,7 +255,7 @@ ${userName} 様
    期限を過ぎた場合は、お手数ですが再度ご登録をお願いいたします。
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-✨ Shareでできること
+✨ ${brand.name}でできること
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
 📱 SNSを一括管理
@@ -271,27 +274,27 @@ ${userName} 様
 ご不明な点やお困りのことがございましたら、
 お気軽にお問い合わせください。
 
-✉️ メール: support@sns-share.com
-🌐 ウェブサイト: https://app.sns-share.com
+✉️ メール: ${brand.supportEmail}
+🌐 ウェブサイト: ${brand.appUrl}
 
-Share サポートチーム
+${brand.name} サポートチーム
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 🏢 運営会社情報
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-〒731-0137 広島県広島市安佐南区山本2-3-35
-運営: 株式会社Senrigan
-すべてのSNS、ワンタップでShare
+${brand.companyAddress}
+運営: ${brand.companyName}
+${brand.tagline}${brand.name}
 
-📋 プライバシーポリシー: https://app.sns-share.com/legal/privacy
-📋 利用規約: https://app.sns-share.com/legal/terms
+📋 プライバシーポリシー: ${brand.appUrl}${brand.privacyUrl}
+📋 利用規約: ${brand.appUrl}${brand.termsUrl}
 
 このメールに心当たりがない場合は、お手数ですが削除をお願いいたします。
   `;
 
   return {
-    subject: '【Share】アカウント登録完了・メールアドレス認証のお願い',
+    subject: `【${brand.name}】アカウント登録完了・メールアドレス認証のお願い`,
     html,
     text,
   };

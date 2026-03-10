@@ -48,7 +48,7 @@ export async function GET(request: Request) {
         isAvailable: isOwn, // 自分のプロフィールの場合のみ利用可能
         isOwn,
         message: isOwn ? '使用可能です（自分のプロフィール）' : '他のユーザーが使用中です',
-        profileUrl: `https://app.sns-share.com/${slug}`,
+        profileUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/${slug}`,
       });
     }
 

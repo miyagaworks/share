@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { auth } from '@/auth';
 import { prisma, safeQuery } from '@/lib/prisma'; // 🔧 修正: disconnectPrismaを削除、safeQueryを追加
 import { logger } from '@/lib/utils/logger';
+import { SUPER_ADMIN_EMAIL } from '@/lib/auth/constants';
 
 // 🔥 永久利用権プラン種別を判定する関数（他のAPIと統一）
 function determinePermanentPlanType(user: any): string {
@@ -111,7 +112,7 @@ export async function GET(request: Request) {
       }
 
       // 管理者メールアドレスリスト
-      const ADMIN_EMAILS = ['admin@sns-share.com'];
+      const ADMIN_EMAILS = [SUPER_ADMIN_EMAIL];
       const isAdminEmail = ADMIN_EMAILS.includes(user.email.toLowerCase());
 
       // 管理者メールアドレスの場合はスーパー管理者権限を付与

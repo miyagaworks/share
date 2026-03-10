@@ -1,9 +1,13 @@
 /** @type {import('next').NextConfig} */
+const isBuyout = process.env.DEPLOYMENT_MODE === 'buyout';
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || '${appUrl}';
+
 const nextConfig = {
   // 本番環境では絶対URLでアセットを配信（sns-share.com/partner リライト対応）
+  // 買取型はVercelのデフォルトCDNを使用するため assetPrefix 不要
   assetPrefix:
-    process.env.NODE_ENV === 'production'
-      ? 'https://app.sns-share.com'
+    process.env.NODE_ENV === 'production' && !isBuyout
+      ? appUrl
       : undefined,
 
   experimental: {
@@ -55,12 +59,12 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://app.sns-share.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com https://static.cloudflareinsights.com",
-              "script-src-elem 'self' 'unsafe-inline' https://app.sns-share.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com https://static.cloudflareinsights.com",
-              "style-src 'self' 'unsafe-inline' https://app.sns-share.com https://fonts.googleapis.com",
-              "font-src 'self' https://app.sns-share.com https://fonts.gstatic.com",
+              `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${appUrl} https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com https://static.cloudflareinsights.com`,
+              `script-src-elem 'self' 'unsafe-inline' ${appUrl} https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com https://static.cloudflareinsights.com`,
+              `style-src 'self' 'unsafe-inline' ${appUrl} https://fonts.googleapis.com`,
+              `font-src 'self' ${appUrl} https://fonts.gstatic.com`,
               "img-src 'self' data: https: blob:",
-              "connect-src 'self' https://app.sns-share.com https://api.stripe.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://maps.googleapis.com https://cloudflareinsights.com",
+              `connect-src 'self' ${appUrl} https://api.stripe.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://maps.googleapis.com https://cloudflareinsights.com`,
               "frame-src 'self' https://www.google.com https://www.recaptcha.net https://js.stripe.com https://www.google.com/maps/embed",
               "worker-src 'self' blob:",
               "object-src 'none'",

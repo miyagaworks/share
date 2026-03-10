@@ -10,6 +10,7 @@ import { QrCodePreview } from './QrCodePreview';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/Input';
 import Image from 'next/image';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 
 // 型定義 - 明確に分離（ベストプラクティス）
 interface CorporateBranding {
@@ -46,7 +47,7 @@ export function QrCodeGenerator({
   hideTitleHeader = false,
 }: QrCodeGeneratorProps) {
   // 初期値の設定
-  const initialPrimaryColor = corporateBranding?.primaryColor || '#3B82F6';
+  const initialPrimaryColor = corporateBranding?.primaryColor || DEFAULT_PRIMARY_COLOR;
   const initialTextColor = corporateBranding?.textColor || '#FFFFFF';
   const initialHeaderText =
     corporateBranding?.headerText ||

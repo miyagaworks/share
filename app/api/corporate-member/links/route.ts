@@ -6,6 +6,8 @@ import { auth } from '@/auth';
 import { prisma, safeQuery, ensurePrismaConnection } from '@/lib/prisma';
 import type { CorporateSnsLink, SnsLink, CustomLink } from '@prisma/client';
 
+const DEFAULT_PRIMARY_COLOR = process.env.BRAND_PRIMARY_COLOR || '#3B82F6';
+
 // 型定義を明示的に定義
 type CorporateSnsLinkSelect = Pick<
   CorporateSnsLink,
@@ -35,7 +37,7 @@ export async function GET() {
           personalSnsLinks: [] as PersonalSnsLinkSelect[],
           customLinks: [] as CustomLinkSelect[],
           corporateColors: {
-            primaryColor: '#3B82F6',
+            primaryColor: DEFAULT_PRIMARY_COLOR,
             secondaryColor: '#1E40AF',
           },
           tenant: null,
@@ -169,7 +171,7 @@ export async function GET() {
 
       // 法人カラー情報
       const corporateColors = {
-        primaryColor: tenantInfo.primaryColor || '#3B82F6',
+        primaryColor: tenantInfo.primaryColor || DEFAULT_PRIMARY_COLOR,
         secondaryColor: tenantInfo.secondaryColor || '#1E40AF',
       };
 
@@ -204,7 +206,7 @@ export async function GET() {
           personalSnsLinks: [] as PersonalSnsLinkSelect[],
           customLinks: [] as CustomLinkSelect[],
           corporateColors: {
-            primaryColor: '#3B82F6',
+            primaryColor: DEFAULT_PRIMARY_COLOR,
             secondaryColor: '#1E40AF',
           },
           tenant: null,
@@ -229,7 +231,7 @@ export async function GET() {
         personalSnsLinks: [] as PersonalSnsLinkSelect[],
         customLinks: [] as CustomLinkSelect[],
         corporateColors: {
-          primaryColor: '#3B82F6',
+          primaryColor: DEFAULT_PRIMARY_COLOR,
           secondaryColor: '#1E40AF',
         },
         tenant: null,

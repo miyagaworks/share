@@ -3,7 +3,7 @@ import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
 
 export const metadata: Metadata = {
-  title: 'QRコード | Share',
+  title: `QRコード | ${process.env.BRAND_NAME || 'Share'}`,
   description: 'スタイリッシュなQRコードを作成',
   // アイコンとマニフェストは以下のmetadata形式で定義
   icons: {

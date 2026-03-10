@@ -128,9 +128,11 @@ export function OneTapSealUrlManager({
     }
   }, [userProfileSlug, onProfileSlugChange]); // userQrSlug, onQrSlugChange → userProfileSlug, onProfileSlugChange に変更
 
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
+
   // URLのコピー
   const copyUrl = useCallback(() => {
-    const url = `https://app.sns-share.com/${profileSlug}`; // /qr/ を削除
+    const url = `${appUrl}/${profileSlug}`;
     navigator.clipboard
       .writeText(url)
       .then(() => {
@@ -139,13 +141,13 @@ export function OneTapSealUrlManager({
       .catch(() => {
         toast.error('URLのコピーに失敗しました');
       });
-  }, [profileSlug]);
+  }, [profileSlug, appUrl]);
 
   // プレビューURLを開く
   const openPreview = useCallback(() => {
-    const url = `https://app.sns-share.com/${profileSlug}`; // /qr/ を削除
+    const url = `${appUrl}/${profileSlug}`;
     window.open(url, '_blank');
-  }, [profileSlug]);
+  }, [profileSlug, appUrl]);
 
   // QRコードデザイナーページを開く
   const openQrDesigner = useCallback(() => {
@@ -203,8 +205,7 @@ export function OneTapSealUrlManager({
                     既存のプロフィールスラッグを使用
                   </p>{' '}
                   {/* QRスラッグ → プロフィールスラッグ に変更 */}
-                  <p className="text-xs text-blue-700">app.sns-share.com/{userProfileSlug}</p>{' '}
-                  {/* /qr/ を削除、userQrSlug → userProfileSlug に変更 */}
+                  <p className="text-xs text-blue-700">{new URL(appUrl).host}/{userProfileSlug}</p>
                 </div>
                 <Button size="sm" variant="outline" onClick={useExistingSlug} disabled={disabled}>
                   使用する
@@ -221,7 +222,7 @@ export function OneTapSealUrlManager({
           </label>
           <div className="flex">
             <span className="inline-flex items-center px-3 rounded-l-md border border-r-0 border-gray-300 bg-gray-50 text-gray-500 text-sm">
-              app.sns-share.com/ {/* /qr/ を削除 */}
+              {new URL(appUrl).host}/
             </span>
             <Input
               type="text"
@@ -273,8 +274,7 @@ export function OneTapSealUrlManager({
             {canUseSlug && (
               <div className="flex items-center space-x-2 text-xs">
                 <span className="text-gray-600">
-                  完成URL: https://app.sns-share.com/{profileSlug}{' '}
-                  {/* /qr/ を削除、qrSlug → profileSlug に変更 */}
+                  完成URL: {appUrl}/{profileSlug}
                 </span>
                 <Button
                   size="sm"

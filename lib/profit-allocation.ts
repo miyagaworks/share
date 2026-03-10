@@ -93,13 +93,13 @@ const CONTRACTORS: Record<string, ContractorInfo> = {
   yoshitsune: {
     id: 'yoshitsune_user_id', // 実際のUser.idに置き換える
     name: '小河原義経',
-    email: 'yoshitsune@sns-share.com',
+    email: process.env.CONTRACTOR_YOSHITSUNE_EMAIL || 'yoshitsune@sns-share.com',
     defaultPercent: 30.0,
   },
   kensei: {
     id: 'kensei_user_id', // 実際のUser.idに置き換える
     name: '福島健世',
-    email: 'kensei@sns-share.com',
+    email: process.env.CONTRACTOR_KENSEI_EMAIL || 'kensei@sns-share.com',
     defaultPercent: 30.0,
   },
 };

@@ -4,10 +4,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma, safeQuery } from '@/lib/prisma'; // 🔧 修正: ensurePrismaConnectionを削除
-
-// 🔧 設定: 財務管理者ドメイン（売却時に変更するだけ）
-const FINANCIAL_ADMIN_DOMAIN = '@sns-share.com';
-const SUPER_ADMIN_EMAIL = 'admin@sns-share.com';
+import { SUPER_ADMIN_EMAIL, ADMIN_EMAIL_DOMAIN as FINANCIAL_ADMIN_DOMAIN } from '@/lib/auth/constants';
 
 // 永久利用権プラン種別を判定する関数
 function determinePermanentPlanType(user: any): string {

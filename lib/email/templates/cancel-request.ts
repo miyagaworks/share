@@ -1,6 +1,7 @@
 // lib/email/templates/cancel-request.ts
 import { format } from 'date-fns';
 import { ja } from 'date-fns/locale';
+import { getBrandConfig } from '@/lib/brand/config';
 
 interface CancelRequestEmailParams {
   userName: string;
@@ -24,6 +25,7 @@ export function getCancelRequestEmailTemplate(params: CancelRequestEmailParams) 
     usedMonths,
     reason,
   } = params;
+  const brand = getBrandConfig();
   const formattedCancelDate = format(cancelDate, 'yyyy年MM月dd日', { locale: ja });
   const intervalText = currentInterval === 'year' ? '年額' : '月額';
 
@@ -33,7 +35,7 @@ export function getCancelRequestEmailTemplate(params: CancelRequestEmailParams) 
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
-      <title>【Share】解約申請を受け付けました</title>
+      <title>【${brand.name}】解約申請を受け付けました</title>
     </head>
     <body style="margin: 0; padding: 0; background-color: #f8fafc; font-family: Arial, sans-serif;">
       <table width="100%" cellpadding="0" cellspacing="0" border="0" style="background-color: #f8fafc;">
@@ -43,12 +45,12 @@ export function getCancelRequestEmailTemplate(params: CancelRequestEmailParams) 
               
               <!-- ヘッダー -->
               <tr>
-                <td style="background-color: #3B82F6; padding: 40px 20px; text-align: center;">
+                <td style="background-color: ${brand.primaryColor}; padding: 40px 20px; text-align: center;">
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="center">
                         <div style="background-color: #ffffff; display: inline-block; padding: 12px 24px; border-radius: 8px; margin-bottom: 20px;">
-                          <h1 style="color: #3B82F6; margin: 0; font-size: 28px; font-weight: bold;">Share</h1>
+                          <h1 style="color: ${brand.primaryColor}; margin: 0; font-size: 28px; font-weight: bold;">${brand.name}</h1>
                         </div>
                         <p style="color: #ffffff; margin: 0; font-size: 16px;">解約申請受付のお知らせ</p>
                       </td>
@@ -162,20 +164,20 @@ export function getCancelRequestEmailTemplate(params: CancelRequestEmailParams) 
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="center" style="padding-bottom: 20px;">
-                        <p style="color: #6b7280; margin: 0 0 10px; font-size: 14px;">Share サポートチーム</p>
-                        <a href="mailto:support@sns-share.com" 
-                           style="color: #3B82F6; text-decoration: none; font-weight: 600;">
-                          support@sns-share.com
+                        <p style="color: #6b7280; margin: 0 0 10px; font-size: 14px;">${brand.name} サポートチーム</p>
+                        <a href="mailto:${brand.supportEmail}" 
+                           style="color: ${brand.primaryColor}; text-decoration: none; font-weight: 600;">
+                          ${brand.supportEmail}
                         </a>
                       </td>
                     </tr>
                     <tr>
                       <td align="center" style="border-top: 1px solid #e5e7eb; padding-top: 20px;">
                         <p style="color: #9ca3af; margin: 0 0 5px; font-size: 12px;">
-                          〒731-0137 広島県広島市安佐南区山本2-3-35
+                          ${brand.companyAddress}
                         </p>
                         <p style="color: #9ca3af; margin: 0 0 15px; font-size: 12px;">
-                          運営: 株式会社Senrigan
+                          運営: ${brand.companyName}
                         </p>
                       </td>
                     </tr>
@@ -222,14 +224,14 @@ ${refundAmount > 0 ? '※ご返金がある場合、処理完了まで5-10営業
 📞 サポート情報
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 
-Share サポートチーム
-✉️ メール: support@sns-share.com
+${brand.name} サポートチーム
+✉️ メール: ${brand.supportEmail}
 
-〒731-0137 広島県広島市安佐南区山本2-3-35
-運営: 株式会社Senrigan`;
+${brand.companyAddress}
+運営: ${brand.companyName}`;
 
   return {
-    subject: '【Share】解約申請を受け付けました',
+    subject: `【${brand.name}】解約申請を受け付けました`,
     html,
     text,
   };

@@ -15,6 +15,7 @@ import { logger } from '@/lib/utils/logger';
 import { ONE_TAP_SEAL_CONFIG, type CreateOneTapSealItem } from '@/types/one-tap-seal';
 import { calculateOrderAmount, validateOneTapSealOrder } from '@/lib/one-tap-seal/order-calculator';
 import { validatePostalCode } from '@/lib/one-tap-seal/qr-slug-manager';
+import { getBrandConfig } from '@/lib/brand/config';
 
 // プランに基づいて適切な期間終了日を計算する関数
 function calculatePeriodEndDate(plan: string, interval: string, startDate: Date): Date {
@@ -331,7 +332,7 @@ export async function POST(req: NextRequest) {
                   maxUsers: maxUsers,
                   adminId: session.user.id,
                   users: { connect: [{ id: session.user.id }] },
-                  primaryColor: '#3B82F6',
+                  primaryColor: getBrandConfig().primaryColor,
                   secondaryColor: 'var(--color-corporate-secondary)',
                 },
               });
@@ -453,9 +454,9 @@ export async function POST(req: NextRequest) {
                   slug: item.qrSlug,
                   userId: item.memberUserId || session.user.id,
                   userName: targetUser?.name || targetUser?.email || item.qrSlug,
-                  profileUrl: `https://app.sns-share.com/qr/${item.qrSlug}`,
+                  profileUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/qr/${item.qrSlug}`,
                   template: 'default',
-                  primaryColor: '#3B82F6',
+                  primaryColor: getBrandConfig().primaryColor,
                   secondaryColor: '#1E40AF',
                 },
               });

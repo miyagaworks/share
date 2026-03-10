@@ -4,6 +4,8 @@ import authConfig from './auth.config';
 import { prisma } from '@/lib/prisma';
 import type { DefaultSession } from 'next-auth';
 import { cookies } from 'next/headers';
+import { SUPER_ADMIN_EMAIL, ADMIN_EMAIL_DOMAIN, isSuperAdmin as isSuperAdminEmail, isAdminEmailDomain } from '@/lib/auth/constants';
+import { getBrandConfig } from '@/lib/brand/config';
 
 // 型定義の拡張
 declare module 'next-auth' {
@@ -139,7 +141,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           const isSignupFlow = signupCookie?.value === 'true';
 
           // 管理者メールは常に許可
-          const isAdminEmail = email === 'admin@sns-share.com';
+          const isAdminEmail = isSuperAdminEmail(email);
 
           if (process.env.NODE_ENV === 'development') {
             console.log('🍪 Cookie check:', {
@@ -169,7 +171,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   firstNameKana: '',
                   email: email,
                   password: null, // Google認証のためパスワードは不要
-                  mainColor: '#3B82F6',
+                  mainColor: getBrandConfig().primaryColor,
                   trialEndsAt,
                   subscriptionStatus: 'trialing',
                   emailVerified: new Date(),
@@ -271,10 +273,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (dbUser) {
             const userEmail = dbUser.email.toLowerCase();
 
-            if (userEmail === 'admin@sns-share.com') {
+            if (isSuperAdminEmail(userEmail)) {
               token.role = 'super-admin';
             } else if (
-              userEmail.endsWith('@sns-share.com') &&
+              isAdminEmailDomain(userEmail) &&
               dbUser.financialAdminRecord?.isActive === true
             ) {
               token.role = 'financial-admin'; // ✅ 正しく判定される

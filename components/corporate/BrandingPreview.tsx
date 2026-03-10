@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
+import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
 // SNSリンクタイプ
 interface SnsLink {
   id: string;
@@ -383,7 +384,7 @@ export function BrandingPreview({
             このサービスを使ってみる
           </a>
           <div className="mt-2 pt-2 border-t border-gray-300">
-            <p className="text-xs text-gray-500">Powered by Share</p>
+            <p className="text-xs text-gray-500">{`Powered by ${DEFAULT_BRAND_NAME}`}</p>
           </div>
         </div>
       </div>

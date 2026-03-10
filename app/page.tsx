@@ -1,11 +1,25 @@
 // app/page.tsx
 'use client';
-import React from 'react';
+import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
+import { DEFAULT_BRAND_NAME, DEFAULT_IS_BUYOUT } from '@/lib/brand/defaults';
 export default function HomePage() {
   const router = useRouter();
+
+  // 買取型: トップページはログインページにリダイレクト
+  useEffect(() => {
+    if (DEFAULT_IS_BUYOUT) {
+      router.replace('/auth/signin');
+    }
+  }, [router]);
+
+  // 買取型: リダイレクト中は白画面を表示
+  if (DEFAULT_IS_BUYOUT) {
+    return null;
+  }
+
   const handleNavigate = (path: string) => {
     router.push(path);
   };
@@ -58,7 +72,7 @@ export default function HomePage() {
     {
       title: "日常のSNS共有",
       description:
-        "友人や知人に「SNSのアカウント教えて」と言われたとき、一つ一つ教える手間が省けます。Shareプロフィールを共有するだけで完了です。あなたの時間を節約しながら、相手にも便利な体験を提供できます。",
+        `友人や知人に「SNSのアカウント教えて」と言われたとき、一つ一つ教える手間が省けます。${DEFAULT_BRAND_NAME}プロフィールを共有するだけで完了です。あなたの時間を節約しながら、相手にも便利な体験を提供できます。`,
       imagePath: "/images/usecase/daily-scene.png",
       bgColor: "bg-white",
       iconPath: (
@@ -80,13 +94,13 @@ export default function HomePage() {
           <div className="w-full max-w-md space-y-8">
             {/* ロゴ */}
             <div className="flex justify-center mb-4">
-              <Image src="/logo_blue.svg" alt="Share Logo" width={90} height={90} priority />
+              <Image src="/logo_blue.svg" alt={`${DEFAULT_BRAND_NAME} Logo`} width={90} height={90} priority />
             </div>
             {/* テキストロゴ */}
             <div className="text-center mb-6">
               <Image
                 src="/logo_share.svg"
-                alt="Share Text"
+                alt={`${DEFAULT_BRAND_NAME} Text`}
                 width={150}
                 height={44}
                 className="mx-auto"
@@ -196,7 +210,7 @@ export default function HomePage() {
           <div className="absolute inset-0 flex items-center justify-center opacity-10">
             <Image
               src="/logo_blue.svg"
-              alt="Share Logo Background"
+              alt={`${DEFAULT_BRAND_NAME} Logo Background`}
               width={800}
               height={800}
               className="brightness-0 invert"
@@ -216,7 +230,7 @@ export default function HomePage() {
               </p>
               <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl text-left">
                 <p className="text-white mb-3 text-justify">
-                  「Share」を使えば、あなたのSNSアカウントと連絡先情報をひとつにまとめて、簡単に共有できます。
+                  {`「${DEFAULT_BRAND_NAME}」を使えば、あなたのSNSアカウントと連絡先情報をひとつにまとめて、簡単に共有できます。`}
                 </p>
                 <p className="text-white/80 text-justify">
                   QRコードでシェアして、ビジネスでもプライベートでも人とのつながりをもっと簡単に。
@@ -230,9 +244,9 @@ export default function HomePage() {
       <div className="pt-24 pb-16 bg-gray-50 mt-0 md:mt-0">
         <div className="container mx-auto px-4">
           <div className="text-center mb-12 pt-8">
-            <h2 className="text-3xl font-bold text-gray-900">Shareの活用シーン</h2>
+            <h2 className="text-3xl font-bold text-gray-900">{`${DEFAULT_BRAND_NAME}の活用シーン`}</h2>
             <p className="mt-4 text-lg text-gray-600 max-w-3xl mx-auto">
-              あらゆるシーンで活躍するShare。ビジネスからプライベートまで、人とのつながりをもっとスマートに。
+              {`あらゆるシーンで活躍する${DEFAULT_BRAND_NAME}。ビジネスからプライベートまで、人とのつながりをもっとスマートに。`}
             </p>
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
@@ -281,7 +295,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4">
           <div className="flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              <p className="text-sm text-gray-500">© 2025 Share. All rights reserved.</p>
+              <p className="text-sm text-gray-500">{`© 2025 ${DEFAULT_BRAND_NAME}. All rights reserved.`}</p>
             </div>
             <div className="flex space-x-6">
               <Link href="/legal/terms" className="text-sm text-gray-500 hover:text-blue-600">

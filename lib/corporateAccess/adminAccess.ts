@@ -1,7 +1,8 @@
 // lib/corporateAccess/adminAccess.ts
 import { corporateAccessState, isClient, logDebug, updateState } from './state';
+import { SUPER_ADMIN_EMAIL, isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
 // 管理者メールアドレスのリスト（クライアントサイド用）
-const ADMIN_EMAILS = ['admin@sns-share.com'];
+const ADMIN_EMAILS = [SUPER_ADMIN_EMAIL];
 /**
  * クライアントサイドで管理者権限の状態を初期化する
  *
@@ -40,8 +41,8 @@ export async function initializeAdminStatus(): Promise<void> {
     }
     // セッションストレージの確認と必要に応じてAPI検証を実行
     if (
-      (savedStatus && userEmail !== 'admin@sns-share.com') ||
-      (!savedStatus && userEmail === 'admin@sns-share.com')
+      (savedStatus && !isSuperAdminEmail(userEmail)) ||
+      (!savedStatus && isSuperAdminEmail(userEmail))
     ) {
       validateAdminStatusFromApi().catch(() => {
         // API検証エラーは無視（バックグラウンド処理のため）

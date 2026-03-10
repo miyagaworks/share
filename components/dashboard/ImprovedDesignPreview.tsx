@@ -5,6 +5,7 @@ import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
 import type { User } from '@prisma/client';
 import { motion } from 'framer-motion';
+import { DEFAULT_PRIMARY_COLOR, DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
 
 // 型拡張
 interface ExtendedUser extends User {
@@ -23,7 +24,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
   // 🚀 useMemoで値を安定化
   const previewData = useMemo(() => {
     const data = {
-      mainColor: user.mainColor || '#3B82F6',
+      mainColor: user.mainColor || DEFAULT_PRIMARY_COLOR,
       snsIconColor: extendedUser.snsIconColor || '#333333',
       headerText: extendedUser.headerText || 'シンプルにつながる、スマートにシェア。',
       textColor: extendedUser.textColor || '#FFFFFF',
@@ -254,7 +255,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
             このサービスを使ってみる
           </a>
           <div className="mt-2 pt-2 border-t border-gray-300">
-            <p className="text-xs text-gray-500">Powered by Share</p>
+            <p className="text-xs text-gray-500">{`Powered by ${DEFAULT_BRAND_NAME}`}</p>
           </div>
         </div>
       </div>

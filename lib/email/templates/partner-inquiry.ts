@@ -1,5 +1,6 @@
 // lib/email/templates/partner-inquiry.ts
 // パートナー資料請求: お客様向け自動返信 + 管理者通知
+import { getBrandConfig } from '@/lib/brand/config';
 
 interface PartnerAutoReplyParams {
   name: string;
@@ -17,15 +18,14 @@ interface PartnerAdminNotifyParams {
   question?: string;
 }
 
-const logoUrl = 'https://app.sns-share.com/images/partner/logo_white.png';
-
 export function getPartnerAutoReplyTemplate(params: PartnerAutoReplyParams) {
+  const brand = getBrandConfig();
+  const logoUrl = `${brand.appUrl}/images/partner/logo_white.png`;
   const { name, companyName, preferences } = params;
-  const siteUrl = process.env.NEXTAUTH_URL || 'https://sns-share.com';
-  const downloadUrl = `${siteUrl}/docs/share-partner-guide.pdf`;
+  const downloadUrl = `${brand.appUrl}/docs/share-partner-guide.pdf`;
   const preferencesText = preferences.map((p) => `- ${p}`).join('\n');
 
-  const subject = '【Share】パートナー資料をお送りします';
+  const subject = `【${brand.name}】パートナー資料をお送りします`;
 
   const html = `
     <!DOCTYPE html>
@@ -44,7 +44,7 @@ export function getPartnerAutoReplyTemplate(params: PartnerAutoReplyParams) {
               <!-- Header -->
               <tr>
                 <td style="background: linear-gradient(135deg, #1B2A4A 0%, #2D4A7A 100%); padding: 36px 40px; border-radius: 12px 12px 0 0; text-align: center;">
-                  <img src="${logoUrl}" alt="Share" width="150" height="45" style="display: inline-block; max-width: 150px; height: auto;" />
+                  <img src="${logoUrl}" alt="${brand.name}" width="150" height="45" style="display: inline-block; max-width: 150px; height: auto;" />
                   <p style="color: rgba(255,255,255,0.7); margin: 12px 0 0; font-size: 13px; letter-spacing: 2px; font-weight: 300;">PARTNER PROGRAM</p>
                 </td>
               </tr>
@@ -68,7 +68,7 @@ export function getPartnerAutoReplyTemplate(params: PartnerAutoReplyParams) {
                     <tr>
                       <td style="padding-bottom: 32px;">
                         <p style="color: #4A5568; margin: 0; font-size: 15px; line-height: 2;">
-                          この度はShareパートナープログラムに<br>
+                          この度は${brand.name}パートナープログラムに<br>
                           ご興味をお持ちいただき、誠にありがとうございます。
                         </p>
                       </td>
@@ -147,23 +147,23 @@ export function getPartnerAutoReplyTemplate(params: PartnerAutoReplyParams) {
                   <table width="100%" cellpadding="0" cellspacing="0" border="0">
                     <tr>
                       <td align="center" style="padding-bottom: 16px;">
-                        <p style="color: rgba(255,255,255,0.6); margin: 0; font-size: 13px;">Share パートナー担当</p>
+                        <p style="color: rgba(255,255,255,0.6); margin: 0; font-size: 13px;">${brand.name} パートナー担当</p>
                       </td>
                     </tr>
                     <tr>
                       <td align="center" style="padding-bottom: 16px;">
-                        <a href="mailto:support@sns-share.com" style="color: #D4A832; text-decoration: none; font-size: 14px; font-weight: 500;">
-                          support@sns-share.com
+                        <a href="mailto:${brand.supportEmail}" style="color: #D4A832; text-decoration: none; font-size: 14px; font-weight: 500;">
+                          ${brand.supportEmail}
                         </a>
                       </td>
                     </tr>
                     <tr>
                       <td align="center" style="border-top: 1px solid rgba(255,255,255,0.1); padding-top: 16px;">
                         <p style="color: rgba(255,255,255,0.4); margin: 0 0 4px; font-size: 11px;">
-                          株式会社Senrigan
+                          ${brand.companyName}
                         </p>
                         <p style="color: rgba(255,255,255,0.3); margin: 0; font-size: 11px;">
-                          〒731-0137 広島県広島市安佐南区山本2-3-35
+                          ${brand.companyAddress}
                         </p>
                       </td>
                     </tr>
@@ -182,7 +182,7 @@ export function getPartnerAutoReplyTemplate(params: PartnerAutoReplyParams) {
   const text = `${companyName}
 ${name} 様
 
-この度はShareパートナープログラムにご興味をお持ちいただき、
+この度は${brand.name}パートナープログラムにご興味をお持ちいただき、
 誠にありがとうございます。
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -202,10 +202,10 @@ ${preferencesText}
 担当者よりご連絡させていただきます。
 
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-Share パートナー担当
-support@sns-share.com
-株式会社Senrigan
-〒731-0137 広島県広島市安佐南区山本2-3-35`;
+${brand.name} パートナー担当
+${brand.supportEmail}
+${brand.companyName}
+${brand.companyAddress}`;
 
   return { subject, html, text };
 }

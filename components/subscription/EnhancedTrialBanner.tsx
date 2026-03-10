@@ -2,6 +2,7 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { HiArrowRight, HiSparkles, HiClock } from 'react-icons/hi';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 
 interface EnhancedTrialBannerProps {
   trialEndDate: string | null;
@@ -54,7 +55,7 @@ export default function EnhancedTrialBanner({ trialEndDate }: EnhancedTrialBanne
       <div
         className="relative px-4 sm:px-6 py-4 sm:py-6"
         style={{
-          background: 'linear-gradient(135deg, #3B82F6 0%, #1E40AF 50%, #1E3A8A 100%)',
+          background: `linear-gradient(135deg, ${DEFAULT_PRIMARY_COLOR} 0%, #1E40AF 50%, #1E3A8A 100%)`,
         }}
       >
         {/* スマホ対応のレイアウト */}

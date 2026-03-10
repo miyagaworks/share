@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
 import { motion } from 'framer-motion';
 import { Spinner } from '@/components/ui/Spinner';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 import { corporateAccessState } from '@/lib/corporateAccess';
 import {
   HiUser,
@@ -115,7 +116,7 @@ export default function CorporateMemberPage() {
             name: '法人テナント',
             logoUrl: null,
             primaryColor: '#1E3A8A',
-            secondaryColor: '#3B82F6',
+            secondaryColor: DEFAULT_PRIMARY_COLOR,
           });
         }
 
@@ -134,7 +135,7 @@ export default function CorporateMemberPage() {
           name: '法人テナント',
           logoUrl: null,
           primaryColor: '#1E3A8A',
-          secondaryColor: '#3B82F6',
+          secondaryColor: DEFAULT_PRIMARY_COLOR,
         });
 
         setError('一部のデータの取得に失敗しました');
