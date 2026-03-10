@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { signIn } from 'next-auth/react';
 import RecaptchaWrapper from '@/components/RecaptchaWrapper';
-import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
+import { DEFAULT_BRAND_NAME, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 // useSearchParamsを使用するコンテンツコンポーネント
 function InvitePageContent() {
   const router = useRouter();
@@ -388,7 +388,7 @@ export default function InvitePage() {
             </div>
             <div className="z-10 max-w-md text-center">
               <h1 className="text-4xl font-bold text-white mb-6">{DEFAULT_BRAND_NAME}</h1>
-              <p className="text-xl text-white/90 mb-8">シンプルにつながる、スマートにシェア。</p>
+              <p className="text-xl text-white/90 mb-8">{DEFAULT_TAGLINE}</p>
               <div className="flex flex-col space-y-4 mt-12">
                 <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
                   <p className="text-white text-left mb-3">

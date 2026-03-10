@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 import Image from 'next/image'; // 追加
 import { Spinner } from '@/components/ui/Spinner';
 import { QrCodeGenerator } from '@/components/qrcode/QrCodeGenerator';
-import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
+import { DEFAULT_PRIMARY_COLOR, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 import { toast } from 'react-hot-toast';
 import Link from 'next/link';
 import { FaArrowLeft } from 'react-icons/fa';
@@ -82,7 +82,7 @@ export default function QrCodePage() {
             primaryColor: data.tenant.primaryColor || '#1E3A8A',
             logoUrl: data.tenant.logoUrl,
             textColor: data.tenant.textColor || '#FFFFFF',
-            headerText: data.tenant.headerText || 'シンプルにつながる、スマートにシェア。',
+            headerText: data.tenant.headerText || DEFAULT_TAGLINE,
           });
         }
         // ユーザー情報を設定
@@ -137,7 +137,7 @@ export default function QrCodePage() {
                 primaryColor: DEFAULT_PRIMARY_COLOR,
                 logoUrl: null,
                 textColor: '#FFFFFF',
-                headerText: 'シンプルにつながる、スマートにシェア。',
+                headerText: DEFAULT_TAGLINE,
               }),
               headerText: data.user.headerText,
             }));
@@ -424,7 +424,7 @@ export default function QrCodePage() {
             ? {
                 primaryColor: corporateData?.primaryColor || '#1E3A8A',
                 textColor: corporateData?.textColor || '#FFFFFF',
-                headerText: corporateData?.headerText || 'シンプルにつながる、スマートにシェア。',
+                headerText: corporateData?.headerText || DEFAULT_TAGLINE,
               }
             : undefined
         }
@@ -433,7 +433,7 @@ export default function QrCodePage() {
           userName: userName || '',
           nameEn: nameEn || '',
           profileImage: profileImage || undefined,
-          headerText: headerText || 'シンプルにつながる、スマートにシェア。', // ここでheaderTextを使用
+          headerText: headerText || DEFAULT_TAGLINE, // ここでheaderTextを使用
         }}
       />
     </div>

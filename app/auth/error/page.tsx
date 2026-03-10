@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Button } from '@/components/ui/Button';
-import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
+import { DEFAULT_BRAND_NAME, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 // SearchParamsを取得するコンポーネントを分離
 function ErrorContent() {
   // useSearchParamsを正しくインポートして使用
@@ -98,7 +98,7 @@ function ErrorContent() {
         </div>
         <div className="z-10 max-w-md text-center">
           <h1 className="text-4xl font-bold text-white mb-6">{DEFAULT_BRAND_NAME}</h1>
-          <p className="text-xl text-white/90 mb-8">シンプルにつながる、スマートにシェア。</p>
+          <p className="text-xl text-white/90 mb-8">{DEFAULT_TAGLINE}</p>
           <div className="flex flex-col space-y-4 mt-12">
             <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
               <p className="text-white text-left mb-3">

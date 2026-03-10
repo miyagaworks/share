@@ -9,7 +9,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
-import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
+import { DEFAULT_BRAND_NAME, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 // フォームのバリデーションスキーマ
 const ResetPasswordSchema = z
   .object({
@@ -187,7 +187,7 @@ function ResetPasswordContent() {
         </div>
         <div className="z-10 max-w-md text-center">
           <h1 className="text-4xl font-bold text-white mb-6">{DEFAULT_BRAND_NAME}</h1>
-          <p className="text-xl text-white/90 mb-8">シンプルにつながる、スマートにシェア。</p>
+          <p className="text-xl text-white/90 mb-8">{DEFAULT_TAGLINE}</p>
           <div className="flex flex-col space-y-4 mt-12">
             <div className="bg-white/10 backdrop-blur-sm p-6 rounded-xl">
               <p className="text-white text-left mb-3">

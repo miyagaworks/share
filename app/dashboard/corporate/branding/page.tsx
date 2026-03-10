@@ -12,7 +12,7 @@ import { HiSave, HiRefresh, HiInformationCircle, HiUpload, HiX } from 'react-ico
 import { corporateAccessState, checkCorporateAccess } from '@/lib/corporateAccess';
 import Image from 'next/image';
 import tinycolor from 'tinycolor2';
-import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
+import { DEFAULT_PRIMARY_COLOR, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 
 // テナント情報の型定義
 interface TenantData {
@@ -511,7 +511,7 @@ export default function ImprovedCorporateBrandingPage() {
                 <textarea
                   value={headerText}
                   onChange={(e) => setHeaderText(e.target.value)}
-                  placeholder="例：シンプルにつながる、スマートにシェア。"
+                  placeholder={`例：${DEFAULT_TAGLINE}`}
                   maxLength={60}
                   rows={2}
                   className="w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm focus:outline-none focus:ring-corporate-primary focus:border-corporate-primary"

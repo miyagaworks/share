@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { signIn } from 'next-auth/react';
 import RecaptchaWrapper from '@/components/RecaptchaWrapper';
-import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
+import { DEFAULT_BRAND_NAME, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 
 // 折りたたみアイコンコンポーネント
 function ChevronIcon({ isOpen }: { isOpen: boolean }) {
@@ -293,7 +293,7 @@ export default function SignupPage() {
             {DEFAULT_BRAND_NAME}
           </h1>
           <p className="text-xl mb-8" style={{ color: 'rgba(255, 255, 255, 0.9)' }}>
-            シンプルにつながる、スマートにシェア。
+            {DEFAULT_TAGLINE}
           </p>
           <div className="flex flex-col space-y-4 mt-12">
             <div

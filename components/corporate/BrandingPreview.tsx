@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import Image from 'next/image';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
-import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
+import { DEFAULT_BRAND_NAME, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 // SNSリンクタイプ
 interface SnsLink {
   id: string;
@@ -136,7 +136,7 @@ export function BrandingPreview({
           className="text-sm px-4 text-center whitespace-pre-wrap"
           style={{ color: safeTextColor }}
         >
-          {headerText || 'シンプルにつながる、スマートにシェア。'}
+          {headerText || DEFAULT_TAGLINE}
         </div>
       </div>
       <div className="p-5">

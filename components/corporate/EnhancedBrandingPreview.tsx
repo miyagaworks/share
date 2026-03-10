@@ -4,7 +4,7 @@ import Image from 'next/image';
 import { HiUser, HiGlobe, HiMail, HiPhone, HiPlus } from 'react-icons/hi';
 import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
-import { DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
+import { DEFAULT_BRAND_NAME, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 // SNSリンクタイプ
 interface SnsLink {
   id: string;
@@ -117,7 +117,7 @@ export function EnhancedBrandingPreview({
         style={{ backgroundColor: primaryColor }}
       >
         <p className="text-sm px-2 text-center" style={{ color: safeTextColor }}>
-          {headerText || 'シンプルにつながる、スマートにシェア。'}
+          {headerText || DEFAULT_TAGLINE}
         </p>
       </div>
       <div className="p-5">

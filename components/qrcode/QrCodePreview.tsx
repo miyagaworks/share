@@ -2,6 +2,7 @@
 import React from 'react';
 import { QRCodeSVG } from 'qrcode.react';
 import Image from 'next/image';
+import { DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 interface QrCodePreviewProps {
   profileUrl: string;
   userName: string;
@@ -22,7 +23,7 @@ export function QrCodePreview({
   primaryColor,
   // secondaryColor, // 使わない場合はコメントアウト
   // accentColor, // 使わない場合はコメントアウト
-  headerText = 'シンプルにつながる、スマートにシェア。',
+  headerText = DEFAULT_TAGLINE,
   textColor = '#FFFFFF', // nullではなく文字列のデフォルト値を設定
   profileImage,
 }: QrCodePreviewProps) {
@@ -62,7 +63,7 @@ export function QrCodePreview({
       <div style={{ minHeight: '480px' }}>
         {/* ヘッダーテキスト */}
         <div style={headerStyle}>
-          <p style={headerTextStyle}>{headerText || 'シンプルにつながる、スマートにシェア。'}</p>
+          <p style={headerTextStyle}>{headerText || DEFAULT_TAGLINE}</p>
         </div>
         <div style={{ padding: '1.5rem' }}>
           {/* プロフィール部分 */}

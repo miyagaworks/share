@@ -58,7 +58,7 @@ export default function CompanyAboutPage() {
               </tr>
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">代表取締役</th>
-                <td className="py-4 px-4">宮川 清実</td>
+                <td className="py-4 px-4">{brand.companyRepresentative}</td>
               </tr>
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">所在地</th>
@@ -89,7 +89,7 @@ export default function CompanyAboutPage() {
                 <td className="py-4 px-4">
                   メール: {brand.supportEmail}
                   <br />
-                  電話: 082-209-0181（平日10:00〜18:00）
+                  電話: {brand.companyPhone}（平日10:00〜18:00）
                 </td>
               </tr>
             </tbody>

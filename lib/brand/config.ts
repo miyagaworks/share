@@ -18,6 +18,8 @@ export interface BrandConfig {
   fromEmail: string;
   appUrl: string;
   tagline: string;
+  companyPhone: string;
+  companyRepresentative: string;
   isBuyout: boolean;
 }
 
@@ -40,6 +42,8 @@ export function getBrandConfig(): BrandConfig {
     fromEmail: process.env.FROM_EMAIL || 'noreply@sns-share.com',
     appUrl: process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com',
     tagline: process.env.BRAND_TAGLINE || 'すべてのSNS、ワンタップで',
+    companyPhone: process.env.BRAND_COMPANY_PHONE || '082-209-0181',
+    companyRepresentative: process.env.BRAND_COMPANY_REPRESENTATIVE || '宮川 清実',
     isBuyout,
   };
 }

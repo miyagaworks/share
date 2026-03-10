@@ -1,9 +1,12 @@
 // app/qrcode/layout.tsx (themeColor重複修正版)
 import type { Metadata, Viewport } from 'next';
 import Script from 'next/script';
+import { getBrandConfig } from '@/lib/brand/config';
+
+const brand = getBrandConfig();
 
 export const metadata: Metadata = {
-  title: `QRコード | ${process.env.BRAND_NAME || 'Share'}`,
+  title: `QRコード | ${brand.name}`,
   description: 'スタイリッシュなQRコードを作成',
   // アイコンとマニフェストは以下のmetadata形式で定義
   icons: {

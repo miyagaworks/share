@@ -10,7 +10,7 @@ import { EnhancedColorPicker } from '@/components/ui/EnhancedColorPicker';
 import { toast } from 'react-hot-toast';
 import { updateProfile } from '@/actions/profile';
 import type { User } from '@prisma/client';
-import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
+import { DEFAULT_PRIMARY_COLOR, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 import tinycolor from 'tinycolor2';
 // 型拡張
 interface ExtendedUser extends User {
@@ -54,7 +54,7 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
     defaultValues: {
       mainColor: user.mainColor || DEFAULT_PRIMARY_COLOR,
       snsIconColor: extendedUser.snsIconColor || '#333333',
-      headerText: extendedUser.headerText || 'シンプルにつながる、スマートにシェア。',
+      headerText: extendedUser.headerText || DEFAULT_TAGLINE,
       textColor: extendedUser.textColor || '#FFFFFF',
     },
   });
@@ -170,7 +170,7 @@ export function ImprovedDesignForm({ user, onUpdate }: ImprovedDesignFormProps) 
           <Input
             {...register('headerText')}
             disabled={isPending}
-            placeholder="シンプルにつながる、スマートにシェア。"
+            placeholder={DEFAULT_TAGLINE}
           />
           {errors.headerText?.message && (
             <p className="text-sm text-destructive mt-1">{errors.headerText.message}</p>

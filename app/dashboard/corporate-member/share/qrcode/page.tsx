@@ -8,6 +8,7 @@ import { QrCodeGenerator } from '@/components/qrcode/QrCodeGenerator';
 import { CorporateMemberGuard } from '@/components/guards/CorporateMemberGuard';
 import { Spinner } from '@/components/ui/Spinner';
 import { HiArrowLeft, HiQrcode } from 'react-icons/hi';
+import { DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 // 型定義
 interface ProfileData {
   user?: {
@@ -134,7 +135,7 @@ export default function CorporateMemberQrcodePage() {
                 ? {
                     primaryColor: tenantData.primaryColor || '#1E3A8A',
                     textColor: tenantData.textColor || '#FFFFFF',
-                    headerText: tenantData.headerText || 'シンプルにつながる、スマートにシェア。',
+                    headerText: tenantData.headerText || DEFAULT_TAGLINE,
                   }
                 : undefined
             }

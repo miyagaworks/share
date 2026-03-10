@@ -5,7 +5,7 @@ import { ImprovedSnsIcon } from '@/components/shared/ImprovedSnsIcon';
 import { type SnsPlatform } from '@/types/sns';
 import type { User } from '@prisma/client';
 import { motion } from 'framer-motion';
-import { DEFAULT_PRIMARY_COLOR, DEFAULT_BRAND_NAME } from '@/lib/brand/defaults';
+import { DEFAULT_PRIMARY_COLOR, DEFAULT_BRAND_NAME, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 
 // 型拡張
 interface ExtendedUser extends User {
@@ -26,7 +26,7 @@ export function ImprovedDesignPreview({ user }: ImprovedDesignPreviewProps) {
     const data = {
       mainColor: user.mainColor || DEFAULT_PRIMARY_COLOR,
       snsIconColor: extendedUser.snsIconColor || '#333333',
-      headerText: extendedUser.headerText || 'シンプルにつながる、スマートにシェア。',
+      headerText: extendedUser.headerText || DEFAULT_TAGLINE,
       textColor: extendedUser.textColor || '#FFFFFF',
       timestamp: Date.now(), // 変更検出用
     };

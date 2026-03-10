@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/Input';
 import { toast } from 'react-hot-toast';
 import { LoadingSpinner } from '@/components/shared/LoadingSpinner';
 import Link from 'next/link';
-import { DEFAULT_BRAND_NAME, DEFAULT_SUPPORT_EMAIL, DEFAULT_COMPANY_ADDRESS, DEFAULT_COMPANY_NAME } from '@/lib/brand/defaults';
+import { DEFAULT_BRAND_NAME, DEFAULT_SUPPORT_EMAIL, DEFAULT_COMPANY_ADDRESS, DEFAULT_COMPANY_NAME, DEFAULT_COMPANY_PHONE } from '@/lib/brand/defaults';
 // お問い合わせの種類
 type ContactType =
   | 'account'
@@ -313,7 +313,7 @@ export default function ContactPageContent() {
             </div>
             <div>
               <h3 className="font-medium">お電話でのお問い合わせ</h3>
-              <p className="mt-1 text-justify">082-209-0181（平日10:00〜18:00 土日祝日休業）</p>
+              <p className="mt-1 text-justify">{DEFAULT_COMPANY_PHONE}（平日10:00〜18:00 土日祝日休業）</p>
             </div>
             <div>
               <h3 className="font-medium">郵送でのお問い合わせ</h3>

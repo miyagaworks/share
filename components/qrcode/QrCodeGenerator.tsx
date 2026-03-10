@@ -10,7 +10,7 @@ import { QrCodePreview } from './QrCodePreview';
 import { motion } from 'framer-motion';
 import { Input } from '@/components/ui/Input';
 import Image from 'next/image';
-import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
+import { DEFAULT_PRIMARY_COLOR, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 
 // 型定義 - 明確に分離（ベストプラクティス）
 interface CorporateBranding {
@@ -52,7 +52,7 @@ export function QrCodeGenerator({
   const initialHeaderText =
     corporateBranding?.headerText ||
     userProfile.headerText ||
-    'シンプルにつながる、スマートにシェア。';
+    DEFAULT_TAGLINE;
 
   // 状態管理 - 関連する状態をグループ化（ベストプラクティス）
   const [primaryColor, setPrimaryColor] = useState(initialPrimaryColor);
@@ -243,7 +243,7 @@ export function QrCodeGenerator({
         const storedTextColor = localStorage.getItem(USER_TEXT_COLOR_KEY);
         setPrimaryColor(storedPrimaryColor || initialPrimaryColor);
         setTextColor(storedTextColor || initialTextColor);
-        setHeaderText(userProfile.headerText || 'シンプルにつながる、スマートにシェア。');
+        setHeaderText(userProfile.headerText || DEFAULT_TAGLINE);
       } else {
         // 現在の設定を保存
         localStorage.setItem(USER_PRIMARY_COLOR_KEY, primaryColor);

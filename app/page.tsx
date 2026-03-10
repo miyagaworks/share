@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import Link from 'next/link';
 import Image from 'next/image';
-import { DEFAULT_BRAND_NAME, DEFAULT_IS_BUYOUT } from '@/lib/brand/defaults';
+import { DEFAULT_BRAND_NAME, DEFAULT_IS_BUYOUT, DEFAULT_TAGLINE } from '@/lib/brand/defaults';
 export default function HomePage() {
   const router = useRouter();
 
@@ -105,7 +105,7 @@ export default function HomePage() {
                 height={44}
                 className="mx-auto"
               />
-              <p className="mt-2 text-gray-600">シンプルにつながる、スマートにシェア。</p>
+              <p className="mt-2 text-gray-600">{DEFAULT_TAGLINE}</p>
             </div>
             {/* CTA ボタン */}
             <div className="pt-8 space-y-4">

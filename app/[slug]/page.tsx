@@ -222,7 +222,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   // ヘッダーテキストとテキストカラー
   const headerText =
-    tenant?.headerText || user.headerText || 'シンプルにつながる、スマートにシェア。';
+    tenant?.headerText || user.headerText || getBrandConfig().tagline;
   const textColor = tenant?.textColor || user.textColor || '#FFFFFF';
 
   return (
