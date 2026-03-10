@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextRequest, NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
 import { prisma } from '@/lib/prisma';
+import { getBrandConfig } from '@/lib/brand/config';
 
 // 画像データの型を定義
 interface ImageData {
@@ -283,10 +284,7 @@ export async function GET(
     });
 
     if (profile?.slug) {
-      const baseUrl =
-        process.env.NEXT_PUBLIC_APP_URL ||
-        process.env.NEXT_PUBLIC_BASE_URL ||
-        'https://app.sns-share.com';
+      const baseUrl = getBrandConfig().appUrl;
       const profileUrl = `${baseUrl}/${profile.slug}`;
       vcard.push(`URL;TYPE=PROFILE:${profileUrl}`);
     }

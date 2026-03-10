@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import { logUserActivity } from '@/lib/utils/activity-logger';
 import { getInviteEmailTemplate } from '@/lib/email/templates/invite-email';
+import { getBrandConfig } from '@/lib/brand/config';
 export async function POST(request: Request) {
   try {
     logger.debug('[API] /api/corporate/users/invite POSTリクエスト受信');
@@ -103,11 +104,7 @@ export async function POST(request: Request) {
           },
         });
         // 招待リンクの生成
-        const baseUrl =
-          process.env.NEXT_PUBLIC_APP_URL ||
-          process.env.NEXT_PUBLIC_BASE_URL ||
-          process.env.NEXTAUTH_URL ||
-          'https://app.sns-share.com';
+        const baseUrl = getBrandConfig().appUrl;
         const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
         const inviteUrl = `${normalizedBaseUrl}/auth/invite?token=${token}`;
         // メール送信

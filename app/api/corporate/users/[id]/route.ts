@@ -7,6 +7,7 @@ import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import { logUserActivity } from '@/lib/utils/activity-logger';
 import { getInviteEmailTemplate } from '@/lib/email/templates/invite-email';
+import { getBrandConfig } from '@/lib/brand/config';
 
 // ユーザー情報を更新するAPI（役割と部署の変更）
 export async function PATCH(request: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -297,13 +298,8 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
       },
     });
 
-    // 環境変数からベースURLを取得
-    const baseUrl =
-      process.env.NEXT_PUBLIC_APP_URL ||
-      process.env.NEXT_PUBLIC_BASE_URL ||
-      process.env.NEXTAUTH_URL ||
-      'https://app.sns-share.com';
-
+    // ブランド設定からベースURLを取得
+    const baseUrl = getBrandConfig().appUrl;
     const normalizedBaseUrl = baseUrl.endsWith('/') ? baseUrl.slice(0, -1) : baseUrl;
 
     // 招待リンクの生成

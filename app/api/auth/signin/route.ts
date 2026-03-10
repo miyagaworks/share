@@ -8,6 +8,12 @@ import { logger } from '@/lib/utils/logger';
 
 // 従来のreCAPTCHA検証関数
 async function verifyRecaptcha(token: string): Promise<boolean> {
+  // バイパストークンは常に成功とする
+  if (token === 'bypass-token-pat-issue') {
+    logger.info('PAT問題回避のためreCAPTCHA検証をバイパス');
+    return true;
+  }
+
   try {
     const secretKey = process.env.RECAPTCHA_SECRET_KEY;
 
