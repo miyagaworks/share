@@ -4,7 +4,6 @@ import { NextResponse } from 'next/server';
 import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { checkPermanentAccess } from '@/lib/corporateAccess';
 
 // 部署詳細取得（GET）
 export async function GET(req: Request, { params }: { params: Promise<{ id: string }> }) {
@@ -68,8 +67,6 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
   try {
     const resolvedParams = await params;
 
-    // 永久利用権ユーザーかどうかチェック
-    const isPermanent = checkPermanentAccess();
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
@@ -85,8 +82,8 @@ export async function PUT(req: Request, { params }: { params: Promise<{ id: stri
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
-    // isPermanentまたはDBからのsubscriptionStatusが'permanent'の場合
-    if (isPermanent || user.subscriptionStatus === 'permanent') {
+    // 永久利用権ユーザーの場合
+    if (user.subscriptionStatus === 'permanent') {
       try {
         // リクエストボディを取得
         const body = await req.json();

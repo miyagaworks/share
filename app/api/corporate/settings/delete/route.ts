@@ -4,18 +4,8 @@ import { NextResponse } from 'next/server';
 import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
-import { checkPermanentAccess } from '@/lib/corporateAccess';
 export async function POST() {
   try {
-    // 永久利用権ユーザーかどうかチェック
-    const isPermanent = checkPermanentAccess();
-    if (isPermanent) {
-      return NextResponse.json({
-        success: true,
-        message: '永久利用権ユーザーのアカウントは削除されません',
-        redirectTo: '/dashboard',
-      });
-    }
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });

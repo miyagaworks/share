@@ -5,11 +5,6 @@ import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { z } from 'zod';
-import {
-  checkPermanentAccess,
-  updateVirtualTenantData,
-  getVirtualTenantData,
-} from '@/lib/corporateAccess';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
 
 // バリデーションスキーマ - 会社/組織情報フィールドを追加
@@ -57,112 +52,6 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: '入力データが無効です', details: errors }, { status: 400 });
     }
 
-    // 永久利用権ユーザーかどうかをチェック
-    const isPermanent = checkPermanentAccess();
-    if (isPermanent) {
-      logger.debug('永久利用権ユーザーのプロフィール更新:', session.user.id);
-      const data = validationResult.data;
-
-      // 通常のデータベース更新処理
-      // ユーザー情報を更新
-      const updateData: Record<string, unknown> = {
-        nameEn: data.nameEn,
-        bio: data.bio,
-        phone: data.phone,
-        position: data.position,
-        image: data.image,
-        headerText: data.headerText,
-        textColor: data.textColor,
-        // 会社/組織情報を追加
-        company: data.company,
-        companyUrl: data.companyUrl,
-        companyLabel: data.companyLabel,
-      };
-
-      // 姓名フィールドの処理
-      if (data.lastName || data.firstName) {
-        updateData.lastName = data.lastName;
-        updateData.firstName = data.firstName;
-        // name フィールドも更新
-        const fullName = `${data.lastName || ''} ${data.firstName || ''}`.trim();
-        if (fullName) {
-          updateData.name = fullName;
-        }
-      } else if (data.name) {
-        updateData.name = data.name;
-      }
-
-      // フリガナフィールドの処理
-      if (data.lastNameKana || data.firstNameKana) {
-        updateData.lastNameKana = data.lastNameKana;
-        updateData.firstNameKana = data.firstNameKana;
-        // nameKana フィールドも更新
-        const fullNameKana = `${data.lastNameKana || ''} ${data.firstNameKana || ''}`.trim();
-        if (fullNameKana) {
-          updateData.nameKana = fullNameKana;
-        }
-      } else if (data.nameKana) {
-        updateData.nameKana = data.nameKana;
-      }
-
-      // ユーザー情報を更新
-      const updatedUser = await prisma.user.update({
-        where: { id: session.user.id },
-        data: updateData,
-      });
-
-      // プロフィールが存在しない場合は作成
-      let profile = await prisma.profile.findUnique({
-        where: { userId: session.user.id },
-      });
-
-      if (!profile) {
-        // スラッグを生成
-        const slug = `${session.user.id.substring(0, 8)}`;
-        profile = await prisma.profile.create({
-          data: {
-            userId: session.user.id,
-            slug,
-            isPublic: true,
-          },
-        });
-      }
-
-      // 仮想テナントデータの更新処理
-      const virtualData = getVirtualTenantData();
-      if (virtualData) {
-        // ユーザー名を仮想テナントデータに反映
-        updateVirtualTenantData((data) => {
-          // ユーザー情報を更新
-          const updatedUsers = data.users.map((user) => {
-            if (user.id === session.user.id) {
-              return {
-                ...user,
-                name: updatedUser.name || user.name,
-              };
-            }
-            return user;
-          });
-
-          return {
-            ...data,
-            users: updatedUsers,
-          };
-        });
-      }
-
-      // センシティブ情報を除外
-      const { password, ...safeUser } = updatedUser;
-
-      return NextResponse.json({
-        success: true,
-        user: safeUser,
-        profile,
-        isPermanentUser: true,
-      });
-    }
-
-    // 通常ユーザーの場合（永久利用権でない場合）の処理
     // ユーザー情報とテナント情報を取得
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
@@ -176,9 +65,9 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
 
-    // ユーザーが法人テナントに所属しているか確認
+    // ユーザーが法人テナントに所属しているか確認（永久利用権ユーザーはテナントなしでも許可）
     const tenantInfo = user.tenant || user.adminOfTenant;
-    if (!tenantInfo) {
+    if (!tenantInfo && user.subscriptionStatus !== 'permanent') {
       return NextResponse.json({ error: '法人テナントに所属していません' }, { status: 403 });
     }
 
@@ -249,7 +138,7 @@ export async function POST(req: NextRequest) {
     }
 
     // アクティビティログを記録（テナントIDが存在する場合のみ）
-    if (tenantInfo.id) {
+    if (tenantInfo?.id) {
       try {
         await logCorporateActivity({
           tenantId: tenantInfo.id,

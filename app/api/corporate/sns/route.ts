@@ -7,22 +7,6 @@ import { prisma, safeQuery } from '@/lib/prisma';
 import { SNS_PLATFORMS } from '@/types/sns';
 import type { CorporateSnsLink } from '@prisma/client';
 
-// 仮想テナントデータを生成する関数（依存関係を削減）
-function generateVirtualSnsData() {
-  return {
-    snsLinks: [
-      {
-        id: 'virtual-twitter',
-        platform: 'twitter',
-        username: 'example',
-        url: 'https://twitter.com/example',
-        displayOrder: 1,
-        isRequired: false,
-      },
-    ],
-  };
-}
-
 // 法人共通SNSリンクの取得
 export async function GET() {
   try {
@@ -59,17 +43,6 @@ export async function GET() {
 
       if (!user) {
         return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
-      }
-
-      // 永久利用権ユーザーの処理を簡素化
-      if (user.subscriptionStatus === 'permanent') {
-        logger.debug('法人SNS API: 永久利用権ユーザー');
-        const virtualData = generateVirtualSnsData();
-        return NextResponse.json({
-          success: true,
-          snsLinks: virtualData.snsLinks,
-          isAdmin: true,
-        });
       }
 
       // テナント情報を取得
@@ -180,23 +153,7 @@ export async function POST(req: NextRequest) {
         });
       });
 
-      // 永久利用権ユーザーの場合
-      if (user?.subscriptionStatus === 'permanent') {
-        return NextResponse.json({
-          success: true,
-          message: '永久利用権ユーザーのSNSリンクは更新されません',
-          link: {
-            id: `virtual-sns-${Date.now()}`,
-            platform: body.platform,
-            username: body.username || null,
-            url: body.url,
-            displayOrder: 999,
-            isRequired: body.isRequired || false,
-          },
-        });
-      }
-
-      // nullチェックを追加
+      // nullチェック（永久利用権ユーザーも管理者テナントを持つ）
       if (!user?.adminOfTenant?.id) {
         return NextResponse.json({ error: 'この操作には管理者権限が必要です' }, { status: 403 });
       }
@@ -308,15 +265,7 @@ export async function PATCH(req: NextRequest) {
         });
       });
 
-      // 永久利用権ユーザーの場合
-      if (user?.subscriptionStatus === 'permanent') {
-        return NextResponse.json({
-          success: true,
-          message: '永久利用権ユーザーのSNSリンク設定は更新されません',
-        });
-      }
-
-      // nullチェックを追加
+      // nullチェック（永久利用権ユーザーも管理者テナントを持つ）
       if (!user?.adminOfTenant?.id) {
         return NextResponse.json({ error: 'この操作には管理者権限が必要です' }, { status: 403 });
       }

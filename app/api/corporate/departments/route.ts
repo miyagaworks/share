@@ -5,7 +5,6 @@ import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
-import { checkPermanentAccess } from '@/lib/corporateAccess';
 // 部署一覧取得（GET）
 export async function GET() {
   try {
@@ -62,8 +61,6 @@ export async function GET() {
 // 部署作成（POST）
 export async function POST(req: Request) {
   try {
-    // 永久利用権ユーザーかどうかチェック
-    const isPermanent = checkPermanentAccess();
     const session = await auth();
     if (!session?.user?.id) {
       return NextResponse.json({ error: '認証されていません' }, { status: 401 });
@@ -80,8 +77,8 @@ export async function POST(req: Request) {
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
     }
-    // isPermanentまたはDBからのsubscriptionStatusが'permanent'の場合
-    if (isPermanent || user.subscriptionStatus === 'permanent') {
+    // 永久利用権ユーザーの場合
+    if (user.subscriptionStatus === 'permanent') {
       // リクエストボディを取得
       const body = await req.json();
       const { name, description } = body;

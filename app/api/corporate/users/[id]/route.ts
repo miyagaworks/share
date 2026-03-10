@@ -6,7 +6,6 @@ import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { sendEmail } from '@/lib/email';
 import { logUserActivity } from '@/lib/utils/activity-logger';
-import { checkPermanentAccess } from '@/lib/corporateAccess';
 import { getInviteEmailTemplate } from '@/lib/email/templates/invite-email';
 
 // ユーザー情報を更新するAPI（役割と部署の変更）
@@ -16,26 +15,6 @@ export async function PATCH(request: Request, { params }: { params: Promise<{ id
     const targetUserId = resolvedParams.id;
 
     logger.debug(`[API] /api/corporate/users/${targetUserId} PATCHリクエスト受信`);
-
-    // 永久利用権ユーザーかどうかチェック
-    const isPermanent = checkPermanentAccess();
-    if (isPermanent) {
-      // リクエストボディを取得
-      const body = await request.json();
-      const { role, departmentId } = body;
-
-      return NextResponse.json({
-        success: true,
-        message: '永久利用権ユーザーの設定は更新されません',
-        user: {
-          id: targetUserId,
-          name: '永久利用権ユーザー',
-          email: 'user@example.com',
-          corporateRole: role || 'admin',
-          departmentId: departmentId || null,
-        },
-      });
-    }
 
     // セッション認証チェック
     const session = await auth();
@@ -173,15 +152,6 @@ export async function DELETE(request: Request, { params }: { params: Promise<{ i
 
     logger.debug(`[API] /api/corporate/users/${targetUserId} DELETEリクエスト受信`);
 
-    // 永久利用権ユーザーかどうかチェック
-    const isPermanent = checkPermanentAccess();
-    if (isPermanent) {
-      return NextResponse.json({
-        success: true,
-        message: '永久利用権ユーザーの設定では操作できません',
-      });
-    }
-
     // セッション認証チェック
     const session = await auth();
     if (!session || !session.user?.id) {
@@ -281,15 +251,6 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const targetUserId = resolvedParams.id;
 
     logger.debug(`[API] /api/corporate/users/${targetUserId}/resend-invite POSTリクエスト受信`);
-
-    // 永久利用権ユーザーかどうかチェック
-    const isPermanent = checkPermanentAccess();
-    if (isPermanent) {
-      return NextResponse.json({
-        success: true,
-        message: '永久利用権ユーザーの設定では操作できません',
-      });
-    }
 
     // セッション認証チェック
     const session = await auth();
