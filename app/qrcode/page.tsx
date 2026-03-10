@@ -198,7 +198,7 @@ export default function QrCodePage() {
           // マニフェストリンクがない場合は追加
           const manifestLink = document.createElement('link');
           manifestLink.rel = 'manifest';
-          manifestLink.href = '/manifest.json'; // 正しいパスを指定
+          manifestLink.href = '/manifest.webmanifest'; // Next.js app/manifest.ts が生成するパス
           document.head.appendChild(manifestLink);
         }
         navigator.serviceWorker

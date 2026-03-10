@@ -23,7 +23,7 @@ export const metadata: Metadata = {
     shortcut: [{ url: '/pwa/favicon.ico' }],
   },
   // マニフェスト参照
-  manifest: '/qrcode-manifest.json?v=9',
+  manifest: '/qrcode-manifest.json',
   // その他のメタデータ
   applicationName: 'My QR',
   appleWebApp: {
