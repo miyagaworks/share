@@ -12,6 +12,7 @@ import {
   type EnhancedShippingAddress,
 } from '@/types/one-tap-seal';
 import { calculateOrderAmount } from '@/lib/one-tap-seal/order-calculator';
+import { DEFAULT_APP_URL } from '@/lib/brand/defaults';
 
 interface OneTapSealOrderSummaryProps {
   items: OneTapSealSelection;
@@ -155,7 +156,7 @@ export function OneTapSealOrderSummary({
               <div className="flex items-center space-x-2">
                 <Link className="h-4 w-4 text-blue-600" />
                 <span className="text-sm font-medium">設定URL:</span>
-                <span className="text-sm text-blue-700">{new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com').host}/{profileSlug}</span>
+                <span className="text-sm text-blue-700">{new URL(DEFAULT_APP_URL).host}/{profileSlug}</span>
               </div>
             </div>
           </div>

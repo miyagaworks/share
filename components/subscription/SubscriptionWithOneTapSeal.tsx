@@ -6,6 +6,7 @@ import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { toast } from 'react-hot-toast';
 import { Package, CreditCard, CheckCircle, AlertCircle, Plus, ExternalLink } from 'lucide-react';
+import { DEFAULT_APP_URL } from '@/lib/brand/defaults';
 import { OneTapSealOrderForm } from '../one-tap-seal/OneTapSealOrderForm';
 
 interface UserData {
@@ -300,7 +301,7 @@ export function SubscriptionWithOneTapSeal() {
 
           <div className="flex items-center justify-between p-3 bg-green-50 rounded-lg">
             <div>
-              <p className="font-medium">{new URL(process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com').host}/qr/{userProfileSlug}</p>
+              <p className="font-medium">{new URL(DEFAULT_APP_URL).host}/qr/{userProfileSlug}</p>
               <p className="text-sm text-gray-600">
                 閲覧数: {userData?.qrCodes?.[0]?.views || 0} 回
               </p>
@@ -308,7 +309,7 @@ export function SubscriptionWithOneTapSeal() {
             <Button
               size="sm"
               variant="outline"
-              onClick={() => window.open(`${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/${userProfileSlug}`, '_blank')}
+              onClick={() => window.open(`${DEFAULT_APP_URL}/${userProfileSlug}`, '_blank')}
             >
               <ExternalLink className="h-4 w-4 mr-1" />
               プレビュー

@@ -23,5 +23,8 @@ export const DEFAULT_SUPPORT_EMAIL = process.env.NEXT_PUBLIC_BRAND_SUPPORT_EMAIL
 /** デフォルトの会社URL（サーバー側では getBrandConfig().companyUrl を使用） */
 export const DEFAULT_COMPANY_URL = process.env.NEXT_PUBLIC_BRAND_COMPANY_URL || 'https://senrigan.systems';
 
+/** デフォルトのアプリURL（サーバー側では getBrandConfig().appUrl を使用） */
+export const DEFAULT_APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
+
 /** 買取型デプロイかどうか（サーバー側では getBrandConfig().isBuyout を使用） */
 export const DEFAULT_IS_BUYOUT = process.env.NEXT_PUBLIC_DEPLOYMENT_MODE === 'buyout';

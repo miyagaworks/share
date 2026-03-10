@@ -14,6 +14,7 @@ import {
   HiOutlineUser,
 } from 'react-icons/hi';
 import { getPagePermissions, ReadOnlyBanner } from '@/lib/utils/admin-permissions';
+import { DEFAULT_APP_URL } from '@/lib/brand/defaults';
 
 // AdminAccess型定義
 interface AdminAccess {
@@ -712,7 +713,7 @@ export default function AdminEmailPage() {
                     value={formData.ctaUrl}
                     onChange={handleChange}
                     className="w-full border-gray-300 rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 p-3 text-base"
-                    placeholder={`${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/dashboard`}
+                    placeholder={`${DEFAULT_APP_URL}/dashboard`}
                   />
                 </div>
               </div>

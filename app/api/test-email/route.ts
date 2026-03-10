@@ -4,6 +4,7 @@ import { NextResponse } from 'next/server';
 import { logger } from "@/lib/utils/logger";
 import nodemailer from 'nodemailer';
 import { sendEmail } from '@/lib/email';
+import { getBrandConfig } from '@/lib/brand/config';
 export async function GET() {
   // 環境変数の出力（機密情報は伏せる）
   logger.debug('環境変数確認', {
@@ -31,7 +32,7 @@ export async function GET() {
     // 実際にテストメールを送信
     try {
       const result = await sendEmail({
-        to: process.env.EMAIL_SERVER_USER || process.env.BRAND_SUPPORT_EMAIL || 'support@sns-share.com', // 自分自身にテストメール
+        to: process.env.EMAIL_SERVER_USER || getBrandConfig().supportEmail, // 自分自身にテストメール
         subject: 'テストメール',
         text: 'これはテストメールです。送信時刻: ' + new Date().toISOString(),
       });

@@ -454,7 +454,7 @@ export async function POST(req: NextRequest) {
                   slug: item.qrSlug,
                   userId: item.memberUserId || session.user.id,
                   userName: targetUser?.name || targetUser?.email || item.qrSlug,
-                  profileUrl: `${process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com'}/qr/${item.qrSlug}`,
+                  profileUrl: `${getBrandConfig().appUrl}/qr/${item.qrSlug}`,
                   template: 'default',
                   primaryColor: getBrandConfig().primaryColor,
                   secondaryColor: '#1E40AF',

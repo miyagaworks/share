@@ -1,5 +1,6 @@
 // lib/one-tap-seal/profile-slug-manager.ts
 import type { ProfileSlugInfo } from '@/types/one-tap-seal'; // インポート追加
+import { DEFAULT_APP_URL } from '@/lib/brand/defaults';
 
 /**
  * プロフィールスラッグの形式をチェックする
@@ -12,7 +13,7 @@ export function isValidProfileSlug(slug: string): boolean {
  * NFCタグ書き込み用URLを生成する
  */
 export function generateNfcTagUrl(profileSlug: string): string {
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
+  const appUrl = DEFAULT_APP_URL;
   return `${appUrl}/${profileSlug}`;
 }
 

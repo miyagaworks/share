@@ -1,6 +1,6 @@
 /** @type {import('next').NextConfig} */
 const isBuyout = process.env.DEPLOYMENT_MODE === 'buyout';
-const appUrl = process.env.NEXT_PUBLIC_APP_URL || '${appUrl}';
+const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
 
 const nextConfig = {
   // 本番環境では絶対URLでアセットを配信（sns-share.com/partner リライト対応）

@@ -5,6 +5,7 @@ import { getExpenseApprovalEmailTemplate } from '@/lib/email/templates/expense-a
 import { getExpenseApprovalResultEmailTemplate } from '@/lib/email/templates/expense-approval-result';
 import { logger } from '@/lib/utils/logger';
 import { SUPER_ADMIN_EMAIL } from '@/lib/auth/constants';
+import { getBrandConfig } from '@/lib/brand/config';
 
 export async function sendExpenseApprovalEmail(params: {
   expenseId: string;
@@ -17,7 +18,7 @@ export async function sendExpenseApprovalEmail(params: {
   expenseDate: string;
 }) {
   try {
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
+    const appUrl = getBrandConfig().appUrl;
     const approvalUrl = `${appUrl}/dashboard/admin/company-expenses?expenseId=${encodeURIComponent(params.expenseId)}`;
 
     const emailTemplate = getExpenseApprovalEmailTemplate({

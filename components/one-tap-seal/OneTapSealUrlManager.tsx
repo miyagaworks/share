@@ -5,6 +5,7 @@ import { Input } from '@/components/ui/Input';
 import { Button } from '@/components/ui/Button';
 import { Card } from '@/components/ui/Card';
 import { toast } from 'react-hot-toast';
+import { DEFAULT_APP_URL } from '@/lib/brand/defaults';
 import {
   Link,
   CheckCircle,
@@ -128,7 +129,7 @@ export function OneTapSealUrlManager({
     }
   }, [userProfileSlug, onProfileSlugChange]); // userQrSlug, onQrSlugChange → userProfileSlug, onProfileSlugChange に変更
 
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
+  const appUrl = DEFAULT_APP_URL;
 
   // URLのコピー
   const copyUrl = useCallback(() => {
