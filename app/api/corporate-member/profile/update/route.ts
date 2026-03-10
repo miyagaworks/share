@@ -118,6 +118,9 @@ export async function POST(req: NextRequest) {
     const updatedUser = await prisma.user.update({
       where: { id: session.user.id },
       data: updateData,
+      include: {
+        department: true,
+      },
     });
 
     // プロフィールが存在しない場合は作成
