@@ -5,8 +5,7 @@ import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma, safeQuery, ensurePrismaConnection } from '@/lib/prisma';
 import type { CorporateSnsLink, SnsLink, CustomLink } from '@prisma/client';
-
-const DEFAULT_PRIMARY_COLOR = process.env.BRAND_PRIMARY_COLOR || '#3B82F6';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 
 // 型定義を明示的に定義
 type CorporateSnsLinkSelect = Pick<

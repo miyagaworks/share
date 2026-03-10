@@ -1,6 +1,7 @@
 // lib/corporateAccess/virtualTenant.ts
 import { isClient, logDebug } from './state';
 import { getFromStorage, saveToStorage, StorageKey, StorageType } from './storage';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 
 interface UserData {
   id: string;
@@ -88,7 +89,7 @@ export function generateVirtualTenantData(
       },
     ],
     settings: {
-      primaryColor: process.env.BRAND_PRIMARY_COLOR || '#3B82F6',
+      primaryColor: process.env.BRAND_PRIMARY_COLOR || DEFAULT_PRIMARY_COLOR,
       secondaryColor: '#60A5FA',
       logoUrl: null,
     },

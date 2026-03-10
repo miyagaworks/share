@@ -5,9 +5,11 @@ import { logger } from '@/lib/utils/logger';
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
+
 // generateVirtualTenantData関数を直接定義（依存関係を削減）
 function generateVirtualTenantData(userId: string, userName: string | null) {
-  const defaultColor = process.env.BRAND_PRIMARY_COLOR || '#3B82F6';
+  const defaultColor = DEFAULT_PRIMARY_COLOR;
   return {
     id: `virtual-${userId}`,
     name: `${userName || 'ユーザー'}の法人`,

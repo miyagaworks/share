@@ -5,6 +5,7 @@ import { logger } from '@/lib/utils/logger';
 import { stripe, getPlanInfoByPriceId } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 
 // 🚀 Webhookハンドラー - 高速レスポンス対応
 export async function POST(req: NextRequest) {
@@ -233,7 +234,7 @@ async function handleCorporateTenantCreation(
         adminId: userId,
         subscriptionId: subscriptionId,
         users: { connect: [{ id: userId }] },
-        primaryColor: '#3B82F6',
+        primaryColor: DEFAULT_PRIMARY_COLOR,
         secondaryColor: 'var(--color-corporate-secondary)',
       },
     });

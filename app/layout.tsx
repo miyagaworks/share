@@ -5,6 +5,7 @@ import { ToastProvider } from '@/components/providers/ToastProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { getBrandConfig } from '@/lib/brand/config';
+import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 import './globals.css';
 
 const inter = Inter({
@@ -64,7 +65,7 @@ export default function RootLayout({
         <link rel="dns-prefetch" href="//fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
         {/* ブランドカラーがデフォルトと異なる場合、CSS変数を上書き */}
-        {brand.primaryColor !== '#3B82F6' && (
+        {brand.primaryColor !== DEFAULT_PRIMARY_COLOR && (
           <style dangerouslySetInnerHTML={{ __html: `:root { --individual-primary: ${brand.primaryColor}; --ring: ${brand.primaryColor}; }` }} />
         )}
 
