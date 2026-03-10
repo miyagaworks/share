@@ -7,6 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/Button';
 import { Input } from '@/components/ui/Input';
 import { signIn } from 'next-auth/react';
+import RecaptchaWrapper from '@/components/RecaptchaWrapper';
 // useSearchParamsを使用するコンテンツコンポーネント
 function InvitePageContent() {
   const router = useRouter();
@@ -23,6 +24,7 @@ function InvitePageContent() {
   const [lastNameKana, setLastNameKana] = useState('');
   const [firstNameKana, setFirstNameKana] = useState('');
   const [email, setEmail] = useState('');
+  const [recaptchaToken, setRecaptchaToken] = useState<string | null>(null);
   const [isFormValid, setIsFormValid] = useState(false);
   // userIdは実際に使用する場合のみコメントを外してください
   // const [userId, setUserId] = useState('');
@@ -130,6 +132,7 @@ function InvitePageContent() {
       const result = await signIn('credentials', {
         email,
         password,
+        recaptchaToken,
         redirect: false,
       });
       if (result?.error) {
@@ -329,10 +332,14 @@ function InvitePageContent() {
                 placeholder="********"
               />
             </div>
+            <RecaptchaWrapper
+              onVerify={(token) => setRecaptchaToken(token)}
+              onExpired={() => setRecaptchaToken(null)}
+            />
             <Button
               type="submit"
               className="w-full bg-blue-600 text-white hover:bg-blue-800 transform hover:-translate-y-0.5 transition-all"
-              disabled={isLoading || !isFormValid}
+              disabled={isLoading || !isFormValid || !recaptchaToken}
             >
               {isLoading ? (
                 <span className="flex items-center justify-center">
