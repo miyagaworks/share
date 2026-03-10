@@ -5,7 +5,7 @@ import { logger } from "@/lib/utils/logger";
 import { auth } from '@/auth';
 import { prisma } from '@/lib/prisma';
 import { logCorporateActivity } from '@/lib/utils/activity-logger';
-import { checkPermanentAccess, generateVirtualTenantData } from '@/lib/corporateAccess';
+import { checkPermanentAccess } from '@/lib/corporateAccess';
 // 部署一覧取得（GET）
 export async function GET() {
   try {
@@ -26,22 +26,6 @@ export async function GET() {
     });
     if (!user) {
       return NextResponse.json({ error: 'ユーザーが見つかりません' }, { status: 404 });
-    }
-    // 永久利用権ユーザーの場合、仮想テナントの部署情報を返す
-    if (user.subscriptionStatus === 'permanent') {
-      logger.debug('永久利用権ユーザー用仮想部署情報の生成:', user.id);
-      const virtualTenant = generateVirtualTenantData(user.id, user.name);
-      // 仮想部署データをユーザー数とともに整形
-      const virtualDepartments = virtualTenant.departments.map((dept) => ({
-        id: dept.id,
-        name: dept.name,
-        description: dept.description,
-        userCount: 1, // 自分だけが所属
-      }));
-      return NextResponse.json({
-        success: true,
-        departments: virtualDepartments,
-      });
     }
     // テナント情報を取得（管理者または一般メンバーのいずれか）
     const tenant = user.adminOfTenant || user.tenant;
