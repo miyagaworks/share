@@ -168,14 +168,14 @@ export default function BusinessModel() {
                   <span className="font-[Inter] text-3xl font-bold text-[#1B2A4A]">¥30,000</span>
                   <span className="text-sm text-[#5A6577]">〜/月</span>
                 </div>
-                <ul className="mb-5 space-y-2.5 text-sm text-[#2D3748]">
+                <ul className="mb-5 space-y-2.5 text-sm text-[#2D3748] lg:text-base">
                   <li className="flex items-start gap-2">
                     <Repeat className="mt-0.5 h-4 w-4 shrink-0 text-[#1B2A4A]" />
                     <span>初期費用ゼロで始められる</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Repeat className="mt-0.5 h-4 w-4 shrink-0 text-[#1B2A4A]" />
-                    <span>3つのプランから選択<br /><span className="text-xs text-[#5A6577]">ベーシック / プロ / プレミアム</span></span>
+                    <span>3つのプランから選択<br /><span className="text-xs text-[#5A6577] lg:text-sm">ベーシック / プロ / プレミアム</span></span>
                   </li>
                   <li className="flex items-start gap-2">
                     <Repeat className="mt-0.5 h-4 w-4 shrink-0 text-[#1B2A4A]" />
@@ -201,14 +201,14 @@ export default function BusinessModel() {
                   <span className="font-[Inter] text-3xl font-bold text-[#1B2A4A]">¥600,000</span>
                   <span className="text-sm text-[#5A6577]">一括</span>
                 </div>
-                <ul className="mb-5 space-y-2.5 text-sm text-[#2D3748]">
+                <ul className="mb-5 space-y-2.5 text-sm text-[#2D3748] lg:text-base">
                   <li className="flex items-start gap-2">
                     <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#B8860B]" />
                     <span>アカウント数の上限なし</span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#B8860B]" />
-                    <span>月額保守費 ¥10,000のみ<br /><span className="text-xs text-[#5A6577]">アップデート・サポート込み</span></span>
+                    <span>月額保守費 ¥10,000のみ<br /><span className="text-xs text-[#5A6577] lg:text-sm">アップデート・サポート込み</span></span>
                   </li>
                   <li className="flex items-start gap-2">
                     <CreditCard className="mt-0.5 h-4 w-4 shrink-0 text-[#B8860B]" />

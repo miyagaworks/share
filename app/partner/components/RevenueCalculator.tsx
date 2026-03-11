@@ -50,7 +50,7 @@ function SliderInput({
     <div>
       <div className="mb-2 flex items-center justify-between">
         <label className="text-sm font-medium text-[#2D3748] lg:text-base">{label}</label>
-        <span className="font-[Inter] text-sm font-bold text-[#1B2A4A]">
+        <span className="font-[Inter] text-sm font-bold text-[#1B2A4A] lg:text-base">
           {prefix}
           {value.toLocaleString()}
           {suffix}
@@ -250,15 +250,15 @@ export default function RevenueCalculator() {
           {/* 総アカウント数 & プラン判定 */}
           <div className="space-y-2">
             <div className="flex items-center justify-between rounded-lg border border-[#4A6FA5]/20 bg-[#4A6FA5]/5 px-4 py-3">
-              <span className="text-sm text-[#2D3748]">総アカウント数</span>
+              <span className="text-sm text-[#2D3748] lg:text-base">総アカウント数</span>
               <span className="font-[Inter] text-lg font-bold text-[#1B2A4A]">
                 {totalAccounts.toLocaleString()}
               </span>
             </div>
             {!isBuyout && (
               <div className="flex items-center justify-between rounded-lg border border-[#4A6FA5]/20 bg-[#4A6FA5]/5 px-4 py-3">
-                <span className="text-sm text-[#2D3748]">適用プラン</span>
-                <span className="text-sm font-bold text-[#1B2A4A]">
+                <span className="text-sm text-[#2D3748] lg:text-base">適用プラン</span>
+                <span className="text-sm font-bold text-[#1B2A4A] lg:text-base">
                   {overLimit ? '上限超過（要相談）' : `${plan.name}（¥${plan.monthly.toLocaleString()}/月）`}
                 </span>
               </div>
@@ -275,21 +275,21 @@ export default function RevenueCalculator() {
             </p>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-white/80">売上</span>
+                <span className="text-sm text-white/80 lg:text-base">売上</span>
                 <span className="font-[Inter] text-lg font-bold">
                   ¥{monthlyRevenue.toLocaleString()}
                 </span>
               </div>
               <div className="border-t border-white/10 pt-3">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-white/80">プラットフォーム料金</span>
-                  <span className="font-[Inter] text-sm text-white/80">
+                  <span className="text-sm text-white/80 lg:text-base">プラットフォーム料金</span>
+                  <span className="font-[Inter] text-sm text-white/80 lg:text-base">
                     -¥{platformFee.toLocaleString()}
                   </span>
                 </div>
                 <div className="mt-1 flex items-center justify-between">
-                  <span className="text-sm text-white/80">インフラ費用</span>
-                  <span className="font-[Inter] text-sm text-white/80">
+                  <span className="text-sm text-white/80 lg:text-base">インフラ費用</span>
+                  <span className="font-[Inter] text-sm text-white/80 lg:text-base">
                     -¥{TOTAL_FIXED.toLocaleString()}
                   </span>
                 </div>
@@ -319,13 +319,13 @@ export default function RevenueCalculator() {
             </div>
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[#2D3748]">年間利益</span>
+                <span className="text-sm text-[#2D3748] lg:text-base">年間利益</span>
                 <span className="font-[Inter] text-lg font-bold text-[#2D3748]">
                   ¥{yearlyProfit.toLocaleString()}
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-[#2D3748]">3年累計利益</span>
+                <span className="text-sm text-[#2D3748] lg:text-base">3年累計利益</span>
                 <span className="font-[Inter] text-xl font-bold text-[#2D8659]">
                   ¥{(yearlyProfit * 3).toLocaleString()}
                 </span>
@@ -344,13 +344,13 @@ export default function RevenueCalculator() {
               </div>
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[#2D3748]">初期費用（買取）</span>
+                  <span className="text-sm text-[#2D3748] lg:text-base">初期費用（買取）</span>
                   <span className="font-[Inter] font-bold text-[#2D3748]">
                     ¥{BUYOUT_PRICE.toLocaleString()}
                   </span>
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className="text-sm text-[#2D3748]">月額保守費</span>
+                  <span className="text-sm text-[#2D3748] lg:text-base">月額保守費</span>
                   <span className="font-[Inter] font-bold text-[#2D3748]">
                     ¥{BUYOUT_MAINTENANCE.toLocaleString()}/月
                   </span>
@@ -358,7 +358,7 @@ export default function RevenueCalculator() {
                 {buyoutPayback && monthlyProfit > 0 && (
                   <div className="mt-2 border-t border-[#B8860B]/20 pt-2">
                     <div className="flex items-center justify-between">
-                      <span className="text-sm text-[#2D3748]">初期費用の回収</span>
+                      <span className="text-sm text-[#2D3748] lg:text-base">初期費用の回収</span>
                       <span className="font-[Inter] font-bold text-[#B8860B]">
                         約{buyoutPayback}ヶ月
                       </span>
@@ -367,7 +367,7 @@ export default function RevenueCalculator() {
                 )}
                 {buyoutBreakeven && (
                   <div className="flex items-center justify-between">
-                    <span className="text-sm text-[#2D3748]">月額プランよりお得になるまで</span>
+                    <span className="text-sm text-[#2D3748] lg:text-base">月額プランよりお得になるまで</span>
                     <span className="font-[Inter] font-bold text-[#2D8659]">
                       {buyoutBreakeven}ヶ月
                     </span>
@@ -386,7 +386,7 @@ export default function RevenueCalculator() {
                   買取プランとの比較
                 </p>
               </div>
-              <p className="text-sm leading-relaxed text-[#2D3748]">
+              <p className="text-sm leading-relaxed text-[#2D3748] lg:text-base">
                 買取プラン（¥{BUYOUT_PRICE.toLocaleString()} + 保守¥{BUYOUT_MAINTENANCE.toLocaleString()}/月）なら、
                 {buyoutBreakeven ? (
                   <span className="font-bold text-[#2D8659]">

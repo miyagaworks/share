@@ -175,7 +175,7 @@ export default function SolutionSection() {
                       {step.title}
                       <span className="ml-1 text-xs font-normal text-[#7B8794] lg:ml-0 lg:block">{step.subtitle}</span>
                     </h3>
-                    <p className="mt-1 text-xs leading-relaxed text-[#5A6577] lg:text-sm">
+                    <p className="mt-1 text-xs leading-relaxed text-[#5A6577] lg:text-base">
                       {step.items.join(' / ')}
                     </p>
                   </div>

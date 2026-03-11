@@ -94,7 +94,7 @@ export default function IndustrySection() {
                 </div>
                 <div>
                   <p className="text-sm font-semibold text-[#2D3748] lg:text-base">{d.label}</p>
-                  <p className="mt-0.5 text-xs text-[#7B8794] lg:text-sm">{d.desc}</p>
+                  <p className="mt-0.5 text-xs text-[#7B8794] lg:text-base">{d.desc}</p>
                 </div>
               </motion.div>
             ))}
