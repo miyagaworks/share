@@ -76,6 +76,13 @@ export default function DashboardPage() {
           return;
         }
 
+        // パートナー管理者はパートナーダッシュボードへ
+        if (session.user?.role === 'partner-admin') {
+          setIsRedirecting(true);
+          router.push('/dashboard/partner');
+          return;
+        }
+
         // 法人アクセス権チェック
         const corporateAccessResponse = await fetch('/api/corporate/access', {
           cache: 'no-cache',

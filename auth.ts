@@ -16,6 +16,7 @@ declare module 'next-auth' {
     user: {
       id: string;
       role?: string;
+      partnerId?: string | null;
     } & DefaultSession['user'];
   }
 }
@@ -25,6 +26,7 @@ declare module 'next-auth/jwt' {
     role?: string;
     isAdmin?: boolean;
     tenantId?: string | null;
+    partnerId?: string | null;
   }
 }
 
@@ -267,6 +269,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
                   plan: true,
                 },
               },
+              // 🆕 パートナー管理者判定用
+              adminOfPartner: {
+                select: {
+                  id: true,
+                  accountStatus: true,
+                },
+              },
             },
           });
 
@@ -275,6 +284,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
 
             if (isSuperAdminEmail(userEmail)) {
               token.role = 'super-admin';
+            } else if (
+              dbUser.adminOfPartner &&
+              dbUser.adminOfPartner.accountStatus === 'active'
+            ) {
+              token.role = 'partner-admin';
+              token.partnerId = dbUser.adminOfPartner.id;
             } else if (
               isAdminEmailDomain(userEmail) &&
               dbUser.financialAdminRecord?.isActive === true
@@ -337,6 +352,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         session.user.role = token.role as string;
         session.user.name = token.name as string;
         session.user.email = token.email as string;
+        session.user.partnerId = token.partnerId || null;
 
         if (process.env.NODE_ENV === 'development') {
           console.log('✅ Session: User info set', {

@@ -120,6 +120,24 @@ export async function middleware(request: NextRequest) {
         return NextResponse.next();
       }
 
+      // パートナー管理者の処理
+      else if (userRole === 'partner-admin') {
+        if (pathname === '/dashboard') {
+          return NextResponse.redirect(new URL('/dashboard/partner', request.url));
+        }
+        // パートナー管理画面内はアクセス許可
+        if (pathname.startsWith('/dashboard/partner')) {
+          return NextResponse.next();
+        }
+        // admin画面やcorporate画面へのアクセスは拒否
+        if (
+          pathname.startsWith('/dashboard/admin') ||
+          pathname.startsWith('/dashboard/corporate')
+        ) {
+          return NextResponse.redirect(new URL('/dashboard/partner', request.url));
+        }
+      }
+
       // 永久利用権法人プランユーザーの処理
       else if (userRole === 'permanent-admin') {
         if (pathname === '/dashboard') {
