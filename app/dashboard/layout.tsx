@@ -130,6 +130,19 @@ export default function DashboardLayoutWrapper({ children }: DashboardLayoutWrap
       };
     }
 
+    // 0. パートナー管理者ページのチェック
+    if (pathname.startsWith('/dashboard/partner')) {
+      // partner-admin ロールのユーザーのみアクセス可、super-adminも可
+      if (session?.user?.role === 'partner-admin' || permissions.isSuperAdmin) {
+        return { hasAccess: true };
+      }
+      return {
+        hasAccess: false,
+        redirectTo: '/dashboard',
+        reason: 'パートナー管理者権限なし',
+      };
+    }
+
     // 1. 管理者ページのチェック
     if (pathname.startsWith('/dashboard/admin')) {
       if (!permissions.isSuperAdmin && !permissions.isFinancialAdmin) {
