@@ -9,6 +9,7 @@ export const metadata: Metadata = {
   title: 'パートナー募集 | デジタル名刺を自社ブランドで提供 - Share',
   description:
     '名刺印刷会社・Web制作会社向け。Shareのホワイトラベルで、開発費ゼロ・最短30日で自社ブランドのデジタル名刺サービスを立ち上げ。3ヶ月無料トライアル実施中。',
+  manifest: null,
   openGraph: {
     title: '御社のブランドで、デジタル名刺事業を。| Share パートナー募集',
     description: '開発費ゼロ、最短30日でスタート。名刺印刷会社のための新収益モデル。',
