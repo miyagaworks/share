@@ -115,19 +115,19 @@ export default function ProblemSection() {
               <motion.div
                 key={s.label}
                 variants={fadeUpVariants}
-                className={`relative px-5 py-6 text-center ${
+                className={`relative px-6 py-8 lg:py-10 text-center ${
                   i % 2 === 0 ? 'border-r border-[#E8E6E1]' : 'lg:border-r lg:border-[#E8E6E1]'
                 } ${i === stats.length - 1 ? 'lg:border-r-0' : ''} ${i < 2 ? 'border-b border-[#E8E6E1] lg:border-b-0' : ''}`}
               >
-                <div className="mb-2">
+                <div className="mb-3">
                   <CountUpNumber
                     end={s.value}
-                    className={`font-[Inter] text-4xl font-bold lg:text-5xl ${s.color}`}
+                    className={`font-[Inter] text-5xl font-bold lg:text-7xl ${s.color}`}
                   />
-                  <span className={`text-lg font-bold lg:text-xl ${s.color}`}>{s.suffix}</span>
+                  <span className={`text-xl font-bold lg:text-3xl ${s.color}`}>{s.suffix}</span>
                 </div>
-                <p className="text-sm font-semibold text-[#2D3748]">{s.label}</p>
-                <p className="mt-0.5 text-xs text-[#7B8794]">{s.desc}</p>
+                <p className="text-base font-semibold text-[#2D3748] lg:text-lg">{s.label}</p>
+                <p className="mt-1 text-sm text-[#7B8794] lg:text-base">{s.desc}</p>
               </motion.div>
             ))}
           </div>
