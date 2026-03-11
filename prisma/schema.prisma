@@ -71,6 +71,9 @@ model User {
   tenant                   CorporateTenant?         @relation("TenantUsers", fields: [tenantId], references: [id])
   oneTapSealOrders         OneTapSealOrder[]
   oneTapSealItems          OneTapSealItem[] @relation("OneTapSealItemMember")
+  partnerId                String?
+  partnerUser              Partner?         @relation("PartnerUsers", fields: [partnerId], references: [id])
+  adminOfPartner           Partner?         @relation("PartnerAdmin")
 }
 
 model Profile {
@@ -243,6 +246,8 @@ model CorporateTenant {
   departments          Department[]
   users                User[]                 @relation("TenantUsers")
   oneTapSealOrders     OneTapSealOrder[]
+  partnerId            String?
+  partner              Partner?         @relation("PartnerTenants", fields: [partnerId], references: [id])
 }
 
 model Department {
@@ -716,4 +721,73 @@ model OneTapSealItem {
   @@index([memberUserId])
   @@index([profileSlug])
   @@index([qrSlug])
+}
+
+model Partner {
+  id                   String   @id @default(cuid())
+  name                 String                          // パートナー企業名
+  slug                 String   @unique                // URL識別子
+
+  // ブランディング
+  brandName            String                          // サービスブランド名
+  logoUrl              String?
+  logoWidth            Int?
+  logoHeight           Int?
+  primaryColor         String   @default("#3B82F6")
+  secondaryColor       String?
+  faviconUrl           String?
+
+  // ドメイン
+  customDomain         String?  @unique                // 例: meishi.partner-company.com
+  domainVerified       Boolean  @default(false)
+
+  // メール設定
+  emailFromName        String?
+  emailFromAddress     String?
+  emailReplyTo         String?
+  supportEmail         String?
+
+  // プラン・課金
+  plan                 String   @default("basic")      // basic / pro / premium
+  maxAccounts          Int      @default(300)
+  billingStatus        String   @default("active")     // active / suspended / cancelled
+  billingEmail         String?
+  stripeCustomerId     String?
+  stripeSubscriptionId String?
+
+  // 管理
+  adminUserId          String   @unique
+  accountStatus        String   @default("active")     // active / suspended / trial
+  trialEndsAt          DateTime?
+
+  // フッター・法的情報
+  companyName          String?
+  companyAddress       String?
+  privacyPolicyUrl     String?
+  termsUrl             String?
+
+  createdAt            DateTime @default(now())
+  updatedAt            DateTime @updatedAt
+
+  // リレーション
+  adminUser            User     @relation("PartnerAdmin", fields: [adminUserId], references: [id])
+  tenants              CorporateTenant[] @relation("PartnerTenants")
+  partnerUsers         User[]   @relation("PartnerUsers")
+  activityLogs         PartnerActivityLog[]
+}
+
+model PartnerActivityLog {
+  id          String   @id @default(cuid())
+  partnerId   String
+  userId      String?
+  action      String                              // tenant_created, user_invited, branding_updated, etc.
+  entityType  String
+  entityId    String?
+  description String
+  metadata    Json?
+  createdAt   DateTime @default(now())
+
+  partner     Partner  @relation(fields: [partnerId], references: [id], onDelete: Cascade)
+
+  @@index([partnerId, createdAt(sort: Desc)])
 }
