@@ -32,6 +32,10 @@ declare module 'next-auth/jwt' {
 
 // NextAuth設定
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  // マルチドメイン対応: パートナーのカスタムドメインからのリクエストを信頼
+  // NextAuth v5 はリクエストヘッダーの Host から baseUrl を自動取得するため、
+  // trustHost: true を設定することで NEXTAUTH_URL に依存せず動作する
+  trustHost: true,
   session: {
     strategy: 'jwt',
     maxAge: 4 * 60 * 60, // 4時間
