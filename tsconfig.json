@@ -49,6 +49,10 @@
   ],
   "exclude": [
     "node_modules",
-    "backup_financial_features/**/*"
+    "backup_financial_features/**/*",
+    "**/__tests__/**",
+    "**/*.test.ts",
+    "**/*.test.tsx",
+    "vitest.config.ts"
   ]
 }
