@@ -7,6 +7,7 @@ import {
   getPlanInfoByPriceId,
   getStripeInstance,
   getPaymentLinkByPlan,
+  getPartnerPlanByPriceId,
 } from '@/lib/stripe';
 import { prisma } from '@/lib/prisma';
 import Stripe from 'stripe';
@@ -84,20 +85,36 @@ async function processWebhookEventAsync(event: Stripe.Event) {
 
     switch (event.type) {
       case 'customer.subscription.created':
-        await handleSubscriptionCreated(event.data.object as Stripe.Subscription);
+      case 'customer.subscription.updated': {
+        const subscription = event.data.object as Stripe.Subscription;
+        if (isPartnerSubscription(subscription)) {
+          await handlePartnerSubscriptionUpdated(subscription);
+        } else if (event.type === 'customer.subscription.created') {
+          await handleSubscriptionCreated(subscription);
+        } else {
+          await handleSubscriptionUpdated(subscription);
+        }
         break;
-      case 'customer.subscription.updated':
-        await handleSubscriptionUpdated(event.data.object as Stripe.Subscription);
+      }
+      case 'customer.subscription.deleted': {
+        const subscription = event.data.object as Stripe.Subscription;
+        if (isPartnerSubscription(subscription)) {
+          await handlePartnerSubscriptionDeleted(subscription);
+        } else {
+          await handleSubscriptionDeleted(subscription);
+        }
         break;
-      case 'customer.subscription.deleted':
-        await handleSubscriptionDeleted(event.data.object as Stripe.Subscription);
-        break;
+      }
       case 'invoice.payment_succeeded':
         await handleInvoicePaymentSucceeded(event.data.object as Stripe.Invoice);
         break;
-      case 'invoice.payment_failed':
-        await handleInvoicePaymentFailed(event.data.object as Stripe.Invoice);
+      case 'invoice.payment_failed': {
+        const invoice = event.data.object as Stripe.Invoice;
+        // パートナー支払い失敗も処理
+        await handlePartnerPaymentFailed(invoice);
+        await handleInvoicePaymentFailed(invoice);
         break;
+      }
       case 'checkout.session.completed':
         await handleCheckoutSessionCompleted(event.data.object as Stripe.Checkout.Session);
         break;
@@ -121,6 +138,136 @@ async function processWebhookEventAsync(event: Stripe.Event) {
     );
   }
 }
+
+// ============================================================
+// パートナー向け Webhook ハンドラー
+// ============================================================
+
+function isPartnerSubscription(subscription: Stripe.Subscription): boolean {
+  return subscription.metadata?.type === 'partner';
+}
+
+function isPartnerInvoice(invoice: Stripe.Invoice): boolean {
+  return (invoice as any).subscription_details?.metadata?.type === 'partner' ||
+    (invoice.metadata as any)?.type === 'partner';
+}
+
+async function handlePartnerSubscriptionUpdated(subscription: Stripe.Subscription) {
+  const partnerId = subscription.metadata?.partnerId;
+  if (!partnerId) {
+    logger.error('Partner subscription updated but no partnerId in metadata');
+    return;
+  }
+
+  logger.info(`Processing partner subscription updated: ${subscription.id} for partner: ${partnerId}`);
+
+  const billingStatusMap: Record<string, string> = {
+    active: 'active',
+    trialing: 'active',
+    past_due: 'suspended',
+    canceled: 'cancelled',
+    unpaid: 'suspended',
+    incomplete: 'suspended',
+    incomplete_expired: 'cancelled',
+    paused: 'suspended',
+  };
+
+  const billingStatus = billingStatusMap[subscription.status] || 'active';
+  const accountStatus = subscription.status === 'trialing' ? 'trial' : (billingStatus === 'active' ? 'active' : 'suspended');
+
+  await prisma.partner.update({
+    where: { id: partnerId },
+    data: {
+      billingStatus,
+      accountStatus,
+      stripeSubscriptionId: subscription.id,
+    },
+  });
+
+  // アクティビティログ記録
+  await prisma.partnerActivityLog.create({
+    data: {
+      partnerId,
+      action: 'billing_status_updated',
+      entityType: 'subscription',
+      entityId: subscription.id,
+      description: `課金ステータスが ${billingStatus} に更新されました`,
+      metadata: { stripeStatus: subscription.status, billingStatus },
+    },
+  });
+
+  logger.info(`Partner ${partnerId} billing status updated to: ${billingStatus}`);
+}
+
+async function handlePartnerSubscriptionDeleted(subscription: Stripe.Subscription) {
+  const partnerId = subscription.metadata?.partnerId;
+  if (!partnerId) {
+    logger.error('Partner subscription deleted but no partnerId in metadata');
+    return;
+  }
+
+  logger.info(`Processing partner subscription deleted: ${subscription.id} for partner: ${partnerId}`);
+
+  await prisma.partner.update({
+    where: { id: partnerId },
+    data: {
+      billingStatus: 'cancelled',
+      accountStatus: 'suspended',
+    },
+  });
+
+  await prisma.partnerActivityLog.create({
+    data: {
+      partnerId,
+      action: 'subscription_cancelled',
+      entityType: 'subscription',
+      entityId: subscription.id,
+      description: 'サブスクリプションがキャンセルされました',
+    },
+  });
+
+  logger.info(`Partner ${partnerId} subscription cancelled`);
+}
+
+async function handlePartnerPaymentFailed(invoice: Stripe.Invoice) {
+  // Stripe API から subscription を取得してパートナー情報を得る
+  if (!invoice.subscription) return;
+
+  try {
+    const stripeClient = getStripeInstance();
+    const subscription = await stripeClient.subscriptions.retrieve(invoice.subscription as string);
+
+    if (!isPartnerSubscription(subscription)) return;
+
+    const partnerId = subscription.metadata?.partnerId;
+    if (!partnerId) return;
+
+    logger.info(`Partner payment failed for partner: ${partnerId}`);
+
+    await prisma.partner.update({
+      where: { id: partnerId },
+      data: {
+        billingStatus: 'suspended',
+      },
+    });
+
+    await prisma.partnerActivityLog.create({
+      data: {
+        partnerId,
+        action: 'payment_failed',
+        entityType: 'invoice',
+        entityId: invoice.id!,
+        description: '月額課金の支払いに失敗しました',
+      },
+    });
+  } catch (error) {
+    logger.error('Partner payment failure handling error:', error);
+  }
+}
+
+// ============================================================
+// 既存のエンドユーザー向け Webhook ハンドラー
+// ============================================================
 
 // 🔧 サブスクリプション作成ハンドラー
 async function handleSubscriptionCreated(subscription: Stripe.Subscription) {

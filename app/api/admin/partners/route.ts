@@ -113,6 +113,10 @@ export async function POST(request: Request) {
       premium: 1000,
     };
 
+    // トライアル期間: 3ヶ月
+    const trialEndsAt = new Date();
+    trialEndsAt.setMonth(trialEndsAt.getMonth() + 3);
+
     const partner = await prisma.partner.create({
       data: {
         name,
@@ -121,7 +125,8 @@ export async function POST(request: Request) {
         plan: plan || 'basic',
         maxAccounts: planLimits[plan || 'basic'] || 300,
         adminUserId: adminUser.id,
-        accountStatus: 'active',
+        accountStatus: 'trial',
+        trialEndsAt,
       },
     });
 

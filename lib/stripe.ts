@@ -285,4 +285,237 @@ export const STRIPE_PAYMENT_LINKS = {
   },
 } as const;
 
+// ============================================================
+// パートナー向け Stripe 月額サブスクリプション
+// ============================================================
+
+// パートナープラン Price ID 定義
+export const PARTNER_PRICE_IDS = {
+  BASIC: process.env.STRIPE_PARTNER_BASIC_PRICE_ID || '',
+  PRO: process.env.STRIPE_PARTNER_PRO_PRICE_ID || '',
+  PREMIUM: process.env.STRIPE_PARTNER_PREMIUM_PRICE_ID || '',
+} as const;
+
+// パートナープラン情報
+interface PartnerPlanInfo {
+  planId: string;
+  priceId: string;
+  amount: number;
+  displayName: string;
+  maxAccounts: number;
+}
+
+export const PARTNER_PLAN_CONFIGS: Record<string, PartnerPlanInfo> = {
+  basic: {
+    planId: 'basic',
+    priceId: PARTNER_PRICE_IDS.BASIC,
+    amount: 30000,
+    displayName: 'ベーシックプラン',
+    maxAccounts: 300,
+  },
+  pro: {
+    planId: 'pro',
+    priceId: PARTNER_PRICE_IDS.PRO,
+    amount: 50000,
+    displayName: 'プロプラン',
+    maxAccounts: 600,
+  },
+  premium: {
+    planId: 'premium',
+    priceId: PARTNER_PRICE_IDS.PREMIUM,
+    amount: 80000,
+    displayName: 'プレミアムプラン',
+    maxAccounts: 1000,
+  },
+};
+
+export function getPartnerPlanInfo(plan: string): PartnerPlanInfo | null {
+  return PARTNER_PLAN_CONFIGS[plan] || null;
+}
+
+export function getPartnerPlanByPriceId(priceId: string): PartnerPlanInfo | null {
+  return Object.values(PARTNER_PLAN_CONFIGS).find((p) => p.priceId === priceId) || null;
+}
+
+/**
+ * パートナー用 Stripe サブスクリプション作成
+ * トライアル期間: 3ヶ月
+ */
+export async function createPartnerSubscription(
+  partnerId: string,
+  plan: string,
+): Promise<Stripe.Subscription> {
+  const stripeClient = getStripeInstance();
+  const planInfo = getPartnerPlanInfo(plan);
+  if (!planInfo || !planInfo.priceId) {
+    throw new Error(`パートナープラン情報が見つかりません: ${plan}`);
+  }
+
+  // パートナー情報を取得
+  const { prisma } = await import('@/lib/prisma');
+  const partner = await prisma.partner.findUnique({
+    where: { id: partnerId },
+    select: {
+      stripeCustomerId: true,
+      billingEmail: true,
+      name: true,
+      adminUser: { select: { email: true, name: true } },
+    },
+  });
+
+  if (!partner) {
+    throw new Error(`パートナーが見つかりません: ${partnerId}`);
+  }
+
+  // Stripe Customer の取得または作成
+  let customerId = partner.stripeCustomerId;
+  if (!customerId) {
+    const customer = await stripeClient.customers.create({
+      email: partner.billingEmail || partner.adminUser.email,
+      name: partner.name,
+      metadata: {
+        type: 'partner',
+        partnerId,
+      },
+    });
+    customerId = customer.id;
+
+    await prisma.partner.update({
+      where: { id: partnerId },
+      data: { stripeCustomerId: customerId },
+    });
+  }
+
+  // 3ヶ月のトライアル期間を計算
+  const trialEnd = Math.floor(Date.now() / 1000) + 90 * 24 * 60 * 60;
+
+  const subscription = await stripeClient.subscriptions.create({
+    customer: customerId,
+    items: [{ price: planInfo.priceId }],
+    trial_end: trialEnd,
+    metadata: {
+      type: 'partner',
+      partnerId,
+      plan,
+    },
+  });
+
+  // パートナーのサブスクリプション情報を更新
+  await prisma.partner.update({
+    where: { id: partnerId },
+    data: {
+      stripeSubscriptionId: subscription.id,
+      billingStatus: 'active',
+      accountStatus: 'trial',
+      trialEndsAt: new Date(trialEnd * 1000),
+    },
+  });
+
+  return subscription;
+}
+
+/**
+ * パートナーの Stripe サブスクリプションをキャンセル
+ */
+export async function cancelPartnerSubscription(partnerId: string): Promise<void> {
+  const stripeClient = getStripeInstance();
+  const { prisma } = await import('@/lib/prisma');
+
+  const partner = await prisma.partner.findUnique({
+    where: { id: partnerId },
+    select: { stripeSubscriptionId: true },
+  });
+
+  if (!partner?.stripeSubscriptionId) {
+    throw new Error('サブスクリプションが見つかりません');
+  }
+
+  await stripeClient.subscriptions.update(partner.stripeSubscriptionId, {
+    cancel_at_period_end: true,
+  });
+
+  await prisma.partner.update({
+    where: { id: partnerId },
+    data: { billingStatus: 'cancelled' },
+  });
+}
+
+/**
+ * パートナーのプラン変更
+ */
+export async function changePartnerPlan(
+  partnerId: string,
+  newPlan: string,
+): Promise<Stripe.Subscription> {
+  const stripeClient = getStripeInstance();
+  const newPlanInfo = getPartnerPlanInfo(newPlan);
+  if (!newPlanInfo || !newPlanInfo.priceId) {
+    throw new Error(`パートナープラン情報が見つかりません: ${newPlan}`);
+  }
+
+  const { prisma } = await import('@/lib/prisma');
+  const partner = await prisma.partner.findUnique({
+    where: { id: partnerId },
+    select: { stripeSubscriptionId: true },
+  });
+
+  if (!partner?.stripeSubscriptionId) {
+    throw new Error('サブスクリプションが見つかりません');
+  }
+
+  const subscription = await stripeClient.subscriptions.retrieve(partner.stripeSubscriptionId);
+  const updatedSubscription = await stripeClient.subscriptions.update(
+    partner.stripeSubscriptionId,
+    {
+      items: [
+        {
+          id: subscription.items.data[0].id,
+          price: newPlanInfo.priceId,
+        },
+      ],
+      metadata: {
+        type: 'partner',
+        partnerId,
+        plan: newPlan,
+      },
+      proration_behavior: 'create_prorations',
+    },
+  );
+
+  await prisma.partner.update({
+    where: { id: partnerId },
+    data: {
+      plan: newPlan,
+      maxAccounts: newPlanInfo.maxAccounts,
+    },
+  });
+
+  return updatedSubscription;
+}
+
+/**
+ * パートナー用 Stripe カスタマーポータルセッション作成
+ */
+export async function createPartnerBillingPortalSession(
+  partnerId: string,
+  returnUrl: string,
+): Promise<Stripe.BillingPortal.Session> {
+  const stripeClient = getStripeInstance();
+  const { prisma } = await import('@/lib/prisma');
+
+  const partner = await prisma.partner.findUnique({
+    where: { id: partnerId },
+    select: { stripeCustomerId: true },
+  });
+
+  if (!partner?.stripeCustomerId) {
+    throw new Error('Stripeカスタマー情報が見つかりません');
+  }
+
+  return await stripeClient.billingPortal.sessions.create({
+    customer: partner.stripeCustomerId,
+    return_url: returnUrl,
+  });
+}
+
 export default stripe;
