@@ -1,15 +1,43 @@
 // app/legal/privacy/page.tsx
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { getBrandConfig } from '@/lib/brand/config';
+import { resolveBrandByHostname } from '@/lib/brand/resolve';
 
-const brand = getBrandConfig();
+// ブランド情報を解決するヘルパー
+async function resolveBrand() {
+  const defaultBrand = getBrandConfig();
+  try {
+    const headersList = await headers();
+    const host = headersList.get('host');
+    if (host) {
+      const resolved = await resolveBrandByHostname(host);
+      if (resolved.isPartner) {
+        return {
+          name: resolved.name,
+          companyName: resolved.companyName || defaultBrand.companyName,
+          supportEmail: resolved.supportEmail || defaultBrand.supportEmail,
+          isPartner: true,
+        };
+      }
+    }
+  } catch {
+    // フォールバック
+  }
+  return { ...defaultBrand, isPartner: false };
+}
 
-export const metadata: Metadata = {
-  title: `プライバシーポリシー | ${brand.name}`,
-  description: `${brand.name}サービスのプライバシーポリシーです。`,
-};
-export default function PrivacyPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const brand = await resolveBrand();
+  return {
+    title: `プライバシーポリシー | ${brand.name}`,
+    description: `${brand.name}サービスのプライバシーポリシーです。`,
+  };
+}
+
+export default async function PrivacyPage() {
+  const brand = await resolveBrand();
   return (
     <PageLayout
       title="プライバシーポリシー"

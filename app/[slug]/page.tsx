@@ -9,6 +9,7 @@ import Link from 'next/link';
 import { addDays } from 'date-fns';
 import SmartContactButton from '@/components/profile/SmartContactButton';
 import { getBrandConfig } from '@/lib/brand/config';
+import { resolveBrandByUserId, type ResolvedBrand } from '@/lib/brand/resolve';
 
 // 🔥 修正: Prismaスキーマに基づく正しい型定義
 type ExtendedUser = {
@@ -38,6 +39,7 @@ type ExtendedUser = {
   corporateRole: string | null;
   position: string | null;
   departmentId: string | null;
+  partnerId: string | null;
   tenantId: string | null;
   tenant?: {
     id: string;
@@ -104,14 +106,23 @@ type ProfilePageProps = {
 
 // generateMetadata関数
 export async function generateMetadata({ params }: ProfilePageProps): Promise<Metadata> {
-  const brand = getBrandConfig();
+  const defaultBrand = getBrandConfig();
   const resolvedParams = await params;
   const { slug } = resolvedParams;
 
   const profile = await prisma.profile.findUnique({
     where: { slug },
     include: {
-      user: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          bio: true,
+          image: true,
+          partnerId: true,
+          tenantId: true,
+        },
+      },
     },
   });
 
@@ -122,9 +133,13 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
     };
   }
 
+  // パートナーブランド解決
+  const brand = await resolveBrandByUserId(profile.user.id);
+  const brandName = brand.name || defaultBrand.name;
+
   return {
-    title: `${profile.user.name || 'ユーザー'} | ${brand.name}`,
-    description: profile.user.bio || `${brand.name}でプロフィールをチェックしましょう`,
+    title: `${profile.user.name || 'ユーザー'} | ${brandName}`,
+    description: profile.user.bio || `${brandName}でプロフィールをチェックしましょう`,
     openGraph: {
       images: profile.user.image ? [profile.user.image] : [],
     },
@@ -133,7 +148,7 @@ export async function generateMetadata({ params }: ProfilePageProps): Promise<Me
 
 // メイン関数
 export default async function ProfilePage({ params }: ProfilePageProps) {
-  const brand = getBrandConfig();
+  const defaultBrand = getBrandConfig();
   const resolvedParams = await params;
   const { slug } = resolvedParams;
 
@@ -157,6 +172,21 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   // 🔥 修正: 型アサーションを使用
   const user = profile.user as ExtendedUser;
+
+  // パートナーブランド解決
+  const partnerBrand: ResolvedBrand = await resolveBrandByUserId(user.id);
+  const brand = {
+    name: partnerBrand.name || defaultBrand.name,
+    appUrl: partnerBrand.appUrl || defaultBrand.appUrl,
+    tagline: defaultBrand.tagline,
+    primaryColor: partnerBrand.primaryColor || defaultBrand.primaryColor,
+    logoUrl: partnerBrand.logoUrl,
+    logoWidth: partnerBrand.logoWidth,
+    logoHeight: partnerBrand.logoHeight,
+    companyName: partnerBrand.companyName,
+    isPartner: partnerBrand.isPartner,
+  };
+
   const trialEndsAt = user.trialEndsAt ? new Date(user.trialEndsAt) : null;
   const now = new Date();
 
@@ -222,7 +252,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
 
   // ヘッダーテキストとテキストカラー
   const headerText =
-    tenant?.headerText || user.headerText || getBrandConfig().tagline;
+    tenant?.headerText || user.headerText || brand.tagline;
   const textColor = tenant?.textColor || user.textColor || '#FFFFFF';
 
   return (
@@ -271,6 +301,44 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
         </div>
 
         <div style={{ padding: '1.5rem', paddingBottom: '120px' }}>
+          {/* パートナーロゴ（テナントロゴがない場合にパートナーロゴを表示） */}
+          {brand.isPartner && brand.logoUrl && !tenant?.logoUrl && (
+            <div
+              style={{
+                textAlign: 'center',
+                marginBottom: '1rem',
+                display: 'flex',
+                justifyContent: 'center',
+              }}
+            >
+              <div
+                style={{
+                  width: brand.logoWidth ? `${brand.logoWidth}px` : 'auto',
+                  height: brand.logoHeight ? `${brand.logoHeight}px` : 'auto',
+                  maxWidth: '100%',
+                  maxHeight: '200px',
+                  display: 'flex',
+                  justifyContent: 'center',
+                  alignItems: 'center',
+                }}
+              >
+                <Image
+                  src={brand.logoUrl}
+                  alt={`${brand.name}のロゴ`}
+                  width={brand.logoWidth || 200}
+                  height={brand.logoHeight || 100}
+                  style={{
+                    width: brand.logoWidth ? `${brand.logoWidth}px` : 'auto',
+                    height: brand.logoHeight ? `${brand.logoHeight}px` : 'auto',
+                    maxWidth: '100%',
+                    maxHeight: '100%',
+                    objectFit: 'contain',
+                  }}
+                />
+              </div>
+            </div>
+          )}
+
           {/* 法人ロゴ - サイズ制限を緩和 */}
           {tenant?.logoUrl && (
             <div
@@ -622,7 +690,9 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
               }}
             >
               <p style={{ fontSize: '0.75rem', color: '#6B7280' }} className="profile-text">
-                Powered by {brand.name}
+                {brand.isPartner && brand.companyName
+                  ? `Powered by ${brand.companyName}`
+                  : `Powered by ${brand.name}`}
               </p>
             </div>
           </div>
@@ -636,7 +706,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           bottom: '0',
           left: '0',
           right: '0',
-          backgroundColor: 'rgb(29, 78, 216)',
+          backgroundColor: brand.isPartner ? brand.primaryColor : 'rgb(29, 78, 216)',
           height: '100px',
           maxHeight: '60px',
           minHeight: '60px',
@@ -696,7 +766,7 @@ export default async function ProfilePage({ params }: ProfilePageProps) {
           width: '50px',
           height: '50px',
           borderRadius: '50%',
-          backgroundColor: 'rgb(29, 78, 216)',
+          backgroundColor: brand.isPartner ? brand.primaryColor : 'rgb(29, 78, 216)',
           color: 'white',
           display: 'flex',
           alignItems: 'center',

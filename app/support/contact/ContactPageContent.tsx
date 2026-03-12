@@ -18,7 +18,22 @@ type ContactType =
   | 'feedback'
   | 'corporate'
   | 'other';
-export default function ContactPageContent() {
+
+interface ContactPageContentProps {
+  brandName?: string;
+  supportEmail?: string;
+  companyPhone?: string;
+  companyAddress?: string;
+  companyName?: string;
+}
+
+export default function ContactPageContent(props: ContactPageContentProps = {}) {
+  // propsが渡された場合はそちらを優先、なければデフォルト定数を使用
+  const displayBrandName = props.brandName || DEFAULT_BRAND_NAME;
+  const displaySupportEmail = props.supportEmail || DEFAULT_SUPPORT_EMAIL;
+  const displayCompanyPhone = props.companyPhone || DEFAULT_COMPANY_PHONE;
+  const displayCompanyAddress = props.companyAddress || DEFAULT_COMPANY_ADDRESS;
+  const displayCompanyName = props.companyName || DEFAULT_COMPANY_NAME;
   const searchParams = useSearchParams();
   const [name, setName] = useState('');
   const [email, setEmail] = useState('');
@@ -126,7 +141,7 @@ export default function ContactPageContent() {
     >
       <div className="space-y-6">
         <p className="mb-6 text-justify">
-          {`${DEFAULT_BRAND_NAME}に関するお問い合わせは、以下のフォームからお願いいたします。`}通常2営業日以内にご返信いたします。
+          {`${displayBrandName}に関するお問い合わせは、以下のフォームからお願いいたします。`}通常2営業日以内にご返信いたします。
         </p>
         {success && contactType === 'corporate' ? (
           <div className="bg-green-50 border border-green-200 rounded-md p-4 mb-6">
@@ -309,18 +324,18 @@ export default function ContactPageContent() {
           <div className="space-y-4">
             <div>
               <h3 className="font-medium">メールでのお問い合わせ</h3>
-              <p className="mt-1">{DEFAULT_SUPPORT_EMAIL}</p>
+              <p className="mt-1">{displaySupportEmail}</p>
             </div>
             <div>
               <h3 className="font-medium">お電話でのお問い合わせ</h3>
-              <p className="mt-1 text-justify">{DEFAULT_COMPANY_PHONE}（平日10:00〜18:00 土日祝日休業）</p>
+              <p className="mt-1 text-justify">{displayCompanyPhone}（平日10:00〜18:00 土日祝日休業）</p>
             </div>
             <div>
               <h3 className="font-medium">郵送でのお問い合わせ</h3>
               <p className="mt-1 text-justify">
-                {DEFAULT_COMPANY_ADDRESS}
+                {displayCompanyAddress}
                 <br />
-                {`${DEFAULT_COMPANY_NAME} ${DEFAULT_BRAND_NAME}運営事務局宛`}
+                {`${displayCompanyName} ${displayBrandName}運営事務局宛`}
               </p>
             </div>
           </div>

@@ -3,15 +3,47 @@ import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
 import React from 'react';
 import Link from 'next/link';
+import { headers } from 'next/headers';
 import { getBrandConfig } from '@/lib/brand/config';
+import { resolveBrandByHostname } from '@/lib/brand/resolve';
 
-const brand = getBrandConfig();
+// ブランド情報を解決するヘルパー
+async function resolveBrand() {
+  const defaultBrand = getBrandConfig();
+  try {
+    const headersList = await headers();
+    const host = headersList.get('host');
+    if (host) {
+      const resolved = await resolveBrandByHostname(host);
+      if (resolved.isPartner) {
+        return {
+          name: resolved.name,
+          companyName: resolved.companyName || defaultBrand.companyName,
+          companyUrl: defaultBrand.companyUrl,
+          companyAddress: resolved.companyAddress || defaultBrand.companyAddress,
+          companyRepresentative: defaultBrand.companyRepresentative,
+          companyPhone: defaultBrand.companyPhone,
+          supportEmail: resolved.supportEmail || defaultBrand.supportEmail,
+          isPartner: true,
+        };
+      }
+    }
+  } catch {
+    // フォールバック
+  }
+  return { ...defaultBrand, isPartner: false };
+}
 
-export const metadata: Metadata = {
-  title: `${brand.companyName} | ${brand.name}`,
-  description: `${brand.name}を運営する${brand.companyName}についての情報です。`,
-};
-export default function CompanyAboutPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const brand = await resolveBrand();
+  return {
+    title: `${brand.companyName} | ${brand.name}`,
+    description: `${brand.name}を運営する${brand.companyName}についての情報です。`,
+  };
+}
+
+export default async function CompanyAboutPage() {
+  const brand = await resolveBrand();
   return (
     <PageLayout
       title={brand.companyName}

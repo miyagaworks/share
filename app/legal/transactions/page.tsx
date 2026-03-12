@@ -1,15 +1,46 @@
 // app/legal/transactions/page.tsx
 import { PageLayout } from '@/components/layout/PageLayout';
 import { Metadata } from 'next';
+import { headers } from 'next/headers';
 import { getBrandConfig } from '@/lib/brand/config';
+import { resolveBrandByHostname } from '@/lib/brand/resolve';
 
-const brand = getBrandConfig();
+// ブランド情報を解決するヘルパー
+async function resolveBrand() {
+  const defaultBrand = getBrandConfig();
+  try {
+    const headersList = await headers();
+    const host = headersList.get('host');
+    if (host) {
+      const resolved = await resolveBrandByHostname(host);
+      if (resolved.isPartner) {
+        return {
+          name: resolved.name,
+          companyName: resolved.companyName || defaultBrand.companyName,
+          companyAddress: resolved.companyAddress || defaultBrand.companyAddress,
+          companyRepresentative: defaultBrand.companyRepresentative,
+          companyPhone: defaultBrand.companyPhone,
+          supportEmail: resolved.supportEmail || defaultBrand.supportEmail,
+          isPartner: true,
+        };
+      }
+    }
+  } catch {
+    // フォールバック
+  }
+  return { ...defaultBrand, isPartner: false };
+}
 
-export const metadata: Metadata = {
-  title: `特定商取引法に基づく表記 | ${brand.name}`,
-  description: `${brand.name}サービスの特定商取引法に基づく表記です。`,
-};
-export default function TransactionsPage() {
+export async function generateMetadata(): Promise<Metadata> {
+  const brand = await resolveBrand();
+  return {
+    title: `特定商取引法に基づく表記 | ${brand.name}`,
+    description: `${brand.name}サービスの特定商取引法に基づく表記です。`,
+  };
+}
+
+export default async function TransactionsPage() {
+  const brand = await resolveBrand();
   return (
     <PageLayout
       title="特定商取引法に基づく表記"
