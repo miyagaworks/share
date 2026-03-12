@@ -6,7 +6,7 @@ import { ToastProvider } from '@/components/providers/ToastProvider';
 import { SessionProvider } from '@/components/providers/SessionProvider';
 import { QueryProvider } from '@/components/providers/QueryProvider';
 import { getBrandConfig } from '@/lib/brand/config';
-import { resolveBrandByHostname } from '@/lib/brand/resolve';
+import { resolveBrandByHostname, resolveBrandByPartnerId } from '@/lib/brand/resolve';
 import { DEFAULT_PRIMARY_COLOR } from '@/lib/brand/defaults';
 import './globals.css';
 
@@ -23,10 +23,22 @@ const robotoMono = Roboto_Mono({
 });
 
 // パートナーブランドを解決するヘルパー
+// x-partner-id ヘッダーがあればそれを優先、なければ host ベースで解決
 async function resolvePartnerBrand() {
   const defaultBrand = getBrandConfig();
   try {
     const headersList = await headers();
+
+    // Phase 7: middleware がセットした x-partner-id を優先的に使用
+    const partnerId = headersList.get('x-partner-id');
+    if (partnerId) {
+      const resolved = await resolveBrandByPartnerId(partnerId);
+      if (resolved.isPartner) {
+        return { brand: { ...defaultBrand, ...resolved }, isPartner: true };
+      }
+    }
+
+    // フォールバック: host ベースで解決
     const host = headersList.get('host');
     if (!host) return { brand: defaultBrand, isPartner: false };
 
@@ -46,6 +58,7 @@ export async function generateMetadata(): Promise<Metadata> {
   return {
     title: isPartner ? brand.name : getBrandConfig().name,
     description: 'デジタル名刺サービス',
+    manifest: '/api/manifest',
     icons: {
       icon: (isPartner && brand.faviconUrl) ? brand.faviconUrl : getBrandConfig().faviconUrl,
       shortcut: (isPartner && brand.faviconUrl) ? brand.faviconUrl : getBrandConfig().faviconUrl,

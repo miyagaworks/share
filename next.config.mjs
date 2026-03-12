@@ -2,6 +2,12 @@
 const isBuyout = process.env.DEPLOYMENT_MODE === 'buyout';
 const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://app.sns-share.com';
 
+// 月額型: パートナーのカスタムドメインをCSPに追加
+// 環境変数 CSP_ALLOWED_DOMAINS にスペース区切りで全パートナードメインを設定
+// 例: CSP_ALLOWED_DOMAINS="https://card.printcompany.co.jp https://meishi.webagency.co.jp"
+const additionalCspDomains = process.env.CSP_ALLOWED_DOMAINS || '';
+const cspDomains = `${appUrl} ${additionalCspDomains}`.trim();
+
 const nextConfig = {
   // 本番環境では絶対URLでアセットを配信（sns-share.com/partner リライト対応）
   // 買取型はVercelのデフォルトCDNを使用するため assetPrefix 不要
@@ -59,12 +65,12 @@ const nextConfig = {
             key: 'Content-Security-Policy',
             value: [
               "default-src 'self'",
-              `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${appUrl} https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com https://static.cloudflareinsights.com`,
-              `script-src-elem 'self' 'unsafe-inline' ${appUrl} https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com https://static.cloudflareinsights.com`,
-              `style-src 'self' 'unsafe-inline' ${appUrl} https://fonts.googleapis.com`,
-              `font-src 'self' ${appUrl} https://fonts.gstatic.com`,
+              `script-src 'self' 'unsafe-inline' 'unsafe-eval' ${cspDomains} https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com https://static.cloudflareinsights.com`,
+              `script-src-elem 'self' 'unsafe-inline' ${cspDomains} https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://js.stripe.com https://maps.googleapis.com https://static.cloudflareinsights.com`,
+              `style-src 'self' 'unsafe-inline' ${cspDomains} https://fonts.googleapis.com`,
+              `font-src 'self' ${cspDomains} https://fonts.gstatic.com`,
               "img-src 'self' data: https: blob:",
-              `connect-src 'self' ${appUrl} https://api.stripe.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://maps.googleapis.com https://cloudflareinsights.com`,
+              `connect-src 'self' ${cspDomains} https://api.stripe.com https://www.google.com https://www.gstatic.com https://www.recaptcha.net https://apis.google.com https://maps.googleapis.com https://cloudflareinsights.com`,
               "frame-src 'self' https://www.google.com https://www.recaptcha.net https://js.stripe.com https://www.google.com/maps/embed",
               "worker-src 'self' blob:",
               "object-src 'none'",

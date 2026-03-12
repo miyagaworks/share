@@ -10,6 +10,8 @@ import {
   HiGlobe,
   HiCheck,
   HiX,
+  HiRefresh,
+  HiTrash,
 } from 'react-icons/hi';
 
 interface Partner {
@@ -40,6 +42,11 @@ export default function AdminPartnersPage() {
     plan: 'basic',
   });
   const [creating, setCreating] = useState(false);
+  // ドメイン設定用の状態
+  const [domainEditPartnerId, setDomainEditPartnerId] = useState<string | null>(null);
+  const [domainInput, setDomainInput] = useState('');
+  const [domainSaving, setDomainSaving] = useState(false);
+  const [domainStatus, setDomainStatus] = useState<Record<string, { verified: boolean; checking: boolean }>>({});
 
   const fetchPartners = async () => {
     try {
@@ -78,6 +85,71 @@ export default function AdminPartnersPage() {
       alert(err instanceof Error ? err.message : 'エラーが発生しました');
     } finally {
       setCreating(false);
+    }
+  };
+
+  // ドメイン登録
+  const handleDomainSave = async (partnerId: string) => {
+    if (!domainInput.trim()) return;
+    setDomainSaving(true);
+    try {
+      const res = await fetch('/api/admin/partners/domain', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partnerId, domain: domainInput.trim() }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      alert(
+        data.vercelConfigured
+          ? `ドメイン登録完了。DNS設定: ${data.dnsInstructions.name} → ${data.dnsInstructions.value} (CNAME)`
+          : `ドメインをDBに保存しました。Vercel APIトークン未設定のため、Vercel管理画面から手動でドメインを追加してください。`,
+      );
+      setDomainEditPartnerId(null);
+      setDomainInput('');
+      await fetchPartners();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'ドメイン登録に失敗しました');
+    } finally {
+      setDomainSaving(false);
+    }
+  };
+
+  // ドメイン検証ステータス確認
+  const handleDomainVerify = async (partnerId: string) => {
+    setDomainStatus((prev) => ({ ...prev, [partnerId]: { verified: false, checking: true } }));
+    try {
+      const res = await fetch(`/api/admin/partners/domain?partnerId=${partnerId}`);
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error);
+      setDomainStatus((prev) => ({
+        ...prev,
+        [partnerId]: { verified: data.domainVerified, checking: false },
+      }));
+      if (data.domainVerified) {
+        await fetchPartners();
+      }
+    } catch {
+      setDomainStatus((prev) => ({ ...prev, [partnerId]: { verified: false, checking: false } }));
+    }
+  };
+
+  // ドメイン削除
+  const handleDomainDelete = async (partnerId: string) => {
+    if (!confirm('カスタムドメインを削除しますか？')) return;
+    try {
+      const res = await fetch('/api/admin/partners/domain', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ partnerId }),
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error);
+      }
+      await fetchPartners();
+    } catch (err) {
+      alert(err instanceof Error ? err.message : 'ドメイン削除に失敗しました');
     }
   };
 
@@ -250,18 +322,70 @@ export default function AdminPartnersPage() {
                       </span>
                     </td>
                     <td className="px-6 py-4">
-                      {partner.customDomain ? (
+                      {domainEditPartnerId === partner.id ? (
+                        <div className="flex items-center gap-1">
+                          <input
+                            type="text"
+                            value={domainInput}
+                            onChange={(e) => setDomainInput(e.target.value)}
+                            placeholder="card.example.co.jp"
+                            className="text-sm border border-gray-300 rounded px-2 py-1 w-44"
+                          />
+                          <button
+                            onClick={() => handleDomainSave(partner.id)}
+                            disabled={domainSaving}
+                            className="text-xs px-2 py-1 bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50"
+                          >
+                            {domainSaving ? '...' : '保存'}
+                          </button>
+                          <button
+                            onClick={() => { setDomainEditPartnerId(null); setDomainInput(''); }}
+                            className="text-xs px-2 py-1 border border-gray-300 rounded hover:bg-gray-50"
+                          >
+                            取消
+                          </button>
+                        </div>
+                      ) : partner.customDomain ? (
                         <div className="flex items-center gap-1">
                           <HiGlobe className="h-4 w-4 text-gray-400" />
                           <span className="text-sm">{partner.customDomain}</span>
-                          {partner.domainVerified ? (
-                            <HiCheck className="h-4 w-4 text-green-500" />
+                          {partner.domainVerified || domainStatus[partner.id]?.verified ? (
+                            <HiCheck className="h-4 w-4 text-green-500" title="検証済み" />
                           ) : (
-                            <HiX className="h-4 w-4 text-red-400" />
+                            <>
+                              <HiX className="h-4 w-4 text-red-400" title="未検証" />
+                              <button
+                                onClick={() => handleDomainVerify(partner.id)}
+                                disabled={domainStatus[partner.id]?.checking}
+                                className="text-xs text-blue-600 hover:text-blue-800"
+                                title="DNS検証を確認"
+                              >
+                                <HiRefresh className={`h-3.5 w-3.5 ${domainStatus[partner.id]?.checking ? 'animate-spin' : ''}`} />
+                              </button>
+                            </>
                           )}
+                          <button
+                            onClick={() => { setDomainEditPartnerId(partner.id); setDomainInput(partner.customDomain || ''); }}
+                            className="text-xs text-gray-400 hover:text-gray-600 ml-1"
+                            title="ドメインを変更"
+                          >
+                            <HiGlobe className="h-3.5 w-3.5" />
+                          </button>
+                          <button
+                            onClick={() => handleDomainDelete(partner.id)}
+                            className="text-xs text-red-400 hover:text-red-600"
+                            title="ドメインを削除"
+                          >
+                            <HiTrash className="h-3.5 w-3.5" />
+                          </button>
                         </div>
                       ) : (
-                        <span className="text-sm text-gray-400">未設定</span>
+                        <button
+                          onClick={() => { setDomainEditPartnerId(partner.id); setDomainInput(''); }}
+                          className="text-sm text-blue-600 hover:text-blue-800"
+                        >
+                          + ドメイン設定
+                        </button>
                       )}
                     </td>
                     <td className="px-6 py-4">

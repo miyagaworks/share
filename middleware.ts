@@ -1,16 +1,53 @@
-// middleware.ts (財務管理者リダイレクト修正版) - 無限ループ解決
+// middleware.ts (財務管理者リダイレクト修正版 + カスタムドメイン対応)
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { isSuperAdmin as isSuperAdminEmail } from '@/lib/auth/constants';
 import { features } from '@/lib/features';
 
+/**
+ * 環境変数 PARTNER_DOMAIN_MAP からドメイン→partnerIdのマッピングを取得
+ * Edge Runtimeで動作するため、PrismaではなくJSONベースの環境変数を使用
+ * 例: {"card.example.co.jp":"partner_id_1","meishi.example.com":"partner_id_2"}
+ */
+function getPartnerDomainMap(): Record<string, string> {
+  const mapJson = process.env.PARTNER_DOMAIN_MAP;
+  if (!mapJson) return {};
+  try {
+    return JSON.parse(mapJson);
+  } catch {
+    return {};
+  }
+}
+
+/** メインドメインかどうかを判定 */
+function isMainDomain(hostname: string): boolean {
+  const mainDomains = ['sns-share.com', 'app.sns-share.com', 'localhost'];
+  const cleaned = hostname.split(':')[0]; // ポート番号を除去
+  return mainDomains.includes(cleaned) || cleaned.endsWith('.sns-share.com') || cleaned.endsWith('.vercel.app');
+}
+
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+  const hostname = request.headers.get('host') || '';
 
-  // auth関連のURLは処理しない
+  // カスタムドメイン判定: メインドメイン以外のホスト名をパートナードメインとして処理
+  let response: NextResponse | undefined;
+  let partnerId: string | null = null;
+
+  if (!isMainDomain(hostname)) {
+    const domainMap = getPartnerDomainMap();
+    const cleanHost = hostname.split(':')[0]; // ポート番号を除去
+    partnerId = domainMap[cleanHost] || null;
+  }
+
+  // auth関連のURLは処理しない（ただしパートナーヘッダーはセット）
   if (pathname.startsWith('/auth') || pathname.startsWith('/api/auth')) {
-    return NextResponse.next();
+    const resp = NextResponse.next();
+    if (partnerId) {
+      resp.headers.set('x-partner-id', partnerId);
+    }
+    return resp;
   }
 
   // ダッシュボードへのアクセスを制御
@@ -182,7 +219,11 @@ export async function middleware(request: NextRequest) {
           userEmail,
         });
       }
-      return NextResponse.next();
+      const resp = NextResponse.next();
+      if (partnerId) {
+        resp.headers.set('x-partner-id', partnerId);
+      }
+      return resp;
     } catch (error) {
       console.error('💥 Middleware error:', error);
       // エラー時はログインページへリダイレクト
@@ -190,9 +231,18 @@ export async function middleware(request: NextRequest) {
     }
   }
 
-  return NextResponse.next();
+  const resp = NextResponse.next();
+  if (partnerId) {
+    resp.headers.set('x-partner-id', partnerId);
+  }
+  return resp;
 }
 
 export const config = {
-  matcher: ['/dashboard/:path*'],
+  matcher: [
+    // ダッシュボードルーティング + カスタムドメインヘッダー注入
+    '/dashboard/:path*',
+    // カスタムドメインでのページ表示にx-partner-idヘッダーを注入
+    '/((?!_next/static|_next/image|favicon.ico|pwa/).*)',
+  ],
 };
