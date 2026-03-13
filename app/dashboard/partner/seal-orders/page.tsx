@@ -316,6 +316,12 @@ export default function PartnerSealOrdersPage() {
                       <span>配送料</span>
                       <span>&yen;{selectedOrder.shippingFee.toLocaleString()}</span>
                     </div>
+                    {selectedOrder.taxAmount > 0 && (
+                      <div className="flex justify-between">
+                        <span>税額</span>
+                        <span>&yen;{selectedOrder.taxAmount.toLocaleString()}</span>
+                      </div>
+                    )}
                     <div className="flex justify-between font-bold border-t pt-1">
                       <span>合計</span>
                       <span>&yen;{selectedOrder.totalAmount.toLocaleString()}</span>

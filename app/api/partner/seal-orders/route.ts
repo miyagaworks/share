@@ -38,14 +38,27 @@ export async function GET() {
     const partnerUserIds = partnerUsers.map((u) => u.id);
 
     // パートナー配下の注文を取得（テナント経由 + 直接ユーザー経由）
+    // テナントもユーザーも0件の場合は空結果を返す（OR: [] の未定義動作を回避）
+    const orConditions = [
+      ...(tenantIds.length > 0 ? [{ tenantId: { in: tenantIds } }] : []),
+      ...(partnerUserIds.length > 0 ? [{ userId: { in: partnerUserIds } }] : []),
+    ];
+
+    if (orConditions.length === 0) {
+      logger.info('パートナー用シール注文取得完了（配下なし）', {
+        partnerId: partner.id,
+        orderCount: 0,
+      });
+      return NextResponse.json({
+        success: true,
+        orders: [],
+        totalCount: 0,
+      });
+    }
+
     const orders = await prisma.oneTapSealOrder.findMany({
       where: {
-        OR: [
-          // テナント経由の注文
-          ...(tenantIds.length > 0 ? [{ tenantId: { in: tenantIds } }] : []),
-          // パートナー直接ユーザーの注文
-          ...(partnerUserIds.length > 0 ? [{ userId: { in: partnerUserIds } }] : []),
-        ],
+        OR: orConditions,
       },
       include: {
         user: {

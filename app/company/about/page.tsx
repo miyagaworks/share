@@ -84,10 +84,12 @@ export default async function CompanyAboutPage() {
                   </Link>
                 </td>
               </tr>
-              <tr className="border-b">
-                <th className="text-left py-4 px-4 font-semibold bg-gray-50">設立</th>
-                <td className="py-4 px-4">2000年8月10日</td>
-              </tr>
+              {!brand.isPartner && (
+                <tr className="border-b">
+                  <th className="text-left py-4 px-4 font-semibold bg-gray-50">設立</th>
+                  <td className="py-4 px-4">2000年8月10日</td>
+                </tr>
+              )}
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">代表取締役</th>
                 <td className="py-4 px-4">{brand.companyRepresentative}</td>
@@ -102,20 +104,28 @@ export default async function CompanyAboutPage() {
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">事業内容</th>
                 <td className="py-4 px-4">
                   <ul className="list-disc pl-5 space-y-1">
-                    <li>SNS連携サービス「{brand.name}」の企画・開発・運営</li>
-                    <li>ウェブアプリケーション開発</li>
-                    <li>デジタルマーケティングソリューション提供</li>
+                    <li>デジタル名刺サービス「{brand.name}」の企画・運営</li>
+                    {!brand.isPartner && (
+                      <>
+                        <li>ウェブアプリケーション開発</li>
+                        <li>デジタルマーケティングソリューション提供</li>
+                      </>
+                    )}
                   </ul>
                 </td>
               </tr>
-              <tr className="border-b">
-                <th className="text-left py-4 px-4 font-semibold bg-gray-50">資本金</th>
-                <td className="py-4 px-4">1,000万円</td>
-              </tr>
-              <tr className="border-b">
-                <th className="text-left py-4 px-4 font-semibold bg-gray-50">従業員数</th>
-                <td className="py-4 px-4">15名（2024年4月現在）</td>
-              </tr>
+              {!brand.isPartner && (
+                <>
+                  <tr className="border-b">
+                    <th className="text-left py-4 px-4 font-semibold bg-gray-50">資本金</th>
+                    <td className="py-4 px-4">1,000万円</td>
+                  </tr>
+                  <tr className="border-b">
+                    <th className="text-left py-4 px-4 font-semibold bg-gray-50">従業員数</th>
+                    <td className="py-4 px-4">15名（2024年4月現在）</td>
+                  </tr>
+                </>
+              )}
               <tr className="border-b">
                 <th className="text-left py-4 px-4 font-semibold bg-gray-50">問い合わせ</th>
                 <td className="py-4 px-4">
@@ -127,15 +137,17 @@ export default async function CompanyAboutPage() {
             </tbody>
           </table>
         </section>
-        <section>
-          <h2 className="text-xl font-semibold mb-4">企業理念</h2>
-          <p className="mb-4 text-justify">
-            「人と人とのつながりをシンプルに」をビジョンに掲げ、デジタル時代の新しいコミュニケーション手段を提供します。
-          </p>
-          <p className="text-justify">
-            現代社会では、人々は複数のSNSプラットフォームを使い分け、多様なコミュニケーション手段を持っています。それらの情報を簡単に共有できる場を作ることで、より豊かなつながりの実現を目指しています。
-          </p>
-        </section>
+        {!brand.isPartner && (
+          <section>
+            <h2 className="text-xl font-semibold mb-4">企業理念</h2>
+            <p className="mb-4 text-justify">
+              「人と人とのつながりをシンプルに」をビジョンに掲げ、デジタル時代の新しいコミュニケーション手段を提供します。
+            </p>
+            <p className="text-justify">
+              現代社会では、人々は複数のSNSプラットフォームを使い分け、多様なコミュニケーション手段を持っています。それらの情報を簡単に共有できる場を作ることで、より豊かなつながりの実現を目指しています。
+            </p>
+          </section>
+        )}
       </div>
     </PageLayout>
   );
