@@ -72,6 +72,7 @@ model User {
   oneTapSealOrders         OneTapSealOrder[]
   oneTapSealItems          OneTapSealItem[] @relation("OneTapSealItemMember")
   partnerId                String?
+  isDemo                   Boolean                  @default(false)
   partnerUser              Partner?         @relation("PartnerUsers", fields: [partnerId], references: [id])
   adminOfPartner           Partner?         @relation("PartnerAdmin")
 }

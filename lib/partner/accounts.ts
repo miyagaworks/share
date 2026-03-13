@@ -18,13 +18,13 @@ export interface AccountLimitStatus {
  */
 export async function countPartnerAccounts(partnerId: string): Promise<number> {
   const [tenantUsers, personalUsers] = await Promise.all([
-    // パートナー配下の全テナントに属するユーザー数
+    // パートナー配下の全テナントに属するユーザー数（デモアカウント除外）
     prisma.user.count({
-      where: { tenant: { partnerId } },
+      where: { tenant: { partnerId }, isDemo: false },
     }),
-    // パートナー経由の個人ユーザー数
+    // パートナー経由の個人ユーザー数（デモアカウント除外）
     prisma.user.count({
-      where: { partnerId },
+      where: { partnerId, isDemo: false },
     }),
   ]);
 

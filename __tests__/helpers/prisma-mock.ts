@@ -22,6 +22,7 @@ export function createPrismaMock() {
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      delete: vi.fn(),
       count: vi.fn(),
     },
     corporateTenant: {
@@ -32,6 +33,7 @@ export function createPrismaMock() {
     },
     profile: {
       aggregate: vi.fn(),
+      create: vi.fn(),
     },
     partnerActivityLog: {
       create: vi.fn(),
