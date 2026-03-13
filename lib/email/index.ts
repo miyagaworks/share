@@ -9,6 +9,8 @@ interface EmailData {
   text: string;
   html?: string;
   replyTo?: string;
+  fromName?: string;
+  fromEmail?: string;
 }
 
 interface EmailResult {
@@ -74,8 +76,8 @@ async function sendProductionEmail(data: EmailData): Promise<EmailResult> {
     const resendClient = getResendClient();
 
     const brand = getBrandConfig();
-    const fromEmail = brand.fromEmail;
-    const fromName = brand.fromName;
+    const fromEmail = data.fromEmail || brand.fromEmail;
+    const fromName = data.fromName || brand.fromName;
 
     logger.info('メール送信開始:', {
       to: data.to,
@@ -134,8 +136,29 @@ export async function sendShippingNotificationEmail(params: {
   };
   orderDate: string;
   totalAmount: number;
+  userId?: string;
 }): Promise<EmailResult> {
   const { getShippingNotificationTemplate } = await import('./templates/shipping-notification');
+
+  // パートナーブランド解決（userIdが指定されている場合）
+  let brandOverride: { name: string; appUrl: string; supportEmail: string; fromName: string; fromEmail: string } | undefined;
+  if (params.userId) {
+    try {
+      const { resolveBrandByUserId } = await import('@/lib/brand/resolve');
+      const resolvedBrand = await resolveBrandByUserId(params.userId);
+      if (resolvedBrand.isPartner && resolvedBrand.fromName && resolvedBrand.fromEmail) {
+        brandOverride = {
+          name: resolvedBrand.name,
+          appUrl: resolvedBrand.appUrl,
+          supportEmail: resolvedBrand.supportEmail || '',
+          fromName: resolvedBrand.fromName,
+          fromEmail: resolvedBrand.fromEmail,
+        };
+      }
+    } catch (error) {
+      logger.warn('パートナーブランド解決エラー（デフォルトブランドで送信）:', error);
+    }
+  }
 
   const template = getShippingNotificationTemplate({
     ...params,
@@ -143,6 +166,7 @@ export async function sendShippingNotificationEmail(params: {
       ...item,
       color: item.color as any,
     })),
+    brandOverride,
   });
 
   return await sendEmail({
@@ -150,6 +174,8 @@ export async function sendShippingNotificationEmail(params: {
     subject: template.subject,
     text: template.text,
     html: template.html,
+    fromName: brandOverride?.fromName,
+    fromEmail: brandOverride?.fromEmail,
   });
 }
 

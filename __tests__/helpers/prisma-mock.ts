@@ -38,6 +38,12 @@ export function createPrismaMock() {
     partnerActivityLog: {
       create: vi.fn(),
     },
+    oneTapSealOrder: {
+      findMany: vi.fn(),
+      findUnique: vi.fn(),
+      create: vi.fn(),
+      update: vi.fn(),
+    },
     $queryRaw: vi.fn(),
     $disconnect: vi.fn(),
   };

@@ -2,6 +2,12 @@
 import { getBrandConfig } from '@/lib/brand/config';
 import { ONE_TAP_SEAL_COLOR_NAMES, type OneTapSealColor } from '@/types/one-tap-seal';
 
+interface BrandOverride {
+  name: string;
+  appUrl: string;
+  supportEmail: string;
+}
+
 interface ShippingNotificationParams {
   customerName: string;
   customerEmail: string;
@@ -20,10 +26,14 @@ interface ShippingNotificationParams {
   };
   orderDate: string;
   totalAmount: number;
+  brandOverride?: BrandOverride;
 }
 
 export function getShippingNotificationTemplate(params: ShippingNotificationParams) {
-  const brand = getBrandConfig();
+  const defaultBrand = getBrandConfig();
+  const brand = params.brandOverride
+    ? { ...defaultBrand, name: params.brandOverride.name, appUrl: params.brandOverride.appUrl, supportEmail: params.brandOverride.supportEmail }
+    : defaultBrand;
   const { customerName, orderId, trackingNumber, items, shippingAddress, orderDate, totalAmount } =
     params;
 
