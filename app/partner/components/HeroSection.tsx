@@ -74,7 +74,7 @@ export default function HeroSection() {
               whileTap={prefersReducedMotion ? {} : { scale: 0.98 }}
               className="inline-flex min-h-[48px] items-center justify-center rounded-lg bg-[#B8860B] px-8 py-3 text-base font-bold text-white shadow-md transition-colors hover:bg-[#A0750A]"
             >
-              補助金活用ガイドを無料で入手
+              DXに使える補助金ガイドを無料で入手
             </motion.a>
             <motion.a
               href="#cta"
