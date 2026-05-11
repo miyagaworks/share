@@ -1,0 +1,656 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<title>経営計画書兼補助事業計画書 - 株式会社Senrigan</title>
+<style>
+  @page { size: A4; margin: 20mm 18mm; }
+  @media print {
+    .page-break { page-break-before: always; }
+    body { padding: 0; }
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: 'Hiragino Kaku Gothic ProN', 'Noto Sans JP', 'Yu Gothic', sans-serif;
+    color: #222;
+    line-height: 1.85;
+    padding: 32px;
+    max-width: 800px;
+    margin: 0 auto;
+    font-size: 13px;
+  }
+
+  /* 表紙 */
+  .cover {
+    text-align: center;
+    padding: 60px 20px 40px;
+    border: 3px double #333;
+    margin-bottom: 40px;
+  }
+  .cover .doc-label {
+    font-size: 12px;
+    color: #666;
+    margin-bottom: 8px;
+  }
+  .cover h1 {
+    font-size: 22px;
+    margin-bottom: 6px;
+    letter-spacing: 0.08em;
+  }
+  .cover .subtitle {
+    font-size: 14px;
+    color: #444;
+    margin-bottom: 32px;
+  }
+  .cover .meta {
+    font-size: 13px;
+    line-height: 2;
+  }
+  .cover .meta strong {
+    display: inline-block;
+    min-width: 100px;
+    text-align: right;
+    margin-right: 12px;
+  }
+
+  /* セクション見出し */
+  h2 {
+    font-size: 16px;
+    color: #fff;
+    background: #1B2A4A;
+    padding: 8px 14px;
+    margin: 32px 0 16px;
+    letter-spacing: 0.04em;
+  }
+  h3 {
+    font-size: 14px;
+    color: #1B2A4A;
+    border-bottom: 2px solid #1B2A4A;
+    padding-bottom: 4px;
+    margin: 24px 0 12px;
+  }
+  h4 {
+    font-size: 13px;
+    color: #333;
+    margin: 16px 0 8px;
+    padding-left: 8px;
+    border-left: 3px solid #B8860B;
+  }
+
+  /* テーブル */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 12px 0 16px;
+    font-size: 12.5px;
+  }
+  th, td {
+    border: 1px solid #999;
+    padding: 8px 10px;
+    text-align: left;
+    vertical-align: top;
+  }
+  th {
+    background: #E8E6E0;
+    font-weight: 700;
+    font-size: 12px;
+    white-space: nowrap;
+  }
+  .amount { text-align: right; }
+  .center { text-align: center; }
+  .highlight { background: #FFFDE7; }
+
+  /* 本文 */
+  p { margin: 8px 0; }
+  ul, ol { padding-left: 22px; margin: 8px 0; }
+  li { margin-bottom: 4px; }
+
+  .note {
+    font-size: 11px;
+    color: #666;
+    margin-top: 4px;
+  }
+  .todo {
+    color: #C62828;
+    font-weight: 700;
+  }
+  .box {
+    border: 1px solid #ccc;
+    background: #F9F9F7;
+    padding: 14px 16px;
+    margin: 12px 0;
+    border-radius: 4px;
+  }
+  .kpi-table td:nth-child(2),
+  .kpi-table td:nth-child(3) { text-align: center; }
+
+  .footer-note {
+    margin-top: 40px;
+    padding-top: 16px;
+    border-top: 1px solid #ccc;
+    font-size: 11px;
+    color: #888;
+    text-align: center;
+  }
+</style>
+</head>
+<body>
+
+<!-- ========== 表紙 ========== -->
+<div class="cover">
+  <p class="doc-label">小規模事業者持続化補助金＜一般型 通常枠＞ 第19回</p>
+  <h1>経営計画書 兼 補助事業計画書</h1>
+  <p class="subtitle">（様式2 記載内容）</p>
+  <div class="meta">
+    <p><strong>事業者名：</strong>株式会社Senrigan</p>
+    <p><strong>代表者名：</strong>宮川 清実</p>
+    <p><strong>所在地：</strong>広島県広島市安佐南区山本2丁目3-35-104</p>
+    <p><strong>業 種：</strong>情報通信業（ソフトウェア開発・SaaS提供）</p>
+    <p><strong>設 立：</strong>2000年8月</p>
+    <p><strong>従業員数：</strong>0名（代表者のみ）</p>
+    <p><strong>申請日：</strong>2026年 4月</p>
+  </div>
+</div>
+
+<p class="note" style="text-align:center; margin-bottom: 20px;"><span class="todo">[赤字太字]</span> の箇所は、実際の情報に置き換えてください。</p>
+
+<!-- ========================================================= -->
+<!--  I. 経営計画                                                -->
+<!-- ========================================================= -->
+
+<h2>I. 経営計画</h2>
+
+<!-- 1. 企業概要 -->
+<h3>1. 企業概要</h3>
+
+<h4>（1）事業内容</h4>
+<p>
+  当社は、NFC（近距離無線通信）技術とQRコードを組み合わせたデジタル名刺プラットフォーム「Share」を開発・運営している。スマートフォンケースに貼付するNFCシールをかざすだけで、プロフィール・連絡先・SNSリンクなどを瞬時に相手のスマートフォンへ送信できるサービスであり、紙の名刺に代わる次世代のビジネスコミュニケーションツールとして、BtoC（個人事業主・フリーランス）およびBtoB（企業の営業部門）に提供している。
+</p>
+<p>
+  サービスURL：https://sns-share.com
+</p>
+
+<h4>（2）売上構成</h4>
+<table>
+  <tr>
+    <th>売上区分</th>
+    <th>内容</th>
+  </tr>
+  <tr>
+    <td>NFCシール販売</td>
+    <td>個人・法人向けNFCシール（1枚550〜1,000円）のEC販売</td>
+  </tr>
+  <tr>
+    <td>サブスクリプション</td>
+    <td>法人向け月額プラン（メンバー管理・ブランディング機能）</td>
+  </tr>
+  <tr>
+    <td>ホワイトラベル提供（新規）</td>
+    <td>パートナー企業への月額OEM提供（月額3万〜8万円）</td>
+  </tr>
+</table>
+
+<h4>（3）直近の業績</h4>
+<table>
+  <tr>
+    <th>期</th>
+    <th class="amount">売上高</th>
+    <th class="amount">営業利益</th>
+  </tr>
+  <tr>
+    <td class="todo">[前々期（____年____月期）]</td>
+    <td class="amount todo">[____万円]</td>
+    <td class="amount todo">[____万円]</td>
+  </tr>
+  <tr>
+    <td class="todo">[前期（____年____月期）]</td>
+    <td class="amount todo">[____万円]</td>
+    <td class="amount todo">[____万円]</td>
+  </tr>
+</table>
+
+<!-- 2. 顧客ニーズと市場の動向 -->
+<h3>2. 顧客ニーズと市場の動向</h3>
+
+<h4>（1）デジタル名刺市場の拡大</h4>
+<p>
+  グローバルのデジタル名刺市場は、2024年の約420百万ドルから2032年には約670百万ドルへ成長する見通しであり（年平均成長率6.8%）、国内においてもDX推進・ペーパーレス化・SDGsへの意識向上を背景に、紙名刺からデジタル名刺への移行が急速に進んでいる。
+</p>
+
+<h4>（2）印刷業界の構造変化とパートナーニーズ</h4>
+<p>
+  名刺印刷市場は過去5年間で約15%縮小しており、オンライン印刷の台頭による価格競争の激化（市場の約40%をオンライン印刷が獲得）も相まって、街の印刷会社は新たな収益源を切実に求めている。一方で、印刷会社は既に名刺顧客との関係性を持っており、「紙からデジタルへの移行」を既存顧客に提案できる好位置にある。
+</p>
+<p>
+  また、Web制作会社においても、ウェブサイト制作のコモディティ化が進む中、デジタル名刺のような月額ストック型サービスを自社ブランドで展開したいというニーズが増加している。
+</p>
+
+<h4>（3）テレワーク・ハイブリッドワークの定着</h4>
+<p>
+  テレワーク経験者の約70%がハイブリッドワークを継続しており、オンライン商談から対面への移行場面で「スマートに連絡先を交換したい」というニーズが高まっている。紙の名刺を持ち歩かないビジネスパーソンも約35%に達しており、デジタル名刺の実需は拡大の一途にある。
+</p>
+
+<!-- 3. 自社の強み -->
+<h3>3. 自社や自社の提供する商品・サービスの強み</h3>
+
+<h4>（1）技術的優位性</h4>
+<ul>
+  <li><strong>NFC + QRコードのハイブリッド方式：</strong>NFC非搭載のスマートフォンにもQRコードで対応でき、受信側に専用アプリが不要。技術的なハードルなく全てのスマートフォンで利用可能。</li>
+  <li><strong>ホワイトラベル基盤の完成：</strong>マルチテナント・マルチドメイン対応のアーキテクチャが既に稼働しており、パートナー企業は自社ブランド（独自ドメイン・ロゴ・カラー）でサービスを提供できる。</li>
+  <li><strong>パートナー管理ダッシュボード：</strong>テナント管理、ブランディング設定、売上レポート、NFCシール受発注機能など、パートナー運営に必要な管理機能を完備。</li>
+</ul>
+
+<h4>（2）ビジネスモデルの優位性</h4>
+<ul>
+  <li><strong>開発費ゼロ・最短30日で開始：</strong>パートナーはシステム開発不要。初期設定のみで自社ブランドのデジタル名刺サービスを立ち上げられる。</li>
+  <li><strong>ストック型収益モデル：</strong>パートナーはエンドユーザーに月額課金でき、安定的な継続収入を得られる。紙名刺の都度販売と比較して、顧客単価が年間約4倍に向上。</li>
+  <li><strong>低リスク参入：</strong>月額3万円〜のサブスクリプションモデルで、パートナーの初期投資リスクを最小化。3ヶ月の無料トライアルも提供。</li>
+</ul>
+
+<h4>（3）自社の弱み・課題</h4>
+<ul>
+  <li>サービス基盤は整っているが、<strong>BtoBパートナーの新規開拓が未着手</strong>であり、パートナー企業数がゼロの状態。</li>
+  <li>代表者1名で運営しており、営業リソースが限られている。</li>
+  <li>印刷業界・Web制作業界におけるサービス認知度が低い。</li>
+</ul>
+
+<!-- 4. 経営方針・目標と今後のプラン -->
+<h3>4. 経営方針・目標と今後のプラン</h3>
+
+<h4>（1）経営方針</h4>
+<p>
+  「デジタル名刺を、すべてのビジネスパーソンの当たり前にする」をミッションに掲げ、自社直販に加えて、印刷会社・Web制作会社をパートナーとするBtoB販路を構築し、全国への普及を加速させる。パートナー企業が自社ブランドでデジタル名刺サービスを展開できるホワイトラベルモデルにより、双方にとってWin-Winの事業拡大を目指す。
+</p>
+
+<h4>（2）数値目標</h4>
+<table class="kpi-table">
+  <tr>
+    <th>指標</th>
+    <th class="center">現状（2026年3月）</th>
+    <th class="center">目標（2027年3月）</th>
+  </tr>
+  <tr>
+    <td>パートナー契約企業数</td>
+    <td class="center">0社</td>
+    <td class="center">5社</td>
+  </tr>
+  <tr>
+    <td>パートナー経由エンドユーザー数</td>
+    <td class="center">0名</td>
+    <td class="center">500名</td>
+  </tr>
+  <tr>
+    <td>パートナー事業月額売上</td>
+    <td class="center">0円</td>
+    <td class="center">25万円/月</td>
+  </tr>
+  <tr>
+    <td>全社売上高</td>
+    <td class="center todo">[____万円/年]</td>
+    <td class="center todo">[____万円/年]</td>
+  </tr>
+</table>
+
+<h4>（3）今後のプラン</h4>
+<table>
+  <tr>
+    <th style="width:120px;">時期</th>
+    <th>取組内容</th>
+  </tr>
+  <tr>
+    <td>2026年7〜9月</td>
+    <td>パートナー募集チラシ・カタログ・営業提案書の制作。ターゲット企業リスト作成とDM発送開始。</td>
+  </tr>
+  <tr>
+    <td>2026年10〜12月</td>
+    <td>印刷・IT系展示会への出展（直接商談によるパートナー候補の開拓）。パートナー候補企業へのデモ・商談実施。</td>
+  </tr>
+  <tr>
+    <td>2027年1〜3月</td>
+    <td>パートナー契約締結・オンボーディング支援。パートナー企業の販売開始サポート。事業効果の検証と改善。</td>
+  </tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ========================================================= -->
+<!--  II. 補助事業計画                                           -->
+<!-- ========================================================= -->
+
+<h2>II. 補助事業計画</h2>
+
+<!-- 1. 補助事業名 -->
+<h3>1. 補助事業で行う事業名</h3>
+<div class="box" style="font-size: 15px; font-weight: 700; text-align: center;">
+  デジタル名刺ホワイトラベルサービスの新規BtoBパートナー獲得のための販路開拓事業
+</div>
+
+<!-- 2. 販路開拓等の取組内容 -->
+<h3>2. 販路開拓等（売上拡大）の取組内容</h3>
+
+<h4>取組（1）：業界展示会への出展によるパートナー候補企業との直接商談</h4>
+<p><strong>目的：</strong>印刷業界・IT業界の展示会に出展し、パートナー候補となる印刷会社・Web制作会社の経営者・決裁者と直接商談する機会を創出する。</p>
+<p><strong>具体的な内容：</strong></p>
+<ul>
+  <li>2026年秋〜冬に開催される印刷・IT関連の展示会（例：page展、Japan IT Week、ビジネスマッチングEXPO等）に1〜2回出展する。</li>
+  <li>展示ブースにて、実際のNFCシールを使ったデモンストレーションを行い、パートナー企業が自社ブランドで提供する際のイメージを体感してもらう。</li>
+  <li>来場者にはパートナー募集カタログとNFCシールサンプルを配布し、後日フォローアップの商談につなげる。</li>
+</ul>
+<p><strong>補助事業期間内に使用する経費：</strong>展示会等出展費（出展料、ブース装飾費、展示パネル・ポスター制作費、運搬費）</p>
+
+<h4>取組（2）：パートナー募集チラシ・カタログの制作とDM発送</h4>
+<p><strong>目的：</strong>ターゲットとなる印刷会社・Web制作会社に対して、デジタル名刺ホワイトラベルサービスの魅力と収益モデルを分かりやすく伝える広報ツールを制作し、DMとして発送する。</p>
+<p><strong>具体的な内容：</strong></p>
+<ul>
+  <li><strong>パートナー募集チラシ（A4両面カラー）：</strong>「紙名刺の売上減少に悩む印刷会社様へ」をキャッチコピーに、開発費ゼロ・最短30日開始・月額3万円〜の訴求ポイントと収益シミュレーションを掲載。1,000部制作。</li>
+  <li><strong>業界向けカタログ（8ページ程度）：</strong>サービスの仕組み、ホワイトラベルの具体的なイメージ（カスタマイズ例）、料金プラン比較、導入フロー、よくある質問をまとめた詳細カタログ。500部制作。</li>
+  <li><strong>業界紙への広告掲載：</strong>印刷業界誌等に1/4ページ程度の広告を掲載し、業界内での認知度向上を図る。</li>
+  <li><strong>DM発送：</strong>全国の印刷会社・Web制作会社から対象企業を選定し、チラシ・カタログをDMとして郵送（封筒・切手代含む）。</li>
+</ul>
+<p><strong>補助事業期間内に使用する経費：</strong>広報費（チラシ印刷費、カタログ印刷費、業界紙広告掲載料、DM発送費）</p>
+
+<h4>取組（3）：パートナー向け営業提案書・導入事例集の制作外注</h4>
+<p><strong>目的：</strong>パートナー候補企業への商談時に使用する、プロフェッショナルな営業提案書・導入事例集を外注制作し、商談の成約率を向上させる。</p>
+<p><strong>具体的な内容：</strong></p>
+<ul>
+  <li><strong>パートナー向け営業提案書（A4横・20ページ程度）：</strong>デザイン会社に外注し、市場データ、サービス概要、収益モデル比較、導入ステップ、サポート体制をビジュアル豊富に構成。商談時のプレゼンテーション資料として使用。</li>
+  <li><strong>導入事例集・ホワイトペーパー（A4・8ページ程度）：</strong>デジタル名刺市場の分析データと、想定されるパートナー活用シナリオをまとめた資料。デザイン・レイアウトを外注制作。</li>
+</ul>
+<p><strong>補助事業期間内に使用する経費：</strong>委託・外注費（提案書デザイン・レイアウト外注、導入事例集デザイン・レイアウト外注）</p>
+
+<h4>デジタル技術の活用について</h4>
+<div class="box">
+  <p>本補助事業は、以下の点でデジタル技術を有効的に活用する取組である。</p>
+  <ul>
+    <li><strong>NFC（近距離無線通信）技術：</strong>スマートフォンをかざすだけで連絡先情報をデジタル送信する先端技術を活用したサービスの販路拡大。</li>
+    <li><strong>クラウドベースのSaaSプラットフォーム：</strong>パートナー企業はクラウド上のプラットフォームを通じて、初期開発不要でデジタル名刺サービスを展開。</li>
+    <li><strong>ウェブマーケティングとの連動：</strong>展示会やDMで獲得したリードを、既に構築済みのパートナー募集LP（sns-share.com/partner）で詳細情報を提供し、オンラインでの問い合わせにつなげる。</li>
+  </ul>
+</div>
+
+<!-- 3. 業務効率化の取組 -->
+<h3>3. 業務効率化（生産性向上）の取組内容</h3>
+<p>
+  本補助事業と併せて、以下の業務効率化に取り組む（補助対象経費には含めない）。
+</p>
+<ul>
+  <li><strong>パートナー問い合わせの自動化：</strong>パートナー募集LP上のフォームから送信された問い合わせ情報を、CRM（顧客管理システム）に自動連携し、自動返信メール・ステータス管理を行うことで、1名体制でも迅速かつ漏れのないフォロー対応を実現する。</li>
+  <li><strong>オンライン商談・デモ環境の整備：</strong>遠方のパートナー候補企業に対して、Webミーティングツールを活用したオンラインデモ環境を整備し、移動コストを削減しつつ全国の企業と効率的に商談を行える体制を構築する。</li>
+</ul>
+
+<div class="page-break"></div>
+
+<!-- 4. 補助事業の効果 -->
+<h3>4. 補助事業の効果</h3>
+
+<h4>（1）定量的な効果</h4>
+<table class="kpi-table">
+  <tr>
+    <th>指標</th>
+    <th class="center">補助事業前</th>
+    <th class="center">補助事業後（1年以内）</th>
+  </tr>
+  <tr>
+    <td>展示会でのパートナー候補リード獲得数</td>
+    <td class="center">0件</td>
+    <td class="center">50件</td>
+  </tr>
+  <tr>
+    <td>DMからのパートナー問い合わせ数</td>
+    <td class="center">0件</td>
+    <td class="center">30件</td>
+  </tr>
+  <tr>
+    <td>パートナー契約締結数</td>
+    <td class="center">0社</td>
+    <td class="center">5社</td>
+  </tr>
+  <tr>
+    <td>パートナー事業による年間売上</td>
+    <td class="center">0円</td>
+    <td class="center">300万円</td>
+  </tr>
+  <tr>
+    <td>全社売上の増加率</td>
+    <td class="center">-</td>
+    <td class="center todo">[+___%]</td>
+  </tr>
+</table>
+
+<h4>（2）定性的な効果</h4>
+<ul>
+  <li><strong>新たなBtoB販路の確立：</strong>これまでBtoC中心だった事業構造に、パートナー経由のBtoB販路が加わり、安定的なストック型収益基盤が構築される。</li>
+  <li><strong>業界内でのブランド認知向上：</strong>展示会出展・業界紙広告・DMにより、印刷業界・Web制作業界における「Share」の認知度が大幅に向上する。</li>
+  <li><strong>地域経済への貢献：</strong>全国の印刷会社・Web制作会社がデジタル名刺サービスを提供できるようになることで、地域の中小事業者のDX推進に寄与する。</li>
+  <li><strong>環境への配慮：</strong>紙名刺からデジタル名刺への移行促進により、紙資源の使用削減に貢献する。</li>
+</ul>
+
+<!-- ========================================================= -->
+<!--  III. 経費明細                                               -->
+<!-- ========================================================= -->
+
+<h2>III. 経費明細・資金調達方法</h2>
+
+<h3>1. 補助事業に要する経費</h3>
+<table>
+  <tr>
+    <th style="width:30px;">No.</th>
+    <th>経費区分</th>
+    <th>内容</th>
+    <th class="amount" style="width:100px;">金額（税抜）</th>
+  </tr>
+  <tr>
+    <td class="center">1</td>
+    <td>広報費</td>
+    <td>パートナー募集チラシ（A4両面カラー）1,000部 印刷</td>
+    <td class="amount">50,000円</td>
+  </tr>
+  <tr>
+    <td class="center">2</td>
+    <td>広報費</td>
+    <td>業界向けカタログ（8ページ）500部 印刷</td>
+    <td class="amount">80,000円</td>
+  </tr>
+  <tr>
+    <td class="center">3</td>
+    <td>広報費</td>
+    <td>印刷業界紙への広告掲載（1/4ページ×1回）</td>
+    <td class="amount">100,000円</td>
+  </tr>
+  <tr>
+    <td class="center">4</td>
+    <td>広報費</td>
+    <td>DM発送費（封筒・切手・宛名印刷）500通</td>
+    <td class="amount">70,000円</td>
+  </tr>
+  <tr>
+    <td class="center" colspan="3" style="text-align:right; font-weight:700;">広報費 小計</td>
+    <td class="amount" style="font-weight:700;">300,000円</td>
+  </tr>
+  <tr>
+    <td class="center">5</td>
+    <td>展示会等出展費</td>
+    <td>展示会出展料（1〜2回分）</td>
+    <td class="amount">200,000円</td>
+  </tr>
+  <tr>
+    <td class="center">6</td>
+    <td>展示会等出展費</td>
+    <td>展示ブース装飾費（パネル・ポスター制作・タペストリー等）</td>
+    <td class="amount">60,000円</td>
+  </tr>
+  <tr>
+    <td class="center">7</td>
+    <td>展示会等出展費</td>
+    <td>展示物運搬費</td>
+    <td class="amount">40,000円</td>
+  </tr>
+  <tr>
+    <td class="center" colspan="3" style="text-align:right; font-weight:700;">展示会等出展費 小計</td>
+    <td class="amount" style="font-weight:700;">300,000円</td>
+  </tr>
+  <tr>
+    <td class="center">8</td>
+    <td>委託・外注費</td>
+    <td>パートナー向け営業提案書デザイン・レイアウト外注（20ページ）</td>
+    <td class="amount">100,000円</td>
+  </tr>
+  <tr>
+    <td class="center">9</td>
+    <td>委託・外注費</td>
+    <td>導入事例集・ホワイトペーパーのデザイン・レイアウト外注（8ページ）</td>
+    <td class="amount">50,000円</td>
+  </tr>
+  <tr>
+    <td class="center" colspan="3" style="text-align:right; font-weight:700;">委託・外注費 小計</td>
+    <td class="amount" style="font-weight:700;">150,000円</td>
+  </tr>
+  <tr class="highlight">
+    <td class="center" colspan="3" style="text-align:right; font-weight:700; font-size:14px;">合計</td>
+    <td class="amount" style="font-weight:700; font-size:14px;">750,000円</td>
+  </tr>
+</table>
+
+<h3>2. 補助金交付申請額</h3>
+<table>
+  <tr>
+    <th>項目</th>
+    <th class="amount">金額</th>
+  </tr>
+  <tr>
+    <td>補助対象経費合計</td>
+    <td class="amount">750,000円</td>
+  </tr>
+  <tr>
+    <td>補助率</td>
+    <td class="amount">2/3</td>
+  </tr>
+  <tr>
+    <td>算出額（750,000 × 2/3）</td>
+    <td class="amount">500,000円</td>
+  </tr>
+  <tr>
+    <td>補助上限額</td>
+    <td class="amount">500,000円</td>
+  </tr>
+  <tr class="highlight">
+    <td style="font-weight:700;">補助金交付申請額</td>
+    <td class="amount" style="font-weight:700; font-size:14px;">500,000円</td>
+  </tr>
+</table>
+
+<h3>3. 資金調達方法</h3>
+<table>
+  <tr>
+    <th>区分</th>
+    <th class="amount">金額</th>
+  </tr>
+  <tr>
+    <td>自己資金</td>
+    <td class="amount">250,000円</td>
+  </tr>
+  <tr>
+    <td>補助金</td>
+    <td class="amount">500,000円</td>
+  </tr>
+  <tr class="highlight">
+    <td style="font-weight:700;">合計</td>
+    <td class="amount" style="font-weight:700;">750,000円</td>
+  </tr>
+</table>
+
+<div class="page-break"></div>
+
+<!-- ========================================================= -->
+<!--  IV. 加点項目                                               -->
+<!-- ========================================================= -->
+
+<h2>IV. 加点項目に関する記載事項</h2>
+
+<h3>【重点政策加点】事業環境変化加点</h3>
+<div class="box">
+  <h4 style="border:none; padding:0; margin: 0 0 8px 0;">物価高騰等の影響を受けている内容</h4>
+  <p>
+    当社はデジタル名刺プラットフォームの運営にあたり、クラウドサーバー（Vercel, Supabase）をドル建てで契約している。2022年以降の急激な円安の進行により、サーバー運用コストが約30〜40%増加しており、利益を圧迫している。
+  </p>
+  <p>
+    また、NFCシールの原材料となるICチップ・アンテナ部品について、半導体不足および原油価格高騰に伴う輸送コスト増加により、仕入価格が上昇している。
+  </p>
+  <p>
+    さらに、米国による相互関税政策の影響により、海外クラウドサービスの利用料金の追加値上げリスクを抱えており、事業の収益構造の多角化（パートナー事業によるBtoB収益の創出）が急務となっている。
+  </p>
+</div>
+
+<h3>【政策加点】地方創生型加点（地域資源型）</h3>
+<div class="box">
+  <h4 style="border:none; padding:0; margin: 0 0 8px 0;">地域資源等を活用した取組計画</h4>
+  <p>
+    当社は広島県に拠点を置くIT企業として、地方発のデジタルサービスを全国に展開する取組を行っている。本補助事業では、当社が開発したデジタル名刺ホワイトラベルプラットフォームを全国の印刷会社・Web制作会社にパートナーとして提供することにより、以下の地方創生効果を見込む。
+  </p>
+  <ul>
+    <li><strong>地域外への販売拡大：</strong>広島県発のサービスを全国のパートナー企業に提供し、地域外への売上拡大を図る。</li>
+    <li><strong>地域のDX推進：</strong>全国各地の印刷会社がデジタル名刺サービスを自社ブランドで提供することで、各地域の中小企業・個人事業主のデジタル化を促進する。</li>
+    <li><strong>伝統産業の新展開：</strong>印刷業という伝統的な地場産業が、デジタルサービスの販売代理という新たな付加価値を獲得し、事業転換・持続的成長を実現する。</li>
+  </ul>
+</div>
+
+<!-- ========================================================= -->
+<!--  V. 補助事業実施スケジュール                                   -->
+<!-- ========================================================= -->
+
+<h2>V. 補助事業実施スケジュール</h2>
+
+<table>
+  <tr>
+    <th style="width:60px;">月</th>
+    <th>広報費（チラシ・カタログ・DM）</th>
+    <th>展示会等出展費</th>
+    <th>委託・外注費</th>
+  </tr>
+  <tr>
+    <td class="center">8月</td>
+    <td>チラシ・カタログの企画・デザイン入稿</td>
+    <td>出展展示会の選定・申込み</td>
+    <td>営業提案書の企画・外注発注</td>
+  </tr>
+  <tr>
+    <td class="center">9月</td>
+    <td>チラシ・カタログ印刷完了。DM発送リスト作成</td>
+    <td>ブース装飾の企画・発注</td>
+    <td>提案書デザイン・レイアウト制作</td>
+  </tr>
+  <tr>
+    <td class="center">10月</td>
+    <td>DM第1回発送（300通）</td>
+    <td>展示会出展（第1回）</td>
+    <td>導入事例集の外注発注・制作</td>
+  </tr>
+  <tr>
+    <td class="center">11月</td>
+    <td>DM第2回発送（200通）。業界紙広告掲載</td>
+    <td>展示会出展（第2回）※該当する場合</td>
+    <td>成果物納品・検収</td>
+  </tr>
+  <tr>
+    <td class="center">12月</td>
+    <td>効果測定・フォローアップDM</td>
+    <td>展示会リードへのフォロー商談</td>
+    <td>-</td>
+  </tr>
+  <tr>
+    <td class="center">1月</td>
+    <td colspan="3" style="text-align:center;">事業効果の検証・実績報告書の作成</td>
+  </tr>
+</table>
+<p class="note">※上記は交付決定時期（2026年7月頃予定）に基づく想定スケジュールです。交付決定日以降に各経費の支出を開始します。</p>
+
+<!-- フッター -->
+<div class="footer-note">
+  <p>本書類は小規模事業者持続化補助金＜一般型 通常枠＞第19回公募への申請にあたり、</p>
+  <p>電子申請システム（様式2）に入力する内容の原案として作成したものです。</p>
+  <p style="margin-top: 8px;">株式会社Senrigan ／ 2026年3月作成</p>
+</div>
+
+</body>
+</html>
